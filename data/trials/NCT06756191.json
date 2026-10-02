@@ -1,0 +1,44 @@
+{
+  "trial_id": "NCT06756191",
+  "title": "Antifungal Drugs in Pulmonary Mucormycosis",
+  "official_title": "Evaluation on Efficacy and Safety of Liposomal Amphotericin B(AmBisome® ) Combination with Isavuconazole Versus AmBisome® Alone for Treatment of Patients with Pulmonary Mucormycosis",
+  "overall_status": "NOT_YET_RECRUITING",
+  "phases": [
+    "PHASE4"
+  ],
+  "study_type": "INTERVENTIONAL",
+  "conditions": [
+    "Pulmonary Mucormycosis"
+  ],
+  "keywords": [
+    "Pulmonary Mucormycosis",
+    "Amphotericin B liposome",
+    "isavuconazole"
+  ],
+  "interventions": [
+    {
+      "type": "DRUG",
+      "name": "Combination therapy group",
+      "description": "Liposomal amphotericin B (AmBisome®) combination with Isavuconazole"
+    },
+    {
+      "type": "DRUG",
+      "name": "Liposomal Amphotericin B",
+      "description": "Liposomal amphotericin B (AmBisome®) alone"
+    }
+  ],
+  "brief_summary": "Pulmonary mucormycosis (PM) poses a substantial clinical challenge, particularly among immunocompromised patients. The aim of the study is to determine the effectiveness and safety of administering AmBisome at a dose of 5mg/kg/day combined with isavuconazole versus using AmBisome for the management of pulmonary mucormycosis",
+  "detailed_description": "",
+  "eligibility_criteria": "Inclusion Criteria\n\n* Patients aged 18 years or older diagnosed with pulmonary mucormycosis (PM).\n* Individuals with Probable or proved PM, as indicated by clinical and radiological findings.\n\nExclusion Criteria:\n\n* Patients with a history of pulmonary mucormycosis (PM) who have previously been treated with amphotericin B for a duration exceeding 5 days.\n* Patients who have documented allergies to azoles or amphotericin B regimens\n* Patients with serum aspartate aminotransferase (AST), alanine aminotransferase (ALT), alkaline phosphatase, or bilirubin levels exceeding five times the upper limit of normal (ULN).\n* Patients with irreversible heart or liver failure, or those experiencing massive, fatal hemoptysis.\n* Patients who have experienced a myocardial infarction or cerebral infarction.\n* Patients currently receiving extracorporeal membrane oxygenation (ECMO) treatment.\n* Pregnant or breastfeeding individuals. 8.Patients with individual reasons that may prevent them from completing the treatment protocol.",
+  "sex": "ALL",
+  "minimum_age": "18 Years",
+  "maximum_age": null,
+  "healthy_volunteers": false,
+  "locations": [],
+  "source": {
+    "name": "ClinicalTrials.gov (U.S. National Library of Medicine)",
+    "url": "https://clinicaltrials.gov/study/NCT06756191",
+    "retrieved_at": "2026-09-29T12:28:15+00:00"
+  },
+  "synthetic": false
+}

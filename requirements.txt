@@ -1,0 +1,8 @@
+# 재현용 최소 의존성. 실제 실험 환경은 `pip freeze > requirements.lock.txt`로 고정해 함께 제출하세요.
+anthropic
+pydantic>=2.6
+requests>=2.31
+python-dotenv>=1.0
+pytest>=8
+fastapi>=0.110
+uvicorn>=0.29

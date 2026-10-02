@@ -1,0 +1,51 @@
+{
+  "trial_id": "NCT06916494",
+  "title": "Pilot Study on Rutin Combined With Tislelizumab and GC (Gemcitabine and Cisplatin) as Neoadjuvant Therapy for Platinum-refractory Muscle-invasive Bladder Cancer",
+  "official_title": "A Single-Arm, Open-Label, Multicenter Pilot Study：Rutin Combined With Tislelizumab and GC (Gemcitabine and Cisplatin) for Platinum-refractory Muscle-Invasive Bladder Cancer",
+  "overall_status": "RECRUITING",
+  "phases": [
+    "PHASE1"
+  ],
+  "study_type": "INTERVENTIONAL",
+  "conditions": [
+    "Muscle Invasive Bladder Cancer"
+  ],
+  "keywords": [],
+  "interventions": [
+    {
+      "type": "DRUG",
+      "name": "Rutin",
+      "description": "Rutin 40 mg tid. Treatment will be given for 2 cycles (21 days per cycle)"
+    },
+    {
+      "type": "DRUG",
+      "name": "Gemcitabine, Cisplatin",
+      "description": "Cisplatin 100 mg/m² D2 q3w, and Gemcitabine 1000 mg/m² D1, D8 q3w. Treatment will be given for 2 cycles (21 days per cycle)"
+    },
+    {
+      "type": "DRUG",
+      "name": "Tislelizumab",
+      "description": "Tislelizumab 200 mg D1 q3w Treatment will be given for 2 cycles (21 days per cycle)"
+    }
+  ],
+  "brief_summary": "This trial aims to evaluate the efficacy, safety, and biological mechanisms of rutin combined with tislelizumab and GC(Gemcitabine and Cisplatin) in platinum-refractory muscle-invasive bladder cancer patients. Key research questions include:\n\n1. Whether rutin regulates epigenetic mechanisms in tumor cells from platinum-refractory bladder cancer patients and modulates the tumor immune microenvironment.\n2. Evaluating the safety and adverse events of the combination treatment in platinum-refractory bladder cancer patients.\n3. Assessing the disease control rate in platinum-refractory bladder cancer patients receiving this therapy.\n\nPatients with MIBC who exhibit no response (stable disease or progressive disease) after two cycles of neoadjuvant GC chemotherapy will receive two cycles of rutin combined with tislelizumab and GC. Safety and adverse events will be assessed after each cycle of combinational treatment. Therapeutic response will be evaluated by contrast-enhanced MRI, and surgical decisions (transurethral resection, partial cystectomy, or radical cystectomy) will be made by two senior urologists. Epigenetic alterations and the changes in immune microenvironment will be analyzed post-treatment.",
+  "detailed_description": "",
+  "eligibility_criteria": "Inclusion Criteria:\n\n* Patients with cT2-cT4N0M0 muscle-invasive bladder cancer (MIBC)\n* No response after 2 cycles of GC neoadjuvant chemotherapy\n* No prior use of systemic immunotherapy or target therapy\n* Tumor is measurable according to New response evaluation criteria in solid tumours: Revised RECIST guideline\n* ECOG (ZPS, 5-point scale) 0-1\n\nExclusion Criteria:\n\n* Age less than 18 years\n* Patients with severe cardiac, cerebral, hepatic, or renal disease\n* Severely malnourished patients\n* Patients with mental illness and those without insight and unable to express exactly\n* Combined with malignant tumors of other organs\n* Systemic infectious diseases",
+  "sex": "ALL",
+  "minimum_age": "18 Years",
+  "maximum_age": null,
+  "healthy_volunteers": false,
+  "locations": [
+    {
+      "facility": "First Affiliated Hospital of Chongqing Medical University",
+      "city": "Chongqing",
+      "country": "China"
+    }
+  ],
+  "source": {
+    "name": "ClinicalTrials.gov (U.S. National Library of Medicine)",
+    "url": "https://clinicaltrials.gov/study/NCT06916494",
+    "retrieved_at": "2026-09-29T12:28:14+00:00"
+  },
+  "synthetic": false
+}

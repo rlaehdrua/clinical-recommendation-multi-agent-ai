@@ -1,0 +1,53 @@
+{
+  "trial_id": "NCT07679893",
+  "title": "Phase 2 Clinical Trial of MNKD-201 (Nintedanib Dry Powder Inhalation) in Patients With Idiopathic Pulmonary Fibrosis",
+  "official_title": "A Randomized, Double-Blind, Placebo-Controlled, Phase 2 Clinical Trial of the Efficacy and Safety of MNKD-201 (Nintedanib Dry Powder Inhalation) in Patients With Idiopathic Pulmonary Fibrosis Followed by an Open-Label Extension",
+  "overall_status": "RECRUITING",
+  "phases": [
+    "PHASE2"
+  ],
+  "study_type": "INTERVENTIONAL",
+  "conditions": [
+    "Idiopathic Pulmonary Fibrosis",
+    "Idiopathic Pulmonary Fibrosis (IPF)"
+  ],
+  "keywords": [
+    "inhalable treatments",
+    "lung scarring",
+    "Pulmonary fibrosis",
+    "fibrosis",
+    "pulmonary"
+  ],
+  "interventions": [
+    {
+      "type": "DRUG",
+      "name": "Nintedanib Dry Powder Inhalation",
+      "description": "Nintedanib DPI is a dry powder nintedanib formulation for oral inhalation."
+    },
+    {
+      "type": "DRUG",
+      "name": "Placebo",
+      "description": "Placebo oral inhalation powder"
+    }
+  ],
+  "brief_summary": "This trial is a randomized, double-blind, placebo-controlled study evaluating the safety and preliminary efficacy of inhaled Nintedanib Dry Powder Inhalation (DPI) in adults with idiopathic pulmonary fibrosis (IPF). Participants are randomized to receive either 2 mg BID, 4 mg BID, or matching placebo for 12 weeks, followed by a 24-week open-label extension in which all participants receive active treatment. The primary focus is on safety-particularly bronchospasm events, lung function changes (FEV1, FEV1/FVC), and adverse event rates and assessing the effectiveness of nintedanib DPI in treating IPF.",
+  "detailed_description": "",
+  "eligibility_criteria": "Inclusion Criteria:\n\n* 40-80 years old when signing consent and entering screening.\n* Diagnosed with IPF based on current ATS/ERS/JRS/ALAT guidelines.\n* Either new to treatment or on a stable dose of pirfenidone and/or nerandomilast for at least 3 months before screening.\n* Weighs more than 40 kg (88 lb) at screening.\n* Women who can become pregnant:\n* Must have a negative pregnancy test at screening.\n* Must use an approved birth control method from screening until at least 1 month after the last study dose.\n* Men who can father a child and are sexually active with women who can become pregnant:\n* Must use an approved birth control method during treatment and for at least 3 months after the last study dose.\n* Must not donate sperm during treatment and for at least 3 months after the last study dose.\n* Willing to follow all study rules and restrictions.\n* Willing and able to attend study visits and complete study procedures.\n* Able to perform spirometry (lung function testing) as required by the study.\n\nExclusion Criteria:\n\n* Has a lung disease caused by something other than IPF.\n* Has a connective tissue or autoimmune disease (such as lupus, scleroderma, or rheumatoid arthritis).\n* Has another condition that significantly affects breathing.\n* Has serious heart or blood vessel disease.\n* Has a recent or current infection.\n* Was recently hospitalized for COVID-19, an IPF flare-up, or a lung infection.\n* Has a history of asthma (except childhood asthma that has resolved).\n* Has another medical condition or abnormal test result that may affect study participation or safety.\n* Cannot perform high-quality spirometry testing.\n* Has obstructive lung disease.\n* Has abnormal liver function tests.\n* Has moderate to severe liver disease.\n* Has severe kidney disease.\n* Has recently used high-dose steroids or other immune-suppressing medications.\n* Has active cancer or recent cancer treatment.\n* Is on, or expected to be added to, a transplant list.\n* Had major surgery recently or has planned procedures that could interfere with the study.\n* Has had a severe reaction to nintedanib or cannot take nintedanib safely.\n* Has recently used certain medications that may interact with the study drug.\n* Is currently using, or plans to use, prohibited medications during the study.\n* Has recently participated in another clinical trial.\n* Has current alcohol or drug abuse issues.\n* Donated a significant amount of blood recently.\n* Received a live vaccine recently.\n* Currently smokes, recently smoked, or quit smoking less than 1 year ago.\n* Requires more than 6 L/min of oxygen while at rest.",
+  "sex": "ALL",
+  "minimum_age": "40 Years",
+  "maximum_age": "80 Years",
+  "healthy_volunteers": false,
+  "locations": [
+    {
+      "facility": "Trial Management Group Inc",
+      "city": "Windsor",
+      "country": "Canada"
+    }
+  ],
+  "source": {
+    "name": "ClinicalTrials.gov (U.S. National Library of Medicine)",
+    "url": "https://clinicaltrials.gov/study/NCT07679893",
+    "retrieved_at": "2026-09-29T12:28:16+00:00"
+  },
+  "synthetic": false
+}

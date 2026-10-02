@@ -1,0 +1,76 @@
+{
+  "topics": [
+    {
+      "num": "SYN-S005-01",
+      "title": "A 31-year-old woman with a 9-year history of migraine with typical visual aura (ICHD-3 diagnosis confirmed by a neurologist in 2025) reports 2-4 attacks per month preceded by scintillating scotomata, with at least 2 aura attacks in each of July, August and September 2026. She has never taken any migraine preventive medication and treats attacks with sumatriptan 50 mg and naproxen about 4 days per month; she takes no other medications, has no known drug allergies, and has no other headache disorder. Contraception has been a levonorgestrel intrauterine device since March 2024; she is not breastfeeding and a urine hCG on 2026-09-22 was negative. Labs on 2026-09-22: potassium 4.2 mmol/L, creatinine 0.68 mg/dL (estimated creatinine clearance 118 mL/min), ALT 18 U/L, AST 21 U/L, bilirubin 0.5 mg/dL. Neurological examination and blood pressure (112/70 mmHg) are normal, and she has no cardiovascular, renal or psychiatric history. She works full-time and is seeking a preventive option.",
+      "hidden_details": "Everything in the title. 31-year-old woman, migraine with typical visual aura per ICHD-3 (diagnosed by neurologist 2025, symptoms for 9 years), 2-4 attacks/month, >=2 aura attacks in each of the last 3 months (Jul, Aug, Sep 2026). Never used any migraine preventive (no beta-blocker, topiramate, amitriptyline, candesartan, CGRP mAb, or onabotulinumtoxinA). Acute meds: sumatriptan 50 mg and naproxen ~4 days/month (no medication overuse). No other medications (no diuretics, potassium salts, lithium, ACE inhibitors/ARBs, ciclosporin, tacrolimus, QT-prolonging drugs). No known drug allergies, never exposed to amiloride. No other primary headache disorder. LNG-IUD since 2024-03, planned to remain in place through and after the study; not pregnant (urine hCG negative 2026-09-22), not lactating. Labs 2026-09-22: K 4.2 mmol/L, creatinine 0.68 mg/dL, CrCl 118 mL/min, ALT 18, AST 21, bilirubin 0.5 mg/dL; normal CBC. No cardiovascular, renal, hepatic, neurological (other than migraine) or psychiatric disease. Normal exam, BP 112/70. Not under guardianship; covered by national health insurance. Willing to consent and able to comply with study visits.",
+      "design_note": "Classic migraine with aura, preventive-naive with frequent auras and full amiloride-safety data in the title: eligible for the amiloride trial (NCT04063540). Decisively ineligible for NCT07616128 because that trial requires a history of failure of prior preventive treatments, and she has never used one.",
+      "base_topic": "S005",
+      "synthetic": true,
+      "candidate_trials": [
+        "NCT07616128",
+        "NCT04063540"
+      ]
+    },
+    {
+      "num": "SYN-S005-02",
+      "title": "A 58-year-old man has had migraine with visual and sensory aura since his twenties, currently with about 3 aura attacks and 6 headache days per month over the past 3 months. He previously failed topiramate 100 mg/day (2023, stopped for paresthesias and word-finding difficulty) and propranolol 80 mg/day (2024, no reduction in attack frequency after 4 months). Since February 2026 he has taken candesartan 16 mg daily as migraine prevention, which he continues today with partial benefit. He uses rizatriptan 10 mg for attacks about 4 days per month. Labs on 2026-09-15 showed potassium 4.5 mmol/L, creatinine 1.0 mg/dL (eGFR 82 mL/min/1.73 m2) and normal liver enzymes. He has no cardiovascular disease other than well-controlled blood pressure on candesartan and no other headache disorder.",
+      "hidden_details": "Everything in the title. 58-year-old man, ICHD-3 migraine with aura (visual and sensory), ~3 aura attacks/month and ~6 headache days/month over the last 3 months. Prior preventive failures: topiramate 100 mg/day (2023, intolerance) and propranolol 80 mg/day (2024, inefficacy after 4 months). Current preventive: candesartan 16 mg daily since 2026-02, ongoing (an angiotensin II receptor blocker used as migraine prophylaxis). Acute: rizatriptan 10 mg ~4 days/month. No hypokalemia (K 4.5 mmol/L). Creatinine 1.0 mg/dL, eGFR 82, normal LFTs. No other headache disorder, no coronary, cerebrovascular or psychiatric disease. No drug allergies. Willing to consent and able to comply with study visits.",
+      "design_note": "Ineligible for both trials because of ongoing migraine preventive therapy (candesartan since 2026-02), which violates 'not currently using migraine preventive therapy' (NCT07616128) and 'no prophylactic treatment for at least 1 month' (NCT04063540); candesartan is also an angiotensin II inhibitor, which is a listed amiloride contraindication in the absence of hypokalemia. Prior preventive failures are otherwise present, so the violation is the current treatment, not the history.",
+      "base_topic": "S005",
+      "synthetic": true,
+      "candidate_trials": [
+        "NCT07616128",
+        "NCT04063540"
+      ]
+    },
+    {
+      "num": "SYN-S005-03",
+      "title": "A 44-year-old woman with migraine with aura since adolescence (ICHD-3 diagnosis) reports recurrent attacks of unilateral throbbing headache preceded by zigzag visual disturbances lasting 20-30 minutes, with photophobia and nausea. Over July through September 2026 she has had 2-3 aura attacks per month and about 7 migraine days per month. Her preventive history includes topiramate in 2024, stopped after 3 months because of paresthesias and cognitive slowing, and later propranolol. She treats attacks with eletriptan 40 mg and ibuprofen and has no other headache disorder. She has no significant medical history apart from migraine and works as an accountant.",
+      "hidden_details": "Everything in the title plus: propranolol 160 mg/day was taken from 2026-01 to 2026-05 with no meaningful reduction in migraine frequency (treatment failure) and was tapered off, last dose 2026-06-10; she has taken no migraine preventive since then (>3 months). Acute medication use ~6 days/month (no overuse). Bilateral tubal ligation in 2019 (reliable contraception); urine hCG negative on 2026-09-24; not breastfeeding. Labs 2026-09-24: potassium 4.1 mmol/L, creatinine 0.74 mg/dL (estimated CrCl 98 mL/min), ALT 22 U/L, AST 19 U/L, bilirubin 0.6 mg/dL, normal CBC. No other medications (no diuretics, potassium salts, lithium, ACE inhibitors/ARBs, ciclosporin, tacrolimus, QT-prolonging drugs). No known drug allergies. No cardiovascular, renal, hepatic, neurological or psychiatric disease; normal neurological exam; BP 118/74. Not under guardianship; insured. Willing to consent and able to comply with study visits.",
+      "design_note": "Full record is eligible for both trials (two prior preventive failures, off all prevention since 2026-06, frequent auras, normal K/renal/hepatic labs, tubal ligation). The title deliberately omits whether propranolol failed and is still being taken, contraception/pregnancy status, and potassium/renal labs, so both trials are uncertain from the title alone.",
+      "base_topic": "S005",
+      "synthetic": true,
+      "candidate_trials": [
+        "NCT07616128",
+        "NCT04063540"
+      ]
+    },
+    {
+      "num": "SYN-S006-01",
+      "title": "A 52-year-old man with poorly controlled type 2 diabetes (HbA1c 12.4% on 2026-09-12) and no history of cancer was admitted on 2026-09-20 with diabetic ketoacidosis, fever, productive cough and right pleuritic chest pain. Chest CT on 2026-09-22 showed a right upper lobe consolidation with a reversed halo sign and early cavitation; sinus CT and nasal endoscopy were normal. Transbronchial biopsy on 2026-09-25 showed broad, ribbon-like pauci-septate hyphae invading lung tissue, and culture grew Rhizopus arrhizus, establishing proven pulmonary mucormycosis. Liposomal amphotericin B 5 mg/kg/day was started on 2026-09-26 (day 4 today); he has no known drug allergies. Labs on 2026-09-28: AST 42 U/L, ALT 51 U/L (ULN 40), alkaline phosphatase 110 U/L, total bilirubin 0.9 mg/dL; echocardiogram showed EF 60%. He has only mild streaky hemoptysis, is on 4 L/min nasal cannula oxygen without mechanical support, and has no history of myocardial infarction or stroke.",
+      "hidden_details": "Everything in the title. 52-year-old man, T2DM poorly controlled (HbA1c 12.4%), DKA on admission 2026-09-20 now resolved. Never diagnosed with any malignancy. Proven pulmonary mucormycosis (histopathology + culture Rhizopus arrhizus) of the right upper lobe; no sinus, orbital or cerebral involvement (normal sinus CT, nasal endoscopy and brain MRI 2026-09-23). No prior episode of mucormycosis; first-ever amphotericin exposure started 2026-09-26 (4 days, <5 days at screening). No allergy to azoles or amphotericin. LFTs well below 5x ULN; no heart or liver failure (EF 60%, normal synthetic function). Mild streaky hemoptysis only. No MI, no cerebral infarction. Not on ECMO. Male. Willing to undergo diagnostic procedures, willing to consent and able to comply with the treatment protocol.",
+      "design_note": "Diabetic (non-cancer) host with proven pulmonary mucormycosis and all safety exclusions documented in the title: eligible for the AmBisome +/- isavuconazole trial (NCT06756191). Ineligible for NCT06878144, which requires patients to have cancer.",
+      "base_topic": "S006",
+      "synthetic": true,
+      "candidate_trials": [
+        "NCT06878144",
+        "NCT06756191"
+      ]
+    },
+    {
+      "num": "SYN-S006-02",
+      "title": "A 57-year-old man with diffuse large B-cell lymphoma diagnosed in May 2026, now after cycle 4 of R-CHOP (last dose 2026-09-05), and steroid-induced hyperglycemia presented on 2026-09-18 with fever, left facial pain and swelling, a black eschar on the left middle turbinate and left periorbital edema with ptosis. MRI on 2026-09-19 showed left maxillary and ethmoid sinusitis with orbital extension but no intracranial involvement. Endoscopic debridement on 2026-09-20 showed broad aseptate hyphae with angioinvasion, and culture grew Rhizopus oryzae, confirming rhino-orbital mucormycosis. Chest CT on 2026-09-19 was normal with no pulmonary nodules or consolidation. He is receiving liposomal amphotericin B 5 mg/kg/day since 2026-09-19 and has agreed to further endoscopy, biopsies and blood draws as part of his care. Labs on 2026-09-27: ANC 1.9 x10^9/L, creatinine 1.1 mg/dL, normal liver enzymes.",
+      "hidden_details": "Everything in the title. 57-year-old man with active DLBCL (cancer) on R-CHOP, steroid-induced hyperglycemia. Proven invasive rhino-orbital mucormycosis (histopathology and culture, Rhizopus oryzae) of left maxillary/ethmoid sinuses and orbit; no cerebral involvement, no cerebral infarction. Chest CT 2026-09-19 normal: no pulmonary mucormycosis (neither probable nor proven). Liposomal amphotericin B since 2026-09-19 (10 days). No drug allergies, normal LFTs, EF 58%, no MI. Willing to undergo routine diagnostic procedures (endoscopy, biopsy, phlebotomy); willing to consent and able to comply with study visits.",
+      "design_note": "Cancer patient with proven invasive (rhino-orbital) mucormycosis who is willing to undergo diagnostic procedures: eligible for the cancer/fungal infection sample-collection study (NCT06878144). Ineligible for NCT06756191 because the infection site is sinus/orbit, not lung (chest CT normal), so the required pulmonary mucormycosis diagnosis is absent.",
+      "base_topic": "S006",
+      "synthetic": true,
+      "candidate_trials": [
+        "NCT06878144",
+        "NCT06756191"
+      ]
+    },
+    {
+      "num": "SYN-S006-03",
+      "title": "A 63-year-old man with acute myeloid leukemia who underwent matched unrelated donor allogeneic stem cell transplantation in June 2026 is being treated for grade II gut graft-versus-host disease with prednisone and has been on posaconazole prophylaxis. He developed fever, cough and mild blood-streaked sputum on 2026-09-21. Chest CT on 2026-09-23 showed multiple nodules in the left lower lobe, one with a reversed halo sign, and bronchoalveolar lavage on 2026-09-24 had a negative galactomannan with Mucorales PCR positive, consistent with probable breakthrough pulmonary mucormycosis; sinus CT was normal. Liposomal amphotericin B was started, and he has agreed to bronchoscopy, biopsies and blood tests as needed for his care. He is on 2 L/min nasal cannula oxygen. Other medications include tacrolimus, acyclovir and trimethoprim-sulfamethoxazole.",
+      "hidden_details": "Everything in the title plus: liposomal amphotericin B 5 mg/kg/day was started on 2026-09-26 (3 days of therapy at screening); no prior episode of mucormycosis or prior amphotericin course. No allergy to azoles or amphotericin B (tolerated posaconazole). Labs 2026-09-28: AST 58 U/L, ALT 88 U/L (ULN 40, 2.2x ULN), alkaline phosphatase 160 U/L (ULN 120), total bilirubin 1.3 mg/dL (ULN 1.2) - all below 5x ULN. Echocardiogram 2026-09-25: EF 57%, no heart failure; no chronic liver disease. No history of myocardial infarction or cerebral infarction (brain MRI 2026-09-24 without infarcts). No massive hemoptysis, not on ECMO. Male. Active hematologic malignancy (AML in remission post-transplant, still under cancer care). Willing to undergo routine diagnostic procedures; willing to consent and able to comply with the treatment protocol.",
+      "design_note": "Post-HSCT AML patient with probable breakthrough pulmonary mucormycosis: full record eligible for both trials. For NCT06756191 the title omits the amphotericin start date/duration, liver function values relative to 5x ULN, and cardiac/cerebral infarction history, making it uncertain from text; NCT06878144 (cancer + invasive mucormycosis + willing to undergo procedures) is decidable from the title.",
+      "base_topic": "S006",
+      "synthetic": true,
+      "candidate_trials": [
+        "NCT06878144",
+        "NCT06756191"
+      ]
+    }
+  ]
+}

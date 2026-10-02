@@ -1,0 +1,52 @@
+{
+  "trial_id": "NCT07369063",
+  "title": "Impact of Vitamin D Therapy on Thyroid Function and Antibody Levels in Pediatric Graves' Disease",
+  "official_title": "Impact of Vitamin D Therapy on Thyroid Function and Antibody Levels in Pediatric Graves' Disease: A Pilot Feasibility Trial",
+  "overall_status": "RECRUITING",
+  "phases": [
+    "PHASE2"
+  ],
+  "study_type": "INTERVENTIONAL",
+  "conditions": [
+    "Graves Disease",
+    "Graves' Disease",
+    "Hyperthyroidism"
+  ],
+  "keywords": [
+    "vitamin d",
+    "graves disease",
+    "hyperthyroidism"
+  ],
+  "interventions": [
+    {
+      "type": "DRUG",
+      "name": "Ergocalciferol 50,000 IU",
+      "description": "Participants will receive ergocalciferol 50,000 IU oral capsules weekly for the first 8 weeks, followed by 50,000 IU every two weeks for the subsequent 16 weeks (total 24 weeks)."
+    },
+    {
+      "type": "DRUG",
+      "name": "Methimazole",
+      "description": "Methimazole is considered standard of care for pediatric Graves' disease. Dosing is determined and adjusted by the participant's treating physician"
+    }
+  ],
+  "brief_summary": "The goal of this randomized pilot feasibility clinical trial is to determine the feasibility of implementing a protocol for a larger trial to assess the effects of high-dose vitamin D supplementation in pediatric patients (9-17 years old) newly diagnosed with Graves' disease. The main questions it aims to answer are:\n\nWhat are the recruitment and adherence rates for a larger trial using this protocol? Is the data collection process complete and robust enough for a larger trial? What are the potential barriers to implementing a larger-scale trial? Researchers will compare vitamin D supplementation plus standard methimazole therapy to methimazole therapy alone (with participants permitted to take up to 1000 International Units of vitamin D2 daily) to explore potential effects on thyroid hormone and antibody levels.\n\nParticipants will:\n\nBe randomized to either the intervention or control group. Take study medications (vitamin D or placebo) as directed. Attend regular study visits for blood tests and clinical assessments. Complete medication logs.",
+  "detailed_description": "This pilot feasibility study will evaluate the practicality of conducting a larger randomized controlled trial (RCT) investigating the impact of high-dose vitamin D2 (ergocalciferol) supplementation as an adjunctive therapy to standard methimazole treatment in pediatric patients aged 9-17 years newly diagnosed with Graves' disease (GD). This study aims to address the current gap in research regarding vitamin D supplementation's effect on antibody and thyroid hormone trends in this population. Specifically, the study will examine the feasibility of recruitment, adherence to the intervention regimen, completeness of data collection, and any potential barriers to implementing a larger-scale trial.\n\nThe rationale for this study stems from the observed association between low vitamin D levels and an increased risk of Graves' disease, coupled with the limited data on vitamin D supplementation's influence on disease progression in children. This pilot study will investigate whether high-dose vitamin D supplementation, alongside methimazole, affects Thyroid Receptor Antibody (TRAb) and Thyroid Stimulating Immunoglobulin (TSI) antibody levels, as well as thyroid hormone levels (Total T3, Free Thyroxine, Total Thyroxine, TSH), in newly diagnosed pediatric GD patients.\n\nParticipants will be randomized 1:1 to either an intervention arm (methimazole + high-dose vitamin D2) or a control arm (methimazole only, with the option of taking up to 1000 IU/day of vitamin D2). The intervention arm will receive 50,000 IU of vitamin D2 weekly for 8 weeks, followed by 50,000 IU every two weeks for 16 weeks, along with standard methimazole therapy as directed by their treating endocrinologist. The control arm will receive standard methimazole therapy alone, per their physician's orders, with the option of taking up to 1000 IU of Over-the-counter (OTC) vitamin D2 daily, if desired. The study will not provide this OTC vitamin D.\n\nThe primary feasibility outcomes will be: (1) recruitment rate; (2) adherence rate to the vitamin D supplementation, assessed through pill counts, medication logs, and self-report; (3) data completeness; and (4) identification of any barriers encountered during study implementation. Exploratory clinical outcomes will include time to normalization of thyroid function tests and the percentage change from baseline in TRAb and TSI antibody levels at 24 weeks. Safety and tolerability will be closely monitored, with particular attention to hypercalcemia and hypervitaminosis D. Data on adverse events will be collected and graded using the CTCAE v5.0.\n\nData analysis will primarily focus on descriptive statistics for feasibility outcomes. Exploratory clinical outcomes will be analyzed to estimate effect sizes and variability, informing the design of a future, adequately powered RCT. This pilot study is not powered to detect statistically significant differences in clinical outcomes.\n\nThis study will provide critical preliminary data and feasibility metrics to inform the development of a larger, more definitive RCT evaluating vitamin D's efficacy as an adjunctive therapy in pediatric Graves' disease. This research has the potential to significantly advance our understanding of the role of vitamin D in autoimmune thyroid disease and contribute to improved treatment strategies for children with Graves' disease.\n\nThe FDA has granted an Investigational New Drug (IND) exemption (PIND 176865, dated April 30, 2025) for this pilot feasibility study evaluating high-dose vitamin D2 in children with Graves' disease. The exemption allows the study to proceed without a full IND application.",
+  "eligibility_criteria": "Inclusion Criteria:\n\n* All new pediatric participants aged 9-17 years with a new diagnosis of GD who will be started on methimazole, will be offered to participate at the time of diagnosis.\n* Biochemical features include:\n* Suppressed TSH \\<0.1.\n* Elevated T3\n* Elevated Free T4\n* Elevated T4\n* Positive TSI or TRAb. The presence of antibodies is diagnostic.\n* Our study will offer enrollment to non-English speaking participants\n\nExclusion Criteria:\n\n* Initial hydroxy vitamin D levels \\>80 ng/mL\n* Hypocalcemia, corrected calcium based on albumin \\<8.4 mg/dL\n* Hypercalcemia, corrected calcium based on albumin \\>10.5 mg/dL\n* Conditions that affect vitamin D metabolism such as: malabsorption, chronic kidney or liver disease, nephrocalcinosis, hyperparathyroidism\n* Current use of medications which are known to affect thyroid function or vitamin D metabolism such as thyroid hormone replacement, corticosteroids, anticonvulsants\n* Allergy to vitamin D or methimazole\n* Diagnosis of Hashitoxicosis or thyrotoxicosis (both TSH receptor antibody (TRAb) and thyroid-stimulating immunoglobulin (TSI) levels are negative)\n* Participants under the age of 9 years at the time of diagnosis\n* Pregnant participants\n* Active or uncontrolled infections, other significant medical conditions deemed by the investigator to interfere with study participation or pose undue risk to the participant.",
+  "sex": "ALL",
+  "minimum_age": "9 Years",
+  "maximum_age": "17 Years",
+  "healthy_volunteers": false,
+  "locations": [
+    {
+      "facility": "Pediatric Endocrinology at Northwell Health",
+      "city": "New Hyde Park",
+      "country": "United States"
+    }
+  ],
+  "source": {
+    "name": "ClinicalTrials.gov (U.S. National Library of Medicine)",
+    "url": "https://clinicaltrials.gov/study/NCT07369063",
+    "retrieved_at": "2026-09-29T12:28:13+00:00"
+  },
+  "synthetic": false
+}

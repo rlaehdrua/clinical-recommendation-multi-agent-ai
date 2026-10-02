@@ -1,0 +1,78 @@
+patient_id,trial_id,label,label_text_only,rationale
+SYN-DEMO-A,DEMO-LUNG-001,ELIGIBLE,UNCERTAIN,pregnancy status and prior ADC not in text; hidden record eligible
+SYN-DEMO-B,DEMO-LUNG-001,INELIGIBLE,INELIGIBLE,untreated brain metastases (exclusion)
+SYN-S001-01,NCT06080789,INELIGIBLE,INELIGIBLE,"Incl: no current AP, outpatient; prior episodes mild; not predicted severe or hospitalized -> INELIGIBLE"
+SYN-S001-01,NCT04761523,ELIGIBLE,ELIGIBLE,"Incl: 2 AP episodes within 2 yrs, last idiopathic, age>14 ok; Excl: no dietary guidance, no gallstones, HbA1c 5.4%, BMI 26.8, no steroids, alcohol 2 u/wk, not pregnant or nursing -> ELIGIBLE"
+SYN-S001-01,NCT06391359,ELIGIBLE,ELIGIBLE,"Incl: age>=18, fit for LC, full work-up incl EUS, 2nd episode IAP with negative EUS; Excl: <=3 episodes, no CP, no necrosis, no malignancy, gallbladder in situ, no etiology found -> ELIGIBLE"
+SYN-S001-02,NCT06080789,INELIGIBLE,INELIGIBLE,Incl predicted severe AP met; Excl: CECT ~40% pancreatic necrosis (>30%) -> INELIGIBLE
+SYN-S001-02,NCT04761523,INELIGIBLE,INELIGIBLE,"Incl: first episode, alcoholic (not idiopathic); Excl: alcohol ~10 u/day > limit -> INELIGIBLE"
+SYN-S001-02,NCT06391359,INELIGIBLE,INELIGIBLE,Excl: documented etiology (alcohol) and necrotizing pancreatitis -> INELIGIBLE
+SYN-S001-03,NCT06080789,ELIGIBLE,UNCERTAIN,"Incl: hospitalized AP, predicted severe (SIRS, BISAP 3, CRP 262), no improvement, EUS-suitable, CECT available; Excl: CECT necrosis ~10%, no calcific CP, organ failure/cholangitis only in hidden details (no OF, normal bilirubin) -> ELIGIBLE; title lacks CT result, oxygenation, LFTs -> UNCERTAIN"
+SYN-S001-03,NCT04761523,INELIGIBLE,INELIGIBLE,"Incl: first episode and hypertriglyceridemic etiology (needs >=2 episodes, last idiopathic); also uncontrolled DM -> INELIGIBLE"
+SYN-S001-03,NCT06391359,INELIGIBLE,INELIGIBLE,Excl: documented etiology (TG 2150 mg/dL); no EUS-negative IAP episode -> INELIGIBLE
+SYN-S002-01,NCT06727604,ELIGIBLE,ELIGIBLE,"Incl: age 34, GD hyperthyroid despite methimazole 30 mg (FT4 2.6, TSH<0.01); Excl: no RAI or thyroidectomy, no other autoimmune disease, no TED (CAS 0) -> ELIGIBLE"
+SYN-S002-01,NCT07369063,INELIGIBLE,INELIGIBLE,Incl age 9-17; patient is 34 -> INELIGIBLE
+SYN-S002-01,NCT07040306,ELIGIBLE,ELIGIBLE,"Incl: age>=18, relapsed GD (2026-05); Excl: no active exophthalmos, no other autoimmune disease, no malignancy or serious disease -> ELIGIBLE"
+SYN-S002-02,NCT06727604,INELIGIBLE,INELIGIBLE,"Incl age >=18; patient 15; also newly diagnosed, not hyperthyroid despite ATD -> INELIGIBLE"
+SYN-S002-02,NCT07369063,INELIGIBLE,INELIGIBLE,"Incl met (age 15, new GD, TSH<0.01, high T3/T4/FT4, TRAb+); Excl: current anticonvulsant (carbamazepine) affecting vitamin D metabolism -> INELIGIBLE"
+SYN-S002-02,NCT07040306,INELIGIBLE,INELIGIBLE,Incl age >=18; patient 15 -> INELIGIBLE
+SYN-S002-03,NCT06727604,INELIGIBLE,INELIGIBLE,Incl age >=18; patient 13 -> INELIGIBLE
+SYN-S002-03,NCT07369063,ELIGIBLE,UNCERTAIN,"Incl: age 13, new GD starting methimazole, TSH<0.01, high T3/T4/FT4; TRAb/TSI positive only in hidden details; Excl: 25-OH D 18, corrected Ca 9.6, no meds or conditions -> ELIGIBLE; title lacks antibodies, vitamin D, Ca -> UNCERTAIN"
+SYN-S002-03,NCT07040306,INELIGIBLE,INELIGIBLE,Incl age >=18; patient 13 -> INELIGIBLE
+SYN-S003-01,NCT06125405,ELIGIBLE,ELIGIBLE,"Age 9; steroid-dependent SSNS in remission (negative dipsticks, UPCR 0.08); eGFR ~130; steroid-only exposure (no RTX/CNI/MMF/CYC/ACTH); normal CBC/LFTs; HBV/HCV negative; no chronic infection, secondary NS or family history"
+SYN-S003-01,NCT07087314,ELIGIBLE,ELIGIBLE,"Age 9 (6-18); SDNS in remission; eGFR >=90; Hb/plt/ANC above thresholds within 7 days; INR 1.0; no immunosuppressants/RTX/anti-CD38; HBV/HCV/HIV negative; no infection, live vaccine or surgery in 4 weeks"
+SYN-S003-01,NCT06530004,INELIGIBLE,INELIGIBLE,Retrospective cohort requires first-time rituximab treatment with >=1 year follow-up; she has never received rituximab
+SYN-S003-02,NCT06125405,INELIGIBLE,INELIGIBLE,Mycophenolate mofetil ongoing since 2026-06-20 violates 'no MMF within 3 months'
+SYN-S003-02,NCT07087314,INELIGIBLE,INELIGIBLE,Mycophenolate mofetil ongoing since 2026-06-20 violates 'no MMF in prior 2 months'
+SYN-S003-02,NCT06530004,ELIGIBLE,ELIGIBLE,"SDNS age 13; first-ever rituximab given in remission May 2025 with 16 months documented follow-up; eGFR ~105 (>=60); primary NS; no active hepatitis, severe infection, immunodeficiency or malignancy"
+SYN-S003-03,NCT06125405,ELIGIBLE,UNCERTAIN,"Full record: FRNS age 5 in remission, steroid-only, eGFR ~138, normal CBC/LFTs, HBV/HCV negative, no family history -> eligible. Title omits eGFR, blood counts and HBV/HCV serology"
+SYN-S003-03,NCT07087314,INELIGIBLE,INELIGIBLE,Age 5 is below the 6-18 year requirement
+SYN-S003-03,NCT06530004,INELIGIBLE,INELIGIBLE,Never received rituximab; study requires first-time RTX treatment with >=1 year follow-up
+SYN-S004-01,NCT06833073,ELIGIBLE,ELIGIBLE,"Cohort A: HG T1 + CIS NMIBC, most recent TURBT 2026-08-25 (within 12 weeks), BCG-naive; no T2+/metastatic/extravesical UC; no other malignancy, MI, steroids, autoimmune disease, HIV/TB, prior cancer vaccine or systemic therapy; CTU tolerated"
+SYN-S004-01,NCT06916494,INELIGIBLE,INELIGIBLE,Requires cT2-T4N0M0 MIBC with no response to 2 cycles of neoadjuvant GC; he has non-muscle-invasive disease and no GC
+SYN-S004-02,NCT06833073,INELIGIBLE,INELIGIBLE,"HG Ta BCG-naive NMIBC, but on chronic prednisone 7.5 mg daily (chronic systemic steroid exclusion) and rheumatoid arthritis requiring systemic therapy within 2 years"
+SYN-S004-02,NCT06916494,INELIGIBLE,INELIGIBLE,pTa non-muscle-invasive disease; trial requires cT2-T4 MIBC after 2 cycles of neoadjuvant GC
+SYN-S004-03,NCT06833073,INELIGIBLE,INELIGIBLE,Muscle-invasive cT3a disease meets the exclusion for history of or concurrent locally advanced (T2-T4) UC
+SYN-S004-03,NCT06916494,ELIGIBLE,UNCERTAIN,"Full record: cT3aN0M0 MIBC, stable disease (4.3 to 4.1 cm) after 2 cycles GC, measurable, ECOG 1, no prior IO/targeted therapy, no severe organ disease/malnutrition/other cancer -> eligible. Title omits restaging response and ECOG"
+SYN-S005-01,NCT07616128,INELIGIBLE,INELIGIBLE,"Never used any migraine preventive, so fails required history of failure of prior preventive treatments"
+SYN-S005-01,NCT04063540,ELIGIBLE,ELIGIBLE,"Migraine with aura, >=2 auras/month x3 months, no prophylaxis ever, LNG-IUD since 2024, hCG negative, K 4.2, CrCl 118, normal LFTs, no interacting drugs"
+SYN-S005-02,NCT07616128,INELIGIBLE,INELIGIBLE,Currently taking candesartan as migraine preventive since 2026-02 (must not be using preventive therapy)
+SYN-S005-02,NCT04063540,INELIGIBLE,INELIGIBLE,Ongoing prophylaxis (candesartan) violates no-prophylaxis >=1 month; ARB co-medication without hypokalemia is an amiloride contraindication
+SYN-S005-03,NCT07616128,ELIGIBLE,UNCERTAIN,"Hidden: propranolol failed and stopped 2026-06 (topiramate also failed), no current preventive; title does not state propranolol outcome or current status"
+SYN-S005-03,NCT04063540,ELIGIBLE,UNCERTAIN,"Hidden: off prophylaxis since 2026-06-10, tubal ligation, hCG negative, K 4.1, CrCl 98, no interacting drugs; title lacks preventive status, contraception and K/renal labs"
+SYN-S006-01,NCT06878144,INELIGIBLE,INELIGIBLE,No history of cancer; trial requires patients with cancer
+SYN-S006-01,NCT06756191,ELIGIBLE,ELIGIBLE,Proven pulmonary mucormycosis; L-AmB only 4 days; no allergy; LFTs <5x ULN; EF 60%; mild hemoptysis only; no MI/stroke; no ECMO; male
+SYN-S006-02,NCT06878144,ELIGIBLE,ELIGIBLE,"Active DLBCL with proven invasive rhino-orbital mucormycosis, age 57, agrees to diagnostic procedures"
+SYN-S006-02,NCT06756191,INELIGIBLE,INELIGIBLE,Rhino-orbital disease with normal chest CT; no probable/proven pulmonary mucormycosis
+SYN-S006-03,NCT06878144,ELIGIBLE,ELIGIBLE,"AML post-allo-HSCT with probable invasive pulmonary mucormycosis, agrees to diagnostic procedures"
+SYN-S006-03,NCT06756191,ELIGIBLE,UNCERTAIN,"Hidden: L-AmB 3 days, no drug allergy, LFTs <5x ULN, EF 57%, no MI or cerebral infarction; title omits AmB duration, LFTs and infarction history"
+SYN-S007-01,NCT00195949,ELIGIBLE,ELIGIBLE,"Age 11 weeks (<12 weeks), ultrasound-confirmed pyloric stenosis after surgical consultation"
+SYN-S007-01,NCT02415049,INELIGIBLE,INELIGIBLE,"Age 11 weeks exceeds maximum age of 10 weeks, although otherwise stable and scheduled for pyloromyotomy"
+SYN-S007-02,NCT00195949,ELIGIBLE,ELIGIBLE,"Age 6 weeks (<12 weeks), ultrasound-confirmed pyloric stenosis, surgical consultation; no severity exclusion"
+SYN-S007-02,NCT02415049,INELIGIBLE,INELIGIBLE,"Exclusion: hypothermia, glycemic instability and PICU care are severe underlying conditions"
+SYN-S007-03,NCT00195949,ELIGIBLE,UNCERTAIN,"Age 5 weeks; hidden record has ultrasound confirmation and surgical consultation, which title omits"
+SYN-S007-03,NCT02415049,ELIGIBLE,UNCERTAIN,"Age 5 weeks within 2-10 weeks; ultrasound confirmation, planned pyloromyotomy, normothermia, stable glucose and ward care only in hidden record"
+SYN-S008-01,NCT07679893,ELIGIBLE,ELIGIBLE,"Age 74, IPF per guidelines, stable pirfenidone >3 months, quit smoking 2009, weight 79 kg, normal LFTs/renal, no CTD/asthma/obstruction/cancer/transplant listing"
+SYN-S008-01,NCT07516951,INELIGIBLE,INELIGIBLE,"IPF diagnosed 2017-11, more than the 8-year maximum before screening"
+SYN-S008-02,NCT07679893,INELIGIBLE,INELIGIBLE,"Quit smoking 2026-03, less than 1 year before screening"
+SYN-S008-02,NCT07516951,ELIGIBLE,ELIGIBLE,"Diagnosis 2026-02, HRCT 2026-07 with emphysema <5%, FVC 64%, FEV1/FVC 0.81, DLCO 41%, SpO2 94% RA, weight 63 kg, no steroids/immunosuppressants/coeliac/infection"
+SYN-S008-03,NCT07679893,ELIGIBLE,UNCERTAIN,"Full record: never-smoker, FEV1/FVC 0.84 (no obstruction), stable pirfenidone; title omits smoking status and FEV1/FVC"
+SYN-S008-03,NCT07516951,ELIGIBLE,UNCERTAIN,"Full record: FEV1/FVC 0.84, DLCO 44%, HRCT 2026-07 without emphysema, FVC 66%, SpO2 93%; title omits FEV1/FVC, DLCO and HRCT date/emphysema"
+SYN-S009-01,NCT05127980,ELIGIBLE,ELIGIBLE,"Age 20, clinical IM with lymphocytosis/reactive lymphs/raised ALT, serology VCA IgM+ VCA IgG+ EBNA IgG- (primary EBV); no immunosuppression or autoimmune disease"
+SYN-S009-01,NCT00575185,ELIGIBLE,ELIGIBLE,"Day 4 of illness (<=7 days), VCA IgM+/EBNA IgG-, ANC 3100, plt 148k, Hb 13.2, CrCl ~114; no prior IM, no steroids, HIV/CMV negative, hCG negative, not breastfeeding"
+SYN-S009-01,NCT06908096,INELIGIBLE,INELIGIBLE,Current febrile illness (38.7 C) within 14 days and not in good general health; ALT 96 >1.25x ULN
+SYN-S009-02,NCT05127980,INELIGIBLE,INELIGIBLE,"Exclusion: history of autoimmune disease (Hashimoto thyroiditis, anti-TPO positive)"
+SYN-S009-02,NCT00575185,ELIGIBLE,ELIGIBLE,"Age 26, day 5 (<=7 days), VCA IgM+/EBNA IgG-, ANC 2400, plt 162k, Hb 14.6, CrCl ~130; no prior IM, no steroids/immunosuppressants, no intercurrent viral infection, no prohibited meds"
+SYN-S009-02,NCT06908096,INELIGIBLE,INELIGIBLE,"Febrile illness (38.9 C) within 14 days, acute IM so not in good health; ALT 142 >1.25x ULN"
+SYN-S009-03,NCT05127980,ELIGIBLE,UNCERTAIN,"Full record: VCA IgM+ VCA IgG+ EBNA IgG- plus compatible clinical/lab picture, no autoimmune disease or immunosuppression. Title lacks EBNA/VCA IgG results and autoimmune/immunosuppression history"
+SYN-S009-03,NCT00575185,INELIGIBLE,INELIGIBLE,"Onset 2026-09-19, day 10: >7 days since onset of illness"
+SYN-S009-03,NCT06908096,INELIGIBLE,INELIGIBLE,Age 31 outside 18-29; also current febrile illness
+SYN-S010-01,NCT06294847,ELIGIBLE,ELIGIBLE,"Pseudophakic, 3-quadrant macula-off RRD for ~2 days, PPV scheduled; no prior vitrectomy, no VH or other retinal pathology, fellow eye 20/25, no hepatobiliary/GI/pancreatic disease or prohibited meds"
+SYN-S010-01,NCT06694259,INELIGIBLE,INELIGIBLE,Horseshoe tear at 7 o'clock in lower half of retina; tears at 10 and 7 o'clock span >2 clock hours
+SYN-S010-01,NCT06468397,INELIGIBLE,INELIGIBLE,Detachment not due only to superior tears (inferior 7 o'clock tear)
+SYN-S010-02,NCT06294847,INELIGIBLE,INELIGIBLE,"Phakic (inclusion requires pseudophakic/aphakic), macula-on, and no vitrectomy scheduled (pneumatic retinopexy planned)"
+SYN-S010-02,NCT06694259,ELIGIBLE,ELIGIBLE,"Single superior tear at 1 o'clock (upper half, within 2 clock hours); no PVR, no VH, clear media, able to position, age 58"
+SYN-S010-02,NCT06468397,INELIGIBLE,INELIGIBLE,Macula-on (requires macula-involving RRD); myopia ~-5.0 D >-4 D in study and fellow eye
+SYN-S010-03,NCT06294847,INELIGIBLE,INELIGIBLE,Exclusion 11: daily oral aluminum/magnesium hydroxide antacid
+SYN-S010-03,NCT06694259,INELIGIBLE,INELIGIBLE,Two tears at 10:30 and 1:30 span 3 clock hours (>2 clock hours)
+SYN-S010-03,NCT06468397,ELIGIBLE,UNCERTAIN,"Full record: age 74, recent macula-off RRD from superior tears only, fellow eye 6/7.5, myopia -1.25 D, no glaucoma/IOP>21, no fellow-eye lattice, no family history RD, no PVR/VH. Title omits refraction, glaucoma/IOP history and fellow-eye exam/family history"

@@ -1,0 +1,46 @@
+{
+  "trial_id": "NCT06391359",
+  "title": "Preventing Recurrent 'Idiopathic' Acute Pancreatitis Through Laparoscopic Cholecystectomy (PICUS-2)",
+  "official_title": "Preventing Recurrent 'Idiopathic' Acute Pancreatitis Through Laparoscopic Cholecystectomy (PICUS-2): a Multicenter Randomized Trial",
+  "overall_status": "RECRUITING",
+  "phases": [
+    "NA"
+  ],
+  "study_type": "INTERVENTIONAL",
+  "conditions": [
+    "Idiopathic Acute Pancreatitis"
+  ],
+  "keywords": [],
+  "interventions": [
+    {
+      "type": "PROCEDURE",
+      "name": "Laparoscopic cholecystectomy",
+      "description": "Laparoscopic cholecystectomy"
+    },
+    {
+      "type": "OTHER",
+      "name": "Watchful waiting",
+      "description": "Watchful waiting"
+    }
+  ],
+  "brief_summary": "Rationale: Annually, acute pancreatitis is diagnosed in 6,500 patients in the Netherlands. In up to 25% of patients no definitive cause can be determined after routine work-up including endoscopic ultrasound and this is deemed to be idiopathic acute pancreatitis (IAP). IAP is known for its high recurrence rate. It is hypothesized that microlithiasis, a type of biliary pancreatitis, is the most common cause of IAP. Laparoscopic cholecystectomy (LC) is highly effective in preventing recurrence of biliary pancreatitis. Currently no randomized trial has compared LC with conservative treatment in patients with IAP after adequate work-up including endoscopic ultrasound.\n\nObjective: To assess the effectiveness of LC as compared to conservative treatment in patients after a first, second or third episode of an 'EUS-negative' IAP.\n\nStudy design: Multicenter randomized controlled trial. Patients will be followed for one year after randomization.\n\nStudy population: Adults with a first, second or third episode of IAP, of which at least one episode is characterized by a 'negative EUS'.\n\nIntervention (if applicable): Laparoscopic cholecystectomy versus conservative treatment.\n\nMain study parameters/endpoints: The primary endpoint is pancreatitis recurrence. Secondary endpoints include occurrence of biliary events, complications of LC, number and severity of recurrent episodes of pancreatitis, quality of life (QALY), costs (hospital and societal) and cost-effectiveness.",
+  "detailed_description": "",
+  "eligibility_criteria": "Inclusion Criteria:\n\n* At least 18 years old\n* Eligible for early (laparoscopic)\\* cholecystectomy\n* Full required diagnostic work-up of patient has been performed, including EUS\n* First, second or third episode of IAP, of which at least one episode characterized by a 'negative-EUS'' result\n* Informed consent for participation was obtained \\*if required open cholecystectomy is allowed\n\nExclusion Criteria:\n\n* Patients with more than 3 episodes of acute pancreatitis\n* Diagnosis of chronic pancreatitis\n* Diagnosis of necrotizing pancreatitis\n* Current pancreatic malignancy\n* Prior cholecystectomy\n* Documented etiology of acute pancreatitis",
+  "sex": "ALL",
+  "minimum_age": "18 Years",
+  "maximum_age": null,
+  "healthy_volunteers": true,
+  "locations": [
+    {
+      "facility": "Amsterdam UMC, location University of Amsterdam",
+      "city": "Amsterdam",
+      "country": "Netherlands"
+    }
+  ],
+  "source": {
+    "name": "ClinicalTrials.gov (U.S. National Library of Medicine)",
+    "url": "https://clinicaltrials.gov/study/NCT06391359",
+    "retrieved_at": "2026-09-29T12:28:12+00:00"
+  },
+  "synthetic": false
+}

@@ -1,0 +1,63 @@
+{
+  "trial_id": "NCT07516951",
+  "title": "A Study to Find an Efficacious and Safe Dose of CHF10067 (Zampilimab) in Participants With Idiopathic Pulmonary Fibrosis",
+  "official_title": "A Phase IIb, Multicentre, Randomised, Double Blind, Placebo Controlled, Three-arm Parallel-group Study to Evaluate the Efficacy, Safety, and Tolerability at Week 24 of 2 Doses of CHF10067 (Zampilimab),in Participants With Idiopathic Pulmonary Fibrosis",
+  "overall_status": "RECRUITING",
+  "phases": [
+    "PHASE2"
+  ],
+  "study_type": "INTERVENTIONAL",
+  "conditions": [
+    "Idiopathic Pulmonary Fibrosis"
+  ],
+  "keywords": [
+    "IPF"
+  ],
+  "interventions": [
+    {
+      "type": "DRUG",
+      "name": "CHF10067",
+      "description": "Dose 1 CHF10067 Intravenous (IV) infusion"
+    },
+    {
+      "type": "DRUG",
+      "name": "CHF10067",
+      "description": "Dose 2 CHF10067 IV infusion"
+    },
+    {
+      "type": "OTHER",
+      "name": "Placebo",
+      "description": "Placebo IV infusion"
+    }
+  ],
+  "brief_summary": "The purpose of this study is to evaluate the efficacy, safety, and tolerability at Week 24 of 2 doses of CHF10067 (zampilimab) in participants with idiopathic pulmonary fibrosis (IPF).\n\nIt is a phase IIb, multicentre, randomised, double-blind, placebo-controlled, three-arm parallel-group study.\n\nA total of 240 participants with IPF (Idiomatic Pulmonary Fibrosis) will be randomised in approximately 150 investigational sites in North and Latin America, Europe, Asia, and Oceania.",
+  "detailed_description": "",
+  "eligibility_criteria": "Inclusion Criteria:\n\n* Informed consent: Participant's written informed consent obtained prior to any study-related procedure.\n* Sex and age: Male or female, of any race and ethnicity, aged ≥40 years with a life expectancy of at least 1 year at screening in the opinion of the Investigator.\n* Body weight ≥45 kg.\n* Diagnosis of IPF: Diagnosis as defined by the 2018 and 2022 American Thoracic Society/European Respiratory Society/Japanese Respiratory Society/Latin American Thoracic Society Guidelines for a maximum 8 years before screening. The most recent High-resolution computed tomography (HRCT) ≤6 months prior to screening, reviewed by central reading, should be used to confirm the diagnosis.\n* Lung function: FVC ≥45% of predicted normal value and a ratio of forced expiratory volume in the first second (FEV1)/FVC ≥0.7 at screening.\n* Diffusing capacity of the lung for carbon monoxide (DLCO) corrected for haemoglobin ≥25% of predicted normal at screening.\n* Oxygen saturation measured by pulse oximetry (peripheral capillary oxygen saturation \\[SpO2\\]) \\>90% at rest when the maximum oxygen flow is 4 L/min by standard nasal cannula or the equivalent oxygen delivery via reservoir nasal cannula (≤2 L/min).\n\nExclusion Criteria:\n\n* Participant with a documented diagnosis of coeliac disease.\n* Low respiratory tract infection: Documented low respiratory tract infection in the last 4 weeks prior to screening or documented acute exacerbation of IPF (defined as acute worsening or development of dyspnoea typically \\<1 month duration;\n* Lung cancer: Active diagnosis or history of lung cancer.\n* Emphysema: HRCT (refer to inclusion criterion \\[Diagnosis of IPF\\]), reviewed by central reading, shows the presence of emphysema ≥20% or that the extent of emphysema is greater than the extent of fibrosis.\n* Organ transplantation: End-stage fibrotic disease expected to require organ transplantation within 6 months from screening.\n* Other medical conditions: Clinically relevant and uncontrolled pulmonary (including any non-IPF pulmonary diagnosis), cardiac, hepatic, gastrointestinal, renal, endocrine, metabolic, neurologic, psychiatric disorders, active or untreated latent tuberculosis/tuberculosis infection that may interfere with the participant's ability to complete this study according to the Investigator's judgement.\n* Any other comorbid non-IPF pulmonary condition that may impact FVC according to the Investigator's judgement. Emphysema is allowed, unless it meets the above exclusion criterion regarding emphysema.\n* Participant currently treated, or been treated with cytotoxic and immunosuppressant/modulator drugs within 48 weeks prior to screening. Systemic (IV, intramuscular, or oral) corticosteroids prednisone- equivalent dose of \\>10 mg/day used for \\>10 days.\n* Hypersensitivity: Known intolerance and/or hypersensitivity to any of the excipients contained in the formulation or any other substance used in the study.\n* History of allergic or anaphylactic reaction to human, humanised, chimeric immunoglobulins (Igs), or murine monoclonal antibodies.",
+  "sex": "ALL",
+  "minimum_age": "40 Years",
+  "maximum_age": null,
+  "healthy_volunteers": false,
+  "locations": [
+    {
+      "facility": "Hannibal Regional Healthcare System, Inc.",
+      "city": "Hannibal",
+      "country": "United States"
+    },
+    {
+      "facility": "Premier Pulmonary Critical Care and Sleep Medicine, PA",
+      "city": "Denison",
+      "country": "United States"
+    },
+    {
+      "facility": "PHI University Clinic of Pulmonology and Allergology",
+      "city": "Skopje",
+      "country": "North Macedonia"
+    }
+  ],
+  "source": {
+    "name": "ClinicalTrials.gov (U.S. National Library of Medicine)",
+    "url": "https://clinicaltrials.gov/study/NCT07516951",
+    "retrieved_at": "2026-09-29T12:28:16+00:00"
+  },
+  "synthetic": false
+}

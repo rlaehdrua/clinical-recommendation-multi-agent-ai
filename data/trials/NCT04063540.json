@@ -1,0 +1,71 @@
+{
+  "trial_id": "NCT04063540",
+  "title": "Acid-Sensing Ion Channel and Migraine Disease Proof of Concept Study on the Efficacy of Amiloride in the Prophylaxis of Migraine Aura",
+  "official_title": "Acid-Sensing Ion Channel and Migraine Disease Proof of Concept Study on the Efficacy of Amiloride in the Prophylaxis of Migraine Aura",
+  "overall_status": "RECRUITING",
+  "phases": [
+    "PHASE2"
+  ],
+  "study_type": "INTERVENTIONAL",
+  "conditions": [
+    "Migraine With Aura"
+  ],
+  "keywords": [
+    "migraine",
+    "aura",
+    "Amiloride",
+    "acid-sensing ion channel"
+  ],
+  "interventions": [
+    {
+      "type": "DRUG",
+      "name": "Amiloride",
+      "description": "Treatment by Amiloride vs placebo in crossover"
+    },
+    {
+      "type": "DRUG",
+      "name": "Placebos",
+      "description": "Treatment by Amiloride vs placebo in crossover"
+    }
+  ],
+  "brief_summary": "Recent data suggest involvement of Acid-Sensing Ion Channel channels in the pathophysiology of migraine making these channels a therapeutic target of migraine disease. The implication of Acid-Sensing Ion Channels is discussed through Acid-Sensing Ion Channel-1 which is the most expressed Acid-Sensing Ion Channel channel subtype in the central nervous system. In a mouse model, cortical spreading depression is inhibited by different Acid-Sensing Ion Channel blockers including amiloride which is a non-selective blocker of the Acid-Sensing Ion Channel-1 channel. From a translational perspective, an efficacy of amiloride on a series of migraine patients suffering from severe aura in open conditions. The APAM study is a proof-of-concept study that aims to evaluate the effect of amiloride in the prophylaxis of migraine with aura. This is a randomized crossover study versus placebo conducted in 3 French headache centers.",
+  "detailed_description": "",
+  "eligibility_criteria": "Inclusion Criteria:\n\n* Diagnosis of migraine with aura code\n* At least 1 aura with aura per month in the 3 months prior to inclusion\n* No prophylactic antimigraine treatment for at least 1 month prior to inclusion\n* For women of childbearing age, use of a reliable contraceptive method at least 3 months before and 1 month after the study\n* Signature of written informed consent\n* Patient affiliated with Social Security\n\nExclusion Criteria:\n\n* Existence of contraindication to taking amiloride:\n\n  * Known hypersensitivity to the molecule\n  * Hyperkalemia (potassium level (\\> 5.5 mmol / l))\n  * Use of another hyperkalemic diuretic or potassium salts\n  * Renal insufficiency (clearance \\<60 ml / min)\n  * Severe hepatocellular insufficiency\n  * In combination with lithium, converting enzyme inhibitors, angiotensin II inhibitors (except if there is hypokalemia), ciclosporin, tacrolimus, non-antiarrhythmic drugs giving torsades de pointes\n* Cardiovascular and renal history, for subjects over 75 years old\n* Patient, who from an investigator's point of view would not be compliant to the procedure of the study\n* Pregnant or lactating patient\n* Patient under trusteeship, under guardianship, protected by law",
+  "sex": "ALL",
+  "minimum_age": "18 Years",
+  "maximum_age": "80 Years",
+  "healthy_volunteers": false,
+  "locations": [
+    {
+      "facility": "Hôpital Pierre Wertheimer",
+      "city": "Bron",
+      "country": "France"
+    },
+    {
+      "facility": "CHU Gabriel Montpied",
+      "city": "Clermont-Ferrand",
+      "country": "France"
+    },
+    {
+      "facility": "AP-HM",
+      "city": "Marly",
+      "country": "France"
+    },
+    {
+      "facility": "CHU de Montpellier",
+      "city": "Montpellier",
+      "country": "France"
+    },
+    {
+      "facility": "CHU de NICE",
+      "city": "Nice",
+      "country": "France"
+    }
+  ],
+  "source": {
+    "name": "ClinicalTrials.gov (U.S. National Library of Medicine)",
+    "url": "https://clinicaltrials.gov/study/NCT04063540",
+    "retrieved_at": "2026-09-29T12:28:15+00:00"
+  },
+  "synthetic": false
+}

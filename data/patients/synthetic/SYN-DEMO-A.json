@@ -1,0 +1,14 @@
+{
+  "patient_id": "SYN-DEMO-A",
+  "synthetic": true,
+  "text": "62세 여성. 2023-03 폐 선암(adenocarcinoma) stage IVA 진단, 조직검사에서 EGFR exon 19 deletion 확인. 1차로 osimertinib 80mg 복용했으나 2026-07 CT에서 폐 병변 증가 및 간 전이 신규 발생(RECIST 기준 진행, 측정 가능 병변 있음). 2026-07 뇌 MRI 전이 없음. ECOG 1. 2026-09-10 혈액검사: ANC 2.8 x10^9/L, PLT 185 x10^9/L, Hb 11.2 g/dL, total bilirubin 0.6 mg/dL (ULN 1.2). 고혈압으로 amlodipine 복용 중. 간질성 폐질환 병력 없음. B형/C형 간염 음성(2023).",
+  "hidden_details": "위 text의 모든 내용과 동일. 폐경 후 상태(임신 가능성 없음). 암 치료는 osimertinib 한 가지뿐이며, 2026-07 진행 이후 추가 항암치료는 아직 받지 않음(EGFR 표적 항체-약물 결합체(ADC)를 포함해 다른 항암제 사용 이력 없음). 임상시험 참여 의사가 있고 방문 가능.",
+  "labels": {
+    "target_trial": "DEMO-LUNG-001",
+    "intended_label": "UNCERTAIN",
+    "design_note": "임신 여부·ADC 치료력이 text에 없어 확인 질문 후 ELIGIBLE이 되도록 설계"
+  },
+  "candidate_trials": [
+    "DEMO-LUNG-001"
+  ]
+}

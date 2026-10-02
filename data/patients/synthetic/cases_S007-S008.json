@@ -1,0 +1,76 @@
+{
+  "topics": [
+    {
+      "num": "SYN-S007-01",
+      "title": "An 11-week-old (78 days) girl born at term is admitted with 6 days of worsening projectile non-bilious vomiting after every feed and a 250 g weight loss from her last clinic weight (current weight 4.6 kg). On examination she is mildly dehydrated, afebrile (36.8 C), with visible gastric peristalsis and a palpable olive in the epigastrium. Admission labs on 2026-09-27 show Na 134 mmol/L, Cl 91 mmol/L, K 3.3 mmol/L, HCO3 31 mmol/L and glucose 84 mg/dL; blood gas pH 7.49. Abdominal ultrasound on 2026-09-27 showed a pyloric muscle thickness of 4.6 mm and channel length of 18 mm, confirming hypertrophic pyloric stenosis. She was seen by pediatric surgery the same day and is being rehydrated with IV fluids on the general pediatric ward, with pyloromyotomy planned for 2026-09-30 once electrolytes normalize. She has no other medical problems, no signs of infection, and takes no medications.",
+      "hidden_details": "All facts in the title. Additional: chronological age 78 days (11 weeks 1 day) at screening on 2026-09-29; born at 39 weeks, birth weight 3.3 kg, uncomplicated neonatal course, no NICU stay. Hemodynamically stable, normothermic throughout admission, glucose 80-90 mg/dL on repeat checks, no fever, CRP normal, no sepsis; never required intensive care. Ultrasound-confirmed pyloric stenosis after surgical consultation; pyloromyotomy planned (surgical approach not yet decided, open or laparoscopic acceptable to family). Parents are willing to give consent and able to comply with study procedures and follow-up.",
+      "design_note": "Age is the decisive factor: 11 weeks is under the 12-week limit of NCT00195949 but above the 10-week maximum of NCT02415049. All other criteria (US confirmation, surgical consult, clinical stability, ward care) are satisfied and stated in the title.",
+      "base_topic": "S007",
+      "synthetic": true,
+      "candidate_trials": [
+        "NCT00195949",
+        "NCT02415049"
+      ]
+    },
+    {
+      "num": "SYN-S007-02",
+      "title": "A 6-week-old term boy presents on 2026-09-20 after 9 days of projectile non-bilious vomiting, lethargy and markedly reduced wet diapers; he weighs 3.9 kg, 400 g below his birth weight of 4.3 kg. On arrival he was hypothermic (35.2 C), severely dehydrated with a capillary refill of 4 seconds, and a firm olive-shaped mass was palpable in the epigastrium. Initial labs showed Cl 78 mmol/L, K 2.6 mmol/L, HCO3 41 mmol/L, blood gas pH 7.58, and point-of-care glucose 36 mg/dL that recurred at 41 mg/dL despite a dextrose bolus. Abdominal ultrasound the same day showed pyloric muscle thickness 5.2 mm and channel length 21 mm, confirming hypertrophic pyloric stenosis, and pediatric surgery was consulted. Because of the hypothermia, recurrent hypoglycemia and severe electrolyte derangement he was admitted to the pediatric intensive care unit for active warming, dextrose infusion and graded electrolyte correction. Pyloromyotomy is planned once he is metabolically corrected; he has no other known medical conditions.",
+      "hidden_details": "All facts in the title. Additional: chronological age 43 days (6 weeks 1 day) at presentation; born at 40 weeks, uncomplicated neonatal period. Blood culture drawn in the PICU was negative and there was no documented sepsis, but hypothermia, glycemic instability and PICU care were all present during this admission. Diagnosis of pyloric stenosis is ultrasound-confirmed after surgical consultation; pyloromyotomy planned. Parents are willing to give consent and able to comply with study visits.",
+      "design_note": "Designed to fail NCT02415049's exclusion for severe underlying conditions (hypothermia, glycemic instability, PICU care) while age (6 weeks) is within both trials' ranges. NCT00195949 has no severity exclusion, so he remains eligible for it.",
+      "base_topic": "S007",
+      "synthetic": true,
+      "candidate_trials": [
+        "NCT00195949",
+        "NCT02415049"
+      ]
+    },
+    {
+      "num": "SYN-S007-03",
+      "title": "A 5-week-old first-born boy, delivered at 39 weeks, is brought in on 2026-09-28 with 4 days of forceful non-bilious vomiting shortly after each bottle feed and persistent hunger after vomiting. His weight is 4.1 kg, down from 4.3 kg one week ago. On examination there is visible left-to-right gastric peristalsis after a test feed and a possible olive-shaped mass in the right upper quadrant. Venous blood gas shows pH 7.47 with Cl 94 mmol/L, K 3.4 mmol/L and HCO3 30 mmol/L. An abdominal ultrasound was obtained and he was admitted for IV fluid rehydration while further management is arranged.",
+      "hidden_details": "All facts in the title. Additional: chronological age 36 days (5 weeks 1 day). Abdominal ultrasound on 2026-09-28 showed pyloric muscle thickness 4.4 mm and channel length 18 mm, confirming hypertrophic pyloric stenosis. Pediatric surgery consulted on 2026-09-28; pyloromyotomy scheduled for 2026-09-30. Admitted to the general pediatric ward (no ICU/NICU care); temperature 36.9 C, glucose 78-88 mg/dL, afebrile, no signs of sepsis, hemodynamically stable. No other medical conditions, no medications. Parents are willing to give consent and able to comply with study visits.",
+      "design_note": "Full record is eligible for both trials. The title omits the ultrasound result/surgical consultation (needed by NCT00195949 and to confirm the diagnosis for NCT02415049) and the clinical stability/ward level of care (NCT02415049 exclusion), so text-only labels are UNCERTAIN.",
+      "base_topic": "S007",
+      "synthetic": true,
+      "candidate_trials": [
+        "NCT00195949",
+        "NCT02415049"
+      ]
+    },
+    {
+      "num": "SYN-S008-01",
+      "title": "A 74-year-old man with idiopathic pulmonary fibrosis diagnosed in 2017-11 by multidisciplinary discussion (definite UIP pattern on HRCT, negative ANA, RF, anti-CCP and myositis panel) presents for routine follow-up of slowly progressive exertional dyspnea and dry cough with finger clubbing. He has taken pirfenidone 801 mg three times daily at a stable dose since 2018-03 and has never been treated with nintedanib, corticosteroids or immunosuppressants. Pulmonary function tests on 2026-09-08 show FVC 2.62 L (70% predicted), FEV1/FVC 0.83, and DLCO 47% predicted; resting SpO2 is 95% on room air, and HRCT on 2026-08-20 shows stable basal-predominant honeycombing without emphysema. He is a former smoker (15 pack-years) who quit in 2009, weighs 79 kg, and has no history of asthma, cancer, heart disease or coeliac disease. Labs on 2026-09-08 show normal AST, ALT, bilirubin and alkaline phosphatase, with creatinine 1.0 mg/dL (eGFR 74 mL/min/1.73m2). His only other medications are atorvastatin 20 mg and omeprazole 20 mg; he has had no respiratory infections or hospitalizations in the past year, no known drug allergies, and is not being considered for lung transplantation.",
+      "hidden_details": "All facts in the title. Additional: IPF diagnosis date 2017-11 (about 8 years 10 months before screening on 2026-09-29), meeting ATS/ERS/JRS/ALAT criteria. Hyperlipidemia and mild GERD, both controlled; echocardiogram 2025 normal (no pulmonary hypertension, normal LV function). No alcohol or drug abuse, no recent blood donation, no live vaccine, no recent surgery, no recent trial participation. Performs good-quality spirometry. No hypersensitivity to monoclonal antibodies. Life expectancy >1 year. Willing to consent and able to comply with study visits.",
+      "design_note": "Eligible for inhaled nintedanib trial NCT07679893 (age 40-80, stable pirfenidone >3 months, ex-smoker >1 year, no exclusions). Ineligible for zampilimab trial NCT07516951 solely because IPF was diagnosed more than 8 years before screening.",
+      "base_topic": "S008",
+      "synthetic": true,
+      "candidate_trials": [
+        "NCT07679893",
+        "NCT07516951"
+      ]
+    },
+    {
+      "num": "SYN-S008-02",
+      "title": "A 61-year-old woman presents with 14 months of progressive exertional dyspnea, dry cough and finger clubbing; IPF was diagnosed in 2026-02 by multidisciplinary discussion based on a UIP pattern on HRCT with negative ANA, ENA, RF, anti-CCP and myositis antibodies and no environmental exposures. She smoked one pack per day for 30 years and quit on 2026-03-01 after the diagnosis. Repeat HRCT on 2026-07-14 shows basal subpleural reticulation with honeycombing and only trace centrilobular emphysema (<5% of lung volume). Pulmonary function tests on 2026-09-10 show FVC 64% predicted, FEV1/FVC 0.81 and hemoglobin-corrected DLCO 41% predicted; resting SpO2 is 94% on room air, and she weighs 63 kg. She has not started any antifibrotic therapy and has never received corticosteroids or immunosuppressants. Labs on 2026-09-10 show normal liver enzymes and bilirubin and eGFR 88 mL/min/1.73m2; she is postmenopausal (last menses 2019). She has no history of asthma, cancer, heart disease or coeliac disease, no respiratory infection or exacerbation in the past 6 months, no known drug allergies, and is not listed for lung transplantation.",
+      "hidden_details": "All facts in the title. Additional: postmenopausal, not of childbearing potential. Hypertension-free; echocardiogram 2026-03 normal. Takes only vitamin D. No alcohol or drug abuse, no recent blood donation, live vaccine, surgery, or trial participation. Able to perform good-quality spirometry. No hypersensitivity to monoclonal antibodies or immunoglobulins. Life expectancy >1 year. Willing to consent and able to comply with study visits.",
+      "design_note": "Decisive criterion is smoking cessation less than 1 year before screening (quit 2026-03), which excludes her from NCT07679893. She meets all NCT07516951 thresholds (diagnosis <8 years, HRCT <6 months, FVC >=45%, FEV1/FVC >=0.7, DLCO >=25%, SpO2 >90%, emphysema <20%).",
+      "base_topic": "S008",
+      "synthetic": true,
+      "candidate_trials": [
+        "NCT07679893",
+        "NCT07516951"
+      ]
+    },
+    {
+      "num": "SYN-S008-03",
+      "title": "A 69-year-old man was diagnosed with idiopathic pulmonary fibrosis in 2025-10 after a multidisciplinary review of HRCT showing a UIP pattern, with negative connective tissue disease serologies. He reports 2 years of progressive exertional dyspnea and dry cough, and examination shows finger clubbing and bibasilar velcro crackles. He started pirfenidone in 2025-11 and has been on a stable dose of 801 mg three times daily since 2026-01; he has never taken corticosteroids, immunosuppressants or nintedanib. Spirometry on 2026-09-15 shows FVC 3.05 L (66% predicted), and resting SpO2 is 93% on room air; he weighs 86 kg. Liver enzymes and bilirubin are normal and eGFR is 69 mL/min/1.73m2 on 2026-09-15. Comorbidities are well-controlled hypertension on amlodipine; he has no history of asthma, cancer, coeliac disease or heart disease, no respiratory infections or hospitalizations in the past year, no drug allergies, and is not being evaluated for transplantation.",
+      "hidden_details": "All facts in the title. Additional: lifelong never-smoker. Full PFT on 2026-09-15: FEV1/FVC 0.84 (no obstruction), hemoglobin-corrected DLCO 44% predicted. HRCT on 2026-07-02 (centrally reviewable) shows basal subpleural honeycombing with no emphysema. Echocardiogram 2026-02 normal. No alcohol or drug abuse, no recent blood donation, live vaccine, surgery or trial participation. Performs good-quality spirometry. No hypersensitivity to monoclonal antibodies. Life expectancy >1 year. Willing to consent and able to comply with study visits.",
+      "design_note": "Full record is eligible for both trials. The title omits smoking status (decisive for NCT07679893), FEV1/FVC ratio (obstruction exclusion in NCT07679893; >=0.7 in NCT07516951), and DLCO plus HRCT date/emphysema extent (NCT07516951), so text-only labels are UNCERTAIN.",
+      "base_topic": "S008",
+      "synthetic": true,
+      "candidate_trials": [
+        "NCT07679893",
+        "NCT07516951"
+      ]
+    }
+  ]
+}

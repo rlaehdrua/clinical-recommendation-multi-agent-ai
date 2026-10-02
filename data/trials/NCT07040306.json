@@ -1,0 +1,39 @@
+{
+  "trial_id": "NCT07040306",
+  "title": "A Clinical Follow-up Study on Drug Therapy for Graves' Disease Patients in China",
+  "official_title": "A Prospective Clinical Follow-up Study of Drug Treatment in Patients With Graves' Disease",
+  "overall_status": "RECRUITING",
+  "phases": [],
+  "study_type": "OBSERVATIONAL",
+  "conditions": [
+    "Graves´ Disease"
+  ],
+  "keywords": [],
+  "interventions": [
+    {
+      "type": "DRUG",
+      "name": "Methimazole(MMI)",
+      "description": "Determine the enrolled GD patients and adjust the dosage of methimazole according to the 2016 American Thyroid Association guidelines. Conduct thyroid function, liver function, TRAb, and blood routine tests during outpatient follow-up to observe the treatment effect and provide medication guidance."
+    }
+  ],
+  "brief_summary": "This study was a prospective follow-up study of newly diagnosed and relapsed Graves' disease patients in the Endocrinology Clinic of the First Affiliated Hospital of China Medical University. The following aspects will be studied: 1. Through the prospective follow-up study of GD patients, we will get the relapse rate and remission rate of GD patients treated with drugs, explore the risk factors of GD patients relapsing after drug treatment, and make GD relapse risk prediction software; 2. To compare the effects of high dose and low dose methimazole on the remission rate, liver side effects, leukopenia and other adverse drug reactions, and to summarize the incidence and risk factors of liver side effects, leukopenia and other adverse drug reactions caused by drug treatment; 3. To investigate the sensitivity and specificity of TRAb in the diagnosis of GD in China and its role in predicting recurrence; 4. After taking ATD, the serum alkaline phosphatase of GD patients will increase first and then decrease. This study will focus on analyzing the dynamic changes of this index before and after methimazole treatment, and analyze the relationship between it and thyroid function index.",
+  "detailed_description": "",
+  "eligibility_criteria": "Inclusion Criteria:\n\n1. Age ≥18 years old.\n2. Newly diagnosed GD and GD relapses.\n\nExclusion Criteria:\n\n1. Patients with active infiltrative exophthalmos in GD were excluded.\n2. Patients with other autoimmune diseases affecting thyroid function were excluded.\n3. Excluding patients with combined malignancies and other serious diseases.",
+  "sex": "ALL",
+  "minimum_age": "18 Years",
+  "maximum_age": null,
+  "healthy_volunteers": false,
+  "locations": [
+    {
+      "facility": "The First Affiliated Hospital of China Medical University",
+      "city": "Shenyang",
+      "country": "China"
+    }
+  ],
+  "source": {
+    "name": "ClinicalTrials.gov (U.S. National Library of Medicine)",
+    "url": "https://clinicaltrials.gov/study/NCT07040306",
+    "retrieved_at": "2026-09-29T12:28:13+00:00"
+  },
+  "synthetic": false
+}

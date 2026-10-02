@@ -1,0 +1,143 @@
+{
+  "trial_id": "NCT06833073",
+  "title": "A Clinical Study of Intismeran Autogene (V940) and BCG in People With Bladder Cancer (V940-011/INTerpath-011)",
+  "official_title": "A Phase 2 Open-label Randomized Study of V940 in Combination With BCG Versus BCG Monotherapy in Participants With High-risk Non-muscle Invasive Bladder Cancer (INTerpath-011)",
+  "overall_status": "RECRUITING",
+  "phases": [
+    "PHASE2"
+  ],
+  "study_type": "INTERVENTIONAL",
+  "conditions": [
+    "Urinary Bladder Neoplasms",
+    "Non-Muscle Invasive Bladder Neoplasms",
+    "Carcinoma in Situ"
+  ],
+  "keywords": [],
+  "interventions": [
+    {
+      "type": "BIOLOGICAL",
+      "name": "Intismeran autogene",
+      "description": "IM injection"
+    },
+    {
+      "type": "BIOLOGICAL",
+      "name": "BCG",
+      "description": "Intravesicular instillation. BCG is a preparation of Bacillus Calmette-Guerin."
+    }
+  ],
+  "brief_summary": "Researchers are looking for new ways to treat people with high-risk non-muscle invasive bladder cancer (HR NMIBC). NMIBC is cancer in the tissue that lines the inside of the bladder but has not spread to the bladder muscle or outside of the bladder. High-risk means NMIBC may have a high chance of getting worse or coming back after treatment. HR NMIBC can also include carcinoma in situ (CIS). CIS is bladder cancer that appears flat and is only in the inner layer (surface) of the bladder. CIS is not raised and is not growing toward the center of the bladder.\n\nThe standard treatment for HR NMIBC is a procedure to remove the tumor called transurethral resection of the bladder tumor (TURBT) followed by Bacillus Calmette-Guerin (BCG). Standard treatment is something that is considered the first line of treatment for a condition. BCG is an immunotherapy, which is a treatment that helps the immune system fight cancer. However, BCG may not work to treat HR NMIBC in some people. Researchers want to learn if adding intismeran autogene, the study treatment, to standard treatment can help treat HR NMIBC. Intismeran autogene is designed to help a person's immune system attack their specific cancer.\n\nThe goal of this study are to learn if people who receive V940 with BCG live longer and without the cancer growing, spreading, or coming back compared to people who receive BCG alone.",
+  "detailed_description": "As of Amendment 03 (effective 01/05/2026), outcome measures associated with the Intismeran autogene Monotherapy Arm (Cohort B) are no longer considered primary or secondary outcome measures.",
+  "eligibility_criteria": "Inclusion Criteria:\n\nThe main inclusion criteria include but are not limited to the following:\n\n\\- Is an individual whose most recent TURBT was performed within 12 weeks before randomization/allocation and showed BICR-confirmed high-risk NMIBC histology\n\nCohort A:\n\n* Has high-risk non-muscle invasive (HG Ta, T1, and/or CIS) UC of the bladder\n* Is BCG-naïve defined as either having never received BCG or having received BCG more than 2 years before high-risk NMIBC recurrence. Recurrence must be at least 24 months from the last exposure to BCG with evidence of complete response during the 2-year period post BCG\n\nCohort B:\n\n* Has CIS +/-papillary non-muscle invasive UC of the bladder\n* Is ineligible for, or refusing, any IVESIC therapy\n* Is either BCG-naïve (as defined above) or BCG-exposed but did not receive protocol-specified minimum dosing of BCG and experienced recurrence of high-risk NMIBC within 2 years of the last dose of BCG\n* Human immunodeficiency virus (HIV)-infected individuals must have well controlled HIV on antiretroviral therapy (ART)\n\nExclusion Criteria:\n\nThe main exclusion criteria include but are not limited to the following:\n\n* Has a history of or concurrent locally-advanced (ie, T2, T3, T4) or metastatic UC\n* Has concurrent extravesical (ie, urethra, ureter, renal pelvis) non-muscle invasive UC or a history of extravesical non-muscle invasive UC that recurred within the last 2 years, with certain exceptions\n* Has a known additional malignancy that is progressing or has required active treatment within the last 3 years\n* Has had a myocardial infarction within 6 months of randomization/allocation\n* Has received any systemic anticancer therapy including investigational agents within 4 weeks before randomization/allocation\n* Has received prior treatment with a cancer vaccine\n* Has immunodeficiency or is receiving chronic systemic steroid therapy\n* Has active autoimmune disease that has required systemic treatment in the last 2 years\n* Has any contraindication to IV contrast and gadolinium or is otherwise unable to have imaging with either computerized tomography urogram (CTU) or Magnetic resonance urography (MRU)\n\nCohort A:\n\n* Has current active tuberculosis\n* Has a known history of HIV infection\n\nCohort B:\n\n\\- HIV-infected individuals with a history of Kaposi's sarcoma and/or Multicentric Castleman's Disease",
+  "sex": "ALL",
+  "minimum_age": "18 Years",
+  "maximum_age": null,
+  "healthy_volunteers": false,
+  "locations": [
+    {
+      "facility": "Michael G Oefelein Clinical Trials ( Site 0138)",
+      "city": "Bakersfield",
+      "country": "United States"
+    },
+    {
+      "facility": "Genesis Research, LLC ( Site 0141)",
+      "city": "Los Alamitos",
+      "country": "United States"
+    },
+    {
+      "facility": "USC Norris Comprehensive Cancer Center ( Site 0123)",
+      "city": "Los Angeles",
+      "country": "United States"
+    },
+    {
+      "facility": "Genesis Healthcare-Torrance ( Site 0140)",
+      "city": "Torrance",
+      "country": "United States"
+    },
+    {
+      "facility": "Genesis Research LLC ( Site 0118)",
+      "city": "Torrance",
+      "country": "United States"
+    },
+    {
+      "facility": "Urology Associates ( Site 0144)",
+      "city": "Littleton",
+      "country": "United States"
+    },
+    {
+      "facility": "Urological Research Network ( Site 0133)",
+      "city": "Hialeah",
+      "country": "United States"
+    },
+    {
+      "facility": "Associated Urological Specialists - Chicago Ridge ( Site 0139)",
+      "city": "Chicago Ridge",
+      "country": "United States"
+    },
+    {
+      "facility": "Southern Urology, LLC ( Site 0145)",
+      "city": "Lafayette",
+      "country": "United States"
+    },
+    {
+      "facility": "University of Missouri Health Care ( Site 0126)",
+      "city": "Columbia",
+      "country": "United States"
+    },
+    {
+      "facility": "NHO Revive Research Institute, LLC ( Site 0137)",
+      "city": "Lincoln",
+      "country": "United States"
+    },
+    {
+      "facility": "Laura and Isaac Perlmutter Cancer Center at NYU Langone Health ( Site 0111)",
+      "city": "New York",
+      "country": "United States"
+    },
+    {
+      "facility": "TriState Urologic Services PSC Inc. dba The Urology Group ( Site 0122)",
+      "city": "Cincinnati",
+      "country": "United States"
+    },
+    {
+      "facility": "OHSU Knight Cancer Institute - South Waterfront ( Site 0110)",
+      "city": "Portland",
+      "country": "United States"
+    },
+    {
+      "facility": "MidLantic Urology ( Site 0102)",
+      "city": "Bala-Cynwyd",
+      "country": "United States"
+    },
+    {
+      "facility": "The Conrad Pearson Clinic ( Site 0143)",
+      "city": "Germantown",
+      "country": "United States"
+    },
+    {
+      "facility": "Texas Oncology-Austin Central ( Site 0107)",
+      "city": "Austin",
+      "country": "United States"
+    },
+    {
+      "facility": "Urology Austin, PLLC ( Site 0109)",
+      "city": "Austin",
+      "country": "United States"
+    },
+    {
+      "facility": "Urology of Virginia ( Site 0125)",
+      "city": "Virginia Beach",
+      "country": "United States"
+    },
+    {
+      "facility": "University of Washington - Fred Hutchinson Cancer Center ( Site 0100)",
+      "city": "Seattle",
+      "country": "United States"
+    }
+  ],
+  "source": {
+    "name": "ClinicalTrials.gov (U.S. National Library of Medicine)",
+    "url": "https://clinicaltrials.gov/study/NCT06833073",
+    "retrieved_at": "2026-09-29T12:28:14+00:00"
+  },
+  "synthetic": false
+}

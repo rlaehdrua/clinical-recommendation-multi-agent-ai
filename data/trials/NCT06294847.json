@@ -1,0 +1,51 @@
+{
+  "trial_id": "NCT06294847",
+  "title": "Ursodeoxycholic Acid (UDCA) as a Neuroprotective Adjuvant Treatment to Rhegmatogenous Retinal Detachment Surgery",
+  "official_title": "Ursodeoxycholic Acid (UDCA) as a Neuroprotective Adjuvant Treatment to Rhegmatogenous Retinal Detachment Surgery",
+  "overall_status": "RECRUITING",
+  "phases": [
+    "PHASE3"
+  ],
+  "study_type": "INTERVENTIONAL",
+  "conditions": [
+    "Retinal Detachment"
+  ],
+  "keywords": [],
+  "interventions": [
+    {
+      "type": "DRUG",
+      "name": "Ursolvan",
+      "description": "single dose of Ursolvan® (10mg/kg) orally within 24 hours before the surgical intervention, followed by a daily dose of 10mg/kg in two divided doses for 30 days."
+    },
+    {
+      "type": "DRUG",
+      "name": "Placebo",
+      "description": "Patients will receive a single dose of placebo orally within 24 hours before the surgical intervention, followed by two doses per day for 30 days"
+    }
+  ],
+  "brief_summary": "This study is indicated for patients with extended rhegmatogenous retinal detachment (RRD) (≥ 2 quadrants) with macula OFF lasting 7 days or less, pseudophakic or aphakic, and scheduled to undergo surgical intervention with vitrectomy and gas tamponade in one of the ophthalmology departments participating in the study.\n\nThe main objective is to assess the effectiveness of UDCA in visual acuity recovery at 3 months (i.e., the difference between preoperative visual acuity and visual acuity 3 months after surgery) in pseudophakic or aphakic patients who have undergone successful surgical intervention (reattachment of the retina) through vitrectomy and gas tamponade following rhegmatogenous retinal detachment (RRD).\n\n120 patients will be enrolled and randomized in two groups:\n\n* the experimental arm \"UDCA Group,\" with oral administration of ursodeoxycholic acid (Ursolvan®)\n* the control group \"Placebo Group,\" with oral administration of the placebo.",
+  "detailed_description": "",
+  "eligibility_criteria": "Inclusion Criteria:\n\n1. Aged 18 years or older,\n2. Scheduled to undergo surgical intervention through vitrectomy,\n3. Aphakic or pseudophakic patients,\n4. Experiencing rhegmatogenous retinal detachment affecting 2 quadrants or more,\n5. Presenting with macula OFF (raised macula) for 7 days or less before the onset of symptoms,\n6. Has signed a consent form,\n7. Affiliated with a health insurance plan.\n\nExclusion Criteria:\n\n1. Patients who have previously undergone vitrectomy for retinal detachment,\n2. Patients with vitreous hemorrhage or any other associated retinal pathologies,\n3. Monophthalmic patients,\n4. Women of childbearing age without effective contraceptive methods,\n5. Pregnant or lactating women,\n6. Hypersensitivity to the active substance, bile acids, or any of the excipients in Ursolvan® (see §6.1.1 of this protocol),\n7. Patients with peptic ulcers, acute or chronic liver disease, acute infection or inflammation of the gallbladder or bile ducts, recurrent gallstones, or obstruction of the bile ducts (common bile duct or cystic duct obstruction),\n8. Patients with radiopaque calcified gallstones,\n9. Patients with severe pancreatic disorders,\n10. Patients with Crohn's disease, ulcerative colitis, or other intestinal diseases that may alter the enterohepatic circulation of bile acids,\n11. Patients on oral treatment with cholestyramine, colestipol, antacids containing aluminum or magnesium hydroxide and/or smectite (aluminum oxide), cyclosporine, ciprofloxacin, nitrendipine, or dapsone,\n12. Patients with galactose intolerance, Lapp lactase deficiency, or glucose and galactose malabsorption syndrome (rare hereditary diseases),\n13. Patients participating or in the exclusion period following an interventional research with the use of prohibited medications in this study,\n14. Patients under protective custody.",
+  "sex": "ALL",
+  "minimum_age": "18 Years",
+  "maximum_age": null,
+  "healthy_volunteers": false,
+  "locations": [
+    {
+      "facility": "Hôpital Cochin",
+      "city": "Paris",
+      "country": "France"
+    },
+    {
+      "facility": "Hôpital Foch",
+      "city": "Suresnes",
+      "country": "France"
+    }
+  ],
+  "source": {
+    "name": "ClinicalTrials.gov (U.S. National Library of Medicine)",
+    "url": "https://clinicaltrials.gov/study/NCT06294847",
+    "retrieved_at": "2026-09-29T12:28:18+00:00"
+  },
+  "synthetic": false
+}

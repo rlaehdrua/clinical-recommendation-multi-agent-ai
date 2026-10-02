@@ -1,0 +1,79 @@
+{
+  "topics": [
+    {
+      "num": "SYN-S003-01",
+      "title": "A 9-year-old girl (height 132 cm) with idiopathic nephrotic syndrome diagnosed in March 2024 that responded to prednisolone within 9 days, followed by relapses in February 2025, June 2025 (during taper), November 2025 (10 days after stopping steroids) and July 2026 (during alternate-day taper), consistent with steroid-dependent disease. Her only treatment has been repeated prednisolone courses; she has never received levamisole, calcineurin inhibitors, mycophenolate, cyclophosphamide, rituximab or any anti-CD38 antibody, and has never taken part in a clinical trial. After the July 2026 relapse she re-entered remission on 2026-07-24 and morning dipsticks have been negative every day since; she is now on prednisolone 15 mg on alternate days. Labs on 2026-09-24: creatinine 0.42 mg/dL (bedside Schwartz eGFR about 130 mL/min/1.73m2), UPCR 0.08 g/g, WBC 7.8 x10^9/L, ANC 4.1 x10^9/L, Hb 12.6 g/dL, platelets 285 x10^9/L, ALT 18 U/L, total bilirubin 0.4 mg/dL, INR 1.0, C3 normal, ANA negative, no microscopic hematuria. Screening HBsAg, HBeAg, anti-HBc, anti-HCV and HIV antibody are negative, EBV and CMV PCR are negative and an interferon-gamma release assay is negative. She has no other medical conditions, no current infection, no family history of kidney disease, and her last vaccine was an inactivated influenza shot in October 2025 with no surgery in the past year.",
+      "hidden_details": "All facts in the title. Additional: Diagnosis of primary (idiopathic) steroid-sensitive nephrotic syndrome; no kidney biopsy performed; no purpura, rash, arthritis or features of lupus; no IgA nephropathy suspicion (no hematuria). No hematologic, endocrine, cardiac or hepatic disease; no autoimmune disease, immunodeficiency or tumor. No antibiotic or antiviral therapy in the past 3 months. No live/attenuated vaccines or major surgery in the past 4 weeks (none in the past year). Parents deny any family history of nephrotic syndrome, chronic glomerulonephritis or uremia. Blood tests on 2026-09-24 obtained without growth factors or transfusions. She has never received rituximab, so she has no rituximab exposure or post-rituximab follow-up. Parents are willing to provide consent, she assents, and the family is able to comply with study visits.",
+      "design_note": "Steroid-dependent SSNS in remission, with only steroid exposure, normal eGFR and normal labs, so she is eligible for both interventional trials (telitacicept, SG301). She is ineligible for the retrospective rituximab cohort because she has never received rituximab. All decisive facts are in the title.",
+      "base_topic": "S003",
+      "synthetic": true,
+      "candidate_trials": [
+        "NCT06125405",
+        "NCT07087314",
+        "NCT06530004"
+      ]
+    },
+    {
+      "num": "SYN-S003-02",
+      "title": "A 13-year-old boy (height 158 cm) with idiopathic steroid-sensitive nephrotic syndrome since 2021 that became steroid-dependent; he was treated with tacrolimus from 2022 until it was stopped in December 2024. In remission he received his first-ever course of rituximab (375 mg/m2, two doses on 2025-05-12 and 2025-05-19) and remained relapse-free until relapses in March 2026 and June 2026, both steroid-responsive. Mycophenolate mofetil 600 mg/m2 twice daily was started on 2026-06-20 and continues, and prednisolone was tapered off on 2026-09-01. He has been in remission since 2026-06-28 with negative morning dipsticks, and his rituximab course and 16 months of follow-up since then are fully documented in the clinic records. Labs on 2026-09-22: creatinine 0.62 mg/dL (bedside Schwartz eGFR about 105 mL/min/1.73m2), UPCR 0.10 g/g, WBC 6.9 x10^9/L, ANC 3.6 x10^9/L, Hb 13.8 g/dL, platelets 262 x10^9/L, ALT 22 U/L, total bilirubin 0.5 mg/dL, INR 1.0, CD19 B cells recovered. HBsAg, anti-HBc, anti-HCV and HIV antibody are negative, C3 is normal, ANA is negative, and he has no hematuria, no current infection, no other medical conditions (no immunodeficiency, malignancy or other autoimmune disease), and no family history of kidney disease.",
+      "hidden_details": "All facts in the title. Additional: primary (idiopathic) nephrotic syndrome with onset at age 8 (not congenital or infantile); no secondary cause (no purpura, lupus, IgA nephropathy or hepatitis B nephropathy). Never steroid-resistant. Rituximab was given only once (a single 2-dose course in May 2025) during remission. No active hepatitis, no severe infection, no immunodeficiency, no malignancy, no other autoimmune disease, no hematologic, endocrine, cardiac or liver disease. EBV and CMV PCR negative, IGRA negative. No prior anti-CD38 therapy. No live vaccines or surgery within the past 4 weeks. No clinical-trial participation. Mycophenolate mofetil taken continuously from 2026-06-20 to the present (last dose 2026-09-28). Family willing to consent and able to comply with visits.",
+      "design_note": "Ongoing mycophenolate (started 2026-06-20) violates the washout rules of both interventional trials (none within 3 months for telitacicept, none within 2 months for SG301). A first-ever rituximab course given in remission more than 1 year ago with documented follow-up makes him eligible for the retrospective rituximab study.",
+      "base_topic": "S003",
+      "synthetic": true,
+      "candidate_trials": [
+        "NCT06125405",
+        "NCT07087314",
+        "NCT06530004"
+      ]
+    },
+    {
+      "num": "SYN-S003-03",
+      "title": "A 5-year-old boy with idiopathic nephrotic syndrome first diagnosed in August 2025 at age 4, which went into remission within 10 days of daily prednisolone. He relapsed in December 2025, again on 2026-03-05 and again on 2026-06-20, each time after an upper respiratory infection and each time responding to prednisolone within 1 to 2 weeks, consistent with frequently relapsing disease. His only treatment has been prednisolone; he has never received levamisole, calcineurin inhibitors, mycophenolate, cyclophosphamide or rituximab and has never been in a clinical trial. He has been in remission since 2026-07-01 with negative morning dipsticks every day, and prednisolone was stopped on 2026-09-10. Urinalysis on 2026-09-25 showed no protein and no blood, UPCR 0.06 g/g. He has no other medical problems, no current infection, and his parents report no family history of kidney disease.",
+      "hidden_details": "All facts in the title. Additional (omitted from title): Labs on 2026-09-25 (height 110 cm): creatinine 0.33 mg/dL, bedside Schwartz eGFR about 138 mL/min/1.73m2; WBC 8.9 x10^9/L, ANC 4.4 x10^9/L, Hb 12.1 g/dL, platelets 310 x10^9/L; ALT 14 U/L, total bilirubin 0.3 mg/dL. HBsAg, HBeAg and anti-HBc negative; anti-HCV negative; HIV antibody negative. EBV and CMV PCR negative, IGRA negative. C3 normal, ANA negative; no purpura or lupus features (primary nephrotic syndrome). No hematologic, endocrine, cardiac or hepatic disease; no autoimmune disease, immunodeficiency or tumor. Not congenital/infantile. Parents willing to consent and able to comply with study visits.",
+      "design_note": "Frequently relapsing SSNS in remission with steroid-only exposure; the full record is eligible for the telitacicept trial, but the title omits renal function (eGFR), blood counts and hepatitis B/C serology, which that trial requires. Age 5 excludes him from the SG301 trial (6-18 years), and never having had rituximab excludes him from the retrospective rituximab study; both are visible in the title.",
+      "base_topic": "S003",
+      "synthetic": true,
+      "candidate_trials": [
+        "NCT06125405",
+        "NCT07087314",
+        "NCT06530004"
+      ]
+    },
+    {
+      "num": "SYN-S004-01",
+      "title": "A 68-year-old man with a 45 pack-year smoking history (quit June 2026) presented with painless gross hematuria; CT urography on 2026-07-02 showed a 3 cm papillary mass on the right lateral bladder wall with normal upper tracts and no lymphadenopathy or metastases. TURBT on 2026-07-21 showed high-grade papillary urothelial carcinoma invading the lamina propria (pT1) with associated carcinoma in situ, and detrusor muscle was present and not involved. Re-resection on 2026-08-25 found no residual papillary tumor but persistent CIS, detrusor again uninvolved, and prostatic urethral biopsies were negative. He has never received BCG, intravesical chemotherapy, systemic anticancer therapy or any cancer vaccine, and BCG induction is being planned. He has hypertension on amlodipine and hyperlipidemia on atorvastatin, has no history of myocardial infarction, other cancer, autoimmune disease, immunodeficiency, HIV or tuberculosis, and takes no steroids. Creatinine is 1.02 mg/dL (eGFR 74 mL/min/1.73m2), he tolerated iodinated contrast without reaction, and he is fully active (ECOG 0).",
+      "hidden_details": "All facts in the title. Additional: No known allergy or contraindication to iodinated contrast or gadolinium; no pacemaker or metal implants (can undergo CTU or MRU). No immunodeficiency; HIV antibody negative on 2026-07 screening; no active or prior tuberculosis. No other malignancy ever. No MI or coronary disease; no investigational agents. Pathology slides from the 2026-08-25 re-TURBT are available for central review, which is expected to confirm high-risk NMIBC (HG T1 + CIS). No neoadjuvant chemotherapy; disease is non-muscle-invasive (no T2-T4) and has not metastasized. No mental illness. Willing to consent and able to comply with study visits.",
+      "design_note": "BCG-naive high-grade T1 + CIS NMIBC with the most recent TURBT 5 weeks ago, so he fits Cohort A of the V940 + BCG trial with no exclusions. He is ineligible for the rutin/tislelizumab trial, which requires cT2-T4 MIBC that did not respond to neoadjuvant GC.",
+      "base_topic": "S004",
+      "synthetic": true,
+      "candidate_trials": [
+        "NCT06833073",
+        "NCT06916494"
+      ]
+    },
+    {
+      "num": "SYN-S004-02",
+      "title": "A 74-year-old woman and former smoker (30 pack-years) presented in July 2026 with painless gross hematuria, and CT urography showed a 2.5 cm papillary bladder lesion with clear upper tracts and no nodal or distant disease. TURBT on 2026-08-12 showed high-grade non-invasive papillary urothelial carcinoma (pTa) without carcinoma in situ, with uninvolved detrusor muscle in the specimen. She has never received BCG or other intravesical or systemic cancer treatment. She has had seropositive rheumatoid arthritis since 2019, controlled on methotrexate 15 mg weekly plus continuous prednisone 7.5 mg daily, which her rheumatologist has not been able to taper. Other history includes hypothyroidism on levothyroxine; creatinine 0.84 mg/dL (eGFR 70 mL/min/1.73m2), no contrast allergy, and ECOG 1 because of joint stiffness.",
+      "hidden_details": "All facts in the title. Additional: no history of myocardial infarction, other malignancy, HIV, or tuberculosis; no prior cancer vaccine. Disease is non-muscle-invasive high-grade Ta (high-risk NMIBC), BCG-naive. No neoadjuvant chemotherapy was given and she has no muscle-invasive disease. Rheumatoid arthritis has required systemic treatment (methotrexate and prednisone) continuously over the past 2 years, and she takes prednisone 7.5 mg daily chronically. Willing to consent and able to comply with visits.",
+      "design_note": "BCG-naive high-grade Ta NMIBC would otherwise fit Cohort A of the V940 trial, but chronic daily prednisone and rheumatoid arthritis requiring systemic therapy within 2 years are clear exclusions. She is ineligible for the rutin trial because her disease is not muscle-invasive.",
+      "base_topic": "S004",
+      "synthetic": true,
+      "candidate_trials": [
+        "NCT06833073",
+        "NCT06916494"
+      ]
+    },
+    {
+      "num": "SYN-S004-03",
+      "title": "A 63-year-old man with a 35 pack-year smoking history presented with painless gross hematuria, and TURBT on 2026-06-10 showed high-grade urothelial carcinoma invading the muscularis propria. Staging pelvic MRI showed a 4.3 cm left lateral wall tumor with perivesical fat stranding (cT3a) and no enlarged lymph nodes, and CT of the chest and abdomen on 2026-06-18 showed no metastases. He received two cycles of neoadjuvant gemcitabine-cisplatin starting on 2026-07-20 and 2026-08-10, and restaging contrast-enhanced MRI was done on 2026-09-08. He has never received immune checkpoint inhibitors or targeted therapy. He has well-controlled type 2 diabetes on metformin and no heart, liver, kidney, neurologic or psychiatric disease; creatinine is 0.95 mg/dL (eGFR 86 mL/min/1.73m2), albumin 3.9 g/dL, BMI 24 kg/m2. He has no current infection and no history of any other cancer.",
+      "hidden_details": "All facts in the title. Additional (omitted from title): restaging MRI on 2026-09-08 showed the bladder tumor at 4.1 cm longest diameter (baseline 4.3 cm, about 5% decrease), i.e. stable disease with no response to 2 cycles of GC; no new nodes (N0) or metastases (M0); the lesion remains measurable by RECIST 1.1. ECOG performance status 1 (works part-time, mild fatigue after chemotherapy). No prior BCG. No systemic infection; no severe malnutrition. Willing to consent and able to comply with study visits.",
+      "design_note": "cT3aN0M0 MIBC after 2 cycles of neoadjuvant GC; the full record (stable disease, measurable lesion, ECOG 1) makes him eligible for the rutin/tislelizumab trial, but the title omits the restaging response result and ECOG. The V940 NMIBC trial excludes him for muscle-invasive disease, which is visible in the title.",
+      "base_topic": "S004",
+      "synthetic": true,
+      "candidate_trials": [
+        "NCT06833073",
+        "NCT06916494"
+      ]
+    }
+  ]
+}

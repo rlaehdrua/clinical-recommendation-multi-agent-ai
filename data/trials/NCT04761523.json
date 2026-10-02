@@ -1,0 +1,51 @@
+{
+  "trial_id": "NCT04761523",
+  "title": "The Effect of Dietary Fat Content on the Recurrence of Pancreatitis",
+  "official_title": "The Effect of Dietary Fat Content on the Recurrence of Pancreatitis (EFFORT): Protocol of a Multicentre Randomized Controlled Trial",
+  "overall_status": "RECRUITING",
+  "phases": [
+    "NA"
+  ],
+  "study_type": "INTERVENTIONAL",
+  "conditions": [
+    "Acute Pancreatitis"
+  ],
+  "keywords": [
+    "acute pancreatitis",
+    "dietary fat",
+    "low-fat diet",
+    "pancreatitis recurrence"
+  ],
+  "interventions": [
+    {
+      "type": "BEHAVIORAL",
+      "name": "Dietary intervention: reduced fat diet",
+      "description": "Participants will receive a dietary intervention, and will be proposed to adhere to a diet with a 15% fat, 65% carbohydrate, 20% protein content."
+    },
+    {
+      "type": "BEHAVIORAL",
+      "name": "Dietary intervention: standard healthy diet",
+      "description": "Participants will receive a dietary intervention, and will be proposed to adhere to a diet with a 30% fat, 50% carbohydrate, 20% protein content."
+    }
+  ],
+  "brief_summary": "This trial aims to test the effects of two different diets on the recurrence of acute pancreatitis, and acute pancreatitis associated mortality.",
+  "detailed_description": "Around 20% of patients with acute pancreatitis (AP) will go on to have acute recurrent pancreatitis (ARP) and 10% progress to chronic pancreatitis (CP). While interventions to avoid recurrences exist for the two most common causes - removal of the cholecyst in the case of biliary, and alcohol seccation in the case of alcoholic - a method to prevent idiopathic pancreatitis is not yet known. Although none of the guidelines suggest the administration of low fat diet, it is recommended by physicians to all pancreatitis patients are. Our aim is to conduct a randomized controlled trial, to assess the problem of dietary fat reduction on the recurrence of acute pancreatitis Patients, who had at least two acute pancreatitis episodes in the preceding 2 year will be approached to participate in the study and to either to be randomized to the 'reduced fat diet' (15% fat, 65% carbohydrate, 20% protein) or to the 'standard healthy diet' (30% fat, 50% carbohydrate, 20% protein; based on WHO recommendations) group. During the 2 year long followup, participants will receive repeated dietary intervention at 3, 6, 12, 18, 24 months, they will completer food frequency questionnaires and their data regarding mortality, BMI, cardiovascular parameters and serum lipid values will be recorded The EFFORT trial will determine the effect of modified dietary fat content on the recurrence of AP, mortality, serum lipids and weight loss in idiopathic cases.",
+  "eligibility_criteria": "Inclusion Criteria:\n\n* Individuals with at least two episodes of acute pancreatitis in the 2 years preceding the inclusion with\n* The last episode being idiopathic, who are\n* Older than 14 years.\n\nExclusion Criteria:\n\n* Individuals already receiving regular nutritional guidance (with medical indication),\n* Individuals in critical condition or in terminal stage of cancer (with an expected survival \\<2 years) ,\n* Individuals undergoing treatment for active malignancy,\n* Individuals with uncontrolled diabetes mellitus (admitted lack of compliance with antidiabetic therapy / HbA1c \\>6.5% / indication of uncontrolled diabetes mellitus in last 24 months' anamnesis / newly discovered diabetes mellitus)\n* Individuals with known cholecystolithiasis\n* Individuals who are pregnant or nursing\n* Individuals with a BMI \\< 18.5\n* Individuals who are regularly receiving systemic corticosteroids\n* Individuals consuming more alcohol than: 5 units per day or 15 units per week for men; 4 units per day or 8 units per week for women.",
+  "sex": "ALL",
+  "minimum_age": "14 Years",
+  "maximum_age": null,
+  "healthy_volunteers": false,
+  "locations": [
+    {
+      "facility": "Division of Pancreatic Diseases, Heart and Vascular Center, Semmelweis University",
+      "city": "Budapest",
+      "country": "Hungary"
+    }
+  ],
+  "source": {
+    "name": "ClinicalTrials.gov (U.S. National Library of Medicine)",
+    "url": "https://clinicaltrials.gov/study/NCT04761523",
+    "retrieved_at": "2026-09-29T12:28:12+00:00"
+  },
+  "synthetic": false
+}

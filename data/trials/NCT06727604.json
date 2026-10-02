@@ -1,0 +1,152 @@
+{
+  "trial_id": "NCT06727604",
+  "title": "A Study to Assess the Efficacy, Safety, and Tolerability of IMVT-1402 as Treatment for Adult Participants With Graves' Disease",
+  "official_title": "A Randomized, Double-Blind, Placebo-Controlled, Phase 2b Study to Assess the Efficacy, Safety, and Tolerability of IMVT-1402 as Treatment for Adult Patients With Graves' Disease",
+  "overall_status": "RECRUITING",
+  "phases": [
+    "PHASE2"
+  ],
+  "study_type": "INTERVENTIONAL",
+  "conditions": [
+    "Graves' Disease"
+  ],
+  "keywords": [
+    "IMVT-1402",
+    "Anti Thyroid Drug",
+    "Hyperthyroidism",
+    "Autoimmune thyroid disease",
+    "Imeroprubart"
+  ],
+  "interventions": [
+    {
+      "type": "DRUG",
+      "name": "IMVT-1402",
+      "description": "600 mg SC QW for 52 weeks"
+    },
+    {
+      "type": "DRUG",
+      "name": "IMVT-1402",
+      "description": "600 mg SC QW for 26 weeks followed by Placebo SC QW for 26 weeks"
+    },
+    {
+      "type": "DRUG",
+      "name": "Placebo",
+      "description": "SC QW for 52 weeks"
+    }
+  ],
+  "brief_summary": "This is a study to assess the efficacy, safety, and tolerability of IMVT-1402 in adult participants with Graves' disease (GD) who are hyperthyroid despite antithyroid drug (ATD) treatment.\n\nThe primary objective of this study is to evaluate the efficacy of IMVT-1402 versus placebo as assessed by T3 (total triiodothyronine \\[T3\\] or free triiodothyronine \\[FT3\\]), free thyroxine (FT4), thyroid-stimulating hormone (TSH), and ATD dose at Week 26.",
+  "detailed_description": "",
+  "eligibility_criteria": "Inclusion Criteria:\n\n* Participants with the ability to understand the requirements of the trial, provide written informed consent, and comply with the trial protocol procedures.\n* Male or female participants aged ≥ 18 years.\n* Participants with diagnosis of GD who are hyperthyroid despite ATD treatment.\n* Other, more specific inclusion criteria are defined in the protocol.\n\nExclusion Criteria:\n\n* Have previously been successfully treated with radioactive iodine (RAI) therapy or have undergone total thyroidectomy.\n* Have an autoimmune disease other than GD requiring treatment that, in the Investigator's judgment, puts the participant at undue risk.\n* Have moderate-to-severe active thyroid eye disease (TED) and are expected to require immediate surgical intervention and/or are planning corrective surgery/irradiation or medical therapy for TED during study participation.\n* Additional exclusion criteria are defined in the protocol.",
+  "sex": "ALL",
+  "minimum_age": "18 Years",
+  "maximum_age": "75 Years",
+  "healthy_volunteers": false,
+  "locations": [
+    {
+      "facility": "Site Number - 1032",
+      "city": "Phoenix",
+      "country": "United States"
+    },
+    {
+      "facility": "Site Number - 1036",
+      "city": "Phoenix",
+      "country": "United States"
+    },
+    {
+      "facility": "Site Number - 1061",
+      "city": "Huntington Beach",
+      "country": "United States"
+    },
+    {
+      "facility": "Site Number - 1001",
+      "city": "Los Angeles",
+      "country": "United States"
+    },
+    {
+      "facility": "Site Number - 1047",
+      "city": "Los Angeles",
+      "country": "United States"
+    },
+    {
+      "facility": "Site Number - 1062",
+      "city": "Orange",
+      "country": "United States"
+    },
+    {
+      "facility": "Site Number - 1046",
+      "city": "Sacramento",
+      "country": "United States"
+    },
+    {
+      "facility": "Site Number - 1034",
+      "city": "San Francisco",
+      "country": "United States"
+    },
+    {
+      "facility": "Site Number - 1035",
+      "city": "Santa Clarita",
+      "country": "United States"
+    },
+    {
+      "facility": "Site Number - 1005",
+      "city": "Torrance",
+      "country": "United States"
+    },
+    {
+      "facility": "Site Number - 1006",
+      "city": "Walnut Creek",
+      "country": "United States"
+    },
+    {
+      "facility": "Site Number - 1013",
+      "city": "Englewood",
+      "country": "United States"
+    },
+    {
+      "facility": "Site Number - 1010",
+      "city": "Newark",
+      "country": "United States"
+    },
+    {
+      "facility": "Site Number - 1040",
+      "city": "Washington D.C.",
+      "country": "United States"
+    },
+    {
+      "facility": "Site Number - 1029",
+      "city": "Clearwater",
+      "country": "United States"
+    },
+    {
+      "facility": "Site Number - 1055",
+      "city": "Jacksonville",
+      "country": "United States"
+    },
+    {
+      "facility": "Site Number - 1056",
+      "city": "Jacksonville",
+      "country": "United States"
+    },
+    {
+      "facility": "Site Number - 1028",
+      "city": "Miami",
+      "country": "United States"
+    },
+    {
+      "facility": "Site Number - 1065",
+      "city": "Miami",
+      "country": "United States"
+    },
+    {
+      "facility": "Site Number - 1064",
+      "city": "Ocoee",
+      "country": "United States"
+    }
+  ],
+  "source": {
+    "name": "ClinicalTrials.gov (U.S. National Library of Medicine)",
+    "url": "https://clinicaltrials.gov/study/NCT06727604",
+    "retrieved_at": "2026-09-29T12:28:12+00:00"
+  },
+  "synthetic": false
+}

@@ -1,0 +1,41 @@
+{
+  "trial_id": "NCT07087314",
+  "title": "A Study of Anti-CD38 Monoclonal Antibody (SG301) Subcutaneous Injection in Children With Nephrotic Syndrome With Frequent Relapses or Steroid Dependence",
+  "official_title": "A Clinical Study to Evaluate the Initial Efficacy and Safety of Anti-CD38 Monoclonal Antibody (SG301) Subcutaneous Injection in Children With Frequent Relapses or Steroid-Dependent Nephrotic Syndrome",
+  "overall_status": "RECRUITING",
+  "phases": [
+    "PHASE2"
+  ],
+  "study_type": "INTERVENTIONAL",
+  "conditions": [
+    "Nephrotic Syndrome in Children"
+  ],
+  "keywords": [],
+  "interventions": [
+    {
+      "type": "DRUG",
+      "name": "SG301 Subcutaneous injection",
+      "description": "Subcutaneous injection every weeks (QW\\*6),subsequently, administer it once every two weeks for a total of three times (Q2W\\*3). The total number of doses is nine."
+    }
+  ],
+  "brief_summary": "This is an open - label study to evaluate the safety, pharmacokinetics, pharmacodynamics, and preliminary efficacy of SG301 Subcutaneous injection in children with frequently relapsing or steroid - dependent nephrotic syndrome.",
+  "detailed_description": "This study will recruit children aged 6 - 18 with frequently relapsing or steroid - dependent nephrotic syndrome, who have morning urine protein \\< 1 + or urine protein / creatinine \\< 0.2 g/g (\\<20 mg/mmol) for at least three consecutive days after steroid treatment.\n\nThe study will stratify participants into two age groups:≥6 - \\<12 years and≥12 - \\<18 years. Recruitment will start with the 12 - 18 - year - old group. After collecting sufficient safety and clinical pharmacology data to support moving to lower age groups, the 6 - 12 - year - old group will be recruited. For every 1 to 3 participants enrolled, there will be a phased data review to guide further recruitment.\n\nThe trial has three phases: screening (D - 28\\~D - 1), treatment (12 - week), and follow - up (40 - week). The enrolled participants will be treated with 10 mg/kg SG301 Subcutaneous injection subcutaneously. They will receive weekly injections for the first six weeks, then every two weeks for three times, totaling nine injections.",
+  "eligibility_criteria": "Inclusion Criteria:\n\n1. Aged 6 - 18 years.\n2. Steroid-sensitive nephrotic syndrome with frequent relapses (FRNS) or steroid dependence (SDNS).\n3. Normal renal function: eGFR≥90 ml/min/1.73m².\n4. After steroid treatment, morning urine protein\\<1 + or urine protein/creatinine\\<0.2 g/g (\\<20 mg/mmol) for ≥3 consecutive days.\n5. Within 7 days before enrollment, blood tests (without growth factors or transfusions) must meet: hemoglobin\\>80 g/L; platelets\\>75×10⁹/L; neutrophils\\>1.5×10⁹/L.\n6. Prothrombin time/INR≤1.5×ULN, unless due to anticoagulation.\n7. No Tacrolimus, cyclosporine A, mycophenolate mofetil, belimumab, levamisole, azathioprine, or cyclophosphamide in prior 2 months; no rituximab or obinutuzumab in prior 6 months.\n\nExclusion Criteria:\n\n1. Family history of nephrotic syndrome, chronic glomerulonephritis, or uremia.\n2. Alanine aminotransferase \\>2×ULN or total bilirubin\\>2×ULN with a sustained increase for 2 weeks.\n3. HBsAg or HBcAb positive with Hepatitis B virus DNA above the lower limit of normal; Hepatitis C virus antibody - positive with Hepatitis C virus RNA positive; HIV antibody - positive.\n4. Chronic active infections (e.g., Epstein-Barr Virus, Cytomegalovirus, tuberculosis) that may worsen with steroids/ immunosuppressants.\n5. Acute active infection (excluding onychomycosis) requiring systemic antibiotics/antivirals.\n6. Secondary nephrotic syndrome (e.g.,immunoglobulin A - associated, lupus nephritis); steroid - resistant nephrotic syndrome (SRNS).\n7. Other autoimmune diseases, primary immunodeficiency, or malignancy.\n8. Prior anti - cluster of differentiation 38 (CD38) treatment.\n9. Live/attenuated vaccine receipt or major surgery (non - diagnostic) within 4 weeks before first dose.",
+  "sex": "ALL",
+  "minimum_age": "6 Years",
+  "maximum_age": "18 Years",
+  "healthy_volunteers": false,
+  "locations": [
+    {
+      "facility": "Children's Hospital, Zhejiang University School of Medicine",
+      "city": "Hangzhou",
+      "country": "China"
+    }
+  ],
+  "source": {
+    "name": "ClinicalTrials.gov (U.S. National Library of Medicine)",
+    "url": "https://clinicaltrials.gov/study/NCT07087314",
+    "retrieved_at": "2026-09-29T12:28:13+00:00"
+  },
+  "synthetic": false
+}

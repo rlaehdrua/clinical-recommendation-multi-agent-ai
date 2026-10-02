@@ -1,0 +1,46 @@
+{
+  "trial_id": "NCT06125405",
+  "title": "Study of the Telitacicept in Pediatric Patients With Frequently Relapsing or Steroid Dependent Nephrotic Syndrome",
+  "official_title": "Study of the Telitacicept in Pediatric Patients With Frequently Relapsing or Steroid Dependent Nephrotic Syndrome",
+  "overall_status": "RECRUITING",
+  "phases": [
+    "PHASE3"
+  ],
+  "study_type": "INTERVENTIONAL",
+  "conditions": [
+    "Nephrotic Syndrome in Children",
+    "Telitacicept"
+  ],
+  "keywords": [
+    "Telitacicept",
+    "Frequently Relapsing Nephrotic Syndrome",
+    "Steroid Dependent Nephrotic Syndrome"
+  ],
+  "interventions": [
+    {
+      "type": "DRUG",
+      "name": "Telitacicept",
+      "description": "The study duration was 52 weeks, with the experimental group receiving subcutaneous injections of Telitacicept once weekly for a total of 52 weeks."
+    }
+  ],
+  "brief_summary": "The main objective is to evaluate the effectiveness of telitacicept in pediatric patients with frequently relapsing or steroid dependent nephrotic syndrome within the 52-week follow-up.",
+  "detailed_description": "Nephrotic syndrome(NS) is the most common glomerular disease in children. Approximately 45-50% of patients with nephrotic syndrome exhibit frequent relapses or are dependent on steroid therapy. Frequent relapses or steroid dependence in nephrotic syndrome have been challenging issues for clinicians. Long-term, repeated, and high-dose oral steroid use can lead to side effects such as obesity, delayed development, hypertension, diabetes, glaucoma, osteoporosis, and increased susceptibility to infections. The addition of traditional immunosuppressants such as cyclophosphamide and tacrolimus can cause severe and irreversible side effects. Therefore, exploring new drugs and their application protocols is particularly important. Telitacicept has a unique dual-target mechanism that can inhibit B cell maturation and differentiation at multiple stages, thereby inhibiting B cell activity. Clinical studies have confirmed its significant efficacy in various kidney diseases, such as lupus nephritis, IgA nephropathy, and adult recurrent minimal change nephrotic syndrome; moreover, it has good safety profiles.\n\nTherefore, through this prospective, single-center, open-label clinical trial, we aim to evaluate whether telitacicept provides superior efficacy compared to existing conventional treatment regimens for childhood frequent relapse (FR) or steroid-dependent (SD) nephrotic syndrome (NS), and assess its safety profile. Our goal is to provide an optimized treatment plan for childhood FRNS or SDNS.",
+  "eligibility_criteria": "Inclusion Criteria:\n\n* Sensitive but frequent relapses or steroids dependence nephrotic syndrome\n* Age: 2 to 18 years old\n* Normal renal function: estimated glomerular filtration rate ≥90ml/ min/1.73m2\n* Morning urine protein \\<1+ or urine protein-creatinine ratio \\<0.2g/g (\\<20 mg/ mmol) for 3 consecutive days and above when in enroll\n* No rituximab was used within 6 months, no tacrolimus, mycophenolate mofetil, cyclosporine A, or cyclophosphamide was used within 3 months, no ACTH was used within 3 months prior to the enrollment\n\nExclusion Criteria:\n\n* Family history of nephrotic syndrome, chronic glomerulonephritis or uremia\n* Leukopenia (White Blood Cells ≤ 3.0 \\* 10\\^9 / L)\n* Moderate to severe anemia (hemoglobin \\<9.0 g/dL)\n* Thrombocytopenia (platelet count \\<100\\*10\\^12/L)\n* Positive Hepatitis B virus serological indicators (Hepatitis B surface antigen or / and Hepatitis B virus e antigen or / and Hepatitis B core antibody), Hepatitis C virus-positive or patients with abnormal liver function (2 or more times of alamine aminotransferase or total bilirubin was exceeded the normal value, and continued to rise for 2 weeks)\n* There are chronic active infections such as Epstein-Barrvirus, cytomegalovirus or Mycobacterium tuberculosis, and the usage of steroids and immunosuppressive agents may aggravate the state of an illness\n* Secondary nephrotic syndrome (such as purpuric nephritis, lupus nephritis, etc.)\n* Those who with hematological or endocrine system diseases as well as serious organs illness such as heart, liver or kidney\n* Those who with other autoimmune diseases or primary immunodeficiencies or tumors\n* Those who have participated in other clinical trials within three months prior to the enrollment\n* Those who was not suitable for participating this study judged by investigator",
+  "sex": "ALL",
+  "minimum_age": "2 Years",
+  "maximum_age": "18 Years",
+  "healthy_volunteers": false,
+  "locations": [
+    {
+      "facility": "Children's Hospital, Zhejiang University School of Medicine",
+      "city": "Hangzhou",
+      "country": "China"
+    }
+  ],
+  "source": {
+    "name": "ClinicalTrials.gov (U.S. National Library of Medicine)",
+    "url": "https://clinicaltrials.gov/study/NCT06125405",
+    "retrieved_at": "2026-09-29T12:28:13+00:00"
+  },
+  "synthetic": false
+}

@@ -1,0 +1,51 @@
+{
+  "trial_id": "NCT00575185",
+  "title": "Activity of Valomaciclovir in Infectious Mononucleosis Due to Primary Epstein-Barr Virus Infection",
+  "official_title": "Randomized, Placebo-Controlled, Double-Blind Study to Assess Clinical and Antiviral Activity of Valomaciclovir (EPB 348) in Infectious Mononucleosis Due to Primary Epstein-Barr Virus Infection (Mono 6)",
+  "overall_status": "COMPLETED",
+  "phases": [
+    "PHASE1",
+    "PHASE2"
+  ],
+  "study_type": "INTERVENTIONAL",
+  "conditions": [
+    "Infectious Mononucleosis"
+  ],
+  "keywords": [
+    "Mono",
+    "Mononucleosis",
+    "Epstein-Barr virus"
+  ],
+  "interventions": [
+    {
+      "type": "DRUG",
+      "name": "Valomaciclovir",
+      "description": "4 grams orally of valomaciclovir (2 grams BID) for 21 days."
+    },
+    {
+      "type": "DRUG",
+      "name": "placebo",
+      "description": "Placebo tablets orally twice daily for 21 days."
+    }
+  ],
+  "brief_summary": "This will be a randomized, placebo-controlled, double-blind single-center proof of concept study to evaluate the anti-EBV activity of 4 grams of valomaciclovir (2 grams BID) for 21 days in subjects with infectious mononucleosis documented to be caused by primary EBV infection. Otherwise healthy subjects (≥15 years old) referred to us with a clinical diagnosis of primary infectious mononucleosis will be screened and those with laboratory-confirmed primary EBV infection will be enrolled.",
+  "detailed_description": "Subjects will be seen 2 times a week for 3 weeks and then weekly for 3 weeks. Clinical findings, clinical lab tests, EBV viral loads, and EBV antibody titers will be obtained at each clinic visit.",
+  "eligibility_criteria": "Inclusion Criteria:\n\n* Age 15 years or older\n* Within 14 days of initial symptoms of present illness diagnosed by a health care provider as infectious mononucleosis and confirmed to be due to primary EBV by antibody profile. The criteria for antibody confirmation of primary EBV at the screening visit are: 1)Positive for anti-EBV VCA IgM antibody and negative for anti-EBV EBNA1 IgG antibody; 2)EBV antibody testing will be done in the Clinical Virology Research Laboratory using commercial ELISA kits (Diamedix Corporation, Miami, FL).\n* Willingness to sign the Informed Consent Form (ICF)\n* Willingness to contribute samples of blood and oral washings at regular intervals\n* Males and females must use effective contraception during treatment and for at least 90 days following treatment\n* Negative pregnancy test result at the Screening Visit for females of childbearing potential (including females who have had a bilateral tubal ligation). Female patients of childbearing potential must be willing to use an approved method of double-barrier contraception (hormonal plus barrier or barrier plus barrier, eg, diaphragm plus condom) from the time of first dose administration until 90 days after completion of dosing and male patients with female partners of childbearing potential must be willing to use a condom. Patients who are sterile or infertile (defined as those who are postmenopausal or have undergone a complete hysterectomy) are eligible.\n* Estimated creatinine clearance (Cockcroft and Gault method) ≥ 60 ml/min\n* Absolute neutrophil count ≥ 1000 cells/microliter\n* Platelets ≥ 100,000/microliter\n* Hemoglobin ≥ 9.5 g/dL\n\nExclusion Criteria:\n\n* Previous history of infectious mononucleosis-like illness\n* Immunosuppressed due to medical disease and/or immunosuppressive or immunomodulating medications (e.g., corticosteroids prior to enrollment, cytotoxic drugs, interferons)\n* Another intercurrent viral infection (including HIV), based on history or referring physician medical evaluation\n* More than 7 days elapsed since onset of illness (including screening time)\n* The following concomitant medications are prohibited: probenecid, trimethoprim, myelosuppressive therapies, and medications known to be nephrotoxic\n* Breast feeding during the study\n* Corticosteroids are not permitted. If they are prescribed by the subject's primary physician for treatment of this acute disease after the subject has enrolled, the subject will be replaced.",
+  "sex": "ALL",
+  "minimum_age": "15 Years",
+  "maximum_age": null,
+  "healthy_volunteers": false,
+  "locations": [
+    {
+      "facility": "University of Minnesota",
+      "city": "Minneapolis",
+      "country": "United States"
+    }
+  ],
+  "source": {
+    "name": "ClinicalTrials.gov (U.S. National Library of Medicine)",
+    "url": "https://clinicaltrials.gov/study/NCT00575185",
+    "retrieved_at": "2026-09-29T12:28:17+00:00"
+  },
+  "synthetic": false
+}

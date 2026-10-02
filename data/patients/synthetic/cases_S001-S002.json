@@ -1,0 +1,82 @@
+{
+  "topics": [
+    {
+      "num": "SYN-S001-01",
+      "title": "A 46-year-old woman is seen in the pancreas clinic on 2026-09-24, seven weeks after her second hospitalization for acute pancreatitis. Episodes occurred on 2025-11-14 and 2026-08-03; both were mild, interstitial edematous pancreatitis on contrast CT, with lipase above 10x the upper limit of normal, no organ failure, and discharge within 4 days. Work-up was unrevealing: two transabdominal ultrasounds and an MRCP showed no gallstones, sludge, ductal dilation or pancreas divisum; triglycerides 142 mg/dL, calcium 9.3 mg/dL, IgG4 normal; she takes no pancreatitis-associated drugs, drinks about 2 units of alcohol per week and does not smoke. Endoscopic ultrasound on 2026-09-10 showed a normal gallbladder without microlithiasis or sludge, a normal common bile duct, no features of chronic pancreatitis and no pancreatic mass. She is now asymptomatic and eating a normal diet, has never received formal dietary counselling, has her gallbladder in situ, and was assessed by a surgeon as fit for laparoscopic cholecystectomy (ASA II). Comorbidities are limited to hypothyroidism on levothyroxine; BMI 26.8 kg/m2, HbA1c 5.4% (2026-09), no corticosteroid use, no history of cancer, and a urine pregnancy test was negative; she is not breastfeeding.",
+      "hidden_details": "All facts in the title. Additional: No history of diabetes. No chronic pancreatitis features on EUS or CT (no calcifications, no ductal irregularity). Neither episode was necrotizing. No trauma, ERCP or procedure preceded either episode. No family history of pancreatitis. No active or prior malignancy. No current acute pancreatitis; she is an outpatient and not hospitalized. Contraception: copper IUD. The patient is willing to provide informed consent and able to comply with study visits and follow-up for at least one year.",
+      "design_note": "Recurrent EUS-negative idiopathic acute pancreatitis (2 episodes within 2 years) in a well outpatient: meets PICUS-2 and the dietary-fat trial, but not the RABI-767 trial, which requires a current hospitalization with predicted severe acute pancreatitis. All decisive facts are in the title.",
+      "base_topic": "S001",
+      "synthetic": true,
+      "candidate_trials": [
+        "NCT06080789",
+        "NCT04761523",
+        "NCT06391359"
+      ]
+    },
+    {
+      "num": "SYN-S001-02",
+      "title": "A 58-year-old man with long-standing heavy alcohol use (about 10 units per day for more than 15 years; last drink 2026-09-24) was admitted on 2026-09-25 with severe epigastric pain radiating to the back and repeated vomiting. Lipase on admission was 3,850 U/L (ULN 60) and amylase 1,420 U/L; this is his first known episode of pancreatitis. Abdominal ultrasound showed no gallstones and a normal common bile duct; triglycerides were 210 mg/dL and calcium 8.6 mg/dL. On admission he met SIRS criteria (heart rate 122, respiratory rate 26, WBC 18.4 x10^9/L), BUN was 34 mg/dL and CRP 285 mg/L at 48 hours; creatinine peaked at 1.6 mg/dL and normalized within 36 hours with fluids, and he has not required vasopressors or ventilatory support. Contrast-enhanced CT on 2026-09-28 (hospital day 4) showed necrotizing pancreatitis with non-enhancement of approximately 40% of the pancreatic body and tail and an acute necrotic collection, without pancreatic calcifications. He remains in hospital on IV fluids and opioid analgesia, total bilirubin is 1.0 mg/dL, and he is afebrile. Comorbidities: hypertension on amlodipine; BMI 24 kg/m2; no diabetes (HbA1c 5.6%).",
+      "hidden_details": "All facts in the title. Additional: No prior pancreatitis, no prior pancreatic necrosis or necrosectomy, no history of chronic pancreatitis. No cholangitis (afebrile, bilirubin and ALP normal, no duct dilation). Gallbladder in situ, no cholecystectomy. No malignancy. Etiology documented as alcohol-induced acute pancreatitis. Not on corticosteroids; not receiving nutritional guidance. The patient is willing to provide informed consent and able to comply with study visits.",
+      "design_note": "Base-topic alcoholic pancreatitis, currently predicted severe, but CECT shows about 40% necrosis (RABI-767 excludes >30%). Alcohol etiology, alcohol intake above limits, a single episode and necrotizing disease exclude him from the recurrence trials. All decisive facts are in the title.",
+      "base_topic": "S001",
+      "synthetic": true,
+      "candidate_trials": [
+        "NCT06080789",
+        "NCT04761523",
+        "NCT06391359"
+      ]
+    },
+    {
+      "num": "SYN-S001-03",
+      "title": "A 41-year-old woman with poorly controlled type 2 diabetes was admitted on 2026-09-26 with acute epigastric pain radiating to the back, nausea and vomiting; lipase was 2,960 U/L (ULN 60) and serum triglycerides 2,150 mg/dL, and hypertriglyceridemia-induced acute pancreatitis was diagnosed. This is her first episode, and she needed supplemental oxygen on arrival. She has persistent SIRS (heart rate 118, respiratory rate 24, WBC 17.8 x10^9/L) and hematocrit rose from 44% to 48%; BUN was 31 mg/dL, chest X-ray showed a left pleural effusion (BISAP 3), and CRP was 262 mg/L at 48 hours. She is being treated with IV fluids, an insulin infusion and IV opioids. Contrast-enhanced CT of the abdomen was obtained on 2026-09-28. On hospital day 4 (2026-09-29) the team documents no clinically meaningful improvement since admission and does not expect discharge within the next several days. Gastroenterology considers her suitable for an EUS-guided procedure. Blood pressure and creatinine (0.9 mg/dL) have remained normal; a serum hCG was negative.",
+      "hidden_details": "All facts in the title. Additional (omitted from title): (1) Oxygenation: PaO2/FiO2 was 290 on admission (Modified Marshall respiratory score 1, not organ failure); she was weaned to room air after 20 hours. Modified Marshall scores for all organ systems have stayed below 2 throughout, so there has been no organ failure, transient or persistent. (2) CECT on 2026-09-28: acute pancreatitis with peripancreatic fluid and approximately 10% necrosis of the pancreatic head region (<30%), no pancreatic calcifications or other features of chronic pancreatitis. (3) Liver tests: total bilirubin 0.7 mg/dL, ALP 88 U/L, ALT 34 U/L; she is afebrile (max 37.6 C), the common bile duct is not dilated and there are no gallstones on ultrasound, so there is no evidence of cholangitis. No prior pancreatitis, pancreatic necrosis or necrosectomy. HbA1c 9.4%. BMI 31 kg/m2. No malignancy; gallbladder in situ. The patient is willing to provide informed consent and able to comply with study visits.",
+      "design_note": "Hospitalized predicted-severe acute pancreatitis (hypertriglyceridemia) who is eligible for RABI-767 on the full record. The title omits the CECT result (necrosis extent and calcifications), the oxygenation and organ-failure details, and the liver tests/cholangitis status. The documented etiology and first episode clearly exclude her from the recurrence trials.",
+      "base_topic": "S001",
+      "synthetic": true,
+      "candidate_trials": [
+        "NCT06080789",
+        "NCT04761523",
+        "NCT06391359"
+      ]
+    },
+    {
+      "num": "SYN-S002-01",
+      "title": "A 34-year-old woman with Graves' disease is referred on 2026-09-22 for persistent hyperthyroidism. Graves' disease was first diagnosed in 2022 (TRAb positive) and treated with methimazole for 18 months, reaching remission; the drug was stopped in January 2024. She relapsed in May 2026 with palpitations, heat intolerance and 5 kg weight loss, and methimazole was restarted at 20 mg/day and increased to 30 mg/day in July 2026. Despite adherence, labs on 2026-09-15 show TSH <0.01 mIU/L, free T4 2.6 ng/dL (0.8-1.8), free T3 7.9 pg/mL (2.3-4.2) and TRAb 14.2 IU/L (<1.75); CBC and liver tests are normal. She has never had radioactive iodine or thyroid surgery. On exam there is a diffuse goiter and fine tremor; she has no signs of thyroid eye disease (no proptosis, lid retraction or diplopia; clinical activity score 0). She has no other autoimmune disease, no history of cancer or other serious illness, and takes only methimazole and propranolol 20 mg three times daily. She is not pregnant (negative hCG) and uses an oral progestin-only contraceptive.",
+      "hidden_details": "All facts in the title. Additional: No type 1 diabetes, celiac disease, rheumatoid arthritis, lupus, vitiligo or other autoimmune condition. No active infection. No hepatitis B/C. Not breastfeeding. The patient is willing to provide informed consent and able to comply with study visits.",
+      "design_note": "Adult with relapsed Graves' disease who is still hyperthyroid on methimazole 30 mg: eligible for the IMVT-1402 trial (hyperthyroid despite ATD, no prior RAI/thyroidectomy, no TED) and the Chinese follow-up study (relapsed GD, no active exophthalmos). Ineligible for the pediatric vitamin D trial by age.",
+      "base_topic": "S002",
+      "synthetic": true,
+      "candidate_trials": [
+        "NCT06727604",
+        "NCT07369063",
+        "NCT07040306"
+      ]
+    },
+    {
+      "num": "SYN-S002-02",
+      "title": "A 15-year-old girl was seen on 2026-09-18 with 3 months of palpitations, heat intolerance, 4 kg unintentional weight loss and declining school performance. Exam showed tachycardia (HR 124), a fine tremor and a diffusely enlarged, non-tender goiter, without proptosis. Labs on 2026-09-18: TSH <0.01 mIU/L, free T4 3.8 ng/dL (0.9-1.7), total T4 19.5 ug/dL, total T3 312 ng/dL, and TRAb 9.6 IU/L (positive); she was newly diagnosed with Graves' disease and methimazole is being started. She has focal epilepsy diagnosed at age 11 and has been maintained on carbamazepine 400 mg twice daily, with no seizures in 2 years. 25-hydroxyvitamin D was 22 ng/mL and albumin-corrected calcium 9.7 mg/dL; renal and liver function are normal. A urine pregnancy test was negative.",
+      "hidden_details": "All facts in the title. Additional: No malabsorption, kidney or liver disease, nephrocalcinosis or hyperparathyroidism. No known allergy to vitamin D or methimazole. No active infection. Not taking corticosteroids or thyroid hormone. The patient and her parent are willing to consent/assent and able to comply with study visits.",
+      "design_note": "New pediatric Graves' disease that otherwise meets the vitamin D trial's biochemical inclusion criteria. She is excluded by chronic carbamazepine (an anticonvulsant that affects vitamin D metabolism) and is under 18 for both adult trials.",
+      "base_topic": "S002",
+      "synthetic": true,
+      "candidate_trials": [
+        "NCT06727604",
+        "NCT07369063",
+        "NCT07040306"
+      ]
+    },
+    {
+      "num": "SYN-S002-03",
+      "title": "A 13-year-old boy presents on 2026-09-21 with 2 months of palpitations, heat intolerance, increased appetite with 3 kg weight loss and difficulty sleeping. Exam shows heart rate 118, a fine tremor, warm moist skin and a diffusely enlarged, non-tender thyroid; there is no proptosis. Labs on 2026-09-21: TSH <0.01 mIU/L, free T4 4.1 ng/dL (0.9-1.7), total T4 21.0 ug/dL (5.0-11.0) and total T3 355 ng/dL (80-200). Graves' disease is suspected and the pediatric endocrinologist plans to start methimazole. He has no prior medical history, takes no regular medications, and has normal growth.",
+      "hidden_details": "All facts in the title. Additional (omitted from title): TRAb 8.2 IU/L (positive, <1.75) and TSI 420% (positive), confirming new Graves' disease rather than thyroiditis or hashitoxicosis. 25-hydroxyvitamin D 18 ng/mL (not >80). Albumin 4.3 g/dL, albumin-corrected calcium 9.6 mg/dL (normal). Creatinine and liver enzymes normal; no malabsorption, chronic kidney or liver disease, nephrocalcinosis or hyperparathyroidism. No allergy to vitamin D or methimazole. No active infection or other significant medical condition. Not taking corticosteroids, anticonvulsants or thyroid hormone. The patient and his guardian are willing to consent/assent and able to comply with study visits.",
+      "design_note": "New pediatric Graves' disease who is eligible for the vitamin D trial on the full record. The title omits the TRAb/TSI result (a required inclusion), the vitamin D level and the calcium level (exclusions). Both adult trials are clearly excluded by age.",
+      "base_topic": "S002",
+      "synthetic": true,
+      "candidate_trials": [
+        "NCT06727604",
+        "NCT07369063",
+        "NCT07040306"
+      ]
+    }
+  ]
+}

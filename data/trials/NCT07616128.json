@@ -1,0 +1,162 @@
+{
+  "trial_id": "NCT07616128",
+  "title": "Study of EVO756 in Adults With Migraine",
+  "official_title": "A Randomized, Double-Blind, Placebo Controlled Study Evaluating the Efficacy and Safety of EVO756 for the Prevention of Migraine in Adults",
+  "overall_status": "RECRUITING",
+  "phases": [
+    "PHASE2"
+  ],
+  "study_type": "INTERVENTIONAL",
+  "conditions": [
+    "Migraine"
+  ],
+  "keywords": [
+    "Migraine Disease",
+    "Migraine Disorder",
+    "Migraine Disorders",
+    "Migraine Headache",
+    "Migraine Headaches",
+    "Migraine",
+    "Migraines",
+    "Migraine in Adults",
+    "Migraine Prophylaxis",
+    "Migraine With Aura",
+    "Migraine With or Without Aura",
+    "Migraine With and Without Aura",
+    "Migraine Without Aura",
+    "Episodic Migraine Headache",
+    "Chronic Migraine Headache"
+  ],
+  "interventions": [
+    {
+      "type": "DRUG",
+      "name": "EVO756, Dose 1",
+      "description": "Orally administered EVO756, Dose 1 (Daily)"
+    },
+    {
+      "type": "DRUG",
+      "name": "EVO756, Dose 2",
+      "description": "Orally administered EVO756, Dose 2 (Daily)"
+    },
+    {
+      "type": "DRUG",
+      "name": "Placebo",
+      "description": "Placebo Control (Daily)"
+    }
+  ],
+  "brief_summary": "This study will evaluate the efficacy and safety of EVO756 against placebo in adults with migraine.",
+  "detailed_description": "",
+  "eligibility_criteria": "Key Inclusion Criteria:\n\n* Adults aged 18 to \\<65 years\n* Migraine with or without aura, per ICHD-3 criteria\n* History of failure with prior preventive migraine treatments\n* Not currently using migraine preventive therapy\n\nKey Exclusion Criteria:\n\n* Difficulty distinguishing migraine from other headache types or presence of other primary headache disorders\n* Use of certain medications\n* Any clinically significant medical, psychiatric, neurological, cardiovascular, or laboratory abnormalities",
+  "sex": "ALL",
+  "minimum_age": "18 Years",
+  "maximum_age": "64 Years",
+  "healthy_volunteers": false,
+  "locations": [
+    {
+      "facility": "Trialsphere Corp",
+      "city": "Chandler",
+      "country": "United States"
+    },
+    {
+      "facility": "Buena Park Research Center",
+      "city": "Buena Park",
+      "country": "United States"
+    },
+    {
+      "facility": "Neuro Pain Research Center",
+      "city": "Fresno",
+      "country": "United States"
+    },
+    {
+      "facility": "CA Medical Clinic for Headache",
+      "city": "Los Angeles",
+      "country": "United States"
+    },
+    {
+      "facility": "Diablo Clinical Research dba Flourish Research",
+      "city": "Walnut Creek",
+      "country": "United States"
+    },
+    {
+      "facility": "New England Institute for Neurology and Headache",
+      "city": "Stamford",
+      "country": "United States"
+    },
+    {
+      "facility": "Clinical Neuroscience Solutions, Inc.",
+      "city": "Jacksonville",
+      "country": "United States"
+    },
+    {
+      "facility": "Apple Medical Research Group, Inc",
+      "city": "Miami",
+      "country": "United States"
+    },
+    {
+      "facility": "Blessed Healthcase & Research",
+      "city": "Miami",
+      "country": "United States"
+    },
+    {
+      "facility": "Florida Research Center, Inc.",
+      "city": "Miami",
+      "country": "United States"
+    },
+    {
+      "facility": "Clinical Neuroscience Solutions, Inc.",
+      "city": "Orlando",
+      "country": "United States"
+    },
+    {
+      "facility": "Vantage Clinical Trials",
+      "city": "Tampa",
+      "country": "United States"
+    },
+    {
+      "facility": "Premiere Research Institute at Palm Beach Neurology",
+      "city": "West Palm Beach",
+      "country": "United States"
+    },
+    {
+      "facility": "Accel Research Site-Decatur-Alcanza",
+      "city": "Decatur",
+      "country": "United States"
+    },
+    {
+      "facility": "Mass Institute of Clinical Research",
+      "city": "Westborough",
+      "country": "United States"
+    },
+    {
+      "facility": "Michigan Headache and Neurological Institute",
+      "city": "Ann Arbor",
+      "country": "United States"
+    },
+    {
+      "facility": "Quest Research Institute-Alcanza",
+      "city": "Farmington Hills",
+      "country": "United States"
+    },
+    {
+      "facility": "Bio Behavoural health",
+      "city": "Toms River",
+      "country": "United States"
+    },
+    {
+      "facility": "Clinosis - Dent Neurologic Instite",
+      "city": "Amherst",
+      "country": "United States"
+    },
+    {
+      "facility": "Asheville Neurology Specialists, Pa",
+      "city": "Asheville",
+      "country": "United States"
+    }
+  ],
+  "source": {
+    "name": "ClinicalTrials.gov (U.S. National Library of Medicine)",
+    "url": "https://clinicaltrials.gov/study/NCT07616128",
+    "retrieved_at": "2026-09-29T12:28:14+00:00"
+  },
+  "synthetic": false
+}

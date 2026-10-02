@@ -1,0 +1,42 @@
+{
+  "trial_id": "NCT06530004",
+  "title": "Clinical Follow-up Study of Rituximab in the Treatment of Nephrotic Syndrome in Children",
+  "official_title": "Clinical Follow-up Study of Rituximab in the Treatment of Nephrotic Syndrome in Children",
+  "overall_status": "RECRUITING",
+  "phases": [],
+  "study_type": "OBSERVATIONAL",
+  "conditions": [
+    "Nephrotic Syndrome",
+    "Rituximab",
+    "Children",
+    "Efficacy"
+  ],
+  "keywords": [],
+  "interventions": [
+    {
+      "type": "DRUG",
+      "name": "Rituximab",
+      "description": "B lymphocyte reconstitution was performed regularly after the administration of rituximab, and 1-4 doses of rituximab were given according to the exhaustion of B cells in children."
+    }
+  ],
+  "brief_summary": "This was a retrospective study. Children who were diagnosed with refractory nephrotic syndrome and treated with rituximab (RTX) and followed up for ≥1 year in the Department of Pediatrics, the First Affiliated Hospital of Xiamen University from March 2020 to March 2026 were enrolled. Personal information, past medical history, clinical examination data and follow-up data before and after the use of RTX were extracted from the medical record system. (1) The median relapse-free survival, the number of relapses and the adverse reactions of RTX were compared before and after RTX treatment, and the clinical efficacy and safety of RTX were evaluated. (2) By comparing the annual relapse frequency, reduction and withdrawal of steroids and immunosuppressive agents, B cell reconstitution and adverse drug reactions between prophylactic RTX and post-relapse RTX maintenance regimens; (3) Multivariate analysis of risk factors for recurrence of nephropathy after RTX treatment. (4) growth indicators monitoring patient evaluation and RTX medical economic benefit analysis.",
+  "detailed_description": "",
+  "eligibility_criteria": "Inclusion Criteria:\n\n* Children clinically diagnosed with FRNS/SDNS/SRNS with complete clinical data;\n* age \\< 18 years old;\n* For the first time using RTX treatment, and used in nephrotic syndrome ease;\n* The follow-up for 1 year or more.\n\nExclusion Criteria:\n\n* Congenital or infantile nephrotic syndrome, secondary nephrotic syndrome (such as lupus nephritis, IgA nephropathy, purpura nephritis, hepatitis B nephritis, etc.);\n* Active stage of hepatitis, complicated with severe infection, severe deficiency of immune response, malignant diseases;\n* Estimated glomerular filtration rate (GFR) \\<60mL/min/1.73m2.",
+  "sex": "ALL",
+  "minimum_age": "1 Year",
+  "maximum_age": "18 Years",
+  "healthy_volunteers": false,
+  "locations": [
+    {
+      "facility": "First affiliated hospital of xiamen university",
+      "city": "Xiamen",
+      "country": "China"
+    }
+  ],
+  "source": {
+    "name": "ClinicalTrials.gov (U.S. National Library of Medicine)",
+    "url": "https://clinicaltrials.gov/study/NCT06530004",
+    "retrieved_at": "2026-09-29T12:28:14+00:00"
+  },
+  "synthetic": false
+}

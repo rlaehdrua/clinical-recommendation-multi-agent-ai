@@ -1,0 +1,57 @@
+{
+  "trial_id": "NCT05127980",
+  "title": "Occurrence of Antibodies Cross-reacting With Autoantigens in Primary EBV Infection",
+  "official_title": "Occurrence of Antibodies Cross-reacting With Autoantigens in Primary EBV Infection - a Longitudinal, Observational Study",
+  "overall_status": "RECRUITING",
+  "phases": [],
+  "study_type": "OBSERVATIONAL",
+  "conditions": [
+    "Epstein-Barr Virus (EBV) Infection"
+  ],
+  "keywords": [
+    "Infectious mononucleosis (IM)",
+    "Viral capsid antigen (VCA)",
+    "EBV nucleic antigen (EBNA)",
+    "Systemic lupus erythematosus (SLE)",
+    "Chronic fatigue syndrome (CFS)",
+    "cross-reacting antibodies",
+    "molecular mimicry"
+  ],
+  "interventions": [
+    {
+      "type": "OTHER",
+      "name": "Data collection: Participant characteristics (Illness course, complications of primary EBV infection and provided treatments)",
+      "description": "Data collection: Participant characteristics (Illness course, complications of primary EBV infection and provided treatments) during 12 months (baseline visit and follow-up visits at 3, 6 and 12 months)."
+    },
+    {
+      "type": "OTHER",
+      "name": "Data collection: blood samples (analysed for EBV serology, auto-antibody-testing/biobanking, RNA expression analyses, procalcitonin)",
+      "description": "Data collection: blood samples (analysed for EBV serology, auto-antibody-testing/biobanking, RNA expression analyses, procalcitonin) during 12 months (baseline visit and follow-up visits at 3, 6 and 12 months)."
+    },
+    {
+      "type": "OTHER",
+      "name": "Data collection: Patient reported outcome (Fatigue questionnaires)",
+      "description": "Data collection: Patient reported outcome (Fatigue questionnaires) at 6 and 12 months."
+    }
+  ],
+  "brief_summary": "The aim of this study is to assess the occurrence of antibodies cross-reacting with autoantigens that have been detected in the context of SLE in patients with primary EBV infection over time compared to a control group. It is to establish a biobank of patients with primary EBV infection allowing to longitudinally analyze the immune response and its accompanying inflammatory processes with focus on the occurrence of antibodies cross-reacting with autoantigens associated with SLE and other autoimmune diseases.\n\nSubstudies will analyze\n\n* characteristics of primary EBV infection patients treated with antibiotics in comparison to patients treated without antibiotics and outcomes of these treatment regimens (occurrence of acute complications such as peritonsillar abscess (PTA) or need for tonsillectomy, frequency of fatigue or symptoms associated with chronic fatigue syndrome).\n* Procalcitonin (PCT) concentrations in primary EBV infection compared to control patients with similar symptoms and its association with disease severity and local complications.\n* the occurrence of fatigue and symptoms associated with chronic fatigue syndrome 6 and 12 months after primary EBV infection.",
+  "detailed_description": "Epstein-Barr Virus (EBV) is a lymphotropic herpes virus and the causative agent of infectious mononucleosis (IM). The course of EBV infection is determined by the virus load and an individuals' immune system state, which in turn is determined by the person's gene composition, other infection history and several environmental factors, which all may influence the immune capacity of a person to various degrees. Many diseases are known to be associated with EBV infection, among those diseases are systemic autoimmune diseases. With regard to EBV, prior infection with the virus seems to be of crucial importance for the development of systemic lupus erythematosus (SLE). Autoantibodies against complement C1q (anti-C1q) can be induced in vivo by the Epstein-Barr virus-derived antigenic site 'EBNA348' (also being part of the C-terminal EBNA-1).\n\nThis study is to analyze whether the primary infection with EBV (leading to IM and antibodies targeting EBV-derived antigens including antibodies against EBNA-1) leads to an at least transient occurrence of antibodies against the virus that have the potential to cross-react with autoantigens as described in patients with systemic autoimmune diseases (e.g. complement C1q, dsDNA, Ro, Sm, MOG, NF186 and others). The advantage of an analysis of patients with primary infection is that the de novo synthesis of antibodies against the virus will allow to determine the time-dependent evolution of the antibody repertoire against the virus as well as against a number of autoantigens.",
+  "eligibility_criteria": "Inclusion Criteria:\n\nParticipants fulfilling all of the following inclusion criteria are eligible for the infectious mononucleosis (IM) group:\n\n* Informed consent as documented by signature\n* Confirmed primary EBV infection as confirmed by the treating clinician and defined by:\n* Compatible clinical (infectious mononucleosis symptoms including but not limited to malaise, headache, fever, tonsillitis, pharyngitis, cervical lymph nodes enlargement) and laboratory picture (lymphocyte count elevation, LUC cells, reactive lymphocytes in manual differential, elevated liver enzymes; of note, not all typically described features have to be fulfilled)\n\nAND\n\n* serology compatible with primary EBV infection (anti-EBNA IgG negative, anti-VCA IgG negative, anti-VCA IgM positive OR anti-EBNA IgG negative, anti-VCA IgG positive, anti- VCA IgM positive).\n\nParticipants fulfilling all of the following inclusion criteria will be eligible for the control group:\n\n* Informed consent as documented by signature.\n* one of the following:\n\n  1. Clinical picture of upper respiratory tract infection (including but not limited to tonsillitis/pharyngitis, malaise, headache, cough, rhinitis, cervical node enlargement)\n  2. confirmed primary Cytomegalovirus (CMV) infection (an optimal control group; however, the number of patients with a diagnosis of primary CMV infection is limited).\n\nExclusion Criteria:\n\n* Suspicion/diagnosis of IM as per judgement of the treating clinician (control group only); this individual may be eligible later for the IM group if primary EBV infection is confirmed, subsequently.\n* Immunosuppression (broadly defined as primary/secondary immunodeficiency or treatment with an immunosuppressive medication including ≥ 10mg prednisone equivalent).\n* History of autoimmune disease (e.g. SLE, vasculitis etc.)",
+  "sex": "ALL",
+  "minimum_age": "18 Years",
+  "maximum_age": null,
+  "healthy_volunteers": false,
+  "locations": [
+    {
+      "facility": "University Hospital Basel, Division of Internal Medicine",
+      "city": "Basel",
+      "country": "Switzerland"
+    }
+  ],
+  "source": {
+    "name": "ClinicalTrials.gov (U.S. National Library of Medicine)",
+    "url": "https://clinicaltrials.gov/study/NCT05127980",
+    "retrieved_at": "2026-09-29T12:28:17+00:00"
+  },
+  "synthetic": false
+}

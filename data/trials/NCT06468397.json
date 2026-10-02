@@ -1,0 +1,53 @@
+{
+  "trial_id": "NCT06468397",
+  "title": "Acute Retinal Detachment Repair With the iSeelr™ Retinal Detachment Repair System",
+  "official_title": "An Improved Retinal Detachment Repair Method: A First-in-human Clinical Trial of the Safety and Performance of the iSeelr™ Retinal Detachment Repair System to Seal Retinal Tears Intraoperatively",
+  "overall_status": "RECRUITING",
+  "phases": [
+    "NA"
+  ],
+  "study_type": "INTERVENTIONAL",
+  "conditions": [
+    "Rhegmatogenous Retinal Detachment - Macula Off"
+  ],
+  "keywords": [
+    "retinal detachment repair",
+    "laser",
+    "air",
+    "photocoagulation",
+    "photodehydration",
+    "gas tamponade",
+    "rhegmatogenous retinal detachment",
+    "1940nm",
+    "retinal thermofusion",
+    "medical device",
+    "iSeelr™"
+  ],
+  "interventions": [
+    {
+      "type": "DEVICE",
+      "name": "iSeelr™",
+      "description": "The iSeelr™ device will be used to deliver 1940nm laser output along with low airflow to seal a retinal tear"
+    }
+  ],
+  "brief_summary": "This study is a first-in-human clinical trial testing a new treatment for rhegmatogenous retinal detachments. The new treatment called retinal thermofusion uses a special laser device called iSeelr™ during surgery. The benefit of the device is that it repairs retinal tears without needing a gas bubble making it quicker to recover from surgery. The study will help us determine how safe and well the device performs in repairing a retinal detachment in people.",
+  "detailed_description": "The retina is a light-sensitive layer at the back of your eye that captures images. When light enters your eye, the retina turns it into signals that travel to your brain, helping you see. It's crucial for clear vision. When a retinal tear forms at the back of your eye, it can cause the fluid inside your eye to leak, leading to the retina peeling away and cause vision problems including blindness.\n\nRetinal Thermofusion (RTF) uses a laser device called iSeelr™ to first dehydrate the fluid buildup around the retina and then laser treatment to seal the retina back in its place. The device was developed by Photofuse Pty Ltd and method validated in a laboratory with the Centre for Eye Research Australia and The University of Melbourne, Victoria, Australia.This clinical trial involves recruiting 10 participants with rhegmatogenous retinal detachment who will receive the treatment and be closely followed with 7 study visits over a three month period. This will allow us to assess the safety and performance of RTF. This research is being Sponsored by Photofuse Pty Ltd and is funded by the US Department of Defense (Award W81XWH-21-1-0730).",
+  "eligibility_criteria": "Inclusion Criteria:\n\n* Aged 50 years or older.\n* Willing and able to comply with all study requirements and visits.\n* Provided written informed consent.\n\nStudy Eye:\n\n* Recent onset as demonstrated by symptoms or diagnosis macular involving rhegmatogenous retinal detachment.\n* Detachment due to single or multiple retinal tears in the superior region of the retina\n\nFellow eye:\n\n• Visual acuity of 6/12 or better.\n\nExclusion Criteria:\n\n* History of medical, surgical, or other conditions that, in the opinion of the investigator, would limit study participation e.g. unstable diabetes, poorly controlled hypertension.\n* Travel limitations that could prevent review at proscribed study intervals or any other time during the study.\n* Inability to provide informed consent.\n* Anaesthetic risk factors or inability to lie supine for 1 hour.\n* Pregnant and/or breast feeding (to be confirmed on treatment day)\n* Current systemic infection\n* Current ocular infection\n* Unable to return for post-treatment visits\n* Known inability to attend the emergency department in the event of an adverse event.\n\nExclusion criteria in the study eye:\n\n* Significant vitreous haemorrhage partially or fully obscuring detailed examination of the retina\n* Intraoperative identification of tears below the superior region in the area of retinal detachment not identified at the screening visit or during pre-operative examination. Note: Isolated retinal tears in attached retina, identified at any time are NOT an exclusion criterion and may be treated with lase as per standard of care\n* Clinical signs of PVR (+1 flare, vitreous clumps, pigment clusters on the inferior retina, rolled retinal tear edge, star-fold)\n* Myopia greater than -4 D spherical equivalent as confirmed by last refraction prior to becoming pseudophakic if cataract surgery has been performed\n* History of glaucoma or elevated intraocular pressure \\>21mmHg\n* Prior or current intraocular infection\n\nExclusion criteria in the fellow eye:\n\n* Visual Acuity worse than 6/12\n* Myopia greater than -4D spherical equivalent or axial length greater than 26mm if known\n* Any potential sight threatening pathology in the fellow eye as determined by the investigator\n* Extensive lattice degeneration\n* Unilateral high myopia as determined by the investigator\n* Family history of retinal detachment\n* Collagen disorders such as Marfan's or Sticklers syndrome\n* History of ocular trauma\n* Evidence of any abnormality of the eye structure as determined by the investigator\n* Planned surgery during the study period",
+  "sex": "ALL",
+  "minimum_age": "50 Years",
+  "maximum_age": null,
+  "healthy_volunteers": false,
+  "locations": [
+    {
+      "facility": "The Royal Victorian Eye and Ear Hospital (RVEEH)",
+      "city": "East Melbourne",
+      "country": "Australia"
+    }
+  ],
+  "source": {
+    "name": "ClinicalTrials.gov (U.S. National Library of Medicine)",
+    "url": "https://clinicaltrials.gov/study/NCT06468397",
+    "retrieved_at": "2026-09-29T12:28:18+00:00"
+  },
+  "synthetic": false
+}

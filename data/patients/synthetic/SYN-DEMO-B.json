@@ -1,0 +1,14 @@
+{
+  "patient_id": "SYN-DEMO-B",
+  "synthetic": true,
+  "text": "55세 남성. 비소세포폐암(선암) stage IV, EGFR L858R 변이. osimertinib 치료 중 2026-06 진행. 2026-06 뇌 MRI에서 새로 발견된 무증상 뇌전이 2개, 아직 치료하지 않음. ECOG 1. 2026-09-01 검사: ANC 3.1 x10^9/L, PLT 142 x10^9/L, Hb 12.5 g/dL.",
+  "hidden_details": "위 text와 동일. 간염 검사 음성(2025). ADC 치료 경험 없음. 간질성 폐질환 병력 없음.",
+  "labels": {
+    "target_trial": "DEMO-LUNG-001",
+    "intended_label": "INELIGIBLE",
+    "design_note": "치료하지 않은 뇌전이(제외기준 E1)로 부적격"
+  },
+  "candidate_trials": [
+    "DEMO-LUNG-001"
+  ]
+}

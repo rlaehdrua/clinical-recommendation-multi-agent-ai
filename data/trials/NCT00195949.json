@@ -1,0 +1,45 @@
+{
+  "trial_id": "NCT00195949",
+  "title": "Laparoscopic Versus Open Pyloromyotomy for Infants With Idiopathic Hypertrophic Pyloric Stenosis",
+  "official_title": "Laparoscopic Versus Open Pyloromyotomy for Infants With Idiopathic Hypertrophic Pyloric Stenosis",
+  "overall_status": "COMPLETED",
+  "phases": [
+    "PHASE3"
+  ],
+  "study_type": "INTERVENTIONAL",
+  "conditions": [
+    "Hypertrophic Pyloric Stenosis"
+  ],
+  "keywords": [
+    "Pyloric Stenosis",
+    "Laparoscopy",
+    "Idiopathic Hypertrophic Pyloric Stenosis"
+  ],
+  "interventions": [
+    {
+      "type": "PROCEDURE",
+      "name": "Laparoscopic pyloromyotomy",
+      "description": ""
+    }
+  ],
+  "brief_summary": "Pyloric stenosis is a condition that develops in infants and that leads to an obstruction of the channel going out of the stomach. This study is being performed to determine if there is an advantage to the laparoscopic approach or the open approach for the surgical correction of the enlarged pylorus.",
+  "detailed_description": "Pyloromyotomy for pyloric stenosis has traditionally been performed via an open technique. With advancements in minimally invasive surgery in infants a laparoscopic approach has been developed. These two approaches have never been critically evaluated with regard to superiority of one technique over the other. This is a prospective randomized trial involving infants with pyloric stenosis. It will enroll 100 patients in each arm (statistical and power analysis was performed by Steve Simon, PhD). Parental consent will be obtained and the patients will be randomized to undergo open or laparoscopic pyloromyotomy. Patient age at diagnosis, electrolyte disturbances at diagnosis, ultrasound findings, operative approach, length of pyloromyotomy, operative times, time to tolerating full feeds, number of emesis episodes, length of hospitalization, operative charges, and hospital charges will be collected for comparison between the groups.",
+  "eligibility_criteria": "Inclusion Criteria:\n\n* All infants less than 12 weeks of age who have undergone surgical consultation and abdominal ultrasound confirming the diagnosis of pyloric stenosis and whose parents have given consent for inclusion in the study.\n\nExclusion Criteria:\n\n* All patients greater than 12 weeks of age, or without parental consent, or without pyloric stenosis will be excluded from the study.",
+  "sex": "ALL",
+  "minimum_age": null,
+  "maximum_age": "12 Weeks",
+  "healthy_volunteers": false,
+  "locations": [
+    {
+      "facility": "Children's Mercy Hospital",
+      "city": "Kansas City",
+      "country": "United States"
+    }
+  ],
+  "source": {
+    "name": "ClinicalTrials.gov (U.S. National Library of Medicine)",
+    "url": "https://clinicaltrials.gov/study/NCT00195949",
+    "retrieved_at": "2026-09-29T12:28:16+00:00"
+  },
+  "synthetic": false
+}

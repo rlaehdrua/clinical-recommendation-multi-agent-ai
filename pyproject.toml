@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ctrec"
+version = "0.1.0"
+description = "Interactive Clinical Trial Recommendation - multi-agent system (Healthcare Agentic AI Challenge 2026)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "anthropic",
+    "pydantic>=2.6",
+    "requests>=2.31",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+web = ["fastapi>=0.110", "uvicorn>=0.29"]
+
+[project.scripts]
+ctrec = "ctrec.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+ctrec = ["web/static/*"]

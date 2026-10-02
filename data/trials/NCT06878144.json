@@ -1,0 +1,39 @@
+{
+  "trial_id": "NCT06878144",
+  "title": "Mucormycosis Clinical Core for the MUCOR-ADVANCE P01 Project",
+  "official_title": "MD Anderson Mucormycosis Clinical Core for the MUCOR-ADVANCE P01 Project (Deciphering Immunopathogenesis of MUCORmycosis to ADVANCE Risk Stratification, Diagnosis and Management of the Disease)",
+  "overall_status": "RECRUITING",
+  "phases": [],
+  "study_type": "OBSERVATIONAL",
+  "conditions": [
+    "Mucormycosis"
+  ],
+  "keywords": [],
+  "interventions": [
+    {
+      "type": "BEHAVIORAL",
+      "name": "Mucormycosis",
+      "description": "Tell the study team about any symptoms or side effects you have, follow study directions, and come to all study appointments (or contact the study team to reschedule)."
+    }
+  ],
+  "brief_summary": "To collect data and samples from participants with cancer who also have invasive mucormycosis, invasive aspergillosis, bacterial pneumonia, or a risk for fungal infection.",
+  "detailed_description": "Primary Objective:\n\nTo establish MD Anderson Mucormycosis Clinical Core for the MUCOR-ADVANCE P01 Project.\n\n* To prospectively identify, collect, and store all isolates causing proven or probable MCM in adult high-risk cancer participants.\n* To prospectively identify, collect, and store relevant host samples from high-risk participants developing proven or probable MCM, along with relevant biospecimens from three control groups.\n* To comprehensively annotate clinical specimens and provide information regarding the course and outcome of all MCM cases and controls.\n\nOUTLINE:\n\nThis is an observational study. Patients are assigned to 1 of 4 groups.\n\nGROUP M: Patients with mucormycosis undergo collection of blood, tissue and BAL fluid samples as well as have their medical records reviewed on study.\n\nGROUP A: Patients with mucormycosis undergo collection of blood, tissue and BAL fluid samples as well as have their medical records reviewed on study.\n\nGROUP B: Patients with mucormycosis undergo collection of blood, tissue and BAL fluid samples as well as have their medical records reviewed on study.\n\nGROUP C: Patients with mucormycosis undergo collection of blood, tissue and BAL fluid samples as well as have their medical records reviewed on study.",
+  "eligibility_criteria": "Inclusion Criteria:\n\n* Patients must be 18-100 years old and have cancer and invasive mucormycosis, invasive aspergillosis, bacterial pneumonia, or a risk for fungal infection but no evidence of such infection.\n* Patients must be willing to undergo routine diagnostic procedures (e.g., phlebotomy, bronchoscopy, biopsy) as part of their regular care.\n\nExclusion Criteria:\n\n• Patients who are unwilling to undergo routine diagnostic procedures as part of their regular care.",
+  "sex": "ALL",
+  "minimum_age": "18 Years",
+  "maximum_age": "100 Years",
+  "healthy_volunteers": false,
+  "locations": [
+    {
+      "facility": "MD Anderson Cancer Center",
+      "city": "Houston",
+      "country": "United States"
+    }
+  ],
+  "source": {
+    "name": "ClinicalTrials.gov (U.S. National Library of Medicine)",
+    "url": "https://clinicaltrials.gov/study/NCT06878144",
+    "retrieved_at": "2026-09-29T12:28:15+00:00"
+  },
+  "synthetic": false
+}

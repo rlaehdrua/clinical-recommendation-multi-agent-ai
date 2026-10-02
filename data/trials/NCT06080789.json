@@ -1,0 +1,116 @@
+{
+  "trial_id": "NCT06080789",
+  "title": "A Study to Evaluate the Safety and Efficacy of a Single Dose of RABI-767 in Participants With Acute Pancreatitis",
+  "official_title": "A Phase 2a, Multi-Center, Randomized, Open-Label Study to Evaluate the Safety and Efficacy of a Single Dose of RABI-767 Administered by Endoscopic Ultrasound-Guided Peripancreatic Injection Plus Standard-of-Care Versus Standard-of-Care Only in Participants With Predicted Severe Acute Pancreatitis",
+  "overall_status": "RECRUITING",
+  "phases": [
+    "PHASE2"
+  ],
+  "study_type": "INTERVENTIONAL",
+  "conditions": [
+    "Acute Pancreatitis"
+  ],
+  "keywords": [],
+  "interventions": [
+    {
+      "type": "DRUG",
+      "name": "RABI-767",
+      "description": "125 mg single-dose given by endoscopic-ultrasound (EUS) guided peripancreatic injection."
+    }
+  ],
+  "brief_summary": "The goal of this clinical trial is to test the safety and effectiveness of a single dose of RABI-767 given by endoscopic ultrasound (EUS) guided peripancreatic injection in participants with predicted severe acute pancreatitis.\n\nThe main question the study aims to answer is:\n\n• Is a single-dose of RABI-767 given by EUS-guided peripancreatic injection safe in patients with predicted severe acute pancreatitis.\n\nThe study also aims to answer:\n\n• Is a single-dose of RABI-767 given by EUS-guided peripancreatic injection effective in treating patients with predicted severe acute pancreatitis.\n\nStudy participants will be randomly assigned (like the flip of a coin) to receive a single dose of RABI-767 plus supportive care or supportive care only.\n\nThe study sponsor will compare safety and efficacy data collected from participants who receive RABI-767 to participants who receive supportive care only to test if RABI-767 is safe and effective.",
+  "detailed_description": "",
+  "eligibility_criteria": "Key Inclusion Criteria:\n\n* Diagnosis of acute pancreatitis\n* Predicted severe acute pancreatitis, based on protocol defined criteria\n* Lack of clinically meaningful improvement from status at admission, at the discretion of Investigator, at the time of randomization\n* Suitable for EUS-guided study drug administration procedure\n* Contrast-enhanced computed tomography (CECT) or magnetic resonance imaging (MRI) of the abdomen/pancreas available for the evaluation of exclusion criteria\n\nKey Exclusion Criteria:\n\n* Confirmed severe acute pancreatitis as defined by the Revised Atlanta Classification of Acute Pancreatitis (ie, Persistent \\[\\> 48 hours\\] organ failure, per Modified Marshall Score), prior to randomization\n* Anticipated discharge from hospital within 48 hours of randomization\n* More than 30% pancreatic necrosis on screening CECT or MRI\n* History of previous pancreatic necrosis, including necrosectomy\n* History of calcific chronic pancreatitis\n* Evidence of cholangitis",
+  "sex": "ALL",
+  "minimum_age": "18 Years",
+  "maximum_age": "85 Years",
+  "healthy_volunteers": false,
+  "locations": [
+    {
+      "facility": "University of Arkansas for Medical Sciences",
+      "city": "Little Rock",
+      "country": "United States"
+    },
+    {
+      "facility": "Keck Hospital of USC and LA County Hospital",
+      "city": "Los Angeles",
+      "country": "United States"
+    },
+    {
+      "facility": "University of Colorado Anschutz Medical Campus",
+      "city": "Aurora",
+      "country": "United States"
+    },
+    {
+      "facility": "University of Florida Health",
+      "city": "Gainesville",
+      "country": "United States"
+    },
+    {
+      "facility": "Orlando Health",
+      "city": "Orlando",
+      "country": "United States"
+    },
+    {
+      "facility": "UI Health, University of Illinois Chicago Hospital Health Sciences System",
+      "city": "Chicago",
+      "country": "United States"
+    },
+    {
+      "facility": "Indiana University Health University Hospital",
+      "city": "Indianapolis",
+      "country": "United States"
+    },
+    {
+      "facility": "Johns Hopkins Hospital",
+      "city": "Baltimore",
+      "country": "United States"
+    },
+    {
+      "facility": "Henry Ford Hospital",
+      "city": "Detroit",
+      "country": "United States"
+    },
+    {
+      "facility": "Dartmouth Hitchcock Medical Center",
+      "city": "Lebanon",
+      "country": "United States"
+    },
+    {
+      "facility": "NYU Langone Medical Center",
+      "city": "New York",
+      "country": "United States"
+    },
+    {
+      "facility": "Lisie Hospital",
+      "city": "Kochi",
+      "country": "India"
+    },
+    {
+      "facility": "Christian Medical College (CMC) Vellore, Ranipet Campus",
+      "city": "Vellore",
+      "country": "India"
+    },
+    {
+      "facility": "Postgraduate Institute of Medical Education and Research",
+      "city": "Chandigarh",
+      "country": "India"
+    },
+    {
+      "facility": "All India Institute of Medical Sciences",
+      "city": "Delhi",
+      "country": "India"
+    },
+    {
+      "facility": "Govind Ballabh Pant Institute of Postgraduate Medical Education and Research",
+      "city": "New Delhi",
+      "country": "India"
+    }
+  ],
+  "source": {
+    "name": "ClinicalTrials.gov (U.S. National Library of Medicine)",
+    "url": "https://clinicaltrials.gov/study/NCT06080789",
+    "retrieved_at": "2026-09-29T12:28:11+00:00"
+  },
+  "synthetic": false
+}

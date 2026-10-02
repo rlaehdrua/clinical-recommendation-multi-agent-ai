@@ -1,0 +1,25 @@
+# Render Blueprint: 대시보드에서 New → Blueprint로 이 저장소를 연결하면 자동 생성됩니다.
+services:
+  - type: web
+    name: ctrec
+    runtime: python
+    plan: free            # 무료 플랜은 15분간 접속이 없으면 잠듦 (첫 접속 30초 내외 지연)
+    numInstances: 1       # 실행 상태를 메모리에 보관하므로 반드시 1개
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn ctrec.web.app:app --host 0.0.0.0 --port $PORT --log-level warning
+    healthCheckPath: /healthz
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.5
+      - key: PYTHONPATH
+        value: src
+      - key: ANTHROPIC_API_KEY
+        sync: false       # 대시보드에서 직접 입력
+      - key: CTREC_PASSWORD
+        sync: false       # 접속 비밀번호 (비우면 누구나 접속 가능)
+      - key: CTREC_MODEL
+        value: claude-sonnet-5
+      - key: CTREC_FALLBACKS
+        value: "1"
+      - key: CTREC_MAX_WORKERS
+        value: "4"

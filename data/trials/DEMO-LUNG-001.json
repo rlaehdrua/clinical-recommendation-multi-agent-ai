@@ -1,0 +1,18 @@
+{
+  "trial_id": "DEMO-LUNG-001",
+  "synthetic": true,
+  "title": "[가상 예시] EGFR 변이 비소세포폐암 2차 치료 신약 임상 2상",
+  "overall_status": "RECRUITING",
+  "phases": ["PHASE2"],
+  "conditions": ["Non-small Cell Lung Cancer", "EGFR Mutation"],
+  "interventions": [{"type": "DRUG", "name": "DEMO-101 (가상 약물)", "description": "경구 1일 1회"}],
+  "brief_summary": "파이프라인 동작 확인용으로 작성한 가상의 임상시험입니다. 실제 시험이 아닙니다. EGFR 변이 양성 진행성 비소세포폐암 환자 중 3세대 EGFR-TKI 치료 후 진행한 환자를 대상으로 가상 약물 DEMO-101의 유효성과 안전성을 평가합니다.",
+  "detailed_description": "",
+  "eligibility_criteria": "Inclusion Criteria:\n\n* Age >= 19 years\n* Histologically or cytologically confirmed stage IIIB-IV non-small cell lung cancer\n* Documented EGFR exon 19 deletion or L858R mutation\n* Disease progression on or after osimertinib\n* ECOG performance status 0-1\n* Adequate organ function within 28 days before enrollment: absolute neutrophil count >= 1.5 x 10^9/L, platelets >= 100 x 10^9/L, hemoglobin >= 9.0 g/dL, total bilirubin <= 1.5 x ULN\n* At least one measurable lesion per RECIST 1.1\n\nExclusion Criteria:\n\n* Symptomatic or untreated brain metastases\n* Prior treatment with any EGFR-targeted antibody-drug conjugate\n* History of interstitial lung disease requiring steroids\n* Pregnant or breastfeeding\n* Active hepatitis B or C infection",
+  "sex": "ALL",
+  "minimum_age": "19 Years",
+  "maximum_age": null,
+  "healthy_volunteers": false,
+  "locations": [],
+  "source": {"name": "synthetic (created for this project)", "url": null}
+}
