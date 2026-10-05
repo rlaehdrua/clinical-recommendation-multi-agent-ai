@@ -57,10 +57,10 @@ def test_decide():
     assert decide([_a(True), _a(True)]) == "ELIGIBLE"
     assert decide([_a(True), _a(None)]) == "UNCERTAIN"
     assert decide([_a(None), _a(False)]) == "INELIGIBLE"
-    # 절차·행정 기준(동의 등)의 판정 불가는 적격성을 막지 않음
+    # 절차·행정 '선정' 기준(동의 등)의 판정 불가는 적격성을 막지 않음
     assert decide([_a(True), _a(None, "consent_or_logistics")]) == "ELIGIBLE"
-    # 원문에 구체 기준이 없는 항목의 판정 불가도 적격성을 막지 않음 (의사 확인 필요로 분류)
-    assert decide([_a(True), _a(None, "medication", underspecified=True)]) == "ELIGIBLE"
+    # 원문에 구체 기준이 없는 항목(의사 확인 필요)의 판정 불가는 ELIGIBLE을 막음 (파서 분류만으로 통과 처리 금지)
+    assert decide([_a(True), _a(None, "medication", underspecified=True)]) == "UNCERTAIN"
 
 
 def test_strict_schema_keeps_field_named_title():

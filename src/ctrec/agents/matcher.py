@@ -4,15 +4,17 @@
 2) 나머지 규칙은 Claude가 환자 정보를 근거로 추론 (근거 인용 필수)
 3) 시험 단위 적격성은 아래 결정 규칙으로 계산 (LLM이 아닌 코드가 최종 결정)
    - 선정 기준 불충족 또는 제외 기준 해당이 하나라도 있으면 INELIGIBLE
-   - 그렇지 않고 임상 기준 중 판정 불가(unknown)가 있으면 UNCERTAIN
-     (동의·방문 가능 여부 같은 절차·행정 기준, 원문에 구체 기준이 없는 underspecified 기준의
-      unknown은 적격성을 막지 않고 각각 '절차 확인 필요' / '의사 확인 필요'로 남김)
+   - 그렇지 않고 판정 불가(unknown)가 하나라도 있으면 UNCERTAIN
+     (예외: 동의·방문 가능 여부 같은 절차·행정 '선정' 기준의 unknown만 적격성을 막지 않고 '절차 확인 필요'로 남김.
+      원문에 구체 기준이 없는 underspecified 기준의 unknown은 '의사 확인 필요'로 분류하되 ELIGIBLE을 막음 -
+      파서 LLM의 분류 하나로 미확인 기준이 통과 처리되지 않도록)
    - 모두 통과하면 ELIGIBLE
 """
 
 from __future__ import annotations
 
 import json
+import re
 
 from .. import config, llm
 from ..schemas import CriterionAssessment, LLMAssessment, MatcherOutput, ParsedTrial, PatientProfile, TrialMatch
@@ -35,7 +37,9 @@ SYSTEM = """당신은 임상시험 적격성을 판정하는 '추론·매칭 에
 - 날짜 조건(예: "28일 이내 검사")은 기준일과 검사일을 비교해 판단합니다. 검사일이 없으면 unknown입니다.
 - 단위가 다르면 표준적인 환산을 적용하고 reasoning에 환산식을 적습니다.
 - 'consent_or_logistics' 규칙(동의 가능, 방문 가능 등)은 반대 근거가 없으면 unknown으로 두고 missing_info에 확인 필요 사항을 적습니다.
-- evidence에는 환자 정보의 source_quote를 그대로 인용합니다.
+- evidence에는 환자 정보의 source_quote(환자 원문)를 번역·요약 없이 그대로 인용하고, 여러 개면 " / "로 구분합니다.
+  단, 나이·성별·ECOG가 근거이면 "sex: male", "age: 62", "ecog: 1"처럼 프로필 필드로 적습니다.
+  "medications: []"처럼 빈 목록을 적거나 "언급 없음"을 근거로 삼지 않습니다. 코드는 원문에서 찾을 수 없는 인용(위 필드 제외)을 근거로 인정하지 않습니다.
 - underspecified=true 규칙(원문에 약물 목록·기준값이 없는 기준)은, 환자가 명백히 해당할 때만 "yes"로 판정하고 그 외에는 "unknown"으로 둡니다. missing_info에는 의사가 전체 프로토콜과 대조할 때 필요한 환자 정보(예: 현재 복용 약물 전체 목록)를 적습니다.
 - 조건부 기준(예: "Men who can father a child: must use contraception", "Women of childbearing potential must have a negative pregnancy test")에서
   환자가 그 대상 집단에 속하지 않으면(예: 여성 환자에게 남성 대상 조건, 폐경이 명시된 환자에게 가임 여성 조건) applicable=false로 표시합니다.
@@ -49,9 +53,23 @@ SYSTEM = """당신은 임상시험 적격성을 판정하는 '추론·매칭 에
 LOGISTICS = "consent_or_logistics"
 
 
+def is_waivable_logistics(a: CriterionAssessment) -> bool:
+    """적격성을 막지 않는 미확인 절차 기준: 동의·방문 가능 등 연구진이 등록 시 확인하는 '선정' 기준.
+
+    제외 기준은 절차로 분류돼도(예: 다른 임상시험 참여 중) 환자에게 확인할 수 있고,
+    파서가 임상 기준을 절차로 잘못 분류할 수 있으므로 면제하지 않습니다.
+    """
+    return a.passes is None and a.category == LOGISTICS and a.kind == "inclusion" and not a.underspecified
+
+
 def is_blocking_unknown(a: CriterionAssessment) -> bool:
-    """판정 보류(UNCERTAIN)를 일으키는 미확인 항목인가."""
-    return a.passes is None and a.category != LOGISTICS and not a.underspecified
+    """판정 보류(UNCERTAIN)를 일으키는 미확인 항목인가 (underspecified 포함)."""
+    return a.passes is None and not is_waivable_logistics(a)
+
+
+def is_askable_unknown(a: CriterionAssessment) -> bool:
+    """확인 질문으로 해소를 시도할 미확인 항목 (underspecified는 의사 참고용 질문으로 따로 다룸)."""
+    return is_blocking_unknown(a) and not a.underspecified
 
 
 def needs_physician_review(a: CriterionAssessment) -> bool:
@@ -137,8 +155,61 @@ def _enforce_evidence(a: LLMAssessment) -> LLMAssessment:
     })
 
 
+_QUOTE_SPLIT = re.compile(r'\s+/\s+|[|;\n]|\.\.\.|…|["“”«»「」『』]')
+_MIN_QUOTE_CHARS = 6  # 공백 제외 글자 수. 너무 짧은 조각("no", "남성")은 우연히 일치할 수 있음
+
+
+def _norm_text(s: str) -> str:
+    return re.sub(r"\s+", " ", s).strip().lower()
+
+
+def evidence_in_source(evidence: str, source_text: str) -> bool:
+    """인용 근거 중 한 조각 이상이 환자 원문에 그대로 있는가 (공백·대소문자 무시)."""
+    source = _norm_text(source_text)
+    for frag in _QUOTE_SPLIT.split(evidence):
+        frag = _norm_text(frag).strip(" .,:'`()[]")
+        if len(frag.replace(" ", "")) >= _MIN_QUOTE_CHARS and frag in source:
+            return True
+    return False
+
+
+_FIELD_REF = re.compile(r'["\']?\b(sex|age|ecog)\b["\']?\s*[:=]\s*["\']?([a-z0-9.]+)', re.IGNORECASE)
+
+
+def _profile_field_ref_ok(evidence: str, profile: PatientProfile | None) -> bool:
+    """근거가 프로필의 구조화 필드(sex/age/ecog) 값을 정확히 가리키는가. (빈 목록 등 '없음' 덤프는 해당 없음)"""
+    if profile is None:
+        return False
+    known = {"sex": None if profile.sex == "unknown" else profile.sex,
+             "age": None if profile.age is None else str(profile.age),
+             "ecog": None if profile.ecog is None else str(profile.ecog)}
+    refs = _FIELD_REF.findall(evidence)
+    return bool(refs) and all(known[k.lower()] is not None and known[k.lower()] == v.lower() for k, v in refs)
+
+
+def _enforce_quote(a: LLMAssessment, source_text: str | None,
+                   profile: PatientProfile | None = None) -> LLMAssessment:
+    """확정 판정(yes/no, 해당 없음)의 인용 근거가 환자 원문에 실제로 있는지 코드로 확인.
+
+    모델이 evidence_type="explicit"이라고 표시해도 인용이 원문에 없으면(필드 덤프, 번역·의역, 지어낸 인용)
+    확정하지 않고 unknown으로 되돌립니다. source_text가 없으면 검사하지 않습니다.
+    """
+    if source_text is None or (a.applicable and a.holds == "unknown"):
+        return a
+    if evidence_in_source(a.evidence, source_text) or _profile_field_ref_ok(a.evidence, profile):
+        return a
+    label = "해당 없음" if not a.applicable else a.holds
+    return a.model_copy(update={
+        "applicable": True,
+        "holds": "unknown",
+        "reasoning": f"[코드 검증: 인용 근거가 환자 원문에서 확인되지 않음 - 모델 판정 '{label}' 보류] {a.reasoning}",
+        "missing_info": a.missing_info or f"확인 필요: {a.reasoning[:120]}",
+    })
+
+
 def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
-                reference_date: str | None = None) -> TrialMatch:
+                reference_date: str | None = None, source_text: str | None = None) -> TrialMatch:
+    """source_text: 환자 원문(확인 질문 답변 포함). 주어지면 LLM 판정의 인용 근거를 원문과 대조합니다."""
     ref = reference_date or config.reference_date()
     by_id = {r.rule_id: r for r in parsed.rules}
     results: dict[str, CriterionAssessment] = {}
@@ -180,7 +251,7 @@ brief_summary: {trial.get('brief_summary', '')[:3000]}
             rule = by_id.get(a.rule_id)
             if rule is None or a.rule_id in results:
                 continue
-            a = _enforce_evidence(a)
+            a = _enforce_quote(_enforce_evidence(a), source_text, profile)
             results[a.rule_id] = CriterionAssessment(
                 rule_id=a.rule_id,
                 kind=rule.kind,
@@ -218,9 +289,9 @@ brief_summary: {trial.get('brief_summary', '')[:3000]}
     n_fail = sum(a.passes is False for a in assessments)
     n_unknown = sum(a.passes is None for a in assessments)
     failed = [f"{a.rule_id}({a.criterion_text[:60]})" for a in assessments if a.passes is False]
-    n_blocking = sum(is_blocking_unknown(a) for a in assessments)
+    n_blocking = sum(is_askable_unknown(a) for a in assessments)
     n_physician = sum(needs_physician_review(a) for a in assessments)
-    n_logistics = n_unknown - n_blocking - n_physician
+    n_logistics = sum(is_waivable_logistics(a) for a in assessments)
     summary = f"{eligibility}: 통과 {n_pass} / 불충족 {n_fail} / 판정불가 {n_blocking}"
     if n_physician:
         summary += f" (+의사 확인 필요 {n_physician})"
@@ -254,7 +325,7 @@ def compact(match: TrialMatch) -> dict:
         "summary": match.summary,
         "unknown": [
             {"rule_id": a.rule_id, "criterion": a.criterion_text, "missing_info": a.missing_info}
-            for a in match.assessments if is_blocking_unknown(a)
+            for a in match.assessments if is_askable_unknown(a)
         ],
         "physician_review": [
             {"rule_id": a.rule_id, "criterion": a.criterion_text, "info_needed": a.missing_info}
@@ -262,7 +333,7 @@ def compact(match: TrialMatch) -> dict:
         ],
         "logistics_to_confirm": [
             a.criterion_text for a in match.assessments
-            if a.passes is None and a.category == LOGISTICS and not a.underspecified
+            if is_waivable_logistics(a)
         ],
         "failed": [
             {"rule_id": a.rule_id, "criterion": a.criterion_text, "evidence": a.evidence}

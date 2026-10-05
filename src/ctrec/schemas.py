@@ -83,7 +83,14 @@ class LabValue(BaseModel):
 
 class PatientProfile(BaseModel):
     patient_id: str
-    age: int | None
+    age: int | None = Field(description="만 나이(년, 정수). 1세 미만이면 0")
+    age_value: float | None = Field(
+        default=None,
+        description="원문에 적힌 나이 값 그대로 (예: '3-month-old' -> 3, '54세' -> 54). 모르면 null",
+    )
+    age_unit: Literal["years", "months", "weeks", "days"] | None = Field(
+        default=None, description="age_value의 단위 (원문 표기 그대로, 변환하지 않음)",
+    )
     sex: Literal["male", "female", "other", "unknown"]
     primary_diagnosis: str | None
     disease_stage: str | None

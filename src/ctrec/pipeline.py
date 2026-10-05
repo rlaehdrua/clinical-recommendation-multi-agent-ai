@@ -131,7 +131,7 @@ class Session:
         def work(tid: str):
             self.tracer.log("matcher", "start", trial_id=tid)
             m = matcher.match_trial(self.profile, self.parsed[tid], self.trials[tid],
-                                    reference_date=self.reference_date)
+                                    reference_date=self.reference_date, source_text=self.case.raw_text)
             self.tracer.log("matcher", "done", trial_id=tid, message=m.summary)
             return tid, m
 
@@ -152,10 +152,14 @@ class Session:
         return out
 
     def uncertain(self) -> list[TrialMatch]:
-        """확인 질문 대상: 판정 보류이면서 현재 참여 가능한(모집 중) 시험만."""
+        """확인 질문 대상: 판정 보류이면서 현재 참여 가능한(모집 중) 시험 중 질문으로 해소할 항목이 있는 시험.
+
+        (의사 확인 필요 항목만 남은 시험은 확인 질문으로 해소되지 않으므로 제외)
+        """
         return [
             m for m in self.matches.values()
             if m.eligibility == "UNCERTAIN" and recommender.is_open(self.trials[m.trial_id])
+            and any(matcher.is_askable_unknown(a) for a in m.assessments)
         ]
 
     def open_candidates(self) -> list[TrialMatch]:

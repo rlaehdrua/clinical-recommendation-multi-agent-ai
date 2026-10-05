@@ -13,6 +13,7 @@ SYSTEM = """당신은 임상시험 매칭을 위해 환자 정보를 정리하�
 - 모든 사실(Fact, LabValue)에는 입력 원문에서 그대로 인용한 source_quote를 붙입니다.
 - 검사명(labs.name)은 영문 소문자 표준명으로 씁니다. 예: hemoglobin, platelets, absolute neutrophil count, creatinine, creatinine clearance, total bilirubin, ast, alt, hba1c, ldl cholesterol, inr, albumin, lvef. 유전자 EGFR과 신기능 eGFR은 혼동하지 않습니다(신기능은 "egfr (renal)").
 - 검사 수치는 숫자(value)와 단위(unit)를 분리합니다. 단위 변환은 하지 않습니다.
+- 나이는 원문 표기를 age_value/age_unit에 그대로 적고(예: '3-month-old' -> 3, months / '생후 10일' -> 10, days), age에는 만 나이(년)를 정수로 적습니다(1세 미만은 0).
 - ECOG가 명시되지 않았으면 null입니다. Karnofsky 점수는 other_facts에 기록하고 ECOG로 바꾸지 않습니다.
 - '[추가 확인 정보]' 섹션은 환자/보호자가 확인 질문에 답한 내용입니다. 기존 정보와 충돌하면 더 최근 답변을 우선하되 other_facts에 충돌 사실을 남깁니다.
 - missing_or_ambiguous에는 임상시험 적격성 판단에 흔히 필요하지만 누락되었거나 모호한 항목(예: 병기, 최근 검사일, 이전 치료 차수, 임신 가능 여부)을 적습니다.

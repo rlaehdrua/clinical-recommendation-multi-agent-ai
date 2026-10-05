@@ -47,8 +47,21 @@ def canonical_lab(name: str) -> str:
     return n
 
 
+# 표기만 다른 같은 단위 (cells/µL = /mm³ 등)
+_UNIT_EQUIV = {
+    "/ul": {"/ul", "cells/ul", "/mm3", "cells/mm3"},
+    "x10^9/l": {"x10^9/l", "10^9/l", "x10e9/l", "10e9/l", "x10^3/ul", "10^3/ul", "k/ul"},
+    "%": {"%", "percent"},
+}
+
+
 def _norm_unit(u: str | None) -> str:
-    return _norm(u or "").replace("µ", "u").replace("μ", "u")
+    n = _norm(u or "").replace("µ", "u").replace("μ", "u").replace("×", "x").replace("mm³", "mm3").replace("³", "^3").replace("⁹", "^9")
+    n = n.replace(" ", "").replace("*", "x")
+    for canon, aliases in _UNIT_EQUIV.items():
+        if n in aliases:
+            return canon
+    return n
 
 
 def _to_float(v: str | None) -> float | None:
@@ -116,25 +129,76 @@ def passes(kind: str, holds: str) -> bool | None:
     return (holds == "yes") if kind == "inclusion" else (holds == "no")
 
 
+# 나이 단위 -> 일. 만 나이는 '그 단위로 v 이상 v+1 미만'인 구간입니다.
+_AGE_DAYS = {"years": 365.25, "months": 365.25 / 12, "weeks": 7.0, "days": 1.0}
+_AGE_UNIT_ALIASES = {
+    "years": {"y", "yr", "yrs", "year", "years", "세", "살", "년"},
+    "months": {"m", "mo", "mos", "month", "months", "개월", "달"},
+    "weeks": {"w", "wk", "wks", "week", "weeks", "주"},
+    "days": {"d", "day", "days", "일"},
+}
+
+
+def _age_unit(u: str | None) -> str | None:
+    """규칙 단위 정규화. 없으면 년(years), 알 수 없는 표기면 None."""
+    n = _norm(u or "")
+    if not n:
+        return "years"
+    for canon, aliases in _AGE_UNIT_ALIASES.items():
+        if n in aliases:
+            return canon
+    return None
+
+
+def _evaluate_age(rule: Rule, patient: PatientProfile) -> CriterionAssessment | None:
+    """나이 비교. 같은 단위의 정수 기준은 관례대로 만 나이를 그대로 비교하고,
+    단위가 다르거나 기준이 소수(예: 0.038년)이면 환자 나이 구간 [v, v+1)을 일 단위로 바꿔 비교합니다.
+    구간 안에서 결과가 갈리면(예: 0세 vs '12주 미만') 확정하지 않고 None을 반환합니다.
+    """
+    target = _to_float(rule.value)
+    rule_unit = _age_unit(rule.unit)
+    if target is None or rule.operator not in _OPS or rule_unit is None:
+        return None
+    if patient.age_value is not None and patient.age_unit:
+        value, unit = patient.age_value, patient.age_unit
+    elif patient.age is not None:
+        value, unit = float(patient.age), "years"
+    else:
+        return None
+    shown = f"{value:g} {unit}"
+    if unit == rule_unit and float(target).is_integer() and float(value).is_integer():
+        holds = _OPS[rule.operator](value, target)
+        return _result(rule, "yes" if holds else "no", f"환자 나이 {shown}",
+                       f"{value:g} {rule.operator} {target:g} ({unit}) -> {holds}")
+    lo, hi = value * _AGE_DAYS[unit], (value + 1) * _AGE_DAYS[unit]  # [lo, hi)
+    t = target * _AGE_DAYS[rule_unit]
+    cmp = _OPS[rule.operator]
+    if rule.operator in ("==", "!="):
+        return None
+    # 구간 양 끝(hi는 포함되지 않으므로 아주 조금 안쪽)에서 결과가 같을 때만 확정
+    at_lo, at_hi = cmp(lo, t), cmp(hi - 1e-6, t)
+    if at_lo != at_hi:
+        return None
+    return _result(rule, "yes" if at_lo else "no", f"환자 나이 {shown}",
+                   f"{shown} = {lo:.0f}~{hi:.0f}일, 기준 {target:g} {rule_unit} = {t:.0f}일 -> {at_lo}")
+
+
 def evaluate(rule: Rule, patient: PatientProfile) -> CriterionAssessment | None:
     if not rule.structured_evaluable or not rule.field or not rule.operator:
         return None
     field = _norm(rule.field)
 
     if field == "age":
-        target = _to_float(rule.value)
-        if patient.age is None or target is None or rule.operator not in _OPS:
-            return None
-        holds = _OPS[rule.operator](patient.age, target)
-        return _result(rule, "yes" if holds else "no", f"환자 나이 {patient.age}세",
-                       f"{patient.age} {rule.operator} {rule.value} -> {holds}")
+        return _evaluate_age(rule, patient)
 
     if field == "sex":
-        if patient.sex == "unknown" or not rule.value or rule.operator not in ("==", "!="):
+        if not rule.value or rule.operator not in ("==", "!="):
             return None
         want = _norm(rule.value)
-        if want in ("all", "any"):
-            return _result(rule, "yes", f"환자 성별 {patient.sex}", "성별 제한 없음")
+        if want in ("all", "any") and rule.operator == "==":
+            return _result(rule, "yes", f"환자 성별 {patient.sex}", "성별 제한 없음 (환자 성별과 무관하게 충족)")
+        if patient.sex == "unknown":
+            return None
         holds = (patient.sex == want) if rule.operator == "==" else (patient.sex != want)
         return _result(rule, "yes" if holds else "no", f"환자 성별 {patient.sex}",
                        f"sex {rule.operator} {want} -> {holds}")
@@ -159,8 +223,8 @@ def evaluate(rule: Rule, patient: PatientProfile) -> CriterionAssessment | None:
         lab = _latest(candidates)
         if lab is None:
             return None  # 같은 검사가 여러 번인데 최신 값을 날짜로 확정할 수 없음 -> LLM에 위임
-        if rule.unit and lab.unit and _norm_unit(rule.unit) != _norm_unit(lab.unit):
-            return None  # 단위 변환은 LLM에 위임
+        if (rule.unit or lab.unit) and _norm_unit(rule.unit) != _norm_unit(lab.unit):
+            return None  # 단위가 다르거나 한쪽만 적혀 있으면 숫자만 비교하지 않음 (예: Hb 100 g/L vs 9 g/dL)
         holds = _OPS[rule.operator](lab.value, target)
         return _result(rule, "yes" if holds else "no",
                        f"{lab.name} {lab.value} {lab.unit or ''} ({lab.date or '날짜 미상'}) - \"{lab.source_quote}\"",
