@@ -68,6 +68,14 @@ def load_patients(path: Path) -> list[PatientCase]:
     return [_case_from_dict(d, f"{path.stem}-{i + 1}") for i, d in enumerate(items)]
 
 
+def _not_evaluated(patient_id: str, trial_id: str, error: str) -> TrialMatch:
+    return TrialMatch(
+        patient_id=patient_id, trial_id=trial_id, eligibility="NOT_EVALUATED", assessments=[],
+        n_pass=0, n_fail=0, n_unknown=0, evaluation_error=error,
+        summary=f"NOT_EVALUATED: 평가 실패로 판정하지 못함(부적격 아님) - {error[:200]}",
+    )
+
+
 @dataclass
 class Session:
     case: PatientCase
@@ -87,9 +95,12 @@ class Session:
     report: str | None = None
     errors: list[dict] = field(default_factory=list)
     usage: dict = field(default_factory=dict)  # 이 환자 처리에 쓴 토큰 (저장 직전에 기록)
+    # 판정 기준일: 세션 시작 시 한 번 고정 (자정을 넘기거나 재평가해도 같은 기준일)
+    reference_date: str = field(default_factory=config.reference_date)
 
     # ----------------------------------------------------------- 단계 ①+③a
-    def parse_criteria(self, trial_ids: list[str] | None = None) -> None:
+    def parse_criteria(self, trial_ids: list[str] | None = None) -> dict[str, str]:
+        """반환: 파싱에 실패한 시험 {trial_id: 오류}."""
         ids = [t for t in (trial_ids or list(self.trials)) if t not in self.parsed]
 
         def work(tid: str):
@@ -98,13 +109,16 @@ class Session:
             self.tracer.log("criteria_parser", "done", trial_id=tid, n_rules=len(p.rules))
             return tid, p
 
-        for tid, p in self._parallel(work, ids):
+        results, failed = self._parallel(work, ids)
+        for tid, p in results:
             self.parsed[tid] = p
+        return failed
 
     # ----------------------------------------------------------- 단계 ②+③b
     def profile_patient(self) -> PatientProfile:
         self.tracer.log("patient_profiler", "start", patient_id=self.case.patient_id)
-        self.profile = patient_profiler.profile_patient(self.case.patient_id, self.case.raw_text)
+        self.profile = patient_profiler.profile_patient(self.case.patient_id, self.case.raw_text,
+                                                        reference_date=self.reference_date)
         self.tracer.log("patient_profiler", "done", missing=self.profile.missing_or_ambiguous)
         return self.profile
 
@@ -112,18 +126,28 @@ class Session:
     def match(self, trial_ids: list[str] | None = None) -> list[TrialMatch]:
         assert self.profile is not None, "profile_patient()를 먼저 실행하세요"
         ids = trial_ids or list(self.trials)
-        self.parse_criteria(ids)
+        parse_failed = self.parse_criteria(ids)
 
         def work(tid: str):
             self.tracer.log("matcher", "start", trial_id=tid)
-            m = matcher.match_trial(self.profile, self.parsed[tid], self.trials[tid])
+            m = matcher.match_trial(self.profile, self.parsed[tid], self.trials[tid],
+                                    reference_date=self.reference_date)
             self.tracer.log("matcher", "done", trial_id=tid, message=m.summary)
             return tid, m
 
+        results, match_failed = self._parallel(work, [t for t in ids if t in self.parsed])
         out = []
-        for tid, m in self._parallel(work, [t for t in ids if t in self.parsed]):
+        for tid, m in results:
             self.matches[tid] = m
             out.append(m)
+        # 평가 실패도 공식 결과로 남김 (조용히 빠지지 않도록, 부적격으로 처리하지도 않음)
+        failures = {**{t: f"기준 파싱 실패: {e}" for t, e in parse_failed.items()},
+                    **{t: f"적격성 판정 실패: {e}" for t, e in match_failed.items()}}
+        for tid in ids:
+            if tid in failures:
+                m = _not_evaluated(self.case.patient_id, tid, failures[tid])
+                self.matches[tid] = m
+                out.append(m)
         self._snapshot(f"match(round={self.rounds})")
         return out
 
@@ -138,7 +162,7 @@ class Session:
         """추천 가능성이 있는 시험: 모집 중 + ELIGIBLE/UNCERTAIN."""
         return [
             m for m in self.matches.values()
-            if m.eligibility != "INELIGIBLE" and recommender.is_open(self.trials[m.trial_id])
+            if recommender.is_candidate(m) and recommender.is_open(self.trials[m.trial_id])
         ]
 
     def pending_physician_review(self) -> bool:
@@ -247,7 +271,8 @@ class Session:
         })
 
     def _parallel(self, fn, items):
-        results = []
+        """반환: (성공 결과 목록, 실패 {item: 오류}). 한 항목의 실패가 전체를 멈추지 않음."""
+        results, failed = [], {}
         with ThreadPoolExecutor(max_workers=config.MAX_WORKERS) as pool:
             # copy_context: 환자별 토큰 사용량 집계(contextvars)를 하위 스레드에 전달
             futures = {pool.submit(contextvars.copy_context().run, fn, it): it for it in items}
@@ -257,4 +282,5 @@ class Session:
                 except Exception as e:  # 한 시험의 실패가 전체를 멈추지 않도록 기록 후 계속
                     self.errors.append({"item": it, "error": repr(e)})
                     self.tracer.log("pipeline", "error", item=it, message=repr(e))
-        return results
+                    failed[it] = repr(e)
+        return results, failed

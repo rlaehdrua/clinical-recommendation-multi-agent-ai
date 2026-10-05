@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import date
-
 from .. import config, llm
 from ..schemas import PatientProfile
 
@@ -21,8 +19,8 @@ SYSTEM = """당신은 임상시험 매칭을 위해 환자 정보를 정리하�
 """
 
 
-def profile_patient(patient_id: str, raw_text: str) -> PatientProfile:
-    user = f"""기준일(오늘): {date.today().isoformat()}
+def profile_patient(patient_id: str, raw_text: str, reference_date: str | None = None) -> PatientProfile:
+    user = f"""기준일: {reference_date or config.reference_date()}
 patient_id: {patient_id}
 
 <patient_profile>

@@ -12,7 +12,8 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 Holds = Literal["yes", "no", "unknown"]
-Eligibility = Literal["ELIGIBLE", "INELIGIBLE", "UNCERTAIN"]
+# NOT_EVALUATED: 파싱·매칭 실패로 판정하지 못함 (부적격이 아님, 추천 대상도 아님)
+Eligibility = Literal["ELIGIBLE", "INELIGIBLE", "UNCERTAIN", "NOT_EVALUATED"]
 Confidence = Literal["high", "medium", "low"]
 
 RuleCategory = Literal[
@@ -150,6 +151,7 @@ class TrialMatch(BaseModel):
     matched_cohort: str | None = None  # 코호트가 나뉜 시험에서 판정에 사용한 코호트
     cohort_results: dict[str, str] = {}  # 코호트별 적격성
     other_cohort_assessments: list[CriterionAssessment] = []  # 다른 코호트 전용 기준 (판정 미적용, 기록용)
+    evaluation_error: str | None = None  # NOT_EVALUATED일 때 실패 단계와 원인
 
 
 # ---------------------------------------------------------------------------

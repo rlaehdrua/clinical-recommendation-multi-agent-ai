@@ -36,3 +36,12 @@ MAX_QUESTIONS_PER_ROUND = int(os.getenv("CTREC_MAX_QUESTIONS", "5"))
 
 # 오케스트레이터 에이전트 루프 최대 반복 횟수
 MAX_ORCHESTRATOR_STEPS = int(os.getenv("CTREC_MAX_STEPS", "15"))
+
+# 판정 기준일(YYYY-MM-DD). 날짜 조건("28일 이내" 등) 판정과 재현성에 사용합니다.
+# 지정하지 않으면 실행(Session) 시작 시점의 날짜로 한 번 고정합니다.
+REFERENCE_DATE = os.getenv("CTREC_REFERENCE_DATE") or None
+
+
+def reference_date() -> str:
+    from datetime import date
+    return date.fromisoformat(REFERENCE_DATE).isoformat() if REFERENCE_DATE else date.today().isoformat()

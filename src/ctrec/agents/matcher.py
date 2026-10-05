@@ -13,7 +13,6 @@
 from __future__ import annotations
 
 import json
-from datetime import date
 
 from .. import config, llm
 from ..schemas import CriterionAssessment, LLMAssessment, MatcherOutput, ParsedTrial, PatientProfile, TrialMatch
@@ -41,6 +40,7 @@ SYSTEM = """당신은 임상시험 적격성을 판정하는 '추론·매칭 에
 - 조건부 기준(예: "Men who can father a child: must use contraception", "Women of childbearing potential must have a negative pregnancy test")에서
   환자가 그 대상 집단에 속하지 않으면(예: 여성 환자에게 남성 대상 조건, 폐경이 명시된 환자에게 가임 여성 조건) applicable=false로 표시합니다.
   이 경우 기준은 '해당 없음'으로 통과 처리되므로 holds 값은 무시됩니다. 대상에 속하는지 불확실하면 applicable=true로 두고 판정합니다.
+  applicable=false일 때 evidence_type과 evidence는 '대상 집단에 속하지 않는다'는 근거를 가리킵니다. 명시적 근거(explicit)와 인용이 없으면 코드가 '해당 없음'을 인정하지 않습니다.
 - cohort가 지정된 규칙은 특정 참여자 군 전용입니다. 환자가 그 군에 속하는지와 상관없이 규칙에 적힌 조건이 성립하는지만 판정하세요(어느 군으로 판정할지는 코드가 결정합니다).
 - 입력으로 받은 모든 rule_id에 대해 정확히 하나씩 평가를 반환합니다.
 """
@@ -70,21 +70,33 @@ _RANK = {"ELIGIBLE": 2, "UNCERTAIN": 1, "INELIGIBLE": 0}
 
 
 def _select_cohort(assessments: list[CriterionAssessment], cohorts: list[str]):
-    """코호트가 나뉜 시험: 공통 기준 + 각 코호트 기준으로 따로 판정해 가장 유리한 코호트를 선택.
+    """코호트가 나뉜 시험: 모든 코호트를 공통 기준 + 각 코호트 기준으로 따로 판정하고,
+    시험 적격성은 그중 가장 나은 코호트의 판정을 따름 (Trial = ELIGIBLE via Cohort B).
+
+    코호트는 cohorts 목록과 규칙에 실제로 붙은 cohort 값을 모두 사용합니다.
+    (파서가 cohorts 목록과 다른 이름을 규칙에 적어도, 서로 다른 코호트 전용 기준이 한꺼번에 적용되지 않도록)
+    같은 적격성이면 결정적 순서로 고름: 판정 불가 항목이 적은 코호트 -> 선언 순서.
 
     반환: (판정에 적용한 기준 목록, 선택된 코호트 또는 None, 코호트별 적격성)
     """
-    known = [c for c in cohorts if any(a.cohort == c for a in assessments)]
-    if not known:
-        # 코호트 구분이 없거나 규칙에 연결되지 않음 -> 모든 기준 적용
+    labels = [c for c in cohorts if any(a.cohort == c for a in assessments)]
+    for a in assessments:
+        if a.cohort is not None and a.cohort not in labels:
+            labels.append(a.cohort)
+    if not labels:
+        # 코호트 구분이 없음 -> 모든 기준 적용
         return assessments, None, {}
     results = {}
-    for c in known:
+    for c in labels:
         subset = [a for a in assessments if a.cohort in (None, c)]
         results[c] = (subset, decide(subset))
-    # 적격성 우선, 같으면 통과 기준이 많은 코호트
-    best = max(known, key=lambda c: (_RANK[results[c][1]], sum(a.passes is True for a in results[c][0])))
-    return results[best][0], best, {c: e for c, (_, e) in results.items()}
+    best = min(range(len(labels)), key=lambda i: (
+        -_RANK[results[labels[i]][1]],
+        sum(is_blocking_unknown(a) for a in results[labels[i]][0]),
+        i,
+    ))
+    best_label = labels[best]
+    return results[best_label][0], best_label, {c: e for c, (_, e) in results.items()}
 
 
 def _enforce_evidence(a: LLMAssessment) -> LLMAssessment:
@@ -95,8 +107,21 @@ def _enforce_evidence(a: LLMAssessment) -> LLMAssessment:
       예: "62세이니 폐경 후일 것", "기록에 없으니 받지 않았을 것"
       모델이 스스로 매긴 확신도는 믿을 수 없으므로(추론에도 high를 매김), 확정 판정은 명시적 근거가 있을 때만 인정합니다.
     이렇게 되돌린 항목은 확인 질문 대상이 되고, 모델의 추정은 reasoning에 남습니다.
+
+    '해당 없음'(applicable=false)도 판정이므로 같은 기준을 적용합니다.
+    대상 집단에 속하지 않는다는 명시적 근거(explicit + 인용)가 없으면 applicable=true, holds=unknown으로 되돌립니다.
+    (N/A가 적격성을 낙관적으로 올리는 우회로가 되지 않도록)
     """
-    if a.holds == "unknown" or not a.applicable:
+    if not a.applicable:
+        if a.evidence_type == "explicit" and a.evidence.strip() and a.evidence.strip() != "근거 없음":
+            return a
+        return a.model_copy(update={
+            "applicable": True,
+            "holds": "unknown",
+            "reasoning": f"[코드 검증: '해당 없음'의 명시적 근거가 없어 확정할 수 없음 - 모델 판정 '해당 없음' 보류] {a.reasoning}",
+            "missing_info": a.missing_info or f"대상 집단 해당 여부 확인 필요: {a.reasoning[:120]}",
+        })
+    if a.holds == "unknown":
         return a
     reason = None
     if a.evidence_type == "absent":
@@ -112,7 +137,9 @@ def _enforce_evidence(a: LLMAssessment) -> LLMAssessment:
     })
 
 
-def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict) -> TrialMatch:
+def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
+                reference_date: str | None = None) -> TrialMatch:
+    ref = reference_date or config.reference_date()
     by_id = {r.rule_id: r for r in parsed.rules}
     results: dict[str, CriterionAssessment] = {}
 
@@ -124,7 +151,7 @@ def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict) -> Tr
     pending = [r for r in parsed.rules if r.rule_id not in results]
     if pending:
         pending_parsed = parsed.model_copy(update={"rules": pending})
-        user = f"""기준일(오늘): {date.today().isoformat()}
+        user = f"""기준일: {ref}
 
 <patient>
 {profile.model_dump_json(indent=1)}

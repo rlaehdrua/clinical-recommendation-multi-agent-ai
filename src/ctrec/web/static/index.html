@@ -268,7 +268,7 @@ function statusBadge(s) {
   const [t, c] = map[s] || [s || "-", ""]; return `<span class="badge ${c}">${esc(t)}</span>`;
 }
 function eligBadge(e) {
-  const m = { ELIGIBLE: ["적격","ok"], INELIGIBLE: ["부적격","bad"], UNCERTAIN: ["판정 보류","warn"] };
+  const m = { ELIGIBLE: ["적격","ok"], INELIGIBLE: ["부적격","bad"], UNCERTAIN: ["판정 보류","warn"], NOT_EVALUATED: ["평가 실패","warn"] };
   const [t, c] = m[e] || ["평가 중","accent"]; return `<span class="badge ${c}">${t}</span>`;
 }
 function onPatient() {

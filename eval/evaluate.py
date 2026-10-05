@@ -22,7 +22,7 @@ from pathlib import Path
 
 from ctrec.agents.recommender import is_open
 
-CLASSES = ["ELIGIBLE", "INELIGIBLE", "UNCERTAIN"]
+CLASSES = ["ELIGIBLE", "INELIGIBLE", "UNCERTAIN", "NOT_EVALUATED"]
 
 
 def load_predictions(outputs: Path) -> tuple[dict, dict]:
@@ -58,11 +58,11 @@ def main() -> None:
 
     confusion = Counter((gold[k], pred[k]) for k in pairs)
     correct = sum(gold[k] == pred[k] for k in pairs)
-    decided = [k for k in pairs if pred[k] != "UNCERTAIN"]
+    decided = [k for k in pairs if pred[k] not in ("UNCERTAIN", "NOT_EVALUATED")]
     decided_correct = sum(gold[k] == pred[k] for k in decided)
 
     print(f"평가 쌍: {len(pairs)} (예측 누락 {len(missing)})")
-    print(f"전체 정확도 (UNCERTAIN 예측=오답): {correct / len(pairs):.3f}")
+    print(f"전체 정확도 (UNCERTAIN·NOT_EVALUATED 예측=오답): {correct / len(pairs):.3f}")
     print(f"판정 확정 비율 (coverage):          {len(decided) / len(pairs):.3f}")
     if decided:
         print(f"확정 판정 정확도:                    {decided_correct / len(decided):.3f}")

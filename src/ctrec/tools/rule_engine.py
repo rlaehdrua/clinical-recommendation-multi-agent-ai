@@ -9,8 +9,9 @@ from __future__ import annotations
 
 import operator as op
 import re
+from datetime import date, datetime
 
-from ..schemas import CriterionAssessment, PatientProfile, Rule
+from ..schemas import CriterionAssessment, LabValue, PatientProfile, Rule
 
 _OPS = {">=": op.ge, "<=": op.le, ">": op.gt, "<": op.lt, "==": op.eq, "!=": op.ne}
 
@@ -57,6 +58,38 @@ def _to_float(v: str | None) -> float | None:
         return float(v)
     except ValueError:
         return None
+
+
+def _parse_date(s: str | None) -> date | None:
+    """ISO 형식(YYYY-MM-DD, YYYY-MM, YYYY)만 인정. 그 외 표기는 None."""
+    if not s:
+        return None
+    s = s.strip()
+    for fmt in ("%Y-%m-%d", "%Y-%m", "%Y"):
+        try:
+            return datetime.strptime(s, fmt).date()
+        except ValueError:
+            continue
+    return None
+
+
+def _latest(labs: list[LabValue]) -> LabValue | None:
+    """가장 최근 검사값. 값이 하나면 그대로, 여러 개면 모든 날짜를 해석할 수 있을 때만 최신값.
+
+    (날짜 문자열을 그대로 정렬하면 'Aug 2026' 같은 표기에서 엉뚱한 값을 고를 수 있음)
+    """
+    if len(labs) == 1:
+        return labs[0]
+    if len({lab.value for lab in labs}) == 1:
+        return labs[0]  # 값이 모두 같으면 어느 것을 골라도 같은 판정
+    dated = [(_parse_date(lab.date), lab) for lab in labs]
+    if any(d is None for d, _ in dated):
+        return None
+    dates = [d for d, _ in dated]
+    latest = max(dates)
+    if dates.count(latest) > 1:
+        return None  # 같은 날짜에 다른 값 -> 확정 불가
+    return next(lab for d, lab in dated if d == latest)
 
 
 def _result(rule: Rule, holds: str, evidence: str, reasoning: str) -> CriterionAssessment:
@@ -123,8 +156,9 @@ def evaluate(rule: Rule, patient: PatientProfile) -> CriterionAssessment | None:
         candidates = [lab for lab in patient.labs if canonical_lab(lab.name) == want and lab.value is not None]
         if not candidates:
             return None
-        # 날짜가 있는 경우 가장 최근 값 사용
-        lab = sorted(candidates, key=lambda x: x.date or "")[-1]
+        lab = _latest(candidates)
+        if lab is None:
+            return None  # 같은 검사가 여러 번인데 최신 값을 날짜로 확정할 수 없음 -> LLM에 위임
         if rule.unit and lab.unit and _norm_unit(rule.unit) != _norm_unit(lab.unit):
             return None  # 단위 변환은 LLM에 위임
         holds = _OPS[rule.operator](lab.value, target)
