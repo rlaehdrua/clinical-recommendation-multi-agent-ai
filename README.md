@@ -9,6 +9,13 @@
 > ⚠️ **의료적 면책 고지**
 > 이 시스템의 출력은 연구·교육 목적의 **참고 자료**이며 의학적 자문, 진단, 치료 권고가 아닙니다. 임상시험 참여 여부는 반드시 담당 의료진 및 해당 임상시험 연구진과 상담해 결정해야 합니다. 모든 보고서(`report.md`)와 결과 파일(`result.json`)에는 이 고지가 자동으로 포함됩니다.
 
+### 저장소
+
+| 구분 | 주소 |
+|---|---|
+| 팀 저장소 | https://github.com/seoyeon488/workseoyeon |
+| 개인 저장소 | https://github.com/rlaehdrua/clinical-recommendation-multi-agent-ai |
+
 ---
 
 ## 1. 전체 파이프라인
