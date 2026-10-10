@@ -21,6 +21,7 @@ MAX_WORKERS = int(os.getenv("CTREC_MAX_WORKERS", "4"))
 # 추출·문장 생성 위주 단계는 medium으로 비용을 줄입니다.
 EFFORT = {
     "orchestrator": "high",
+    "screener": "high",
     "criteria_parser": "high",
     "patient_profiler": "medium",
     "matcher": "high",
@@ -33,6 +34,9 @@ EFFORT = {
 # 확인 질문 라운드 최대 횟수, 라운드당 최대 질문 수
 MAX_CLARIFY_ROUNDS = int(os.getenv("CTREC_MAX_CLARIFY_ROUNDS", "2"))
 MAX_QUESTIONS_PER_ROUND = int(os.getenv("CTREC_MAX_QUESTIONS", "5"))
+
+# 후보 추림: 전체 시험 풀에서 자세히 평가할 시험 수 상한
+SCREEN_MAX_CANDIDATES = int(os.getenv("CTREC_SCREEN_MAX", "5"))
 
 # 매칭 에이전트가 일부 규칙의 판정을 빠뜨렸을 때, 빠진 규칙만 다시 요청하는 횟수
 MATCHER_MISSING_RETRIES = int(os.getenv("CTREC_MATCHER_RETRIES", "1"))

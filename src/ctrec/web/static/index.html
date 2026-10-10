@@ -48,6 +48,8 @@ textarea { resize: vertical; min-height: 90px; }
 .trial-list { max-height: 220px; overflow: auto; border: 1px solid var(--line); border-radius: 8px; }
 .trial-opt { display: flex; gap: 8px; padding: 7px 10px; border-bottom: 1px solid var(--line); font-size: 12.5px; cursor: pointer; align-items: flex-start; }
 .trial-opt:last-child { border-bottom: 0; } .trial-opt input { margin-top: 3px; }
+.trial-list.off { opacity: .45; pointer-events: none; }
+.cand-mode { display: flex; gap: 14px; margin-bottom: 6px; font-size: 12.5px; } .cand-mode label { display: flex; gap: 5px; align-items: center; cursor: pointer; }
 .trial-opt .tid { font-weight: 600; font-variant-numeric: tabular-nums; }
 .trial-opt .ttl { color: var(--muted); display: block; }
 .btn { width: 100%; border: 0; background: var(--accent); color: #fff; font: inherit; font-weight: 700; padding: 10px; border-radius: 8px; cursor: pointer; }
@@ -148,8 +150,12 @@ details.report summary { cursor: pointer; font-weight: 700; padding: 4px 0; }
       </div>
       <div>
         <label class="field">후보 임상시험 <span id="trial-count"></span></label>
+        <div class="cand-mode">
+          <label><input type="radio" name="cand-mode" value="screen" checked> 전체 시험에서 자동 추림</label>
+          <label><input type="radio" name="cand-mode" value="given"> 직접 선택</label>
+        </div>
         <div class="trial-list" id="trials"></div>
-        <div class="hint" style="margin-top:4px">평가할 후보 시험입니다. 환자 질환별로 미리 정해 둔 후보(ClinicalTrials.gov에서 질환명으로 검색해 선정)가 자동 선택되며, 에이전트가 모두 평가한 뒤 가장 적합한 1개를 추천합니다. <button class="link" id="clear-trials">선택 해제</button></div>
+        <div class="hint" style="margin-top:4px" id="cand-hint"></div>
       </div>
       <label class="hint" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="search"> 후보가 모두 부적격·모집 종료일 때 ClinicalTrials.gov 추가 검색 허용</label>
       <button class="btn" id="start">실행</button>
@@ -255,7 +261,7 @@ async function init() {
     <span class="ttl">${esc(t.title)}</span></span></label>`).join("");
   $("#trials").addEventListener("change", countTrials);
   $("#patient").addEventListener("change", onPatient);
-  $("#clear-trials").onclick = () => { document.querySelectorAll("#trials input").forEach(i => i.checked = false); countTrials(); };
+  document.querySelectorAll('input[name="cand-mode"]').forEach(r => r.onchange = countTrials);
   $("#to-custom").onclick = () => setCustom(true); $("#to-list").onclick = () => setCustom(false);
   $("#start").onclick = start;
   document.querySelectorAll("#pages button").forEach(b => b.onclick = () => showPage(b.dataset.page));
@@ -283,14 +289,24 @@ function onPatient() {
 function setCustom(on) { state.custom = on; $("#custom-wrap").hidden = !on; $("#preview-wrap").hidden = on; $("#patient").disabled = on;
   if (!on) onPatient(); }
 function selectedTrials() { return [...document.querySelectorAll("#trials input:checked")].map(i => i.value); }
-function countTrials() { $("#trial-count").textContent = `(${selectedTrials().length}개 선택)`; }
+function screenMode() { return document.querySelector('input[name="cand-mode"]:checked').value === "screen"; }
+function countTrials() {
+  const on = screenMode();
+  $("#trials").classList.toggle("off", on);
+  $("#trial-count").textContent = on ? `(전체 ${state.trials.length}개에서 자동 추림)` : `(${selectedTrials().length}개 선택)`;
+  $("#cand-hint").innerHTML = on
+    ? "후보 추림 에이전트가 전체 시험을 훑어 이 환자에게 해당될 만한 시험(최대 5개)을 고르고, 그 시험들만 자세히 평가해 가장 적합한 1개를 추천합니다."
+    : `평가할 시험을 직접 고릅니다. 환자 질환별로 미리 정해 둔 후보가 자동 선택됩니다. <button class="link" id="clear-trials">선택 해제</button>`;
+  const clear = $("#clear-trials");
+  if (clear) clear.onclick = () => { document.querySelectorAll("#trials input").forEach(i => i.checked = false); countTrials(); };
+}
 
 // ------------------------------------------------------------ 실행
 async function start() {
-  const body = { trial_ids: selectedTrials(), allow_search: $("#search").checked };
+  const body = { trial_ids: screenMode() ? [] : selectedTrials(), screen: screenMode(), allow_search: $("#search").checked };
   if (state.custom) { body.custom_text = $("#custom").value.trim(); if (!body.custom_text) return hint("환자 정보를 입력하세요."); }
   else body.patient_id = $("#patient").value;
-  if (!body.trial_ids.length && !body.allow_search) return hint("후보 임상시험을 하나 이상 선택하세요.");
+  if (!body.screen && !body.trial_ids.length && !body.allow_search) return hint("후보 임상시험을 하나 이상 선택하세요.");
   resetView();
   $("#start").disabled = true; hint("");
   const r = await fetch("/api/runs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -321,11 +337,11 @@ function finish() {
 }
 
 // ------------------------------------------------------------ 이벤트 처리
-const WHO = { pipeline: "파이프라인", orchestrator: "오케스트레이터", patient_profiler: "환자 정보 이해", criteria_parser: "기준 파싱",
+const WHO = { pipeline: "파이프라인", orchestrator: "오케스트레이터", screener: "후보 추림", patient_profiler: "환자 정보 이해", criteria_parser: "기준 파싱",
   matcher: "추론·매칭", question_generator: "질문 생성", answerer: "환자 답변", recommender: "추천", explainer: "결과 설명" };
 const TOOL_TARGET = { profile_patient: ["patient_profiler"], evaluate_trials: ["criteria_parser","matcher"], ask_clarifying_questions: ["question_generator"],
-  finalize_recommendation: ["recommender"], search_trials: ["input"], list_candidate_trials: [] };
-const TOOL_KO = { profile_patient: "환자 프로파일 구조화", list_candidate_trials: "후보 시험 확인", search_trials: "CT.gov 검색", evaluate_trials: "시험 적격성 평가",
+  finalize_recommendation: ["recommender"], search_trials: ["input"], list_candidate_trials: [], screen_trials: [] };
+const TOOL_KO = { screen_trials: "후보 시험 추림", profile_patient: "환자 프로파일 구조화", list_candidate_trials: "후보 시험 확인", search_trials: "CT.gov 검색", evaluate_trials: "시험 적격성 평가",
   ask_clarifying_questions: "확인 질문 라운드", finalize_recommendation: "최종 추천 생성" };
 
 function handle(ev) {
@@ -396,6 +412,10 @@ function onTrace(r) {
   if (a === "recommender") {
     step(3, "done"); step(4, "done"); step(5); nodeState(a, e === "start" ? "active" : "done"); edgeOn("recommender","explainer", e === "done");
     feed(r.t, a, e === "start" ? `시험 ${r.n_trials}개 종합 · 우선순위 결정 중` : `추천 순서: ${esc(r.message)}`);
+    return;
+  }
+  if (a === "screener") {
+    feed(r.t, a, e === "start" ? `전체 ${r.pool}개 시험에서 후보 추림 중` : `${esc(r.message)}${r.selected ? ` <span class="chip">${esc(r.selected.join(", "))}</span>` : ""}`);
     return;
   }
   if (a === "explainer") {

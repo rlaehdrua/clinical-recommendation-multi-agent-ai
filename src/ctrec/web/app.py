@@ -127,7 +127,8 @@ class WebAnswerer:
 class RunRequest(BaseModel):
     patient_id: str | None = None
     custom_text: str | None = None
-    trial_ids: list[str]
+    trial_ids: list[str] = []
+    screen: bool = True  # True: 전체 시험에서 후보 추림 에이전트가 고름 / False: trial_ids만 평가
     allow_search: bool = False
     max_rounds: int = config.MAX_CLARIFY_ROUNDS
 
@@ -144,7 +145,8 @@ def _execute(run: Run, req: RunRequest, case: PatientCase, trials: dict[str, dic
     # 웹 UI: 확인 질문이 필요하면 화면에서 사용자가 직접 답변 (가상 환자·답변 없음 모드는 CLI 평가용)
     answerer = WebAnswerer(run)
     session = Session(case=case, trials=trials, answerer=answerer, tracer=tracer,
-                      max_rounds=req.max_rounds, allow_search=req.allow_search)
+                      max_rounds=req.max_rounds, allow_search=req.allow_search,
+                      screen_trials=req.screen and len(trials) > config.SCREEN_MAX_CANDIDATES)
     try:
         # 웹 UI는 오케스트레이터(agent) 모드로만 실행
         tracer.log("pipeline", "start", message=f"mode=agent model={config.MODEL} trials={len(trials)}")
@@ -202,7 +204,7 @@ def list_trials() -> list[dict]:
 @app.post("/api/runs")
 def start_run(req: RunRequest) -> dict:
     all_trials = _load_trials()
-    trials = {t: all_trials[t] for t in req.trial_ids if t in all_trials}
+    trials = dict(all_trials) if req.screen else {t: all_trials[t] for t in req.trial_ids if t in all_trials}
     if not trials and not req.allow_search:
         raise HTTPException(400, "평가할 임상시험을 하나 이상 선택하세요.")
     if req.custom_text and req.custom_text.strip():

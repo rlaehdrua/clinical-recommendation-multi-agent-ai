@@ -26,6 +26,7 @@
 |---|---|---|---|
 | ① 기준 입력 | 선정·제외 기준과 상세 설명 입력 | `tools/ctgov.py` (CT.gov API v2, 로컬 JSON) | `TrialRecord` |
 | ② 환자 정보 입력 | 인구학·병력·검사·투약 프로파일 | `pipeline.load_patients` (JSON/TXT, TREC topics 형식) | `PatientCase` |
+| (추가) 후보 추림 | 전체 시험 풀에서 이 환자에게 해당될 만한 시험 선택 | 후보 추림 에이전트 (`agents/screener.py`) | `ScreeningResult` (선택·제외 시험과 사유) |
 | ③ 정보 추출 및 매칭 | 기준 파싱 → 환자 정보 추출 → 조건 매칭·추론 → 근거 제시 | 기준 파싱 → 환자 정보 이해 → **규칙 엔진 + 추론·매칭** | `ParsedTrial`, `PatientProfile`, `TrialMatch` |
 | ④ 부족 정보 탐지 | 충족이 불확실하거나 누락된 항목 식별 | 추론·매칭 에이전트 (`holds="unknown"`, `missing_info`) | `UNCERTAIN` 판정과 누락 항목 |
 | ⑤ 질문 생성 및 재평가 | 확인 질문 → 추가 정보 반영 → 최종 판정 | 질문 생성 에이전트 → 답변 제공자 → 환자 정보 재추출 → 재매칭 | `QAPair`, 판정 변화 이력 |
@@ -43,6 +44,7 @@ flowchart TB
     O{{"🧭 오케스트레이터 에이전트<br/>계획 수립 · 도구 호출 순서 결정<br/>(검색 추가 / 질문 라운드 여부)"}}
 
     subgraph AG[전문 에이전트 = 오케스트레이터의 도구]
+        A0[후보 추림 에이전트<br/>전체 시험 → 후보 3–5개]
         A1[① 기준 파싱 에이전트<br/>기준 → 원자 규칙]
         A2[② 환자 정보 이해 에이전트<br/>자유서술 → 구조화 프로파일]
         RE[[규칙 엔진<br/>나이·성별·ECOG·검사수치<br/>결정론적 판정]]
@@ -59,6 +61,8 @@ flowchart TB
     P --> O
     O -->|parse| A1
     O -->|profile_patient| A2
+    O -->|screen_trials| A0
+    A0 --> A1
     O -->|evaluate_trials| A3
     A1 --> A3
     A2 --> A3
@@ -78,6 +82,7 @@ flowchart TB
 sequenceDiagram
     participant O as 오케스트레이터
     participant PP as 환자 정보 이해
+    participant S as 후보 추림
     participant CP as 기준 파싱
     participant M as 추론·매칭(+규칙엔진)
     participant Q as 질문 생성
@@ -88,6 +93,8 @@ sequenceDiagram
     O->>O: 계획 수립
     O->>PP: profile_patient
     PP-->>O: 구조화 프로파일 + 누락 항목
+    O->>S: screen_trials (전체 시험 풀)
+    S-->>O: 후보 3–5개 + 제외 사유
     O->>CP: evaluate_trials (시험별 병렬)
     CP->>M: 원자 규칙
     M-->>O: ELIGIBLE / INELIGIBLE / UNCERTAIN + 근거
@@ -114,7 +121,11 @@ sequenceDiagram
   - 나이·성별·ECOG·수치형 검사값은 **결정론적 규칙 엔진**이 먼저 판정해 산술 오류를 막습니다.
   - 시험 단위 최종 적격성은 **코드가 정한 결정 규칙**으로 계산합니다. 선정 기준 불충족이나 제외 기준 해당이 하나라도 있으면 `INELIGIBLE`, 그렇지 않고 판정 불가 항목이 있으면 `UNCERTAIN`, 모두 통과하면 `ELIGIBLE`입니다.
   - 추천 에이전트가 이 판정과 어긋나는 출력을 내면 코드가 교정합니다.
-- **최종 추천은 1개**: 후보 시험(질환별로 미리 정한 2–3개, `data/topic_map.json`)을 모두 평가한 뒤, 가장 적합한 시험 1개를 `recommended`로 추천하고 `selection_reason`에 차순위와 비교한 선정 이유를 적습니다.
+- **후보는 전체 시험에서 에이전트가 고름**: 후보 추림 에이전트가 시험 풀 전체(현재 26개)의 제목·대상 질환·대상군·요약을 한 번에 보고, 이 환자에게 해당될 만한 시험을 최대 5개 고릅니다(`--max-candidates`). 기준별 자세한 판정은 고른 시험에만 하므로 비용이 시험 수에 비례해 늘지 않습니다.
+  - 제외 사유는 ① 대상 질환 자체가 다름 ② 나이·성별 범위를 명백히 벗어남, 두 가지뿐입니다. 같은 질환이면 원인·병기·동반 질환 같은 세부 차이로는 제외하지 않고 다음 단계의 기준별 판정에 맡깁니다.
+  - 모델이 판단을 빠뜨린 시험은 후보로 남기고(안전한 기본값), 목록에 없는 시험 ID는 버립니다. 선택·제외된 시험과 사유는 `result.json`의 `screening`과 `report.md`의 "후보 시험 추림" 섹션에 남습니다.
+  - 이전 방식(질환별로 사람이 미리 정한 2–3개, `data/topic_map.json`)은 `--candidates given`으로 쓸 수 있습니다.
+- **최종 추천은 1개**: 후보 시험을 모두 평가한 뒤, 가장 적합한 시험 1개를 `recommended`로 추천하고 `selection_reason`에 차순위와 비교한 선정 이유를 적습니다.
   - 적합성이 실질적으로 구분되지 않을 때만 공동 1순위로 함께 추천합니다. 공동 순위는 적격성 등급이 같을 때만 인정하고(적격 > 판정 보류), 나머지는 차순위 후보(`ranked`)로 남깁니다.
 - **추천 가능 조건과 '추천 없음' 사유**: 시험은 **적격성(ELIGIBLE/UNCERTAIN)**과 **현재 모집 상태(모집 중·모집 예정)**를 모두 만족해야 추천됩니다.
   - 완료·조기 종료·철회 등 모집이 끝난 시험은 적격이어도 추천하지 않습니다. 대신 제외 목록에 "모집 종료된 시험으로 현재 참여 불가"라는 사유와 적격성 결과를 함께 남깁니다.
@@ -186,7 +197,7 @@ python -m ctrec.web              # http://127.0.0.1:8000 (--port로 변경)
 
 | 영역 | 내용 |
 |---|---|
-| 입력 | 환자 선택(사업단 10명, 합성 32명) 또는 직접 입력. 후보 시험은 자동 선택되며 모집 상태가 함께 표시됩니다. 웹 UI는 항상 오케스트레이터(agent) 모드로 실행됩니다 |
+| 입력 | 환자 선택(사업단 10명, 합성 32명) 또는 직접 입력. 후보 시험은 기본적으로 **전체 시험에서 자동 추림**하며, "직접 선택"으로 바꾸면 질환별로 미리 정한 후보가 선택된 목록에서 고를 수 있습니다. 모집 상태가 함께 표시됩니다. 웹 UI는 항상 오케스트레이터(agent) 모드로 실행됩니다 |
 | 에이전트 구성도 | 실행 중인 에이전트는 파란색, 완료된 에이전트는 초록색으로 표시됩니다. 오케스트레이터가 도구를 호출하면 해당 연결선이 켜집니다. 아래 단계 표시가 과제의 6단계 진행 상황을 보여줍니다 |
 | 진행 로그 | 오케스트레이터의 계획(말풍선), 도구 호출, 에이전트별 결과, 질문과 답변이 실시간으로 쌓입니다 |
 | 시험별 판정 | 시험마다 적격 / 부적격 / 판정 보류 배지를 표시하고, 판정 변화(예: 판정 보류 → 적격)를 보여줍니다 |
@@ -199,12 +210,12 @@ python -m ctrec.web              # http://127.0.0.1:8000 (--port로 변경)
 
 ### 3.3 사업단 제공 환자 + 실제 ClinicalTrials.gov 시험
 
-사업단 제공 환자 10명(S001–S010)마다 CT.gov에서 관련 시험 2–3개를 골라 `data/trials/`에 저장해 두었습니다. 환자별 후보 시험은 `data/topic_map.json`에 정의되어 있습니다.
+사업단 제공 환자 10명(S001–S010)마다 CT.gov에서 관련 시험 2–3개를 골라 `data/trials/`에 저장해 두었습니다(전체 26개). 기본 실행은 이 26개 전체를 후보 풀로 보고 후보 추림 에이전트가 고릅니다. 이전처럼 질환별로 정해 둔 후보(`data/topic_map.json`)만 평가하려면 `--candidates given --topic-map data/topic_map.json`을 붙입니다.
 
 ```bash
 # 사람이 직접 답하는 인터랙티브 모드 (S004: 방광암)
 python -m ctrec run --patient data/patients/provided/synthetic-patients.json --patient-id S004 \
-  --trials-dir data/trials --topic-map data/topic_map.json --answers interactive
+  --trials-dir data/trials --answers interactive
 
 # 오케스트레이터가 필요 시 CT.gov에서 후보 시험을 추가 검색
 python -m ctrec run --patient data/patients/provided/synthetic-patients.json --patient-id S008 \
@@ -217,19 +228,27 @@ python scripts/fetch_trials.py --nct NCT0XXXXXXX NCT0YYYYYYY
 
 ### 3.4 합성 평가셋 일괄 실행과 평가
 
-합성 환자 파일에는 환자별 `candidate_trials`가 들어 있어, 각 환자를 해당 질환의 시험들과만 대조합니다.
+합성 환자 파일에는 환자별 `candidate_trials`(해당 질환의 시험)가 들어 있습니다. (A)·(B)는 확인 질문의 효과만 비교하려고 `--candidates given`으로 이 후보만 평가합니다. (C)는 후보 추림까지 포함한 전체 흐름을 평가합니다.
 
 ```bash
 # (A) 확인 질문 없이: 공개 서술만으로 판정 -> label_text_only와 비교
-python -m ctrec batch --patients-dir data/patients/synthetic --trials-dir data/trials \
+python -m ctrec batch --patients-dir data/patients/synthetic --trials-dir data/trials --candidates given \
   --answers none --mode fixed --out outputs/no_qa --workers 4 --quiet
 python eval/evaluate.py --labels data/labels/synthetic_labels.csv --outputs outputs/no_qa --label-column label_text_only
 
 # (B) 확인 질문 + 가상 환자 응답: 숨은 정보를 얻은 뒤 판정 -> label과 비교
-python -m ctrec batch --patients-dir data/patients/synthetic --trials-dir data/trials \
+python -m ctrec batch --patients-dir data/patients/synthetic --trials-dir data/trials --candidates given \
   --answers simulated --mode agent --out outputs/with_qa --workers 4 --quiet
 python eval/evaluate.py --labels data/labels/synthetic_labels.csv --outputs outputs/with_qa --label-column label
+
+# (C) 후보 추림 포함: 전체 26개 시험에서 후보를 골라 평가 -> 전체 시험으로 확장한 라벨과 비교
+python scripts/expand_labels.py   # data/labels/synthetic_labels_all.csv (다른 분야 시험은 자동으로 INELIGIBLE)
+python -m ctrec batch --patients-dir data/patients/synthetic --trials-dir data/trials \
+  --answers simulated --mode fixed --out outputs/screen --workers 4 --quiet
+python eval/evaluate.py --labels data/labels/synthetic_labels_all.csv --outputs outputs/screen
 ```
+
+(C)에서 `evaluate.py`는 후보 추림 지표도 출력합니다: 정답 적격 시험을 후보로 남긴 비율(가장 중요. 추림에서 놓친 시험은 이후 단계에서 되찾을 수 없음), 같은 분야 시험을 남긴 비율, 다른 분야 시험을 고른 수, 놓친 적격 시험 목록. 추림에서 제외된 시험은 INELIGIBLE 예측으로, 상한을 넘어 평가하지 않은 시험은 UNCERTAIN 예측으로 셉니다. 자동 라벨(`auto=1`)은 "다른 질환 분야 시험은 부적격"이라는 가정이므로 연구진 검토가 필요합니다.
 
 (A)에서 판정 보류(UNCERTAIN)였던 쌍이 (B)에서 정답(ELIGIBLE)으로 바뀌는 비율이, 확인 질문 단계의 효과를 보여주는 핵심 지표입니다. `evaluate.py`는 이를 다음 지표로 나눠 출력합니다(`--json 경로`로 저장 가능, 정의는 `src/ctrec/metrics.py`).
 
@@ -263,7 +282,7 @@ python scripts/budget_sweep.py --budgets 0,1,2,3,5 --reuse   # 다시 실행하�
 python scripts/build_masked_benchmark.py --workers 4
 
 # 평가: 확인 질문 + 사실 단위 가상 환자
-python -m ctrec batch --patients-dir data/patients/masked --trials-dir data/trials \
+python -m ctrec batch --patients-dir data/patients/masked --trials-dir data/trials --candidates given \
   --answers simulated --mode fixed --out outputs/masked --workers 4 --quiet
 python eval/evaluate.py --labels data/labels/masked_labels.csv --outputs outputs/masked
 ```
@@ -310,6 +329,10 @@ python eval/evaluate.py --labels data/labels/masked_labels.csv --outputs outputs
 | `--answers simulated` | 가상 환자의 `hidden_details`를 아는 LLM이 답변 (개발·평가용) | |
 | `--answers none` | 답변 없이 질문만 기록 | ✅ |
 | `--max-rounds N` | 확인 질문 최대 라운드 | 2 |
+| `--candidates screen` | 불러온 시험 전체를 풀로 보고 후보 추림 에이전트가 고름 | ✅ |
+| `--candidates given` | 환자 파일의 `candidate_trials` 또는 `--topic-map`에 정한 후보만 평가 (이전 방식, 라벨이 있는 쌍만 평가할 때) | |
+| `--max-candidates N` | 후보 추림 후 자세히 평가할 최대 시험 수. 시험 풀이 이보다 작으면 추림 없이 전부 평가. **5는 실험 전 임시값**이며 실제 값은 팀 결정 D3(후보 예산)에 따라 실험으로 정합니다 | 5 (임시) |
+| `CTREC_MAX_QUESTIONS` (환경변수) | 라운드당 최대 질문 수. **5는 실험 전 임시값**이며 팀 결정 D4(라운드당 질문 수)에 따라 1개씩 vs 묶음 질문을 비교해 정합니다 | 5 (임시) |
 | `--question-budget N` | 환자 1명당 전체 라운드 합산 최대 질문 수 (질문 예산 실험용). 라운드당 한도(`CTREC_MAX_QUESTIONS`, 기본 5)와 남은 예산 중 작은 값만큼 묻습니다 | 제한 없음 |
 | `--search` | CT.gov 추가 검색 허용 (agent 모드) | off |
 | `--trials`, `--trials-dir`, `--nct` | 후보 시험 지정 | |
@@ -427,6 +450,7 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 │   ├── metrics.py              # 평가 지표 (정확도, Rescue/Cleanup, False Removal 등)
 │   ├── web/                    # 웹 UI: app.py(FastAPI + SSE), static/index.html
 │   ├── agents/
+│   │   ├── screener.py         # 후보 추림 에이전트
 │   │   ├── criteria_parser.py  # 기준 파싱 에이전트
 │   │   ├── patient_profiler.py # 환자 정보 이해 에이전트
 │   │   ├── matcher.py          # 추론·매칭 에이전트 (+ 적격성 결정 규칙)
@@ -441,16 +465,17 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 │   ├── fetch_trials.py         # CT.gov 프로토콜 수집
 │   ├── generate_synthetic_patients.py  # 가상 환자와 정답 라벨 생성
 │   ├── budget_sweep.py         # 질문 예산별 성능 곡선
-│   └── build_masked_benchmark.py  # 정보 가리기 평가셋 생성
+│   ├── build_masked_benchmark.py  # 정보 가리기 평가셋 생성
+│   └── expand_labels.py        # 라벨을 전체 시험 풀로 확장 (후보 추림 평가용)
 ├── eval/evaluate.py            # 매칭 정확성 평가
-├── tests/                      # API 없이 도는 단위 테스트 (test_offline, test_recommender, test_reliability, test_masked_benchmark)
+├── tests/                      # API 없이 도는 단위 테스트 (test_offline, test_recommender, test_reliability, test_masked_benchmark, test_screening)
 └── data/
     ├── trials/                 # 시험 프로토콜 (CT.gov 캐시 + 가상 데모)
     ├── topic_map.json          # 사업단 환자 S001–S010 → 후보 시험
     ├── patients/synthetic/     # 합성 환자 30명 (cases_*.json) + 데모 2명
     ├── patients/provided/      # 사업단 제공 예시 10명
     ├── patients/masked/        # 정보 가리기 평가셋 101명 (masked_cases.json) + 생성 보고서 (build_report.json)
-    └── labels/                 # 평가용 정답 라벨 (synthetic_labels.csv, masked_labels.csv)
+    └── labels/                 # 평가용 정답 라벨 (synthetic_labels.csv, synthetic_labels_all.csv, masked_labels.csv)
 ```
 
 ---
@@ -463,6 +488,7 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
   - 파싱된 시험 규칙은 `data/cache/parsed/`에 저장되어, 같은 시험을 여러 환자에 쓸 때 다시 파싱하지 않습니다. 모델이나 프롬프트, 시험 내용이 바뀌면 캐시 키가 자동으로 달라집니다.
 - **안전 분류기 대응**: 의료 텍스트가 드물게 모델의 안전 분류기에 의해 거절될 수 있습니다. 이 경우를 대비해 Claude API의 서버측 refusal fallback(`fallbacks: "default"`)을 기본으로 켜 두었습니다. Bedrock이나 Vertex 등 다른 플랫폼에서는 `.env`에 `CTREC_FALLBACKS=0`을 설정하세요.
 - **비용 규모**: 환자 1명 × 시험 N개 기준으로 대략 다음 횟수만큼 Claude를 호출합니다.
+  - 후보 추림: 1회 (약 $0.03. 시험 풀 설명은 시스템 프롬프트에 넣어 환자가 바뀌어도 캐시로 재사용). 자세한 판정은 고른 시험 N개(최대 5개)에만 합니다
   - 기준 파싱: N회 (최초 1회만, 이후 캐시)
   - 매칭: N회
   - 질문 라운드: 라운드마다 3회 이상
@@ -483,6 +509,36 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 ## 10. 변경 이력
 
 수정할 때마다 무엇을 왜 바꿨는지 여기에 기록합니다. 최신 항목이 위에 옵니다.
+
+### 2026-10-10 — 후보 시험을 전체 시험에서 에이전트가 고르도록 변경 (후보 추림)
+
+배경: 환자별 후보 시험 2–3개는 데이터를 만들 때 질환별로 사람이 골라 둔 목록(`data/topic_map.json`)이었고, 고르는 기준이 없었습니다. 전체 시험을 모두 자세히 평가하면 비용이 약 5–6배(환자당 $2–3)로 늘기 때문에, **전체를 한 번에 훑어 추린 뒤 추린 시험만 자세히 평가**하는 방식(B안)을 택했습니다.
+
+| # | 변경 | 파일 | 효과 |
+|---|---|---|---|
+| 1 | **후보 추림 에이전트**: 시험 26개의 제목·대상 질환·대상군·요약을 한 번에 보고 최대 5개 선택. 제외 사유는 "대상 질환이 다름"과 "나이·성별 범위를 명백히 벗어남" 두 가지뿐. 판단을 빠뜨린 시험은 후보로 남기고 없는 ID는 버림 | `agents/screener.py`(신규), `config.py`(`SCREEN_MAX_CANDIDATES`, effort) | 사람이 후보를 정하지 않아도 됨. 선택·제외 사유가 `result.json`(`screening`)과 `report.md`("후보 시험 추림")에 남음 |
+| 2 | **파이프라인 연동**: Session이 시험 풀과 후보를 구분하고 후보만 파싱·매칭. 오케스트레이터에 `screen_trials` 도구 추가(추림 없이 풀 전체를 평가하지 않도록 코드가 보장). 검색으로 찾은 시험은 바로 후보에 추가 | `pipeline.py`, `orchestrator.py`, `agents/explainer.py` | fixed·agent 모드 모두 동작 |
+| 3 | **CLI·웹 옵션**: `--candidates screen`(기본) / `given`(이전 방식), `--max-candidates`. 웹 UI에 "전체 시험에서 자동 추림 / 직접 선택" 선택 추가(기본 자동) | `cli.py`, `web/app.py`, `web/static/index.html` | 이전 방식과 비교 실험 가능 |
+| 4 | **평가**: 라벨을 전체 시험으로 확장(다른 분야 시험은 자동 INELIGIBLE, `auto=1`)하고 추림 지표 추가(정답 적격 시험을 남긴 비율, 다른 분야 선택 수 등) | `scripts/expand_labels.py`(신규), `data/labels/synthetic_labels_all.csv`(신규, 832쌍), `metrics.py`, `eval/evaluate.py`, `scripts/budget_sweep.py`(`--candidates`) | 추림 단계에서 맞는 시험을 놓치지 않았는지 측정 |
+
+**프롬프트 조정 과정** (사업단 환자 10명, 추림 에이전트만 실행)
+
+| 버전 | 같은 분야 시험 유지 | 다른 분야 시험 선택 | 문제 |
+|---|---|---|---|
+| 1차 ("애매하면 남김") | – | 환자당 다수 | 췌장염 환자에게 "편두통 진단 여부 미확인"이라며 폐암·편두통 시험까지 남김 |
+| 2차 (기록에 없는 질환은 제외) | 21/25 | 3 | 같은 질환인데 세부 대상군(암 동반 여부 등)으로 제외. 실행마다 결과가 달라짐 |
+| 3차 (제외 사유 2가지로 한정, effort high) | **24/25, 23/25** (2회) | **0** | 남은 1건(S002의 9–17세 소아 전용 시험)은 29세 환자라 올바른 제외. 1회차에서 영아 시험 1건 누락 |
+
+**실측 비용** (fixed 모드, 답변 없음, 같은 환자를 두 방식으로 실행)
+
+| 환자 | 이전 방식 (사람이 정한 후보) | 후보 추림 (전체 26개 → 3개 선택) | 평가한 시험·판정·최종 추천 |
+|---|---|---|---|
+| S001 (급성 췌장염) | $0.59 (17회 호출) | $0.47 (15회) | 같음 |
+| S009 (전염성 단핵구증) | $0.35 (10회) | $0.43 (11회) | 같음 |
+
+- 추림 호출 자체는 환자당 약 $0.03(입력 대부분이 캐시 읽기)이고, 나머지 차이는 질문·출력 길이에 따른 실행별 편차입니다. 결론적으로 **비용은 이전과 거의 같고**(전체 26개를 모두 자세히 평가했다면 약 $2–3), 두 환자 모두 사람이 정했던 후보를 그대로 찾아 같은 결과를 냈습니다.
+- 테스트: `tests/test_screening.py`에 3개 추가(전체 33개 통과).
+- 알려진 한계: ① 합성 환자 32명 전체로는 아직 추림 평가를 돌리지 않았습니다(위 (C) 명령). ② 자동 라벨은 "다른 분야 시험은 부적격" 가정이라 검토가 필요합니다. ③ 1차 실험에서, 추림이 엉뚱한 시험을 남기면 매칭 에이전트가 "폐암 진단"처럼 명백히 다른 질환 기준도 `unknown`(근거 없음)으로 두어 UNCERTAIN이 되는 것을 발견했습니다. "명시적 근거가 있을 때만 확정" 규칙의 부작용으로, 추림이 막아 주지만 매칭 단계에서도 따로 개선할 과제입니다.
 
 ### 2026-10-09 — 평가 데이터 키우기 (정보 가리기 평가셋 + 사실 단위 가상 환자)
 

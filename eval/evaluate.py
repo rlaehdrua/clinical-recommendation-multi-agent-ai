@@ -25,7 +25,8 @@ from pathlib import Path
 
 from ctrec.agents.recommender import is_open
 from ctrec.metrics import (CLASSES, accuracy_by_group, eligibility_metrics, fact_acquisition_metrics, fmt,
-                           load_label_rows, load_labels, load_predictions, load_reveals, load_usage)
+                           load_label_rows, load_labels, load_predictions, load_reveals, load_usage,
+                           screening_metrics)
 
 
 def main() -> None:
@@ -78,6 +79,16 @@ def main() -> None:
         print(f"  쓸모 있는 질문 비율:         {fmt(acq['useful_question_rate'])}")
         print(f"  사실 1개 회수당 질문 수:     {fmt(acq['questions_per_masked_fact'])}")
         m["fact_acquisition"] = acq
+
+    scr = screening_metrics(rows, Path(args.outputs))
+    if scr:
+        print(f"후보 추림 (환자 {scr['patients']}명, 전체 {scr['pool_size']:.0f}개 중 평균 {scr['selected_per_patient']:.1f}개 선택)")
+        print(f"  정답 적격 시험을 후보로 남긴 비율: {fmt(scr['eligible_recall'])} ({scr['eligible_recall_n']})")
+        print(f"  같은 분야 시험을 후보로 남긴 비율: {fmt(scr['same_topic_recall'])}")
+        print(f"  다른 분야 시험 선택 (환자당):      {scr['off_topic_per_patient']:.2f}")
+        if scr["missed_eligible"]:
+            print(f"  놓친 적격 시험: {', '.join(scr['missed_eligible'])}")
+        m["screening"] = scr
 
     print("\n혼동 행렬 (행=정답, 열=예측)")
     print(" " * 12 + "".join(f"{c:>12}" for c in CLASSES))

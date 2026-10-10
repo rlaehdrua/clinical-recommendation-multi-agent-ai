@@ -42,7 +42,7 @@ def run_budget(budget: int, out_dir: Path, args) -> None:
     cmd = [
         sys.executable, "-m", "ctrec", "batch",
         "--patients-dir", args.patients_dir, "--trials-dir", args.trials_dir,
-        "--mode", "fixed", "--answers", "simulated",
+        "--mode", "fixed", "--answers", "simulated", "--candidates", args.candidates,
         "--question-budget", str(budget), "--max-rounds", str(args.max_rounds),
         "--out", str(out_dir), "--workers", str(args.workers), "--quiet",
     ]
@@ -79,6 +79,8 @@ def main() -> None:
     ap.add_argument("--out", default="outputs/budget_sweep")
     ap.add_argument("--max-rounds", type=int, default=3)
     ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--candidates", choices=["given", "screen"], default="given",
+                    help="given: 라벨이 있는 후보만 평가(기본, 질문 효과만 비교) / screen: 후보 추림 포함")
     ap.add_argument("--reuse", action="store_true", help="결과가 이미 있는 예산은 다시 실행하지 않음")
     args = ap.parse_args()
 

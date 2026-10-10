@@ -19,6 +19,7 @@ SYSTEM = """당신은 인터랙티브 임상시험 추천 시스템의 '오케�
 
 당신은 직접 판정하지 않고, 전문 에이전트를 도구로 호출해 일을 분담합니다.
 - profile_patient: 환자 정보 이해 에이전트 (환자 프로파일 구조화)
+- screen_trials: 후보 추림 에이전트 (전체 시험 풀을 훑어 자세히 평가할 후보를 고름)
 - list_candidate_trials: 현재 후보 시험 목록과 평가 상태 확인
 - search_trials: ClinicalTrials.gov에서 후보 시험 추가 검색 (허용된 경우에만)
 - evaluate_trials: 기준 파싱 에이전트 + 추론·매칭 에이전트 (시험별 적격성 판정)
@@ -27,7 +28,8 @@ SYSTEM = """당신은 인터랙티브 임상시험 추천 시스템의 '오케�
 
 작업 방식:
 1. 먼저 짧게 계획을 세운 뒤 환자 프로파일을 구조화합니다.
-2. 후보 시험을 평가합니다. 후보가 없거나, 모두 부적격이거나, 모집이 종료된 시험뿐이고 검색이 허용되면, 환자의 진단에 맞는 검색어로 모집 중인 시험을 추가해 평가합니다.
+2. 시험 풀이 크면(후보 추림 필요: True) screen_trials로 후보를 먼저 고릅니다. 자세한 평가는 비용이 크므로 풀 전체를 evaluate_trials로 평가하지 않습니다.
+   후보 시험을 평가합니다. 후보가 없거나, 모두 부적격이거나, 모집이 종료된 시험뿐이고 검색이 허용되면, 환자의 진단에 맞는 검색어로 모집 중인 시험을 추가해 평가합니다.
    (모집 상태는 list_candidate_trials의 status로 확인합니다. 모집 종료 시험은 적격이어도 추천되지 않습니다.)
 3. evaluate_trials 결과에 physician_review 항목(예: "특정 약물 사용"처럼 원문에 구체 목록이 없는 기준)이 있으면, 의사가 참고할 수 있도록 ask_clarifying_questions로 관련 정보를 한 번 수집합니다.
    모집 중인 UNCERTAIN 시험이 있고 확인 질문으로 해소될 가능성이 있으면 ask_clarifying_questions를 호출합니다. 답변이 "모름" 위주이거나 라운드 한도에 도달하면 더 묻지 않습니다.
@@ -52,6 +54,7 @@ def _tool(name: str, description: str, properties: dict, required: list[str]) ->
 
 TOOLS = [
     _tool("profile_patient", "환자 정보 이해 에이전트를 실행해 환자 프로파일을 구조화합니다. 결과로 핵심 정보와 누락 항목을 반환합니다.", {}, []),
+    _tool("screen_trials", "후보 추림 에이전트로 전체 시험 풀에서 이 환자에게 해당될 여지가 있는 시험만 골라 후보로 정합니다. 결과로 선택·제외된 시험과 사유를 반환합니다. profile_patient 이후에 호출합니다.", {}, []),
     _tool("list_candidate_trials", "현재 후보 임상시험 목록(ID, 제목, 상태)과 각 시험의 평가 결과를 반환합니다.", {}, []),
     _tool(
         "search_trials",
@@ -90,6 +93,17 @@ class Orchestrator:
             "missing_or_ambiguous": p.missing_or_ambiguous,
         }
 
+    def _screen_trials(self, _):
+        if self.s.profile is None:
+            self.s.profile_patient()
+        r = self.s.screen()
+        return {
+            "pool_size": r.pool_size,
+            "selected": [(s.trial_id, s.relevance, s.reason) for s in r.selected],
+            "over_limit": [(s.trial_id, s.relevance, s.reason) for s in r.over_limit],
+            "excluded_count": len(r.excluded),
+        }
+
     def _list_candidate_trials(self, _):
         return [
             {
@@ -97,7 +111,7 @@ class Orchestrator:
                 "conditions": t.get("conditions"),
                 "evaluation": self.s.matches[tid].summary if tid in self.s.matches else "미평가",
             }
-            for tid, t in self.s.trials.items()
+            for tid, t in self.s.candidate_trials().items()
         ]
 
     def _search_trials(self, args):
@@ -110,14 +124,18 @@ class Orchestrator:
             if rec["trial_id"] not in self.s.trials:
                 self.s.trials[rec["trial_id"]] = rec
                 added.append({"trial_id": rec["trial_id"], "title": rec["title"]})
+        self.s.add_candidates([a["trial_id"] for a in added])
         self.s.tracer.log("orchestrator", "search", message=f"{args['condition']} -> {len(added)}건 추가")
         return {"added": added}
 
     def _evaluate_trials(self, args):
         if self.s.profile is None:
             self.s.profile_patient()
-        ids = [t for t in args["trial_ids"] if t in self.s.trials] or [
-            t for t in self.s.trials if t not in self.s.matches
+        if self.s.screen_trials and self.s.screening is None:
+            self.s.screen()  # 추림 없이 풀 전체를 자세히 평가하지 않도록 코드가 보장
+        candidates = self.s.candidate_ids()
+        ids = [t for t in args["trial_ids"] if t in candidates] or [
+            t for t in candidates if t not in self.s.matches
         ]
         if not ids:
             return {"message": "평가할 시험이 없습니다."}
@@ -141,7 +159,8 @@ class Orchestrator:
         s = self.s
         intro = (
             f"환자 ID: {s.case.patient_id}\n"
-            f"후보 시험 수: {len(s.trials)}\n"
+            f"시험 풀 크기: {len(s.trials)}\n"
+            f"후보 추림 필요: {s.screen_trials}\n"
             f"ClinicalTrials.gov 추가 검색 허용: {s.allow_search}\n"
             f"확인 질문 최대 라운드: {s.max_rounds}\n\n"
             "작업을 시작하세요."
@@ -186,7 +205,9 @@ class Orchestrator:
             s.tracer.log("orchestrator", "fallback_finalize", message="남은 단계를 고정 순서로 마무리")
             if s.profile is None:
                 s.profile_patient()
-            pending = [t for t in s.trials if t not in s.matches]
+            if s.screen_trials and s.screening is None:
+                s.screen()
+            pending = [t for t in s.candidate_ids() if t not in s.matches]
             if pending:
                 s.match(pending)
             if s.matches:

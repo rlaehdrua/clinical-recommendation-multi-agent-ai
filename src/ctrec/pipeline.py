@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from . import DISCLAIMER, config, llm
-from .agents import criteria_parser, explainer, matcher, patient_profiler, question_generator, recommender
+from .agents import criteria_parser, explainer, matcher, patient_profiler, question_generator, recommender, screener
 from .agents.answerers import Answerer
 from .schemas import ParsedTrial, PatientProfile, QAPair, Recommendation, TrialMatch
 from .trace import Tracer
@@ -82,6 +82,8 @@ class Session:
     max_rounds: int = config.MAX_CLARIFY_ROUNDS
     allow_search: bool = False
     question_budget: int | None = None  # 전체 라운드 합산 최대 질문 수 (None = 라운드당 한도만 적용)
+    screen_trials: bool = False  # True: trials 전체를 풀로 보고 후보 추림 후 자세히 평가
+    max_candidates: int = config.SCREEN_MAX_CANDIDATES
 
     profile: PatientProfile | None = None
     parsed: dict[str, ParsedTrial] = field(default_factory=dict)
@@ -93,10 +95,36 @@ class Session:
     report: str | None = None
     errors: list[dict] = field(default_factory=list)
     usage: dict = field(default_factory=dict)  # 이 환자 처리에 쓴 토큰 (저장 직전에 기록)
+    candidates: list[str] | None = None  # 자세히 평가할 시험 (None = trials 전체)
+    screening: screener.ScreeningResult | None = None
+
+    # ----------------------------------------------------------- 후보
+    def candidate_ids(self) -> list[str]:
+        return list(self.trials) if self.candidates is None else [t for t in self.candidates if t in self.trials]
+
+    def candidate_trials(self) -> dict[str, dict]:
+        return {t: self.trials[t] for t in self.candidate_ids()}
+
+    def add_candidates(self, trial_ids: list[str]) -> None:
+        """검색 등으로 새로 찾은 시험을 후보에 추가 (추림을 했더라도 직접 찾은 시험은 바로 후보)."""
+        if self.candidates is not None:
+            self.candidates += [t for t in trial_ids if t not in self.candidates]
+
+    def screen(self) -> screener.ScreeningResult:
+        """후보 추림: 전체 시험 풀을 한 번에 훑어 자세히 평가할 시험을 고름."""
+        assert self.profile is not None, "profile_patient()를 먼저 실행하세요"
+        self.tracer.log("screener", "start", pool=len(self.trials))
+        r = screener.screen(self.profile, self.trials, self.max_candidates, self.case.raw_text)
+        self.screening = r
+        self.candidates = [s.trial_id for s in r.selected]
+        self.tracer.log("screener", "done", selected=self.candidates,
+                        message=f"전체 {r.pool_size}개 중 {len(r.selected)}개 선택 "
+                                f"(제외 {len(r.excluded)}, 상한 초과 {len(r.over_limit)})")
+        return r
 
     # ----------------------------------------------------------- 단계 ①+③a
     def parse_criteria(self, trial_ids: list[str] | None = None) -> None:
-        ids = [t for t in (trial_ids or list(self.trials)) if t not in self.parsed]
+        ids = [t for t in (trial_ids or self.candidate_ids()) if t not in self.parsed]
 
         def work(tid: str):
             self.tracer.log("criteria_parser", "start", trial_id=tid)
@@ -118,7 +146,7 @@ class Session:
     # ----------------------------------------------------------- 단계 ③c, ④
     def match(self, trial_ids: list[str] | None = None) -> list[TrialMatch]:
         assert self.profile is not None, "profile_patient()를 먼저 실행하세요"
-        ids = trial_ids or list(self.trials)
+        ids = trial_ids or self.candidate_ids()
         self.parse_criteria(ids)
 
         def work(tid: str):
@@ -210,20 +238,23 @@ class Session:
     # ----------------------------------------------------------- 단계 ⑥
     def finalize(self) -> None:
         matches = list(self.matches.values())
+        evaluated = {t: self.trials[t] for t in self.matches}
         self.tracer.log("recommender", "start", n_trials=len(matches))
-        self.recommendation = recommender.recommend(self.profile, matches, self.trials, self.qa_log)
+        self.recommendation = recommender.recommend(self.profile, matches, evaluated, self.qa_log)
         self.tracer.log("recommender", "done",
                         message=" > ".join(r.trial_id for r in self.recommendation.ranked) or "(추천 없음)")
         self.tracer.log("explainer", "start")
         self.report = explainer.explain(
-            self.profile, matches, self.recommendation, self.trials, self.qa_log, self.match_history
+            self.profile, matches, self.recommendation, evaluated, self.qa_log, self.match_history,
+            extra_section=screener.report_section(self.screening) if self.screening else "",
         )
         self.tracer.log("explainer", "done")
 
     # ----------------------------------------------------------- 고정 순서 실행
     def run_fixed(self) -> None:
-        self.parse_criteria()
         self.profile_patient()
+        if self.screen_trials:
+            self.screen()
         self.match()
         while self.needs_clarification():
             result = self.clarify()
@@ -241,8 +272,9 @@ class Session:
             "matches": {tid: m.model_dump() for tid, m in self.matches.items()},
             "qa_log": [qa.model_dump() for qa in self.qa_log],
             "eligibility_history": self.match_history,
+            "screening": self.screening.model_dump() if self.screening else None,
             "recommendation": self.recommendation.model_dump() if self.recommendation else None,
-            "trial_sources": {tid: t.get("source") for tid, t in self.trials.items()},
+            "trial_sources": {tid: self.trials[tid].get("source") for tid in self.matches},
             "errors": self.errors,
             # 사실 단위 가상 환자가 질문별로 공개한 사실 ID (정보 가리기 평가용)
             "revealed_facts": self.answerer.revealed(self.case.patient_id) if hasattr(self.answerer, "revealed") else [],

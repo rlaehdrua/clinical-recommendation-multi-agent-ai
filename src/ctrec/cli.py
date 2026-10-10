@@ -57,8 +57,14 @@ def _answerer(kind: str, cases: list[PatientCase]):
     return NoAnswerer()
 
 
-def _candidates(case: PatientCase, trials: dict[str, dict], topic_map: dict) -> dict[str, dict]:
-    """환자별 후보 시험: 환자 파일의 candidate_trials > --topic-map > 전체."""
+def _candidates(case: PatientCase, trials: dict[str, dict], topic_map: dict, mode: str = "given") -> dict[str, dict]:
+    """환자별 후보 시험.
+
+    screen: 불러온 시험 전체를 풀로 넘기고, 후보 추림 에이전트가 고름 (candidate_trials·topic-map 무시)
+    given : 환자 파일의 candidate_trials > --topic-map > 전체 (사람이 정한 후보, 이전 방식)
+    """
+    if mode == "screen":
+        return dict(trials)
     ids = case.candidate_trials or topic_map.get(case.patient_id)
     if not ids:
         return dict(trials)
@@ -75,6 +81,8 @@ def _run_case(case: PatientCase, trials: dict[str, dict], args, answerer) -> Ses
     session = Session(
         case=case, trials=trials, answerer=answerer, tracer=tracer,
         max_rounds=args.max_rounds, allow_search=args.search, question_budget=args.question_budget,
+        screen_trials=args.candidates == "screen" and len(trials) > args.max_candidates,
+        max_candidates=args.max_candidates,
     )
     llm.reset_usage()
     tracer.log("pipeline", "start", message=f"mode={args.mode} model={config.MODEL} trials={len(trials)}")
@@ -99,6 +107,10 @@ def _add_common(p: argparse.ArgumentParser) -> None:
     p.add_argument("--mode", choices=["agent", "fixed"], default="agent")
     p.add_argument("--answers", choices=["interactive", "simulated", "none"], default="none")
     p.add_argument("--max-rounds", type=int, default=config.MAX_CLARIFY_ROUNDS)
+    p.add_argument("--candidates", choices=["screen", "given"], default="screen",
+                   help="screen: 불러온 시험 전체에서 후보 추림 에이전트가 고름 / given: 환자 파일·topic-map에 정한 후보만 평가")
+    p.add_argument("--max-candidates", type=int, default=config.SCREEN_MAX_CANDIDATES,
+                   help="후보 추림 후 자세히 평가할 최대 시험 수")
     p.add_argument("--question-budget", type=int, default=None,
                    help="환자 1명당 전체 라운드 합산 최대 질문 수 (질문 예산 실험용, 기본: 라운드당 한도만 적용)")
     p.add_argument("--out", default=str(config.OUTPUT_DIR))
@@ -145,7 +157,7 @@ def main(argv: list[str] | None = None) -> None:
 
     def work(case: PatientCase):
         # 환자마다 새 컨텍스트: 토큰 사용량을 환자별로 집계
-        return contextvars.copy_context().run(_run_case, case, _candidates(case, trials, topic_map), args, answerer)
+        return contextvars.copy_context().run(_run_case, case, _candidates(case, trials, topic_map, args.candidates), args, answerer)
 
     sessions: list[tuple[PatientCase, Session | None]] = []
     if args.workers > 1 and len(cases) > 1:

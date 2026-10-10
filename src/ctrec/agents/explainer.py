@@ -33,6 +33,7 @@ def explain(
     trials: dict[str, dict],
     qa_log: list[QAPair],
     match_history: list[dict],
+    extra_section: str = "",
 ) -> str:
     payload = {
         "patient": profile.model_dump(),
@@ -58,7 +59,7 @@ def explain(
         head += f"## 최종 추천{tie}\n\n" + "\n".join(
             f"- **{r.trial_id}** ({r.eligibility}) {titles.get(r.trial_id, '')}" for r in rec.recommended
         ) + f"\n\n{rec.selection_reason}\n\n"
-    return f"{head}{body.strip()}\n\n{_physician_section(rec)}---\n{DISCLAIMER}\n"
+    return f"{head}{body.strip()}\n\n{extra_section}{_physician_section(rec)}---\n{DISCLAIMER}\n"
 
 
 def _physician_section(rec: Recommendation) -> str:

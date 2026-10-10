@@ -32,11 +32,21 @@ def load_labels(path: Path, column: str = "label") -> dict[tuple[str, str], str]
 
 
 def load_predictions(outputs: Path) -> tuple[dict, dict, dict]:
-    """outputs/<patient_id>/result.json -> (적격성 예측, 추천 순위, 최종 추천)."""
+    """outputs/<patient_id>/result.json -> (적격성 예측, 추천 순위, 최종 추천).
+
+    후보 추림을 한 실행에서는 자세히 평가하지 않은 시험도 예측으로 셉니다.
+    - 대상이 달라 제외한 시험(excluded) -> INELIGIBLE
+    - 해당 가능하지만 상한을 넘어 평가하지 않은 시험(over_limit) -> UNCERTAIN (판정하지 않음)
+    """
     elig, ranked, top = {}, {}, {}
     for result in outputs.glob("*/result.json"):
         data = json.loads(result.read_text(encoding="utf-8"))
         pid = data["patient_id"]
+        sc = data.get("screening") or {}
+        for s in sc.get("excluded", []):
+            elig[(pid, s["trial_id"])] = "INELIGIBLE"
+        for s in sc.get("over_limit", []):
+            elig[(pid, s["trial_id"])] = "UNCERTAIN"
         for tid, m in data["matches"].items():
             elig[(pid, tid)] = m["eligibility"]
         rec = data.get("recommendation") or {}
@@ -156,3 +166,55 @@ def accuracy_by_group(gold: dict, pred: dict, rows: list[dict], column: str = "c
         if k in pred and r.get(column):
             groups[r[column]].append(gold[k] == pred[k])
     return {g: f"{sum(v) / len(v):.3f} ({sum(v)}/{len(v)})" for g, v in sorted(groups.items())}
+
+
+# ---------------------------------------------------------------------------
+# 후보 추림: 맞는 시험을 놓치지 않았는가
+# ---------------------------------------------------------------------------
+
+def screening_metrics(rows: list[dict], outputs: Path) -> dict | None:
+    """result.json의 screening과 라벨(auto 열: 1=다른 분야 자동 라벨)로 계산.
+
+    - eligible_recall: 정답 ELIGIBLE 시험 중 추림에서 선택된 비율 (가장 중요. 놓치면 이후 단계에서 되찾을 수 없음)
+    - same_topic_recall: 사람이 정했던 같은 분야 후보 중 선택된 비율
+    - off_topic_per_patient: 다른 분야(자동 라벨) 시험을 선택한 수 (환자 평균, 낭비된 자세한 평가)
+    - selected_per_patient / pool_size: 자세히 평가한 시험 수 / 전체 풀 크기
+    """
+    by_pid = {}
+    for result in outputs.glob("*/result.json"):
+        data = json.loads(result.read_text(encoding="utf-8"))
+        if data.get("screening"):
+            by_pid[data["patient_id"]] = data["screening"]
+    if not by_pid:
+        return None
+    elig_hit = elig_n = topic_hit = topic_n = off = sel = pool = 0
+    missed = []
+    for r in rows:
+        sc = by_pid.get(r["patient_id"])
+        if sc is None or r.get("auto") == "1":
+            continue
+        chosen = {s["trial_id"] for s in sc["selected"]}
+        topic_n += 1
+        topic_hit += r["trial_id"] in chosen
+        if r["label"].upper() == "ELIGIBLE":
+            elig_n += 1
+            if r["trial_id"] in chosen:
+                elig_hit += 1
+            else:
+                missed.append(f"{r['patient_id']}/{r['trial_id']}")
+    auto = {(r["patient_id"], r["trial_id"]) for r in rows if r.get("auto") == "1"}
+    for pid, sc in by_pid.items():
+        sel += len(sc["selected"])
+        pool += sc["pool_size"]
+        off += sum((pid, s["trial_id"]) in auto for s in sc["selected"])
+    n = len(by_pid)
+    return {
+        "patients": n,
+        "eligible_recall": _rate(elig_hit, elig_n),
+        "eligible_recall_n": f"{elig_hit}/{elig_n}",
+        "same_topic_recall": _rate(topic_hit, topic_n),
+        "off_topic_per_patient": off / n,
+        "selected_per_patient": sel / n,
+        "pool_size": pool / n,
+        "missed_eligible": missed,
+    }
