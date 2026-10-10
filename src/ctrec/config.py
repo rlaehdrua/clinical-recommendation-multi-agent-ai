@@ -34,5 +34,8 @@ EFFORT = {
 MAX_CLARIFY_ROUNDS = int(os.getenv("CTREC_MAX_CLARIFY_ROUNDS", "2"))
 MAX_QUESTIONS_PER_ROUND = int(os.getenv("CTREC_MAX_QUESTIONS", "5"))
 
+# 매칭 에이전트가 일부 규칙의 판정을 빠뜨렸을 때, 빠진 규칙만 다시 요청하는 횟수
+MATCHER_MISSING_RETRIES = int(os.getenv("CTREC_MATCHER_RETRIES", "1"))
+
 # 오케스트레이터 에이전트 루프 최대 반복 횟수
 MAX_ORCHESTRATOR_STEPS = int(os.getenv("CTREC_MAX_STEPS", "15"))

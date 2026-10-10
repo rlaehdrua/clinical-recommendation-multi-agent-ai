@@ -112,19 +112,9 @@ def _enforce_evidence(a: LLMAssessment) -> LLMAssessment:
     })
 
 
-def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict) -> TrialMatch:
-    by_id = {r.rule_id: r for r in parsed.rules}
-    results: dict[str, CriterionAssessment] = {}
-
-    for rule in parsed.rules:
-        res = rule_engine.evaluate(rule, profile)
-        if res is not None:
-            results[rule.rule_id] = res
-
-    pending = [r for r in parsed.rules if r.rule_id not in results]
-    if pending:
-        pending_parsed = parsed.model_copy(update={"rules": pending})
-        user = f"""기준일(오늘): {date.today().isoformat()}
+def _llm_assess(profile: PatientProfile, parsed: ParsedTrial, trial: dict, rules: list) -> MatcherOutput:
+    pending_parsed = parsed.model_copy(update={"rules": rules})
+    user = f"""기준일(오늘): {date.today().isoformat()}
 
 <patient>
 {profile.model_dump_json(indent=1)}
@@ -143,15 +133,36 @@ brief_summary: {trial.get('brief_summary', '')[:3000]}
 </rules_to_assess>
 
 각 규칙의 holds를 판정하세요."""
-        out = llm.structured(
-            MatcherOutput,
-            system=SYSTEM,
-            user=user,
-            effort=config.EFFORT["matcher"],
-        )
-        for a in out.assessments:
+    return llm.structured(
+        MatcherOutput,
+        system=SYSTEM,
+        user=user,
+        effort=config.EFFORT["matcher"],
+    )
+
+
+def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict) -> TrialMatch:
+    by_id = {r.rule_id: r for r in parsed.rules}
+    results: dict[str, CriterionAssessment] = {}
+
+    for rule in parsed.rules:
+        res = rule_engine.evaluate(rule, profile)
+        if res is not None:
+            results[rule.rule_id] = res
+
+    # LLM 판정: 응답에서 빠진 rule_id만 골라 다시 요청 (전체 재평가 없이 누락분만)
+    pending = [r for r in parsed.rules if r.rule_id not in results]
+    retried: list[str] = []
+    for attempt in range(1 + config.MATCHER_MISSING_RETRIES):
+        if not pending:
+            break
+        if attempt:
+            retried.extend(r.rule_id for r in pending)
+        asked = {r.rule_id for r in pending}
+        for a in _llm_assess(profile, parsed, trial, pending).assessments:
             rule = by_id.get(a.rule_id)
-            if rule is None or a.rule_id in results:
+            # 화이트리스트: 이번에 요청하지 않은 rule_id(지어낸 ID 포함)나 중복 응답은 버림
+            if rule is None or a.rule_id not in asked or a.rule_id in results:
                 continue
             a = _enforce_evidence(a)
             results[a.rule_id] = CriterionAssessment(
@@ -171,13 +182,15 @@ brief_summary: {trial.get('brief_summary', '')[:3000]}
                 underspecified=rule.underspecified,
                 cohort=rule.cohort,
             )
+        pending = [r for r in pending if r.rule_id not in results]
 
     # LLM이 누락한 규칙은 unknown으로 채움
     for rule in parsed.rules:
         if rule.rule_id not in results:
             results[rule.rule_id] = CriterionAssessment(
                 rule_id=rule.rule_id, kind=rule.kind, criterion_text=rule.text, holds="unknown",
-                passes=None, confidence="low", evidence="근거 없음", reasoning="평가 누락",
+                passes=None, confidence="low", evidence="근거 없음",
+                reasoning=f"평가 누락 (모델이 재요청 {config.MATCHER_MISSING_RETRIES}회 후에도 판정을 반환하지 않음)",
                 missing_info=rule.text, method="llm", category=rule.category,
                 underspecified=rule.underspecified,
                 cohort=rule.cohort,
@@ -216,6 +229,7 @@ brief_summary: {trial.get('brief_summary', '')[:3000]}
         matched_cohort=matched_cohort,
         cohort_results=cohort_results,
         other_cohort_assessments=other,
+        retried_rule_ids=retried,
     )
 
 

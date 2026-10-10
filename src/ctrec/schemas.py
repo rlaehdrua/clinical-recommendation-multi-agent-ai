@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PrivateAttr
 
 Holds = Literal["yes", "no", "unknown"]
 Eligibility = Literal["ELIGIBLE", "INELIGIBLE", "UNCERTAIN"]
@@ -60,6 +60,16 @@ class ParsedTrial(BaseModel):
     )
     rules: list[Rule]
     parsing_notes: str = Field(description="모호하거나 해석이 필요한 기준에 대한 메모")
+    # 코드 무결성 검사 결과 (LLM 출력 스키마에는 포함되지 않음, criteria_parser.check_integrity가 채움)
+    _integrity_issues: list[str] = PrivateAttr(default_factory=list)
+
+    @property
+    def integrity_issues(self) -> list[str]:
+        return self._integrity_issues
+
+    @integrity_issues.setter
+    def integrity_issues(self, value: list[str]) -> None:
+        self._integrity_issues = value
 
 
 # ---------------------------------------------------------------------------
@@ -150,6 +160,7 @@ class TrialMatch(BaseModel):
     matched_cohort: str | None = None  # 코호트가 나뉜 시험에서 판정에 사용한 코호트
     cohort_results: dict[str, str] = {}  # 코호트별 적격성
     other_cohort_assessments: list[CriterionAssessment] = []  # 다른 코호트 전용 기준 (판정 미적용, 기록용)
+    retried_rule_ids: list[str] = []  # 매칭 응답에서 빠져 다시 요청한 규칙 (기록용)
 
 
 # ---------------------------------------------------------------------------

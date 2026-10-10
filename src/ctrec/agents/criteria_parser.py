@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import threading
 
 from .. import config, llm
-from ..schemas import ParsedTrial
+from ..schemas import ParsedTrial, Rule
 
 SYSTEM = """당신은 임상시험 프로토콜을 분석하는 '기준 파싱 에이전트'입니다.
 입력으로 받은 임상시험의 선정(Inclusion)·제외(Exclusion) 기준과 상세 설명을, 다른 에이전트가 환자 정보와 하나씩 대조할 수 있는 원자 규칙 목록으로 변환합니다.
@@ -82,7 +83,10 @@ def parse_trial(trial: dict, *, use_cache: bool = True) -> ParsedTrial:
     with _locks_guard:
         lock = _locks.setdefault(str(cache_path), threading.Lock())
     with lock:
-        return _parse_trial_locked(trial, rendered, cache_path, use_cache)
+        parsed = _parse_trial_locked(trial, rendered, cache_path, use_cache)
+    # 캐시에는 LLM 원본을 두고, 불러올 때마다 검사 (검사 규칙이 바뀌어도 캐시를 버릴 필요 없음)
+    parsed.integrity_issues = check_integrity(parsed, trial)
+    return parsed
 
 
 def _parse_trial_locked(trial: dict, rendered: str, cache_path, use_cache: bool) -> ParsedTrial:
@@ -109,6 +113,65 @@ def _renumber(parsed: ParsedTrial) -> None:
     for rule in parsed.rules:
         counters[rule.kind] += 1
         rule.rule_id = f"{'I' if rule.kind == 'inclusion' else 'E'}{counters[rule.kind]}"
+
+
+# ---------------------------------------------------------------------------
+# 기계적 무결성 검사: 규칙 엔진이 쓸 값(field/operator/value)이 원문과 맞는지 코드로 확인
+# ---------------------------------------------------------------------------
+
+_NUM = re.compile(r"\d+(?:,\d{3})*(?:\.\d+)?|\.\d+")
+_RANGE = re.compile(r"\d\s*(?:-|–|~|to)\s*[<>≤≥]?\s*\d", re.I)
+_UP = re.compile(r"≥|>|\bat least\b|\bor older\b|\bor more\b|\bor greater\b|\bminimum\b|\bno less than\b"
+                 r"|\bgreater than\b|\bmore than\b|\bolder than\b|\bexceed(?:s|ing)?\b|\babove\b|\bover\b|이상|초과", re.I)
+_DOWN = re.compile(r"≤|<|\bat most\b|\bor younger\b|\bor less\b|\bmaximum\b|\bno more than\b|\bup to\b"
+                   r"|\bless than\b|\byounger than\b|\bunder\b|\bbelow\b|이하|미만", re.I)
+_OP_DIRECTION = {">=": "up", ">": "up", "<=": "down", "<": "down"}
+
+
+def numbers_in(text: str) -> set[float]:
+    return {float(n.replace(",", "")) for n in _NUM.findall(text or "")}
+
+
+def _integrity_problem(rule: Rule, source_numbers: set[float]) -> str | None:
+    """규칙 엔진용 값이 원문과 어긋나면 사유를 반환."""
+    if rule.field in (None, "sex") or rule.value is None:
+        return None
+    try:
+        value = float(rule.value)
+    except ValueError:
+        return f"비교값 '{rule.value}'이 숫자가 아님"
+    # 수치 일치: 비교값이 기준 문장(또는 CT.gov 구조화 나이 필드)에 그대로 있어야 함. 단위 환산값은 인정하지 않음
+    if value not in numbers_in(rule.text) | source_numbers:
+        return f"비교값 {rule.value}이 원문에 없음"
+    # 부등호 방향: 문장에 한 방향 표현만 있을 때 operator 방향과 비교 (범위 표현 '18-65', '18 to <65'는 건너뜀)
+    direction = _OP_DIRECTION.get(rule.operator or "")
+    if direction and not _RANGE.search(rule.text):
+        up, down = bool(_UP.search(rule.text)), bool(_DOWN.search(rule.text))
+        if up != down:
+            stated = "up" if up else "down"
+            if stated != direction:
+                return f"부등호 '{rule.operator}'가 원문 방향({'이상/초과' if up else '이하/미만'})과 반대"
+    return None
+
+
+def check_integrity(parsed: ParsedTrial, trial: dict) -> list[str]:
+    """원문과 어긋난 규칙은 규칙 엔진 대상에서 빼고(LLM이 원문으로 판정) 사유 목록을 반환.
+
+    LLM 파서가 'ANC >= 1.5'를 'ANC >= 1.0'으로 바꾸면 스키마는 맞아도 의미가 틀립니다.
+    이런 규칙을 규칙 엔진이 그대로 판정하지 않도록, 원문에 없는 수치나 반대 방향 부등호는 구조화 필드를 비웁니다.
+    """
+    source_numbers = numbers_in(f"{trial.get('minimum_age') or ''} {trial.get('maximum_age') or ''}")
+    issues = []
+    for rule in parsed.rules:
+        problem = _integrity_problem(rule, source_numbers)
+        if problem is None:
+            continue
+        issues.append(f"{rule.rule_id}: {problem} ({rule.field} {rule.operator} {rule.value}) -> LLM 판정으로 전환")
+        rule.field = rule.operator = rule.value = None
+        rule.structured_evaluable = False
+    if issues:
+        parsed.parsing_notes += "\n[코드 검증] " + " / ".join(issues)
+    return issues
 
 
 def rules_json(parsed: ParsedTrial) -> str:

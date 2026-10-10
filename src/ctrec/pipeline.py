@@ -26,10 +26,15 @@ class PatientCase:
     raw_text: str
     hidden_details: str | None = None  # 가상 환자 시뮬레이션용 (파이프라인에는 노출되지 않음)
     candidate_trials: list[str] | None = None  # 이 환자에게 평가할 후보 시험 ID (없으면 전체)
+    oracle_facts: list[dict] | None = None  # 정보 가리기 평가셋: 전체 사실 목록 (가상 환자만 사용, 파이프라인에는 노출되지 않음)
 
 
 # 파이프라인에 노출하지 않는 필드 (시뮬레이터·평가용 메타데이터)
-_HIDDEN_KEYS = {"hidden_details", "labels", "design_note", "synthetic", "base_topic", "candidate_trials"}
+_HIDDEN_KEYS = {
+    "hidden_details", "labels", "design_note", "synthetic", "base_topic", "candidate_trials",
+    # 정보 가리기 평가셋(scripts/build_masked_benchmark.py)의 정답·숨긴 사실
+    "oracle_facts", "hidden_facts", "masked_fact_ids", "clue_fact_ids", "masked_criteria", "case_type", "source_patient",
+}
 
 
 def _case_from_dict(data: dict, default_id: str) -> PatientCase:
@@ -43,7 +48,7 @@ def _case_from_dict(data: dict, default_id: str) -> PatientCase:
         visible = {k: v for k, v in data.items() if k not in _HIDDEN_KEYS}
         text = json.dumps(visible, ensure_ascii=False, indent=1)
     return PatientCase(patient_id=pid, raw_text=text, hidden_details=hidden,
-                       candidate_trials=data.get("candidate_trials"))
+                       candidate_trials=data.get("candidate_trials"), oracle_facts=data.get("oracle_facts"))
 
 
 def load_patients(path: Path) -> list[PatientCase]:
@@ -76,6 +81,7 @@ class Session:
     tracer: Tracer
     max_rounds: int = config.MAX_CLARIFY_ROUNDS
     allow_search: bool = False
+    question_budget: int | None = None  # 전체 라운드 합산 최대 질문 수 (None = 라운드당 한도만 적용)
 
     profile: PatientProfile | None = None
     parsed: dict[str, ParsedTrial] = field(default_factory=dict)
@@ -95,7 +101,8 @@ class Session:
         def work(tid: str):
             self.tracer.log("criteria_parser", "start", trial_id=tid)
             p = criteria_parser.parse_trial(self.trials[tid])
-            self.tracer.log("criteria_parser", "done", trial_id=tid, n_rules=len(p.rules))
+            self.tracer.log("criteria_parser", "done", trial_id=tid, n_rules=len(p.rules),
+                            integrity_issues=p.integrity_issues)
             return tid, p
 
         for tid, p in self._parallel(work, ids):
@@ -147,8 +154,16 @@ class Session:
         asked = any(qa.purpose == "physician_reference" for qa in self.qa_log)
         return has_items and not asked
 
+    def remaining_questions(self) -> int:
+        """이번 라운드에 할 수 있는 질문 수 (라운드당 한도와 남은 전체 예산 중 작은 값)."""
+        per_round = config.MAX_QUESTIONS_PER_ROUND
+        if self.question_budget is None:
+            return per_round
+        return max(0, min(per_round, self.question_budget - len(self.qa_log)))
+
     def needs_clarification(self) -> bool:
-        return self.rounds < self.max_rounds and (bool(self.uncertain()) or self.pending_physician_review())
+        return (self.rounds < self.max_rounds and self.remaining_questions() > 0
+                and (bool(self.uncertain()) or self.pending_physician_review()))
 
     # ----------------------------------------------------------- 단계 ⑤
     def clarify(self) -> dict:
@@ -158,13 +173,15 @@ class Session:
         """
         if self.rounds >= self.max_rounds:
             return {"status": "skipped", "reason": f"최대 라운드({self.max_rounds}) 도달"}
+        if self.remaining_questions() <= 0:
+            return {"status": "skipped", "reason": f"질문 예산({self.question_budget}개) 소진"}
         if not (self.uncertain() or self.pending_physician_review()):
             return {"status": "skipped", "reason": "판정 불가 항목과 의사 확인용 미질문 항목 없음"}
         targets = self.open_candidates()
 
         self.rounds += 1
         qs = question_generator.generate_questions(
-            self.profile, targets, self.qa_log, config.MAX_QUESTIONS_PER_ROUND
+            self.profile, targets, self.qa_log, self.remaining_questions()
         )
         self.tracer.log("question_generator", "questions", round=self.rounds,
                         questions=[q.model_dump() for q in qs.questions],
@@ -227,6 +244,8 @@ class Session:
             "recommendation": self.recommendation.model_dump() if self.recommendation else None,
             "trial_sources": {tid: t.get("source") for tid, t in self.trials.items()},
             "errors": self.errors,
+            # 사실 단위 가상 환자가 질문별로 공개한 사실 ID (정보 가리기 평가용)
+            "revealed_facts": self.answerer.revealed(self.case.patient_id) if hasattr(self.answerer, "revealed") else [],
             "usage": self.usage,
         }
 

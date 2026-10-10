@@ -16,7 +16,8 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from . import DISCLAIMER, config, llm
-from .agents.answerers import InteractiveAnswerer, NoAnswerer, SimulatedPatientAnswerer
+from .agents.answerers import (FactRevealAnswerer, InteractiveAnswerer, NoAnswerer, RoutingAnswerer,
+                               SimulatedPatientAnswerer)
 from .orchestrator import Orchestrator
 from .pipeline import PatientCase, Session, load_patients
 from .tools import ctgov
@@ -43,10 +44,16 @@ def _answerer(kind: str, cases: list[PatientCase]):
         return InteractiveAnswerer()
     if kind == "simulated":
         # 시뮬레이터는 공개 서술 + 숨긴 기록을 모두 알고 답함 (숨긴 기록이 "위와 동일"처럼 서술을 참조해도 동작)
-        return SimulatedPatientAnswerer({
+        legacy = SimulatedPatientAnswerer({
             c.patient_id: f"[공개 기록]\n{c.raw_text}\n\n[추가 기록]\n{c.hidden_details}"
             for c in cases if c.hidden_details
         })
+        # 사실 목록이 있는 환자(정보 가리기 평가셋)는 질문이 묻는 사실만 공개하는 시뮬레이터 사용
+        facts = {c.patient_id: c.oracle_facts for c in cases if c.oracle_facts}
+        if not facts:
+            return legacy
+        fact_answerer = FactRevealAnswerer(facts)
+        return RoutingAnswerer({pid: fact_answerer for pid in facts}, legacy)
     return NoAnswerer()
 
 
@@ -67,7 +74,7 @@ def _run_case(case: PatientCase, trials: dict[str, dict], args, answerer) -> Ses
                     label=case.patient_id if args.workers > 1 else "")
     session = Session(
         case=case, trials=trials, answerer=answerer, tracer=tracer,
-        max_rounds=args.max_rounds, allow_search=args.search,
+        max_rounds=args.max_rounds, allow_search=args.search, question_budget=args.question_budget,
     )
     llm.reset_usage()
     tracer.log("pipeline", "start", message=f"mode={args.mode} model={config.MODEL} trials={len(trials)}")
@@ -92,6 +99,8 @@ def _add_common(p: argparse.ArgumentParser) -> None:
     p.add_argument("--mode", choices=["agent", "fixed"], default="agent")
     p.add_argument("--answers", choices=["interactive", "simulated", "none"], default="none")
     p.add_argument("--max-rounds", type=int, default=config.MAX_CLARIFY_ROUNDS)
+    p.add_argument("--question-budget", type=int, default=None,
+                   help="환자 1명당 전체 라운드 합산 최대 질문 수 (질문 예산 실험용, 기본: 라운드당 한도만 적용)")
     p.add_argument("--out", default=str(config.OUTPUT_DIR))
     p.add_argument("--quiet", action="store_true")
     p.add_argument("--workers", type=int, default=1,
