@@ -53,6 +53,11 @@ pre_score는 코드로 계산한 참고 점수이며 위 원칙에 따라 조정
 """
 
 
+def is_candidate(m: TrialMatch) -> bool:
+    """추천 대상이 될 수 있는 판정인가 (INELIGIBLE·NOT_EVALUATED 제외)."""
+    return m.eligibility in ("ELIGIBLE", "UNCERTAIN")
+
+
 def status_of(trial: dict) -> str:
     return (trial.get("overall_status") or "UNKNOWN").upper()
 
@@ -68,7 +73,7 @@ def status_ko(trial: dict) -> str:
 
 def pre_score(match: TrialMatch, trial: dict) -> float:
     total = max(1, len(match.assessments))
-    score = {"ELIGIBLE": 100.0, "UNCERTAIN": 50.0, "INELIGIBLE": 0.0}[match.eligibility]
+    score = {"ELIGIBLE": 100.0, "UNCERTAIN": 50.0}.get(match.eligibility, 0.0)
     score += 30.0 * match.n_pass / total
     score -= 5.0 * sum(a.passes is None and a.category != "consent_or_logistics" for a in match.assessments)
     if status_of(trial) == "RECRUITING":
@@ -80,8 +85,17 @@ def no_recommendation_reason(matches: list[TrialMatch], trials: dict[str, dict])
     """추천할 시험이 없을 때 그 이유를 상황별로 명시."""
     if not matches:
         return "평가할 후보 임상시험이 없어 추천할 수 있는 임상시험이 없습니다."
+    failed = [m for m in matches if m.eligibility == "NOT_EVALUATED"]
+    if failed:
+        # 평가 실패 시험이 있으면 '기준에 맞지 않음'으로 단정하지 않고 실패 사실을 명시
+        others = [m for m in matches if m.eligibility != "NOT_EVALUATED"]
+        note = (f" 평가에 실패한 시험 {len(failed)}개({', '.join(m.trial_id for m in failed)})는 "
+                f"적격 여부를 판정하지 못했으므로(부적격 아님) 재평가 또는 담당자 확인이 필요합니다.")
+        if not others:
+            return "모든 후보 임상시험의 평가에 실패해 추천할 수 있는 임상시험이 없습니다." + note
+        return no_recommendation_reason(others, trials) + note
     closed = [m for m in matches if not is_open(trials[m.trial_id])]
-    closed_fit = [m for m in closed if m.eligibility != "INELIGIBLE"]
+    closed_fit = [m for m in closed if is_candidate(m)]
 
     def fit_desc(ms: list[TrialMatch], with_status: bool = False) -> str:
         label = {"ELIGIBLE": "적격", "UNCERTAIN": "판정 보류"}
@@ -105,7 +119,7 @@ def no_recommendation_reason(matches: list[TrialMatch], trials: dict[str, dict])
 
 def _closed_reason(m: TrialMatch, trial: dict) -> str:
     fit = {"ELIGIBLE": "적격 기준은 충족", "UNCERTAIN": "적격 여부 일부 미확인",
-           "INELIGIBLE": "선정/제외 기준 불충족"}[m.eligibility]
+           "INELIGIBLE": "선정/제외 기준 불충족", "NOT_EVALUATED": "평가 실패로 적격 여부 미판정"}[m.eligibility]
     return f"모집 종료된 시험으로 현재 참여 불가 - {status_ko(trial)}. ({fit}: {m.summary})"
 
 
@@ -136,7 +150,7 @@ def physician_notes(match: TrialMatch, profile: PatientProfile | None, qa_log: l
 
 def recommend(profile: PatientProfile, matches: list[TrialMatch], trials: dict[str, dict],
               qa_log: list[QAPair] | None = None) -> Recommendation:
-    open_fit = [m for m in matches if m.eligibility != "INELIGIBLE" and is_open(trials[m.trial_id])]
+    open_fit = [m for m in matches if is_candidate(m) and is_open(trials[m.trial_id])]
 
     if not open_fit:
         # 추천할 시험이 없으면 LLM을 부르지 않고 코드가 결과와 이유를 작성
@@ -190,7 +204,7 @@ def _validate(draft: RecommendationDraft, patient_id: str, matches: list[TrialMa
     """LLM 출력이 코드의 적격성 판정·모집 상태와 어긋나지 않도록 교정."""
     by_id = {m.trial_id: m for m in matches}
     recommendable = {m.trial_id for m in matches
-                     if m.eligibility != "INELIGIBLE" and is_open(trials[m.trial_id])}
+                     if is_candidate(m) and is_open(trials[m.trial_id])}
 
     ranked, seen = [], set()
     for r in sorted(draft.ranked, key=lambda x: x.rank):
@@ -221,7 +235,11 @@ def _validate(draft: RecommendationDraft, patient_id: str, matches: list[TrialMa
         if m.trial_id in seen:
             continue
         t = trials[m.trial_id]
-        if not is_open(t):
+        if m.eligibility == "NOT_EVALUATED":
+            excluded.append(ExcludedTrial(trial_id=m.trial_id, reason=(
+                f"평가 실패로 적격 여부를 판정하지 못함(부적격 아님) - 재평가 또는 담당자 확인 필요. "
+                f"원인: {(m.evaluation_error or '')[:200]}")))
+        elif not is_open(t):
             excluded.append(ExcludedTrial(trial_id=m.trial_id, reason=_closed_reason(m, t)))
         elif m.eligibility == "INELIGIBLE":
             excluded.append(ExcludedTrial(trial_id=m.trial_id, reason=llm_reasons.get(m.trial_id) or m.summary))

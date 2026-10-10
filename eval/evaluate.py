@@ -54,7 +54,7 @@ def main() -> None:
     confusion = m["confusion"]
 
     print(f"평가 쌍: {m['pairs']} (예측 누락 {m['missing_predictions']})")
-    print(f"전체 정확도 (UNCERTAIN 예측=오답): {fmt(m['accuracy'])}")
+    print(f"전체 정확도 (UNCERTAIN·NOT_EVALUATED 예측=오답): {fmt(m['accuracy'])}")
     print(f"판정 확정 비율 (coverage):          {fmt(m['coverage'])}")
     print(f"확정 판정 정확도:                    {fmt(m['decided_accuracy'])}")
 

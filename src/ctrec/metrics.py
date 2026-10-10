@@ -1,7 +1,7 @@
 """평가 지표 계산 (eval/evaluate.py, scripts/budget_sweep.py 공용).
 
 판정 지표
-- accuracy: 전체 정확도 (UNCERTAIN 예측은 오답)
+- accuracy: 전체 정확도 (UNCERTAIN·NOT_EVALUATED 예측은 오답)
 - coverage: 판정 확정(ELIGIBLE/INELIGIBLE) 비율
 - decided_accuracy: 확정 판정 중 정답 비율
 
@@ -23,7 +23,8 @@ import json
 from collections import Counter, defaultdict
 from pathlib import Path
 
-CLASSES = ["ELIGIBLE", "INELIGIBLE", "UNCERTAIN"]
+CLASSES = ["ELIGIBLE", "INELIGIBLE", "UNCERTAIN", "NOT_EVALUATED"]
+UNDECIDED = ("UNCERTAIN", "NOT_EVALUATED")  # NOT_EVALUATED: 파싱·매칭 실패로 판정하지 못함 (부적격 아님)
 
 
 def load_labels(path: Path, column: str = "label") -> dict[tuple[str, str], str]:
@@ -79,7 +80,7 @@ def _rate(num: int, den: int) -> float | None:
 def eligibility_metrics(gold: dict, pred: dict, text_only: dict | None = None) -> dict:
     """gold: 비교할 정답 라벨, text_only: label_text_only(있으면 rescue/cleanup 계산)."""
     pairs = [k for k in gold if k in pred]
-    decided = [k for k in pairs if pred[k] != "UNCERTAIN"]
+    decided = [k for k in pairs if pred[k] not in UNDECIDED]
     gold_elig = [k for k in pairs if gold[k] == "ELIGIBLE"]
     gold_not_elig = [k for k in pairs if gold[k] != "ELIGIBLE"]
     m = {

@@ -12,7 +12,8 @@ from typing import Literal
 from pydantic import BaseModel, Field, PrivateAttr
 
 Holds = Literal["yes", "no", "unknown"]
-Eligibility = Literal["ELIGIBLE", "INELIGIBLE", "UNCERTAIN"]
+# NOT_EVALUATED: 파싱·매칭 실패로 판정하지 못함 (부적격이 아님, 추천 대상도 아님)
+Eligibility = Literal["ELIGIBLE", "INELIGIBLE", "UNCERTAIN", "NOT_EVALUATED"]
 Confidence = Literal["high", "medium", "low"]
 
 RuleCategory = Literal[
@@ -92,7 +93,14 @@ class LabValue(BaseModel):
 
 class PatientProfile(BaseModel):
     patient_id: str
-    age: int | None
+    age: int | None = Field(description="만 나이(년, 정수). 1세 미만이면 0")
+    age_value: float | None = Field(
+        default=None,
+        description="원문에 적힌 나이 값 그대로 (예: '3-month-old' -> 3, '54세' -> 54). 모르면 null",
+    )
+    age_unit: Literal["years", "months", "weeks", "days"] | None = Field(
+        default=None, description="age_value의 단위 (원문 표기 그대로, 변환하지 않음)",
+    )
     sex: Literal["male", "female", "other", "unknown"]
     primary_diagnosis: str | None
     disease_stage: str | None
@@ -161,6 +169,7 @@ class TrialMatch(BaseModel):
     cohort_results: dict[str, str] = {}  # 코호트별 적격성
     other_cohort_assessments: list[CriterionAssessment] = []  # 다른 코호트 전용 기준 (판정 미적용, 기록용)
     retried_rule_ids: list[str] = []  # 매칭 응답에서 빠져 다시 요청한 규칙 (기록용)
+    evaluation_error: str | None = None  # NOT_EVALUATED일 때 실패 단계와 원인
 
 
 # ---------------------------------------------------------------------------
