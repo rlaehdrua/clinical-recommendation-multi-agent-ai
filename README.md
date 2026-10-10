@@ -466,9 +466,10 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 │   ├── generate_synthetic_patients.py  # 가상 환자와 정답 라벨 생성
 │   ├── budget_sweep.py         # 질문 예산별 성능 곡선
 │   ├── build_masked_benchmark.py  # 정보 가리기 평가셋 생성
-│   └── expand_labels.py        # 라벨을 전체 시험 풀로 확장 (후보 추림 평가용)
+│   ├── expand_labels.py        # 라벨을 전체 시험 풀로 확장 (후보 추림 평가용)
+│   └── parse_consistency.py    # 기준 파싱 일관성 측정 + 전체 시험 사전 파싱
 ├── eval/evaluate.py            # 매칭 정확성 평가
-├── tests/                      # API 없이 도는 단위 테스트 (test_offline, test_recommender, test_reliability, test_masked_benchmark, test_screening)
+├── tests/                      # API 없이 도는 단위 테스트 (test_offline, test_recommender, test_reliability, test_masked_benchmark, test_screening, test_safety, test_stage05)
 └── data/
     ├── trials/                 # 시험 프로토콜 (CT.gov 캐시 + 가상 데모)
     ├── topic_map.json          # 사업단 환자 S001–S010 → 후보 시험
@@ -509,6 +510,30 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 ## 10. 변경 이력
 
 수정할 때마다 무엇을 왜 바꿨는지 여기에 기록합니다. 최신 항목이 위에 옵니다.
+
+### 2026-10-10 — 안전 패치 브랜치 병합, 파싱 일관성 측정, 전체 시험 사전 파싱
+
+배경: 팀 아키텍처 문서(Final Merged Architecture) §66은 0/0.5단계 안전 패치가 "현재 저장소에 이미 적용됨"을 전제로 하지만, 이 패치는 `worktree-stage0-safety-patch` 브랜치에만 있고 main에는 병합되지 않은 상태였습니다. 그래서 main에서는 원문이 애매한(underspecified) 기준을 확인하지 않아도 ELIGIBLE이 나올 수 있었습니다. 팀 결정 대기 문서의 D1(파서 검증 수준)·D8(사전 파싱 범위)을 정할 근거도 함께 만들었습니다.
+
+**1. 안전 패치 브랜치 병합** (`worktree-stage0-safety-patch` → main)
+- 들어온 것: underspecified 미확인 기준이 ELIGIBLE을 막음, '해당 없음'도 명시적 근거 필요, LLM 인용 근거를 환자 원문과 대조, 파싱·매칭 실패를 `NOT_EVALUATED`로 기록(조용히 빠지지 않음), 코호트 혼합 방지, 판정 기준일 고정(`CTREC_REFERENCE_DATE`), 영아 나이 단위, lab 날짜·단위 처리, 회귀 테스트 49개
+- 충돌 해결: 매칭은 "인용 원문 대조 + 누락 규칙만 재요청"을 함께 적용, 파이프라인은 "후보 추림 + 기준일 고정 + 평가 실패 기록"을 함께 적용, 평가 지표는 `NOT_EVALUATED`를 미확정으로 집계
+- 확인: 오프라인 테스트 82개 통과. 후보 추림 → 파싱 실패 시험 `NOT_EVALUATED` → 누락 규칙 재요청 → 지어낸 인용 차단 → underspecified 미확인이 ELIGIBLE을 막음까지 한 번에 도는 통합 시나리오 확인
+
+**2. 기준 파싱 일관성 측정** (`scripts/parse_consistency.py`, 시험 26개 × 같은 프롬프트로 3회, 약 $3.6)
+
+| 항목 | 결과 |
+|---|---|
+| 규칙 수가 실행마다 다른 시험 | 26개 중 17개 (예: NCT07516951 33 / 25 / 22개) |
+| underspecified 수가 다른 시험 | 26개 중 11개, 3개 이상 차이 4개 (예: NCT07516951 10 / 2 / 2개) |
+| 코호트 구조가 다른 시험 | **0개** (이전 캐시에서 보인 코호트 차이는 프롬프트 버전 차이 때문이었음) |
+| 규칙 분할 일치율 (원문 문장 기준) | 평균 0.50. 같은 기준을 하나로 묶거나 여러 개로 나누는 방식이 실행마다 다름 (예: "심장·간·위장·신장 질환" 1개 vs 5개) |
+| 같은 규칙에서 속성이 바뀐 비율 (공통 규칙 316개) | underspecified 2.5%, 규칙 엔진 필드(field/operator/value) 9.2%, category 17.1%, 선정/제외 구분 0% |
+
+- 해석: 파싱 결과의 **구조(규칙 분할)가 실행마다 크게 달라지고**, 같은 규칙이라도 약 10%는 규칙 엔진 대상 여부가 바뀝니다. 환자마다 다시 파싱하면 같은 시험이 매번 다른 기준 목록으로 평가된다는 뜻입니다. → 사전 파싱 후 고정(D8), 결정적 검사 + 위험 항목만 추가 검증(D1 Option D), underspecified를 한 번의 파싱 결과로 믿지 않는 상태 기반 처리(D6 Option C)의 근거.
+- 실행별 원본과 요약은 `outputs/parse_consistency/`(git 제외)에 있습니다.
+
+**3. 전체 시험 사전 파싱**: 위 측정의 마지막 실행 결과가 파싱 캐시로 남아 26개 시험 모두 사전 파싱된 상태입니다. 다만 `data/cache/`는 git에 올라가지 않으므로 팀원 환경에는 공유되지 않습니다(공유 방식은 D8 결정 사항).
 
 ### 2026-10-10 — 후보 시험을 전체 시험에서 에이전트가 고르도록 변경 (후보 추림)
 
