@@ -13,7 +13,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from . import DISCLAIMER, config, llm
+from . import DISCLAIMER, acquisition, config, llm, location, trial_store
 from .agents import criteria_parser, explainer, matcher, patient_profiler, question_generator, recommender, screener
 from .agents.answerers import Answerer
 from .schemas import ParsedTrial, PatientProfile, QAPair, Recommendation, TrialMatch
@@ -92,6 +92,8 @@ class Session:
     question_budget: int | None = None  # 전체 라운드 합산 최대 질문 수 (None = 라운드당 한도만 적용)
     screen_trials: bool = False  # True: trials 전체를 풀로 보고 후보 추림 후 자세히 평가
     max_candidates: int = config.SCREEN_MAX_CANDIDATES
+    country: str | None = config.PATIENT_COUNTRY  # 환자 거주 국가 (위치 표시용, D5)
+    country_only: bool = False  # True: 그 나라에 기관이 있는 시험만 평가 (사용자가 원할 때만, D5)
 
     profile: PatientProfile | None = None
     parsed: dict[str, ParsedTrial] = field(default_factory=dict)
@@ -107,6 +109,15 @@ class Session:
     screening: screener.ScreeningResult | None = None
     # 판정 기준일: 세션 시작 시 한 번 고정 (자정을 넘기거나 재평가해도 같은 기준일)
     reference_date: str = field(default_factory=config.reference_date)
+    # 판정 불가 항목별 확보 시도 기록 (D7): "<trial_id>:<rule_id>" -> MissingFact
+    missing_facts: dict[str, acquisition.MissingFact] = field(default_factory=dict)
+    location_removed: dict[str, str] | None = None  # country_only로 뺀 시험
+
+    def __post_init__(self) -> None:
+        if self.country_only and self.country:
+            self.trials, self.location_removed = location.hard_filter(self.trials, self.country)
+            self.tracer.log("pipeline", "location_filter", removed=self.location_removed,
+                            message=f"{self.country} 기관이 없는 시험 {len(self.location_removed)}개 제외")
 
     # ----------------------------------------------------------- 후보
     def candidate_ids(self) -> list[str]:
@@ -138,10 +149,12 @@ class Session:
         ids = [t for t in (trial_ids or self.candidate_ids()) if t not in self.parsed]
 
         def work(tid: str):
+            # 사전 컴파일한 고정 기준을 불러옴 (D8). 범위 밖 시험은 CompilationPending -> NOT_EVALUATED
             self.tracer.log("criteria_parser", "start", trial_id=tid)
-            p = criteria_parser.parse_trial(self.trials[tid])
+            p = trial_store.get(self.trials[tid])
             self.tracer.log("criteria_parser", "done", trial_id=tid, n_rules=len(p.rules),
-                            integrity_issues=p.integrity_issues)
+                            integrity_issues=p.integrity_issues,
+                            review=[rid for rid, m in p.rule_meta.items() if m.review])
             return tid, p
 
         results, failed = self._parallel(work, ids)
@@ -184,6 +197,7 @@ class Session:
                 self.matches[tid] = m
                 out.append(m)
         self._snapshot(f"match(round={self.rounds})")
+        acquisition.update(self.missing_facts, self.matches.values())
         return out
 
     def uncertain(self) -> list[TrialMatch]:
@@ -194,7 +208,9 @@ class Session:
         return [
             m for m in self.matches.values()
             if m.eligibility == "UNCERTAIN" and recommender.is_open(self.trials[m.trial_id])
-            and any(matcher.is_askable_unknown(a) for a in m.assessments)
+            and any(matcher.is_askable_unknown(a)
+                    and acquisition.is_open(self.missing_facts, f"{m.trial_id}:{a.rule_id}")
+                    for a in m.assessments)
         ]
 
     def open_candidates(self) -> list[TrialMatch]:
@@ -212,7 +228,7 @@ class Session:
 
     def remaining_questions(self) -> int:
         """이번 라운드에 할 수 있는 질문 수 (라운드당 한도와 남은 전체 예산 중 작은 값)."""
-        per_round = config.MAX_QUESTIONS_PER_ROUND
+        per_round = 1 if config.QUESTION_POLICY == "single" else config.MAX_QUESTIONS_PER_ROUND
         if self.question_budget is None:
             return per_round
         return max(0, min(per_round, self.question_budget - len(self.qa_log)))
@@ -237,8 +253,11 @@ class Session:
 
         self.rounds += 1
         qs = question_generator.generate_questions(
-            self.profile, targets, self.qa_log, self.remaining_questions()
+            self.profile, targets, self.qa_log, self.remaining_questions(),
+            acquisition_plan={k: v for k, v in acquisition.plan(self.missing_facts).items()
+                              if k.split(":")[0] in {m.trial_id for m in targets}},
         )
+        acquisition.record_attempts(self.missing_facts, qs.questions, self.rounds)
         self.tracer.log("question_generator", "questions", round=self.rounds,
                         questions=[q.model_dump() for q in qs.questions],
                         message=f"{len(qs.questions)}개 질문 생성")
@@ -268,13 +287,20 @@ class Session:
         matches = list(self.matches.values())
         evaluated = {t: self.trials[t] for t in self.matches}
         self.tracer.log("recommender", "start", n_trials=len(matches))
-        self.recommendation = recommender.recommend(self.profile, matches, evaluated, self.qa_log)
+        self.recommendation = recommender.recommend(self.profile, matches, evaluated, self.qa_log,
+                                                    country=self.country)
         self.tracer.log("recommender", "done",
                         message=" > ".join(r.trial_id for r in self.recommendation.ranked) or "(추천 없음)")
         self.tracer.log("explainer", "start")
+        if not config.WRITE_REPORT:  # 평가 실험용: 보고서(설명 에이전트) 생략
+            return
+        ranked_ids = [r.trial_id for r in self.recommendation.ranked]
+        extra = (screener.report_section(self.screening) if self.screening else "")
+        extra += acquisition.report_section(self.missing_facts, set(ranked_ids))
+        extra += location.report_section(self.trials, ranked_ids, self.country, self.location_removed)
         self.report = explainer.explain(
             self.profile, matches, self.recommendation, evaluated, self.qa_log, self.match_history,
-            extra_section=screener.report_section(self.screening) if self.screening else "",
+            extra_section=extra,
         )
         self.tracer.log("explainer", "done")
 
@@ -301,6 +327,9 @@ class Session:
             "qa_log": [qa.model_dump() for qa in self.qa_log],
             "eligibility_history": self.match_history,
             "screening": self.screening.model_dump() if self.screening else None,
+            "missing_facts": {k: f.model_dump() for k, f in self.missing_facts.items()},
+            "location": {"country": self.country, "country_only": self.country_only,
+                         "removed": self.location_removed},
             "recommendation": self.recommendation.model_dump() if self.recommendation else None,
             "trial_sources": {tid: self.trials[tid].get("source") for tid in self.matches},
             "errors": self.errors,

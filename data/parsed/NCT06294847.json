@@ -1,0 +1,587 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT06294847",
+ "trial_hash": "163bac225992264a",
+ "parser_prompt_hash": "2e69d96de0305d7b",
+ "model": "claude-sonnet-5",
+ "compiled_at": "2026-10-11T06:39:38+00:00",
+ "runs": 3,
+ "canonical_run": 1,
+ "parsed": {
+  "trial_id": "NCT06294847",
+  "title": "Ursodeoxycholic Acid (UDCA) as a Neuroprotective Adjuvant Treatment to Rhegmatogenous Retinal Detachment Surgery",
+  "target_population": "18세 이상, 가성수정체 또는 무수정체 상태이며, 2개 이상 사분면을 침범한 열공성 망막박리(RRD)로 황반 OFF가 발병 7일 이내이고 유리체절제술 및 가스탐포나데 수술이 예정된 환자",
+  "intervention_summary": "경구 ursodeoxycholic acid(Ursolvan®) 투여 vs 위약 투여, 열공성 망막박리 수술(유리체절제술+가스탐포나데)에 대한 신경보호 보조요법으로서 효과 평가(3개월 시점 시력 회복)",
+  "key_conditions": [
+   "Retinal Detachment"
+  ],
+  "cohorts": [],
+  "rules": [
+   {
+    "rule_id": "I1",
+    "kind": "inclusion",
+    "text": "Aged 18 years or older",
+    "category": "demographic",
+    "field": "age",
+    "operator": ">=",
+    "value": "18",
+    "unit": "years",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I2",
+    "kind": "inclusion",
+    "text": "Scheduled to undergo surgical intervention through vitrectomy",
+    "category": "procedure",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I3",
+    "kind": "inclusion",
+    "text": "Aphakic or pseudophakic patients",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I4",
+    "kind": "inclusion",
+    "text": "Experiencing rhegmatogenous retinal detachment affecting 2 quadrants or more",
+    "category": "disease_stage",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I5",
+    "kind": "inclusion",
+    "text": "Presenting with macula OFF (raised macula) for 7 days or less before the onset of symptoms",
+    "category": "disease_stage",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I6",
+    "kind": "inclusion",
+    "text": "Has signed a consent form",
+    "category": "consent_or_logistics",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I7",
+    "kind": "inclusion",
+    "text": "Affiliated with a health insurance plan",
+    "category": "consent_or_logistics",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I8",
+    "kind": "inclusion",
+    "text": "Sex eligible for study: All (structured eligibility field)",
+    "category": "demographic",
+    "field": "sex",
+    "operator": "==",
+    "value": "all",
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E1",
+    "kind": "exclusion",
+    "text": "Patients who have previously undergone vitrectomy for retinal detachment",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E2",
+    "kind": "exclusion",
+    "text": "Patients with vitreous hemorrhage or any other associated retinal pathologies",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E3",
+    "kind": "exclusion",
+    "text": "Monophthalmic patients",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E4",
+    "kind": "exclusion",
+    "text": "Women of childbearing age without effective contraceptive methods",
+    "category": "reproductive",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E5",
+    "kind": "exclusion",
+    "text": "Pregnant or lactating women",
+    "category": "reproductive",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E6",
+    "kind": "exclusion",
+    "text": "Hypersensitivity to the active substance, bile acids, or any of the excipients in Ursolvan® (see §6.1.1 of this protocol)",
+    "category": "other",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   },
+   {
+    "rule_id": "E7",
+    "kind": "exclusion",
+    "text": "Patients with peptic ulcers",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E8",
+    "kind": "exclusion",
+    "text": "Patients with acute or chronic liver disease",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E9",
+    "kind": "exclusion",
+    "text": "Patients with acute infection or inflammation of the gallbladder or bile ducts",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E10",
+    "kind": "exclusion",
+    "text": "Patients with recurrent gallstones",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E11",
+    "kind": "exclusion",
+    "text": "Patients with obstruction of the bile ducts (common bile duct or cystic duct obstruction)",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E12",
+    "kind": "exclusion",
+    "text": "Patients with radiopaque calcified gallstones",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E13",
+    "kind": "exclusion",
+    "text": "Patients with severe pancreatic disorders",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E14",
+    "kind": "exclusion",
+    "text": "Patients with Crohn's disease, ulcerative colitis, or other intestinal diseases that may alter the enterohepatic circulation of bile acids",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E15",
+    "kind": "exclusion",
+    "text": "Patients on oral treatment with cholestyramine, colestipol, antacids containing aluminum or magnesium hydroxide and/or smectite (aluminum oxide), cyclosporine, ciprofloxacin, nitrendipine, or dapsone",
+    "category": "medication",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E16",
+    "kind": "exclusion",
+    "text": "Patients with galactose intolerance, Lapp lactase deficiency, or glucose and galactose malabsorption syndrome (rare hereditary diseases)",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E17",
+    "kind": "exclusion",
+    "text": "Patients participating or in the exclusion period following an interventional research with the use of prohibited medications in this study",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   },
+   {
+    "rule_id": "E18",
+    "kind": "exclusion",
+    "text": "Patients under protective custody",
+    "category": "consent_or_logistics",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   }
+  ],
+  "parsing_notes": "구조화 필드(sex=ALL, minimum_age=18)를 I8, I1로 명시적으로 추가함. 원문 제외 기준 7번(peptic ulcers, acute/chronic liver disease, acute infection/inflammation of gallbladder or bile ducts, recurrent gallstones, obstruction of bile ducts)은 쉼표로 나열된 복수 조건으로 판단되어 E7~E11로 분리함. 황반 OFF 지속 기간(7일 이내, I5)은 '최근 N일 이내' 류의 추적관찰 시간창이 아니라 질환 상태 자체의 지속기간이므로 time_window_days를 채우지 않음. E6(과민반응, 부형제 관련)은 프로토콜 §6.1.1 참조로 공개 원문에 부형제 전체 목록이 없어 underspecified=true 처리. E17(금지약물 임상연구 참여)은 '이 연구에서 금지된 약물' 목록이 원문에 구체적으로 제시되지 않아 underspecified=true 처리. UDCA군과 위약군은 무작위 배정 치료군일 뿐 적격기준이 동일하여 cohorts로 분리하지 않음(cohorts=[])."
+ },
+ "rule_meta": {
+  "I1": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I2": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I3": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I4": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I5": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I6": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I7": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I8": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E1": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E2": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E3": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E4": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E5": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E6": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_confirmed",
+   "added_by_validator": false
+  },
+  "E7": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E8": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E9": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E10": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E11": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E12": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E13": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E14": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E15": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E16": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E17": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_confirmed",
+   "added_by_validator": false
+  },
+  "E18": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  }
+ },
+ "validation": {
+  "deterministic": {},
+  "risk": {
+   "I6": [
+    "절차 선정 기준 (미확인이어도 적격을 막지 않음)"
+   ],
+   "I7": [
+    "절차 선정 기준 (미확인이어도 적격을 막지 않음)"
+   ],
+   "E6": [
+    "underspecified (파서 한 번의 판단)",
+    "category=other (근거 수준을 유형으로 정할 수 없음)"
+   ],
+   "E17": [
+    "underspecified (파서 한 번의 판단)",
+    "category=other (근거 수준을 유형으로 정할 수 없음)"
+   ],
+   "E18": [
+    "다른 파싱 실행과 다름(logistics)"
+   ]
+  },
+  "coverage_gaps": [],
+  "llm_checked": [
+   "E17",
+   "E18",
+   "E6",
+   "I6",
+   "I7"
+  ],
+  "changes": [
+   "E17: category other -> treatment_history"
+  ],
+  "review": {},
+  "added_rules": [],
+  "evidence_conflicts": [
+   "I6: 유형 규칙(consent_or_logistics: self_report_ok)과 검증 제안(clinical_record)이 달라 clinical_record 적용",
+   "E17: 유형 규칙(treatment_history: self_report_ok)과 검증 제안(clinical_record)이 달라 clinical_record 적용",
+   "E18: 유형 규칙(consent_or_logistics: self_report_ok)과 검증 제안(clinical_record)이 달라 clinical_record 적용"
+  ],
+  "notes": [],
+  "llm_output": null
+ }
+}

@@ -1,0 +1,488 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT06833073",
+ "trial_hash": "83b555cb7b82f238",
+ "parser_prompt_hash": "2e69d96de0305d7b",
+ "model": "claude-sonnet-5",
+ "compiled_at": "2026-10-11T06:39:47+00:00",
+ "runs": 3,
+ "canonical_run": 2,
+ "parsed": {
+  "trial_id": "NCT06833073",
+  "title": "A Clinical Study of Intismeran Autogene (V940) and BCG in People With Bladder Cancer (V940-011/INTerpath-011)",
+  "target_population": "18세 이상, BICR 확인된 고위험 비근침윤성 방광암(HR NMIBC) 또는 상피내암(CIS) 환자로, 최근 TURBT 시행 이력이 있으며 Cohort A(BCG-naive 고위험 NMIBC) 또는 Cohort B(CIS +/- papillary NMIBC, IVESIC 치료 부적격/거부)에 해당하는 환자",
+  "intervention_summary": "Intismeran autogene(V940, 개인맞춤형 mRNA 암백신)과 BCG 병용 또는 BCG 단독(대조군)을 비교하는 2상 임상시험; Cohort B는 Amendment 03 이후 주요/이차 평가변수에서 제외됨",
+  "key_conditions": [
+   "Urinary Bladder Neoplasms",
+   "Non-Muscle Invasive Bladder Neoplasms",
+   "Carcinoma in Situ"
+  ],
+  "cohorts": [
+   "Cohort A",
+   "Cohort B"
+  ],
+  "rules": [
+   {
+    "rule_id": "I1",
+    "kind": "inclusion",
+    "text": "minimum_age=18 Years (structured eligibility)",
+    "category": "demographic",
+    "field": "age",
+    "operator": ">=",
+    "value": "18",
+    "unit": "years",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I2",
+    "kind": "inclusion",
+    "text": "sex=ALL (structured eligibility)",
+    "category": "demographic",
+    "field": "sex",
+    "operator": "==",
+    "value": "all",
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I3",
+    "kind": "inclusion",
+    "text": "Is an individual whose most recent TURBT was performed within 12 weeks before randomization/allocation and showed BICR-confirmed high-risk NMIBC histology",
+    "category": "procedure",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 84,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I4",
+    "kind": "inclusion",
+    "text": "Cohort A: Has high-risk non-muscle invasive (HG Ta, T1, and/or CIS) UC of the bladder",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Cohort A"
+   },
+   {
+    "rule_id": "I5",
+    "kind": "inclusion",
+    "text": "Cohort A: Is BCG-naïve defined as either having never received BCG or having received BCG more than 2 years before high-risk NMIBC recurrence. Recurrence must be at least 24 months from the last exposure to BCG with evidence of complete response during the 2-year period post BCG",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Cohort A"
+   },
+   {
+    "rule_id": "I6",
+    "kind": "inclusion",
+    "text": "Cohort B: Has CIS +/-papillary non-muscle invasive UC of the bladder",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Cohort B"
+   },
+   {
+    "rule_id": "I7",
+    "kind": "inclusion",
+    "text": "Cohort B: Is ineligible for, or refusing, any IVESIC therapy",
+    "category": "procedure",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Cohort B"
+   },
+   {
+    "rule_id": "I8",
+    "kind": "inclusion",
+    "text": "Cohort B: Is either BCG-naïve (as defined above) or BCG-exposed but did not receive protocol-specified minimum dosing of BCG and experienced recurrence of high-risk NMIBC within 2 years of the last dose of BCG",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Cohort B"
+   },
+   {
+    "rule_id": "I9",
+    "kind": "inclusion",
+    "text": "Cohort B: Human immunodeficiency virus (HIV)-infected individuals must have well controlled HIV on antiretroviral therapy (ART)",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Cohort B"
+   },
+   {
+    "rule_id": "E1",
+    "kind": "exclusion",
+    "text": "Has a history of or concurrent locally-advanced (ie, T2, T3, T4) or metastatic UC",
+    "category": "disease_stage",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E2",
+    "kind": "exclusion",
+    "text": "Has concurrent extravesical (ie, urethra, ureter, renal pelvis) non-muscle invasive UC or a history of extravesical non-muscle invasive UC that recurred within the last 2 years, with certain exceptions",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 730,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E3",
+    "kind": "exclusion",
+    "text": "Has a known additional malignancy that is progressing or has required active treatment within the last 3 years",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 1095,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E4",
+    "kind": "exclusion",
+    "text": "Has had a myocardial infarction within 6 months of randomization/allocation",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 180,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E5",
+    "kind": "exclusion",
+    "text": "Has received any systemic anticancer therapy including investigational agents within 4 weeks before randomization/allocation",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 28,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E6",
+    "kind": "exclusion",
+    "text": "Has received prior treatment with a cancer vaccine",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E7",
+    "kind": "exclusion",
+    "text": "Has immunodeficiency or is receiving chronic systemic steroid therapy",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E8",
+    "kind": "exclusion",
+    "text": "Has active autoimmune disease that has required systemic treatment in the last 2 years",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 730,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E9",
+    "kind": "exclusion",
+    "text": "Has any contraindication to IV contrast and gadolinium or is otherwise unable to have imaging with either computerized tomography urogram (CTU) or Magnetic resonance urography (MRU)",
+    "category": "procedure",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E10",
+    "kind": "exclusion",
+    "text": "Cohort A: Has current active tuberculosis",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Cohort A"
+   },
+   {
+    "rule_id": "E11",
+    "kind": "exclusion",
+    "text": "Cohort A: Has a known history of HIV infection",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Cohort A"
+   },
+   {
+    "rule_id": "E12",
+    "kind": "exclusion",
+    "text": "Cohort B: HIV-infected individuals with a history of Kaposi's sarcoma and/or Multicentric Castleman's Disease",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Cohort B"
+   }
+  ],
+  "parsing_notes": "본 시험은 Cohort A(BCG-naive 고위험 NMIBC)와 Cohort B(CIS +/- papillary NMIBC, IVESIC 부적격/거부)로 나뉘며 일부 선정·제외 기준이 코호트별로 다르게 적용됨. 'with certain exceptions'(E2), 'protocol-specified minimum dosing'(I8) 등은 구체 수치가 원문에 제시되지 않았으나 질병/치료 이력 등 구체적 조건이 명시되어 있어 underspecified=false로 처리함. 검사실 수치, ECOG 등 구조화 가능한 수치 기준은 본문에 제시되지 않음. 나이/성별은 structured_eligibility 필드에서 가져옴."
+ },
+ "rule_meta": {
+  "I1": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I2": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I3": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I4": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I5": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I6": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I7": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_suspected",
+   "added_by_validator": false
+  },
+  "I8": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I9": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E1": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E2": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_suspected",
+   "added_by_validator": false
+  },
+  "E3": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E4": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E5": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E6": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E7": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E8": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E9": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E10": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E11": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E12": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  }
+ },
+ "validation": {
+  "deterministic": {},
+  "risk": {
+   "I7": [
+    "category=other (근거 수준을 유형으로 정할 수 없음)"
+   ],
+   "E2": [
+    "다른 파싱 실행과 다름(underspecified)"
+   ],
+   "E9": [
+    "category=other (근거 수준을 유형으로 정할 수 없음)"
+   ]
+  },
+  "coverage_gaps": [
+   "[inclusion] The main inclusion criteria include but are not limited to the following:",
+   "[exclusion] The main exclusion criteria include but are not limited to the following:"
+  ],
+  "llm_checked": [
+   "E2",
+   "E9",
+   "I7"
+  ],
+  "changes": [
+   "I7: category other -> procedure",
+   "E9: category other -> procedure"
+  ],
+  "review": {},
+  "added_rules": [],
+  "evidence_conflicts": [
+   "I7: 유형 규칙(procedure: self_report_ok)과 검증 제안(clinical_record)이 달라 clinical_record 적용",
+   "E9: 유형 규칙(procedure: self_report_ok)과 검증 제안(clinical_record)이 달라 clinical_record 적용"
+  ],
+  "notes": [
+   "I7: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정",
+   "E2: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정"
+  ],
+  "llm_output": null
+ }
+}

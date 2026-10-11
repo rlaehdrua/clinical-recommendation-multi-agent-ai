@@ -16,8 +16,9 @@ from __future__ import annotations
 import json
 import re
 
-from .. import config, llm
-from ..schemas import CriterionAssessment, LLMAssessment, MatcherOutput, ParsedTrial, PatientProfile, TrialMatch
+from .. import config, evidence, llm
+from ..schemas import (CriterionAssessment, LLMAssessment, MatcherOutput, ParsedTrial, PatientProfile, Rule,
+                       RuleMeta, TrialMatch)
 from ..tools import rule_engine
 from .criteria_parser import rules_json
 
@@ -207,6 +208,53 @@ def _enforce_quote(a: LLMAssessment, source_text: str | None,
     })
 
 
+def _meta(parsed: ParsedTrial, rule: Rule) -> RuleMeta:
+    """사전 컴파일 메타. 없으면(즉석 파싱 등) 유형별 고정 규칙으로 근거 수준만 정함."""
+    m = parsed.rule_meta.get(rule.rule_id)
+    if m is not None:
+        return m
+    return RuleMeta(required_evidence=evidence.required_evidence(rule)[0])
+
+
+def _review_assessment(rule: Rule, reason: str) -> CriterionAssessment:
+    """파싱 검증에서 원문과 뜻이 다르다고 본 규칙: 자동 판정하지 않고 의사 확인 (UNSUPPORTED)."""
+    return CriterionAssessment(
+        rule_id=rule.rule_id, kind=rule.kind, criterion_text=rule.text, holds="unknown", passes=None,
+        confidence="low", evidence="근거 없음",
+        reasoning=f"[파싱 검증: 자동 판정 안 함] {reason}",
+        missing_info="담당 의사가 원문 기준과 대조해 확인", method="llm", category=rule.category,
+        underspecified=True, cohort=rule.cohort,
+    )
+
+
+def _evidence_source(a: CriterionAssessment, source_text: str | None) -> str:
+    """판정 근거가 처음 받은 기록에서 왔는지, 확인 질문 답변(자기 보고)에서 왔는지."""
+    if a.passes is None or source_text is None:
+        return "none"
+    record, answers = evidence.split_source(source_text)
+    quote = a.evidence
+    if a.method == "rule_engine":
+        quote = a.evidence.split(' - "', 1)[-1].rstrip('"') if ' - "' in a.evidence else ""
+        if not quote:
+            return "record"  # 나이·성별·ECOG 프로필 필드
+    if evidence_in_source(quote, record) or (a.method == "llm" and _FIELD_REF.search(quote)):
+        return "record"
+    if answers and evidence_in_source(quote, answers):
+        return "self_report"
+    return "record"
+
+
+def _apply_evidence_policy(a: CriterionAssessment, meta: RuleMeta, source_text: str | None) -> CriterionAssessment:
+    a.required_evidence = meta.required_evidence
+    a.evidence_source = _evidence_source(a, source_text)  # type: ignore[assignment]
+    a.needs_verification = a.evidence_source == "self_report" and a.required_evidence == "clinical_record"
+    return a
+
+
+def needs_record_check(a: CriterionAssessment) -> bool:
+    return a.needs_verification
+
+
 def _llm_assess(profile: PatientProfile, parsed: ParsedTrial, trial: dict, rules: list, ref: str) -> MatcherOutput:
     pending_parsed = parsed.model_copy(update={"rules": rules})
     user = f"""기준일: {ref}
@@ -244,6 +292,10 @@ def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
     results: dict[str, CriterionAssessment] = {}
 
     for rule in parsed.rules:
+        review = _meta(parsed, rule).review
+        if review:
+            results[rule.rule_id] = _review_assessment(rule, review)
+            continue
         res = rule_engine.evaluate(rule, profile)
         if res is not None:
             results[rule.rule_id] = res
@@ -294,7 +346,7 @@ def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
                 cohort=rule.cohort,
             )
 
-    all_assessments = [results[r.rule_id] for r in parsed.rules]
+    all_assessments = [_apply_evidence_policy(results[r.rule_id], _meta(parsed, r), source_text) for r in parsed.rules]
     assessments, matched_cohort, cohort_results = _select_cohort(all_assessments, parsed.cohorts)
     other = [a for a in all_assessments if a not in assessments]
     eligibility = decide(assessments)
@@ -305,11 +357,14 @@ def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
     n_blocking = sum(is_askable_unknown(a) for a in assessments)
     n_physician = sum(needs_physician_review(a) for a in assessments)
     n_logistics = sum(is_waivable_logistics(a) for a in assessments)
+    n_verify = sum(needs_record_check(a) for a in assessments)
     summary = f"{eligibility}: 통과 {n_pass} / 불충족 {n_fail} / 판정불가 {n_blocking}"
     if n_physician:
         summary += f" (+의사 확인 필요 {n_physician})"
     if n_logistics:
         summary += f" (+절차 기준 확인 필요 {n_logistics})"
+    if n_verify:
+        summary += f" (+답변 기반·기록 확인 필요 {n_verify})"
     if matched_cohort:
         summary += f" [코호트: {matched_cohort}]"
     if failed:
@@ -344,6 +399,9 @@ def compact(match: TrialMatch) -> dict:
         "physician_review": [
             {"rule_id": a.rule_id, "criterion": a.criterion_text, "info_needed": a.missing_info}
             for a in match.assessments if needs_physician_review(a)
+        ],
+        "record_check_needed": [
+            a.criterion_text for a in match.assessments if needs_record_check(a)
         ],
         "logistics_to_confirm": [
             a.criterion_text for a in match.assessments

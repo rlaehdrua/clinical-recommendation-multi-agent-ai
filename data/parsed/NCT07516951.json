@@ -1,0 +1,591 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT07516951",
+ "trial_hash": "dbfd56f43da75da0",
+ "parser_prompt_hash": "2e69d96de0305d7b",
+ "model": "claude-sonnet-5",
+ "compiled_at": "2026-10-11T06:40:53+00:00",
+ "runs": 3,
+ "canonical_run": 2,
+ "parsed": {
+  "trial_id": "NCT07516951",
+  "title": "A Study to Find an Efficacious and Safe Dose of CHF10067 (Zampilimab) in Participants With Idiopathic Pulmonary Fibrosis",
+  "target_population": "Adults aged 40 years or older with a confirmed diagnosis of idiopathic pulmonary fibrosis (IPF) within the last 8 years, with preserved lung function (FVC ≥45%, FEV1/FVC ≥0.7, DLCO ≥25%) and adequate oxygenation, without significant comorbidities or recent infections/exacerbations.",
+  "intervention_summary": "Phase IIb, multicentre, randomised, double-blind, placebo-controlled, three-arm parallel-group study evaluating two doses of CHF10067 (zampilimab) versus placebo in participants with IPF.",
+  "key_conditions": [
+   "Idiopathic Pulmonary Fibrosis"
+  ],
+  "cohorts": [],
+  "rules": [
+   {
+    "rule_id": "I1",
+    "kind": "inclusion",
+    "text": "Participant's written informed consent obtained prior to any study-related procedure.",
+    "category": "consent_or_logistics",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I2",
+    "kind": "inclusion",
+    "text": "Male or female, of any race and ethnicity, aged ≥40 years",
+    "category": "demographic",
+    "field": "age",
+    "operator": ">=",
+    "value": "40",
+    "unit": "years",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I3",
+    "kind": "inclusion",
+    "text": "Male or female, of any race and ethnicity",
+    "category": "demographic",
+    "field": "sex",
+    "operator": "==",
+    "value": "all",
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I4",
+    "kind": "inclusion",
+    "text": "Life expectancy of at least 1 year at screening in the opinion of the Investigator.",
+    "category": "other",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I5",
+    "kind": "inclusion",
+    "text": "Body weight ≥45 kg.",
+    "category": "other",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": "kg",
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I6",
+    "kind": "inclusion",
+    "text": "Diagnosis of IPF as defined by the 2018 and 2022 ATS/ERS/JRS/ALAT Guidelines for a maximum 8 years before screening.",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 2920,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I7",
+    "kind": "inclusion",
+    "text": "The most recent HRCT ≤6 months prior to screening, reviewed by central reading, should be used to confirm the diagnosis.",
+    "category": "procedure",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 180,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I8",
+    "kind": "inclusion",
+    "text": "FVC ≥45% of predicted normal value at screening.",
+    "category": "lab",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": "%",
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I9",
+    "kind": "inclusion",
+    "text": "Ratio of FEV1/FVC ≥0.7 at screening.",
+    "category": "lab",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I10",
+    "kind": "inclusion",
+    "text": "Diffusing capacity of the lung for carbon monoxide (DLCO) corrected for haemoglobin ≥25% of predicted normal at screening.",
+    "category": "lab",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": "%",
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I11",
+    "kind": "inclusion",
+    "text": "Oxygen saturation measured by pulse oximetry (SpO2) >90% at rest when the maximum oxygen flow is 4 L/min by standard nasal cannula or the equivalent oxygen delivery via reservoir nasal cannula (≤2 L/min).",
+    "category": "lab",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": "%",
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E1",
+    "kind": "exclusion",
+    "text": "Participant with a documented diagnosis of coeliac disease.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E2",
+    "kind": "exclusion",
+    "text": "Documented low respiratory tract infection in the last 4 weeks prior to screening.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 28,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E3",
+    "kind": "exclusion",
+    "text": "Documented acute exacerbation of IPF (defined as acute worsening or development of dyspnoea typically <1 month duration).",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E4",
+    "kind": "exclusion",
+    "text": "Active diagnosis or history of lung cancer.",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E5",
+    "kind": "exclusion",
+    "text": "HRCT shows the presence of emphysema ≥20%.",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": "%",
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E6",
+    "kind": "exclusion",
+    "text": "Extent of emphysema is greater than the extent of fibrosis on HRCT.",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E7",
+    "kind": "exclusion",
+    "text": "End-stage fibrotic disease expected to require organ transplantation within 6 months from screening.",
+    "category": "disease_stage",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 180,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E8",
+    "kind": "exclusion",
+    "text": "Clinically relevant and uncontrolled pulmonary (including any non-IPF pulmonary diagnosis), cardiac, hepatic, gastrointestinal, renal, endocrine, metabolic, neurologic, or psychiatric disorders that may interfere with the participant's ability to complete this study according to the Investigator's judgement.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   },
+   {
+    "rule_id": "E9",
+    "kind": "exclusion",
+    "text": "Active or untreated latent tuberculosis/tuberculosis infection that may interfere with the participant's ability to complete this study.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E10",
+    "kind": "exclusion",
+    "text": "Any other comorbid non-IPF pulmonary condition that may impact FVC according to the Investigator's judgement. Emphysema is allowed, unless it meets the above exclusion criterion regarding emphysema.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   },
+   {
+    "rule_id": "E11",
+    "kind": "exclusion",
+    "text": "Participant currently treated, or been treated with cytotoxic and immunosuppressant/modulator drugs within 48 weeks prior to screening.",
+    "category": "medication",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 336,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E12",
+    "kind": "exclusion",
+    "text": "Systemic (IV, intramuscular, or oral) corticosteroids prednisone-equivalent dose of >10 mg/day used for >10 days.",
+    "category": "medication",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": "mg/day",
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E13",
+    "kind": "exclusion",
+    "text": "Known intolerance and/or hypersensitivity to any of the excipients contained in the formulation or any other substance used in the study.",
+    "category": "other",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E14",
+    "kind": "exclusion",
+    "text": "History of allergic or anaphylactic reaction to human, humanised, chimeric immunoglobulins (Igs), or murine monoclonal antibodies.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   }
+  ],
+  "parsing_notes": "구조화 필드(sex=ALL, minimum_age=40)는 I2/I3로 반영함. Body weight, FVC%, FEV1/FVC, DLCO%, SpO2 등은 허용된 field 목록(age/sex/ecog/lab:특정검사명)에 해당하지 않아 field=null로 처리함. E8과 E10은 구체적 질환명이나 기준값 없이 'Investigator's judgement'에만 의존하는 광범위한 다장기 이상 기준이라 underspecified=true로 표시함. 나머지 제외기준은 구체적 질환명/기간/수치가 명시되어 있어 underspecified=false로 처리함. 8년, 6개월, 4주, 48주 등 시간 조건은 time_window_days(일)로 환산함."
+ },
+ "rule_meta": {
+  "I1": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I2": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I3": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I4": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_suspected",
+   "added_by_validator": false
+  },
+  "I5": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I6": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I7": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I8": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I9": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I10": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I11": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E1": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E2": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E3": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E4": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E5": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E6": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E7": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E8": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_confirmed",
+   "added_by_validator": false
+  },
+  "E9": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E10": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_confirmed",
+   "added_by_validator": false
+  },
+  "E11": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E12": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E13": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": "vague_suspected",
+   "added_by_validator": false
+  },
+  "E14": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  }
+ },
+ "validation": {
+  "deterministic": {},
+  "risk": {
+   "I1": [
+    "절차 선정 기준 (미확인이어도 적격을 막지 않음)"
+   ],
+   "I2": [
+    "다른 파싱 실행과 다름(engine)"
+   ],
+   "I4": [
+    "category=other (근거 수준을 유형으로 정할 수 없음)"
+   ],
+   "I5": [
+    "category=other (근거 수준을 유형으로 정할 수 없음)",
+    "다른 파싱 실행과 다름(engine)"
+   ],
+   "I8": [
+    "다른 파싱 실행과 다름(engine)"
+   ],
+   "I10": [
+    "다른 파싱 실행과 다름(engine)"
+   ],
+   "I11": [
+    "다른 파싱 실행과 다름(engine)"
+   ],
+   "E8": [
+    "underspecified (파서 한 번의 판단)"
+   ],
+   "E10": [
+    "underspecified (파서 한 번의 판단)"
+   ],
+   "E12": [
+    "다른 파싱 실행과 다름(engine)"
+   ],
+   "E13": [
+    "category=other (근거 수준을 유형으로 정할 수 없음)"
+   ]
+  },
+  "coverage_gaps": [],
+  "llm_checked": [
+   "E10",
+   "E12",
+   "E13",
+   "E8",
+   "I1",
+   "I10",
+   "I11",
+   "I2",
+   "I4",
+   "I5",
+   "I8"
+  ],
+  "changes": [],
+  "review": {},
+  "added_rules": [],
+  "evidence_conflicts": [
+   "E8: 유형 규칙(comorbidity: self_report_ok)과 검증 제안(clinical_record)이 달라 clinical_record 적용",
+   "E10: 유형 규칙(comorbidity: self_report_ok)과 검증 제안(clinical_record)이 달라 clinical_record 적용",
+   "E12: 유형 규칙(medication: self_report_ok)과 검증 제안(clinical_record)이 달라 clinical_record 적용"
+  ],
+  "notes": [
+   "I4: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정",
+   "E13: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정"
+  ],
+  "llm_output": null
+ }
+}

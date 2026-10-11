@@ -1,0 +1,993 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT06908096",
+ "trial_hash": "662d659f6a2f3b34",
+ "parser_prompt_hash": "2e69d96de0305d7b",
+ "model": "claude-sonnet-5",
+ "compiled_at": "2026-10-11T06:40:32+00:00",
+ "runs": 3,
+ "canonical_run": 2,
+ "parsed": {
+  "trial_id": "NCT06908096",
+  "title": "Epstein-Barr Virus (EBV) gH/gL/gp42-Ferritin Nanoparticle Vaccine With or Without gp350-Ferritin in Healthy Adults With or Without EBV Infection",
+  "target_population": "18-29세의 건강한 성인(EBV 혈청음성 또는 혈청양성 모두 포함)으로 EBV 백신 1상 임상시험에 참여 가능한 자",
+  "intervention_summary": "EBV gH/gL/gp42-ferritin 나노입자 백신을 ALFQ 애주번트와 함께 단독 또는 EBV gp350-ferritin 백신과 병용하여 0, 1, 4개월에 3회 근육주사로 투여",
+  "key_conditions": [
+   "EBV",
+   "Epstein-Barr Virus Infection",
+   "Infectious Mononucleosis",
+   "Mono"
+  ],
+  "cohorts": [],
+  "rules": [
+   {
+    "rule_id": "I1",
+    "kind": "inclusion",
+    "text": "18 to 29 years old.",
+    "category": "demographic",
+    "field": "age",
+    "operator": ">=",
+    "value": "18",
+    "unit": "years",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I2",
+    "kind": "inclusion",
+    "text": "18 to 29 years old.",
+    "category": "demographic",
+    "field": "age",
+    "operator": "<=",
+    "value": "29",
+    "unit": "years",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I3",
+    "kind": "inclusion",
+    "text": "Sex: ALL (structured eligibility field)",
+    "category": "demographic",
+    "field": "sex",
+    "operator": "==",
+    "value": "all",
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I4",
+    "kind": "inclusion",
+    "text": "Able to provide informed consent.",
+    "category": "consent_or_logistics",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I5",
+    "kind": "inclusion",
+    "text": "Willingness to allow storage of blood and saliva for future research.",
+    "category": "consent_or_logistics",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I6",
+    "kind": "inclusion",
+    "text": "In good general health as evidenced by medical history, physical examination, and laboratory screening results.",
+    "category": "other",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   },
+   {
+    "rule_id": "I7",
+    "kind": "inclusion",
+    "text": "Participant is willing to forgo receipt of a licensed, live vaccine in the 30 days preceding each dose of vaccine or in the 30 days following each dose of vaccine.",
+    "category": "medication",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 30,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I8",
+    "kind": "inclusion",
+    "text": "Participants of reproductive potential who are sexually active with a partner who can impregnate them: use of highly effective continuous contraception for at least 30 days prior to Day 0 and agreement to continue use until 60 days after the last dose of vaccine.",
+    "category": "reproductive",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 30,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I9",
+    "kind": "inclusion",
+    "text": "Participants of childbearing potential must have a negative pregnancy test before receiving each dose of the EBV gH/gL/gp42-FNP vaccine.",
+    "category": "reproductive",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I10",
+    "kind": "inclusion",
+    "text": "Hemoglobin within institutional normal limits or if not, then assessed and deemed not clinically significant by PI or designee.",
+    "category": "lab",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 30,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I11",
+    "kind": "inclusion",
+    "text": "White blood cell count and differential either within institutional normal reference range or if not then assessed and deemed not clinically significant by PI or designee.",
+    "category": "lab",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 30,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I12",
+    "kind": "inclusion",
+    "text": "Total lymphocyte count (lymphocyte absolute) > 800 cells/microL.",
+    "category": "lab",
+    "field": "lab:absolute lymphocyte count",
+    "operator": ">",
+    "value": "800",
+    "unit": "cells/microL",
+    "time_window_days": 30,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I13",
+    "kind": "inclusion",
+    "text": "Platelet count equal to 125,000-500,000/microL.",
+    "category": "lab",
+    "field": "lab:platelets",
+    "operator": ">=",
+    "value": "125000",
+    "unit": "/microL",
+    "time_window_days": 30,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I14",
+    "kind": "inclusion",
+    "text": "Platelet count equal to 125,000-500,000/microL.",
+    "category": "lab",
+    "field": "lab:platelets",
+    "operator": "<=",
+    "value": "500000",
+    "unit": "/microL",
+    "time_window_days": 30,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I15",
+    "kind": "inclusion",
+    "text": "Alanine aminotransferase <1.25 x upper limit of normal (ULN).",
+    "category": "lab",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 30,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I16",
+    "kind": "inclusion",
+    "text": "Serum IgG >600 mg/dL.",
+    "category": "lab",
+    "field": "lab:igg",
+    "operator": ">",
+    "value": "600",
+    "unit": "mg/dL",
+    "time_window_days": 30,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E1",
+    "kind": "exclusion",
+    "text": "Pregnant, breastfeeding, or planning to become pregnant while participating through 60 days after the last dose of vaccine.",
+    "category": "reproductive",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E2",
+    "kind": "exclusion",
+    "text": "More than 10 days of systemic immunosuppressive medications (>=10 mg prednisone dose or its equivalent) or cytotoxic medication within the 30 days prior to first dose of vaccine.",
+    "category": "medication",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 30,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E3",
+    "kind": "exclusion",
+    "text": "Immunomodulating therapy within 180 days prior to first dose of vaccine.",
+    "category": "medication",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 180,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E4",
+    "kind": "exclusion",
+    "text": "Blood products, including immunoglobulin products, within 120 days prior to first dose of vaccine.",
+    "category": "medication",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 120,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E5",
+    "kind": "exclusion",
+    "text": "Investigational research agents within 30 days prior to first dose or planning to receive investigational products while on study.",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 30,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E6",
+    "kind": "exclusion",
+    "text": "Allergy treatment with antigen injections, unless on a maintenance schedule of shots no more frequently than once per month.",
+    "category": "medication",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E7",
+    "kind": "exclusion",
+    "text": "Prior participant in an EBV vaccine clinical trial.",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E8",
+    "kind": "exclusion",
+    "text": "Febrile illness within 14 days of the first dose of vaccine.",
+    "category": "other",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 14,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E9",
+    "kind": "exclusion",
+    "text": "Body habitus such that it is difficult to confirm location of the deltoid muscle for safe intramuscular injection.",
+    "category": "other",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E10",
+    "kind": "exclusion",
+    "text": "History of serious reactions to vaccines.",
+    "category": "other",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E11",
+    "kind": "exclusion",
+    "text": "Hereditary, acquired, or idiopathic forms of angioedema.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E12",
+    "kind": "exclusion",
+    "text": "Idiopathic urticaria within the past year.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 365,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E13",
+    "kind": "exclusion",
+    "text": "Asthma that is not well-controlled or required emergent care, urgent care, hospitalization, or intubation during the past 2 years or that requires the use of oral or intravenous steroids.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 730,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E14",
+    "kind": "exclusion",
+    "text": "Diabetes mellitus type 1 or type 2, excluding a history of gestational diabetes.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E15",
+    "kind": "exclusion",
+    "text": "Clinically significant autoimmune disease or immunodeficiency.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E16",
+    "kind": "exclusion",
+    "text": "Hypertension that is not well-controlled.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E17",
+    "kind": "exclusion",
+    "text": "Thyroid disease that is not well-controlled.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E18",
+    "kind": "exclusion",
+    "text": "Bleeding disorder diagnosed by doctor (eg, factor deficiency, coagulopathy, or platelet disorder requiring special precautions).",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E19",
+    "kind": "exclusion",
+    "text": "Significant bruising or bleeding difficulties with intramuscular injections or blood draws.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E20",
+    "kind": "exclusion",
+    "text": "Malignancy that is active or treated malignancy for which there is no reasonable assurance of sustained cure or malignancy that is likely to recur during the study period.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E21",
+    "kind": "exclusion",
+    "text": "Seizure disorder other than a history of 1) febrile seizures, 2) seizures secondary to alcohol withdrawal more than 3 years ago, or 3) seizures that have not required treatment within the past 3 years.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E22",
+    "kind": "exclusion",
+    "text": "Asplenia, functional asplenia, or any condition resulting in absence or removal of the spleen.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E23",
+    "kind": "exclusion",
+    "text": "History of Guillain-Barre Syndrome.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E24",
+    "kind": "exclusion",
+    "text": "Alcohol or drug abuse or addiction.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E25",
+    "kind": "exclusion",
+    "text": "HIV infection.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E26",
+    "kind": "exclusion",
+    "text": "Any medical, psychiatric, or social condition that, in the judgement of the investigator, is a contraindication to protocol participation or impairs the participant's ability to give informed consent.",
+    "category": "other",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   },
+   {
+    "rule_id": "I17",
+    "kind": "inclusion",
+    "text": "Contraceptive requirements: Because the effects of EBV gH/gL/gp42-FNP and EBV gp350-ferritin vaccines on the developing human fetus are unknown, sexually active participants of childbearing potential must agree to use highly effective contraception as outlined below before study entry and until 60 days after the last dose of vaccine. Participants of childbearing potential must have a negative pregnancy test before receiving each dose of the EBV gH/gL/gp42-FNP vaccine. During the course of the study, if a participant becomes pregnant or suspects they are pregnant, then they should inform the study staff and their primary care physician immediately.",
+    "category": "reproductive",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   }
+  ],
+  "parsing_notes": "연구는 용량 증량(dose escalation)과 무작위 배정(randomization) 단계, EBV 혈청양성/혈청음성 집단으로 나뉘지만 이는 참여자 배정 단계이며 적격 기준 자체는 모든 참여자에게 동일하게 적용되어 cohorts는 빈 목록으로 처리함. 실험실 기준 중 'institutional normal limits', 'PI 판단으로 임상적으로 유의하지 않다고 간주', 'ULN 대비 상대값(1.25x ULN)' 등은 절대 수치가 제시되지 않아 field/operator/value를 null로 두고 structured_evaluable=false로 처리함(단, 의미 자체는 명확하여 underspecified는 false). 'In good general health'과 '투자자 판단에 따른 의학/정신/사회적 금기사항' 기준은 구체적 판정 기준이 없어 underspecified=true로 표시함. 피임 관련 항목은 다양한 허용 방법이 원문에 구체적으로 나열되어 있어 하나의 규칙으로 통합함."
+ },
+ "rule_meta": {
+  "I1": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I2": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I3": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I4": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I5": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I6": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_confirmed",
+   "added_by_validator": false
+  },
+  "I7": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I8": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I9": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I10": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_suspected",
+   "added_by_validator": false
+  },
+  "I11": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_suspected",
+   "added_by_validator": false
+  },
+  "I12": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I13": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I14": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I15": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I16": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E1": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E2": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E3": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E4": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E5": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E6": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E7": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E8": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E9": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_suspected",
+   "added_by_validator": false
+  },
+  "E10": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": "vague_suspected",
+   "added_by_validator": false
+  },
+  "E11": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E12": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E13": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E14": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E15": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_suspected",
+   "added_by_validator": false
+  },
+  "E16": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E17": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E18": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E19": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E20": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E21": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E22": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E23": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E24": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E25": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E26": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_confirmed",
+   "added_by_validator": false
+  },
+  "I17": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": true
+  }
+ },
+ "validation": {
+  "deterministic": {},
+  "risk": {
+   "I1": [
+    "다른 파싱 실행과 다름(engine)"
+   ],
+   "I4": [
+    "절차 선정 기준 (미확인이어도 적격을 막지 않음)"
+   ],
+   "I5": [
+    "절차 선정 기준 (미확인이어도 적격을 막지 않음)"
+   ],
+   "I6": [
+    "underspecified (파서 한 번의 판단)",
+    "category=other (근거 수준을 유형으로 정할 수 없음)"
+   ],
+   "I10": [
+    "다른 파싱 실행과 다름(underspecified)"
+   ],
+   "I11": [
+    "다른 파싱 실행과 다름(underspecified)"
+   ],
+   "I12": [
+    "규칙 엔진 확정 판정 (검사·ECOG)",
+    "다른 파싱 실행과 다름(engine)"
+   ],
+   "I13": [
+    "규칙 엔진 확정 판정 (검사·ECOG)",
+    "다른 파싱 실행과 다름(engine)"
+   ],
+   "I14": [
+    "규칙 엔진 확정 판정 (검사·ECOG)"
+   ],
+   "I16": [
+    "규칙 엔진 확정 판정 (검사·ECOG)"
+   ],
+   "E8": [
+    "category=other (근거 수준을 유형으로 정할 수 없음)"
+   ],
+   "E9": [
+    "category=other (근거 수준을 유형으로 정할 수 없음)"
+   ],
+   "E10": [
+    "category=other (근거 수준을 유형으로 정할 수 없음)"
+   ],
+   "E15": [
+    "다른 파싱 실행과 다름(underspecified)"
+   ],
+   "E26": [
+    "underspecified (파서 한 번의 판단)",
+    "category=other (근거 수준을 유형으로 정할 수 없음)"
+   ]
+  },
+  "coverage_gaps": [
+   "[inclusion] To be eligible to participate in this study, an individual must meet all of the following criteria:",
+   "[inclusion] Participant is willing to forgo receipt of a licensed, live vaccine in the 30 days preceding each dose of vaccine or in the 30 days following each dose of vaccine. Any FDA-approved inactivated, subunit, or replication-defective vaccine (such as COVID-19, influenza, tetanus, etc.) can be used \\>=14 days before or \\>=14 days after administration of the study vaccine.",
+   "[inclusion] Contraceptive requirements: Because the effects of EBV gH/gL/gp42-FNP and EBV gp350-ferritin vaccines on the developing human fetus are unknown, sexually active participants of childbearing potential must agree to use highly effective contraception as outlined below before study entry and until 60 days after the last dose of vaccine. Participants of childbearing potential must have a negative pregnancy test before receiving each dose of the EBV gH/gL/gp42-FNP vaccine. During the course of the study, if a participant becomes pregnant or suspects they are pregnant, then they should inform the study staff and their primary care physician immediately.",
+   "[inclusion] Acceptable forms of contraception are:",
+   "[inclusion] Intrauterine device (IUD) or equivalent.",
+   "[inclusion] Hormonal contraceptive (eg, consistent, timely, and continuous use of contraceptive pill, patch, ring, implant, or injection that has reached full efficacy prior to dosing). If the participant uses a contraceptive pill, patch, or ring, then a barrier method (eg, internal/external condom, cap, or diaphragm plus spermicide) must also be used at the time of potentially reproductive sexual activity.",
+   "[inclusion] A stable, long-term monogamous relationship with a partner who does not pose any potential pregnancy risk, eg, has undergone a vasectomy at least 6 months prior to the first dose of vaccine or is of the same sex as the participant.",
+   "[inclusion] A hysterectomy and/or a bilateral tubal ligation or bilateral oophorectomy.",
+   "[inclusion] Acceptable forms of contraception for participants who can impregnate a partner include one of the following:",
+   "[inclusion] External condom plus spermicide, used during sexual intercourse, even if the partner uses a contraceptive pill, patch, or ring.",
+   "[inclusion] A vasectomy completed at least 6 months before the first dose of vaccine.",
+   "[inclusion] Acceptable contraception for partners of childbearing potential of participants who can impregnate them include one of the following:",
+   "[inclusion] Hormonal contraceptive (eg, pill, patch, ring, implant, or an injection used consistently and that has reached full effect prior to the first dose of vaccine).",
+   "[inclusion] Hysterectomy and/or a bilateral tubal ligation or bilateral oophorectomy.",
+   "[inclusion] Laboratory Criteria within 30 days or less prior to enrollment:",
+   "[exclusion] An individual who meets any of the following criteria will be excluded from participation in this study:"
+  ],
+  "llm_checked": [
+   "E10",
+   "E15",
+   "E26",
+   "E8",
+   "E9",
+   "I1",
+   "I10",
+   "I11",
+   "I12",
+   "I13",
+   "I14",
+   "I16",
+   "I4",
+   "I5",
+   "I6"
+  ],
+  "changes": [],
+  "review": {},
+  "added_rules": [
+   "I17: Contraceptive requirements: Because the effects of EBV gH/gL/gp42-FNP and EBV gp350-ferritin vaccines on the developing "
+  ],
+  "evidence_conflicts": [
+   "E15: 유형 규칙(comorbidity: self_report_ok)과 검증 제안(clinical_record)이 달라 clinical_record 적용"
+  ],
+  "notes": [
+   "I10: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정",
+   "I11: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정",
+   "E9: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정",
+   "E10: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정",
+   "E15: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정"
+  ],
+  "llm_output": null
+ }
+}

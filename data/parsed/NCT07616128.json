@@ -1,0 +1,236 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT07616128",
+ "trial_hash": "f91b3e327b832dd7",
+ "parser_prompt_hash": "2e69d96de0305d7b",
+ "model": "claude-sonnet-5",
+ "compiled_at": "2026-10-11T06:39:59+00:00",
+ "runs": 3,
+ "canonical_run": 1,
+ "parsed": {
+  "trial_id": "NCT07616128",
+  "title": "Study of EVO756 in Adults With Migraine",
+  "target_population": "Adults aged 18 to 64 years with migraine (with or without aura) per ICHD-3 criteria who have failed prior preventive migraine treatments and are not currently on preventive therapy",
+  "intervention_summary": "EVO756 Dose 1 vs Dose 2 vs Placebo in adults with migraine",
+  "key_conditions": [
+   "Migraine"
+  ],
+  "cohorts": [],
+  "rules": [
+   {
+    "rule_id": "I1",
+    "kind": "inclusion",
+    "text": "Adults aged 18 to <65 years",
+    "category": "demographic",
+    "field": "age",
+    "operator": ">=",
+    "value": "18",
+    "unit": "years",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I2",
+    "kind": "inclusion",
+    "text": "Adults aged 18 to <65 years",
+    "category": "demographic",
+    "field": "age",
+    "operator": "<",
+    "value": "65",
+    "unit": "years",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I3",
+    "kind": "inclusion",
+    "text": "Sex: All (structured eligibility)",
+    "category": "demographic",
+    "field": "sex",
+    "operator": "==",
+    "value": "all",
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I4",
+    "kind": "inclusion",
+    "text": "Migraine with or without aura, per ICHD-3 criteria",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I5",
+    "kind": "inclusion",
+    "text": "History of failure with prior preventive migraine treatments",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I6",
+    "kind": "inclusion",
+    "text": "Not currently using migraine preventive therapy",
+    "category": "medication",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E1",
+    "kind": "exclusion",
+    "text": "Difficulty distinguishing migraine from other headache types or presence of other primary headache disorders",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E2",
+    "kind": "exclusion",
+    "text": "Use of certain medications",
+    "category": "medication",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   },
+   {
+    "rule_id": "E3",
+    "kind": "exclusion",
+    "text": "Any clinically significant medical, psychiatric, neurological, cardiovascular, or laboratory abnormalities",
+    "category": "other",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   }
+  ],
+  "parsing_notes": "구조화된 성별(all) 및 나이(18-64) 필드를 규칙으로 변환함. E2, E3는 구체적인 약물 목록이나 이상 소견 기준이 명시되지 않아 underspecified=true로 표시함. E1은 'or'로 연결된 단일 기준으로 유지함."
+ },
+ "rule_meta": {
+  "I1": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I2": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I3": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I4": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I5": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I6": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E1": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_suspected",
+   "added_by_validator": false
+  },
+  "E2": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": "vague_confirmed",
+   "added_by_validator": false
+  },
+  "E3": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_confirmed",
+   "added_by_validator": false
+  }
+ },
+ "validation": {
+  "deterministic": {},
+  "risk": {
+   "E1": [
+    "다른 파싱 실행과 다름(underspecified)"
+   ],
+   "E2": [
+    "underspecified (파서 한 번의 판단)"
+   ],
+   "E3": [
+    "underspecified (파서 한 번의 판단)",
+    "category=other (근거 수준을 유형으로 정할 수 없음)"
+   ]
+  },
+  "coverage_gaps": [
+   "[inclusion] Key Inclusion Criteria:"
+  ],
+  "llm_checked": [
+   "E1",
+   "E2",
+   "E3"
+  ],
+  "changes": [],
+  "review": {},
+  "added_rules": [],
+  "evidence_conflicts": [],
+  "notes": [
+   "E1: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정"
+  ],
+  "llm_output": null
+ }
+}

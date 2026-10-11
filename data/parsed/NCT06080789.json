@@ -1,0 +1,345 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT06080789",
+ "trial_hash": "8141ab7880c2b5a9",
+ "parser_prompt_hash": "2e69d96de0305d7b",
+ "model": "claude-sonnet-5",
+ "compiled_at": "2026-10-11T06:39:23+00:00",
+ "runs": 3,
+ "canonical_run": 2,
+ "parsed": {
+  "trial_id": "NCT06080789",
+  "title": "A Study to Evaluate the Safety and Efficacy of a Single Dose of RABI-767 in Participants With Acute Pancreatitis",
+  "target_population": "18-85세, 입원 중인 예측된 중증 급성 췌장염(predicted severe acute pancreatitis) 환자로 EUS 유도 약물 투여가 가능한 자",
+  "intervention_summary": "단회 용량 RABI-767을 EUS 유도 췌장주위 주사로 투여 + 보존적 치료 vs 보존적 치료 단독, 무작위 배정 비교",
+  "key_conditions": [
+   "Acute Pancreatitis",
+   "Predicted severe acute pancreatitis"
+  ],
+  "cohorts": [],
+  "rules": [
+   {
+    "rule_id": "I1",
+    "kind": "inclusion",
+    "text": "minimum_age=18 Years",
+    "category": "demographic",
+    "field": "age",
+    "operator": ">=",
+    "value": "18",
+    "unit": "years",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I2",
+    "kind": "inclusion",
+    "text": "maximum_age=85 Years",
+    "category": "demographic",
+    "field": "age",
+    "operator": "<=",
+    "value": "85",
+    "unit": "years",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I3",
+    "kind": "inclusion",
+    "text": "sex=ALL",
+    "category": "demographic",
+    "field": "sex",
+    "operator": "==",
+    "value": "all",
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I4",
+    "kind": "inclusion",
+    "text": "Diagnosis of acute pancreatitis",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I5",
+    "kind": "inclusion",
+    "text": "Predicted severe acute pancreatitis, based on protocol defined criteria",
+    "category": "disease_stage",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   },
+   {
+    "rule_id": "I6",
+    "kind": "inclusion",
+    "text": "Lack of clinically meaningful improvement from status at admission, at the discretion of Investigator, at the time of randomization",
+    "category": "disease_stage",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   },
+   {
+    "rule_id": "I7",
+    "kind": "inclusion",
+    "text": "Suitable for EUS-guided study drug administration procedure",
+    "category": "procedure",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   },
+   {
+    "rule_id": "I8",
+    "kind": "inclusion",
+    "text": "Contrast-enhanced computed tomography (CECT) or magnetic resonance imaging (MRI) of the abdomen/pancreas available for the evaluation of exclusion criteria",
+    "category": "procedure",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E1",
+    "kind": "exclusion",
+    "text": "Confirmed severe acute pancreatitis as defined by the Revised Atlanta Classification of Acute Pancreatitis (ie, Persistent [> 48 hours] organ failure, per Modified Marshall Score), prior to randomization",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E2",
+    "kind": "exclusion",
+    "text": "Anticipated discharge from hospital within 48 hours of randomization",
+    "category": "disease_stage",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E3",
+    "kind": "exclusion",
+    "text": "More than 30% pancreatic necrosis on screening CECT or MRI",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E4",
+    "kind": "exclusion",
+    "text": "History of previous pancreatic necrosis, including necrosectomy",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E5",
+    "kind": "exclusion",
+    "text": "History of calcific chronic pancreatitis",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E6",
+    "kind": "exclusion",
+    "text": "Evidence of cholangitis",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   }
+  ],
+  "parsing_notes": "군(코호트) 구분 없음 - RABI-767군과 보존적 치료군은 무작위 배정 arm이며 적격 기준은 동일하게 적용됨. I5(protocol defined criteria 미공개), I6(investigator 재량, 구체적 기준 없음), I7(procedure 적합성, 구체적 기준 없음)은 원문만으로 판정 불가하여 underspecified=true로 표시. E1은 Modified Marshall Score 및 Atlanta Classification 등 구체적 정의가 제공되어 underspecified=false로 처리했으나 구조화 필드로는 평가 불가(structured_evaluable=false)."
+ },
+ "rule_meta": {
+  "I1": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I2": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I3": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I4": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I5": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_confirmed",
+   "added_by_validator": false
+  },
+  "I6": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_confirmed",
+   "added_by_validator": false
+  },
+  "I7": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_confirmed",
+   "added_by_validator": false
+  },
+  "I8": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E1": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E2": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E3": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E4": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E5": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E6": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  }
+ },
+ "validation": {
+  "deterministic": {},
+  "risk": {
+   "I5": [
+    "underspecified (파서 한 번의 판단)"
+   ],
+   "I6": [
+    "underspecified (파서 한 번의 판단)",
+    "category=other (근거 수준을 유형으로 정할 수 없음)"
+   ],
+   "I7": [
+    "underspecified (파서 한 번의 판단)"
+   ],
+   "E2": [
+    "category=other (근거 수준을 유형으로 정할 수 없음)"
+   ]
+  },
+  "coverage_gaps": [
+   "[inclusion] Key Inclusion Criteria:",
+   "[exclusion] Key Exclusion Criteria:"
+  ],
+  "llm_checked": [
+   "E2",
+   "I5",
+   "I6",
+   "I7"
+  ],
+  "changes": [
+   "I6: category other -> disease_stage",
+   "E2: category other -> disease_stage"
+  ],
+  "review": {},
+  "added_rules": [],
+  "evidence_conflicts": [
+   "I7: 유형 규칙(procedure: self_report_ok)과 검증 제안(clinical_record)이 달라 clinical_record 적용"
+  ],
+  "notes": [],
+  "llm_output": null
+ }
+}

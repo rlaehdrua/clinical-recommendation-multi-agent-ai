@@ -1,0 +1,183 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT00195949",
+ "trial_hash": "357da88fd77d5cfd",
+ "parser_prompt_hash": "2e69d96de0305d7b",
+ "model": "claude-sonnet-5",
+ "compiled_at": "2026-10-11T06:39:01+00:00",
+ "runs": 3,
+ "canonical_run": 3,
+ "parsed": {
+  "trial_id": "NCT00195949",
+  "title": "Laparoscopic Versus Open Pyloromyotomy for Infants With Idiopathic Hypertrophic Pyloric Stenosis",
+  "target_population": "12주 미만의 특발성 비대성 유문 협착증(pyloric stenosis) 진단을 받은 영아",
+  "intervention_summary": "복강경(laparoscopic) 유문근절개술과 개복(open) 유문근절개술을 무작위 배정하여 비교하는 3상 수술적 중재 연구",
+  "key_conditions": [
+   "Hypertrophic Pyloric Stenosis"
+  ],
+  "cohorts": [],
+  "rules": [
+   {
+    "rule_id": "I1",
+    "kind": "inclusion",
+    "text": "All infants less than 12 weeks of age",
+    "category": "demographic",
+    "field": "age",
+    "operator": "<",
+    "value": "12",
+    "unit": "weeks",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I2",
+    "kind": "inclusion",
+    "text": "sex=ALL (structured eligibility)",
+    "category": "demographic",
+    "field": "sex",
+    "operator": "==",
+    "value": "all",
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I3",
+    "kind": "inclusion",
+    "text": "who have undergone surgical consultation and abdominal ultrasound confirming the diagnosis of pyloric stenosis",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I4",
+    "kind": "inclusion",
+    "text": "whose parents have given consent for inclusion in the study",
+    "category": "consent_or_logistics",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E1",
+    "kind": "exclusion",
+    "text": "All patients greater than 12 weeks of age",
+    "category": "demographic",
+    "field": "age",
+    "operator": ">",
+    "value": "12",
+    "unit": "weeks",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E2",
+    "kind": "exclusion",
+    "text": "without parental consent",
+    "category": "consent_or_logistics",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E3",
+    "kind": "exclusion",
+    "text": "without pyloric stenosis",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   }
+  ],
+  "parsing_notes": "구조화된 성별(ALL) 및 최대연령(12주) 필드를 규칙으로 포함함. 진단 확인(초음파, 외과 상담) 및 부모 동의는 수치/범주 기준이 아니므로 structured_evaluable=false로 처리함. 코호트 구분 없음(단순 무작위 배정 arm)."
+ },
+ "rule_meta": {
+  "I1": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I2": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I3": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I4": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E1": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E2": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E3": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  }
+ },
+ "validation": {
+  "deterministic": {},
+  "risk": {
+   "I4": [
+    "절차 선정 기준 (미확인이어도 적격을 막지 않음)"
+   ]
+  },
+  "coverage_gaps": [],
+  "llm_checked": [
+   "I4"
+  ],
+  "changes": [],
+  "review": {},
+  "added_rules": [],
+  "evidence_conflicts": [],
+  "notes": [],
+  "llm_output": null
+ }
+}

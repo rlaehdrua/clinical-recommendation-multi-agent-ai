@@ -59,7 +59,20 @@ def explain(
         head += f"## 최종 추천{tie}\n\n" + "\n".join(
             f"- **{r.trial_id}** ({r.eligibility}) {titles.get(r.trial_id, '')}" for r in rec.recommended
         ) + f"\n\n{rec.selection_reason}\n\n"
-    return f"{head}{body.strip()}\n\n{extra_section}{_physician_section(rec)}---\n{DISCLAIMER}\n"
+    return (f"{head}{body.strip()}\n\n{extra_section}{_physician_section(rec)}{_verification_section(rec)}"
+            f"---\n{DISCLAIMER}\n")
+
+
+def _verification_section(rec: Recommendation) -> str:
+    """환자 답변만으로 판정해 진료 기록 확인이 필요한 항목 (D2, 코드가 고정 기재)."""
+    items = [(r.trial_id, n) for r in rec.ranked for n in r.verification_needed]
+    if not items:
+        return ""
+    lines = ["## 진료 기록 확인 필요 사항", "",
+             "아래 기준은 검사 결과지·보고서 같은 진료 기록으로 확인해야 하지만, 환자 답변만으로 판정했습니다. "
+             "판정은 답변이 사실이라는 전제이므로 등록 전 기록으로 확인하세요.", ""]
+    lines += [f"- **{tid}** - {note}" for tid, note in items]
+    return "\n".join(lines) + "\n\n"
 
 
 def _physician_section(rec: Recommendation) -> str:

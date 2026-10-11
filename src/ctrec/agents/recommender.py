@@ -9,11 +9,11 @@ from __future__ import annotations
 
 import json
 
-from .. import config, llm
+from .. import config, llm, location
 from ..schemas import (
     ExcludedTrial, PatientProfile, QAPair, RankedTrial, Recommendation, RecommendationDraft, TrialMatch,
 )
-from .matcher import needs_physician_review
+from .matcher import needs_physician_review, needs_record_check
 
 # 참여 신청이 가능한 모집 상태. UNKNOWN(직접 입력한 시험 등)은 막지 않고 확인 필요로 표시
 OPEN_STATUSES = {"RECRUITING", "NOT_YET_RECRUITING", "UNKNOWN"}
@@ -38,13 +38,14 @@ SYSTEM = """당신은 환자에게 가장 적절한 임상시험을 추천하는
 1. 적격성: ELIGIBLE > UNCERTAIN. INELIGIBLE 시험은 ranked에 넣지 않고 excluded에 사유와 함께 넣습니다.
 2. UNCERTAIN 시험끼리는 판정 불가 항목이 적고, 남은 항목이 충족될 가능성이 높은 시험을 앞에 둡니다.
 3. 환자의 주 진단·병기·바이오마커·치료 이력과 시험 대상군(target population)의 적합도.
-4. 모집 상태(RECRUITING > NOT_YET_RECRUITING), 시험 단계 등 실무적 요소.
+4. 모집 상태(RECRUITING > NOT_YET_RECRUITING), 기관 위치(location: 환자 국가에 기관이 있는가), 시험 단계 등 실무적 요소.
+   위치는 적격성과 별개이므로 적격성 순서를 바꾸지 않고, 같은 적격성 안에서만 고려합니다.
 pre_score는 코드로 계산한 참고 점수이며 위 원칙에 따라 조정할 수 있습니다.
 
 작성 원칙:
 - rationale, key_matches, key_concerns는 반드시 판정 결과에 있는 근거(규칙 ID와 환자 정보)에 기반합니다. 입력에 없는 효능·안전성 주장을 하지 않습니다.
 - next_steps에는 참여 전 확인해야 할 사항(미확인 기준, 담당의 상담 등)을 적습니다.
-- physician_review는 코드가 채우므로 빈 목록으로 둡니다. 모집 상태가 UNKNOWN이면 "모집 상태 확인"을 포함합니다.
+- physician_review, verification_needed, location_note는 코드가 채우므로 비워 둡니다. 모집 상태가 UNKNOWN이면 "모집 상태 확인"을 포함합니다.
 - 최종 추천은 rank=1인 시험입니다. 원칙적으로 가장 적합한 시험 하나만 1순위로 정합니다.
   위 원칙으로 적합성이 실질적으로 구분되지 않을 때만 같은 rank를 부여하고(공동 순위), selection_reason에 구분되지 않는 이유를 적습니다.
 - selection_reason에는 1순위를 고른 결정적 이유와 차순위 후보보다 나은 점을 근거(규칙 ID·환자 정보)와 함께 적습니다.
@@ -148,8 +149,15 @@ def physician_notes(match: TrialMatch, profile: PatientProfile | None, qa_log: l
     return notes
 
 
+def verification_notes(match: TrialMatch) -> list[str]:
+    """진료 기록이 필요한 기준을 환자 답변만으로 판정한 항목 (D2, 코드가 작성)."""
+    return [f"{a.rule_id} \"{a.criterion_text[:100]}\": 환자 답변({a.evidence[:80]})으로 판정함 "
+            f"→ 등록 전 진료 기록(검사 결과지·보고서)으로 확인 필요"
+            for a in match.assessments if needs_record_check(a)]
+
+
 def recommend(profile: PatientProfile, matches: list[TrialMatch], trials: dict[str, dict],
-              qa_log: list[QAPair] | None = None) -> Recommendation:
+              qa_log: list[QAPair] | None = None, country: str | None = None) -> Recommendation:
     open_fit = [m for m in matches if is_candidate(m) and is_open(trials[m.trial_id])]
 
     if not open_fit:
@@ -157,7 +165,7 @@ def recommend(profile: PatientProfile, matches: list[TrialMatch], trials: dict[s
         reason = no_recommendation_reason(matches, trials)
         return _validate(
             RecommendationDraft(patient_id=profile.patient_id, ranked=[], excluded=[], overall_comment=reason),
-            profile.patient_id, matches, trials, profile, qa_log or [],
+            profile.patient_id, matches, trials, profile, qa_log or [], country,
         )
 
     items = []
@@ -172,6 +180,7 @@ def recommend(profile: PatientProfile, matches: list[TrialMatch], trials: dict[s
             "interventions": [i.get("name") for i in t.get("interventions", [])],
             "eligibility": m.eligibility,
             "matched_cohort": m.matched_cohort,
+            "location": location.note(t, country),
             "pre_score": pre_score(m, t),
             "summary": m.summary,
             "assessments": [
@@ -195,12 +204,12 @@ patient_id={profile.patient_id} 환자에 대한 임상시험 추천 순위를 �
         user=user,
         effort=config.EFFORT["recommender"],
     )
-    return _validate(draft, profile.patient_id, matches, trials, profile, qa_log or [])
+    return _validate(draft, profile.patient_id, matches, trials, profile, qa_log or [], country)
 
 
 def _validate(draft: RecommendationDraft, patient_id: str, matches: list[TrialMatch],
               trials: dict[str, dict], profile: PatientProfile | None = None,
-              qa_log: list[QAPair] | None = None) -> Recommendation:
+              qa_log: list[QAPair] | None = None, country: str | None = None) -> Recommendation:
     """LLM 출력이 코드의 적격성 판정·모집 상태와 어긋나지 않도록 교정."""
     by_id = {m.trial_id: m for m in matches}
     recommendable = {m.trial_id for m in matches
@@ -227,6 +236,10 @@ def _validate(draft: RecommendationDraft, patient_id: str, matches: list[TrialMa
         r.physician_review = physician_notes(by_id[r.trial_id], profile, qa_log or [])
         if r.physician_review and not any("의사" in s for s in r.next_steps):
             r.next_steps.append("원문에 구체 기준이 없는 항목은 담당 의사가 전체 프로토콜과 대조해 참여 여부 판단")
+        r.verification_needed = verification_notes(by_id[r.trial_id])
+        if r.verification_needed:
+            r.next_steps.append("환자 답변으로 판정한 항목은 진료 기록으로 확인")
+        r.location_note = location.note(trials[r.trial_id], country)
 
     # 제외 목록: 모집 종료 시험은 코드가 사유를 작성, 부적격 시험은 LLM 사유가 없으면 요약으로 채움
     llm_reasons = {e.trial_id: e.reason for e in draft.excluded}

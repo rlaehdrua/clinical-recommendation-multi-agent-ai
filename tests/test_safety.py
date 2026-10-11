@@ -84,6 +84,7 @@ def test_failed_trial_recorded_as_not_evaluated(monkeypatch):
 
     monkeypatch.setattr(criteria_parser, "parse_trial", parse)
     monkeypatch.setattr(matcher, "match_trial", match)
+    monkeypatch.setattr(config, "LAZY_COMPILE", True)  # 고정 저장소에 없는 가짜 시험 -> 즉석 파싱
     trials = {t: {"trial_id": t, "overall_status": "RECRUITING"} for t in ("OK", "BAD_PARSE", "BAD_MATCH")}
     s = _session(trials)
     s.profile = _profile()

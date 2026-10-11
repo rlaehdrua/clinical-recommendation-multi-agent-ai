@@ -1,0 +1,392 @@
+{
+ "format_version": 1,
+ "trial_id": "DEMO-LUNG-001",
+ "trial_hash": "c82eb9139b651bed",
+ "parser_prompt_hash": "2e69d96de0305d7b",
+ "model": "claude-sonnet-5",
+ "compiled_at": "2026-10-11T06:39:24+00:00",
+ "runs": 3,
+ "canonical_run": 2,
+ "parsed": {
+  "trial_id": "DEMO-LUNG-001",
+  "title": "[가상 예시] EGFR 변이 비소세포폐암 2차 치료 신약 임상 2상",
+  "target_population": "3세대 EGFR-TKI(osimertinib) 치료 후 진행한 EGFR 변이 양성 진행성(Stage IIIB-IV) 비소세포폐암 성인 환자",
+  "intervention_summary": "DRUG: DEMO-101 (가상 약물) 투여, 유효성 및 안전성 평가 목적의 2상 임상시험",
+  "key_conditions": [
+   "Non-small Cell Lung Cancer",
+   "EGFR Mutation"
+  ],
+  "cohorts": [],
+  "rules": [
+   {
+    "rule_id": "I1",
+    "kind": "inclusion",
+    "text": "Age >= 19 years",
+    "category": "demographic",
+    "field": "age",
+    "operator": ">=",
+    "value": "19",
+    "unit": "years",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I2",
+    "kind": "inclusion",
+    "text": "sex=ALL (structured eligibility)",
+    "category": "demographic",
+    "field": "sex",
+    "operator": "==",
+    "value": "all",
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I3",
+    "kind": "inclusion",
+    "text": "Histologically or cytologically confirmed stage IIIB-IV non-small cell lung cancer",
+    "category": "disease_stage",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I4",
+    "kind": "inclusion",
+    "text": "Documented EGFR exon 19 deletion or L858R mutation",
+    "category": "biomarker",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I5",
+    "kind": "inclusion",
+    "text": "Disease progression on or after osimertinib",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I6",
+    "kind": "inclusion",
+    "text": "ECOG performance status 0-1",
+    "category": "performance_status",
+    "field": "ecog",
+    "operator": "<=",
+    "value": "1",
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I7",
+    "kind": "inclusion",
+    "text": "Adequate organ function within 28 days before enrollment: absolute neutrophil count >= 1.5 x 10^9/L",
+    "category": "lab",
+    "field": "lab:absolute neutrophil count",
+    "operator": ">=",
+    "value": "1.5",
+    "unit": "10^9/L",
+    "time_window_days": 28,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I8",
+    "kind": "inclusion",
+    "text": "Adequate organ function within 28 days before enrollment: platelets >= 100 x 10^9/L",
+    "category": "lab",
+    "field": "lab:platelets",
+    "operator": ">=",
+    "value": "100",
+    "unit": "10^9/L",
+    "time_window_days": 28,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I9",
+    "kind": "inclusion",
+    "text": "Adequate organ function within 28 days before enrollment: hemoglobin >= 9.0 g/dL",
+    "category": "lab",
+    "field": "lab:hemoglobin",
+    "operator": ">=",
+    "value": "9.0",
+    "unit": "g/dL",
+    "time_window_days": 28,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I10",
+    "kind": "inclusion",
+    "text": "Adequate organ function within 28 days before enrollment: total bilirubin <= 1.5 x ULN",
+    "category": "lab",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 28,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I11",
+    "kind": "inclusion",
+    "text": "At least one measurable lesion per RECIST 1.1",
+    "category": "procedure",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E1",
+    "kind": "exclusion",
+    "text": "Symptomatic or untreated brain metastases",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E2",
+    "kind": "exclusion",
+    "text": "Prior treatment with any EGFR-targeted antibody-drug conjugate",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E3",
+    "kind": "exclusion",
+    "text": "History of interstitial lung disease requiring steroids",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E4",
+    "kind": "exclusion",
+    "text": "Pregnant or breastfeeding",
+    "category": "reproductive",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E5",
+    "kind": "exclusion",
+    "text": "Active hepatitis B or C infection",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   }
+  ],
+  "parsing_notes": "총 담즙(total bilirubin) 기준은 ULN 상대값이라 수치화하지 않음. ECOG 0-1은 상한 1로 단순화(operator<=)하여 표현. 코호트 구분 없는 단일군 시험. 구조화 성별 필드(ALL)를 본문에 명시되지 않았으나 포함."
+ },
+ "rule_meta": {
+  "I1": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I2": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I3": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I4": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I5": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I6": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I7": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I8": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I9": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I10": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I11": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E1": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E2": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E3": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E4": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E5": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  }
+ },
+ "validation": {
+  "deterministic": {
+   "I10": [
+    "규칙 엔진이 처리하지 않는 연산자 'None' -> LLM 판정으로 전환"
+   ]
+  },
+  "risk": {
+   "I6": [
+    "규칙 엔진 확정 판정 (검사·ECOG)"
+   ],
+   "I7": [
+    "규칙 엔진 확정 판정 (검사·ECOG)"
+   ],
+   "I8": [
+    "규칙 엔진 확정 판정 (검사·ECOG)"
+   ],
+   "I9": [
+    "규칙 엔진 확정 판정 (검사·ECOG)"
+   ],
+   "I10": [
+    "다른 파싱 실행과 다름(engine)"
+   ],
+   "I11": [
+    "category=other (근거 수준을 유형으로 정할 수 없음)"
+   ]
+  },
+  "coverage_gaps": [],
+  "llm_checked": [
+   "I10",
+   "I11",
+   "I6",
+   "I7",
+   "I8",
+   "I9"
+  ],
+  "changes": [
+   "I11: category other -> procedure"
+  ],
+  "review": {},
+  "added_rules": [],
+  "evidence_conflicts": [
+   "I11: 유형 규칙(procedure: self_report_ok)과 검증 제안(clinical_record)이 달라 clinical_record 적용"
+  ],
+  "notes": [],
+  "llm_output": null
+ }
+}

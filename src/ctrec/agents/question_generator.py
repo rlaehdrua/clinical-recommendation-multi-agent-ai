@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 from .. import config, llm
 from ..schemas import PatientProfile, QAPair, QuestionSet, TrialMatch
 from .matcher import compact_json
@@ -28,7 +30,25 @@ SYSTEM = """당신은 임상시험 적격성 판정에 부족한 정보를 확�
 - logistics_to_confirm(동의 의사, 방문 가능 여부 등 절차 기준)은 연구진이 등록 시 확인할 사항이므로 질문하지 않습니다.
 - 개인 식별 정보(이름, 주민번호, 연락처, 주소 등)는 절대 묻지 않습니다.
 - question_id는 Q1, Q2, ... 로 매깁니다.
+
+정보 확보 단계(<acquisition_plan>):
+- 각 unknown 항목('<trial_id>:<rule_id>')에 이번에 쓸 확보 방식(step)이 정해져 있습니다. 그 방식에 맞게 질문합니다.
+  예: step이 "결과지의 수치와 검사일을 요청"이면 결과지를 보고 답하도록 묻고, "대략적인 수치나 의료진 설명"이면 기억나는 대로 답하도록 묻습니다.
+- <acquisition_plan>에 없는 unknown 항목은 확보 단계를 모두 시도한 항목이므로 다시 묻지 않습니다.
 """
+
+BATCHING = {
+    "single": "",
+    "batch": "",
+    "adaptive": """
+한 라운드에 묶을 질문 (적응형):
+- 서로 독립적이고(한 질문의 답이 다른 질문을 불필요하게 만들지 않음) 각각 판정을 바꿀 가능성이 큰 질문만 함께 묻습니다.
+- 첫 질문의 답에 따라 필요 없어질 수 있는 질문은 이번 라운드에 넣지 않고 다음 라운드로 미룹니다.
+  예: 같은 시험에서 한 기준이 불충족이면 그 시험의 다른 질문은 필요 없어짐 -> 그 시험은 탈락 가능성이 가장 큰 질문 하나만.
+  예: "수술을 받았나요?"의 답이 '아니오'면 "수술 후 몇 주가 지났나요?"는 필요 없음 -> 앞 질문만.
+- 묶을 질문이 없으면 가장 중요한 질문 하나만 반환합니다.
+""",
+}
 
 
 def generate_questions(
@@ -36,6 +56,7 @@ def generate_questions(
     matches: list[TrialMatch],
     qa_log: list[QAPair],
     max_questions: int,
+    acquisition_plan: dict[str, dict] | None = None,
 ) -> QuestionSet:
     previous = "\n".join(f"- Q: {qa.question} / A: {qa.answer}" for qa in qa_log) or "(없음)"
     user = f"""<patient>
@@ -50,10 +71,14 @@ def generate_questions(
 {compact_json(matches)}
 </trial_match_status>
 
+<acquisition_plan>
+{json.dumps(acquisition_plan or {}, ensure_ascii=False, indent=1)}
+</acquisition_plan>
+
 최대 {max_questions}개의 확인 질문을 생성하세요(physician_reference 질문 포함). 물어볼 필요가 없으면 빈 목록을 반환하세요."""
     qs = llm.structured(
         QuestionSet,
-        system=SYSTEM,
+        system=SYSTEM + BATCHING.get(config.QUESTION_POLICY, ""),
         user=user,
         effort=config.EFFORT["question_generator"],
     )

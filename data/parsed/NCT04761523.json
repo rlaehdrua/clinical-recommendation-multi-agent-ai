@@ -1,0 +1,315 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT04761523",
+ "trial_hash": "32bd242e3e70fc4e",
+ "parser_prompt_hash": "2e69d96de0305d7b",
+ "model": "claude-sonnet-5",
+ "compiled_at": "2026-10-11T06:39:11+00:00",
+ "runs": 3,
+ "canonical_run": 2,
+ "parsed": {
+  "trial_id": "NCT04761523",
+  "title": "The Effect of Dietary Fat Content on the Recurrence of Pancreatitis",
+  "target_population": "Patients over 14 years old who have had at least two episodes of acute pancreatitis in the preceding 2 years, with the most recent episode being idiopathic, being considered for a randomized dietary fat intervention trial.",
+  "intervention_summary": "Randomized comparison of a reduced fat diet (15% fat) versus a standard healthy diet (30% fat, WHO-based) with repeated dietary counseling over a 2-year follow-up to assess recurrence of acute pancreatitis, mortality, and metabolic parameters.",
+  "key_conditions": [
+   "Acute Pancreatitis",
+   "Recurrent Pancreatitis"
+  ],
+  "cohorts": [],
+  "rules": [
+   {
+    "rule_id": "I1",
+    "kind": "inclusion",
+    "text": "Individuals with at least two episodes of acute pancreatitis in the 2 years preceding the inclusion",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 730,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I2",
+    "kind": "inclusion",
+    "text": "The last episode being idiopathic",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I3",
+    "kind": "inclusion",
+    "text": "Older than 14 years",
+    "category": "demographic",
+    "field": "age",
+    "operator": ">",
+    "value": "14",
+    "unit": "years",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I4",
+    "kind": "inclusion",
+    "text": "Sex eligibility: All (structured eligibility field)",
+    "category": "demographic",
+    "field": "sex",
+    "operator": "==",
+    "value": "all",
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E1",
+    "kind": "exclusion",
+    "text": "Individuals already receiving regular nutritional guidance (with medical indication)",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E2",
+    "kind": "exclusion",
+    "text": "Individuals in critical condition or in terminal stage of cancer (with an expected survival <2 years)",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   },
+   {
+    "rule_id": "E3",
+    "kind": "exclusion",
+    "text": "Individuals undergoing treatment for active malignancy",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E4",
+    "kind": "exclusion",
+    "text": "Individuals with uncontrolled diabetes mellitus (admitted lack of compliance with antidiabetic therapy / HbA1c >6.5% / indication of uncontrolled diabetes mellitus in last 24 months' anamnesis / newly discovered diabetes mellitus)",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 730,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E5",
+    "kind": "exclusion",
+    "text": "Individuals with known cholecystolithiasis",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E6",
+    "kind": "exclusion",
+    "text": "Individuals who are pregnant or nursing",
+    "category": "reproductive",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E7",
+    "kind": "exclusion",
+    "text": "Individuals with a BMI < 18.5",
+    "category": "lab",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E8",
+    "kind": "exclusion",
+    "text": "Individuals who are regularly receiving systemic corticosteroids",
+    "category": "medication",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E9",
+    "kind": "exclusion",
+    "text": "Individuals consuming more alcohol than: 5 units per day or 15 units per week for men; 4 units per day or 8 units per week for women.",
+    "category": "other",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   }
+  ],
+  "parsing_notes": "E2는 'critical condition'에 대한 구체적 정의가 없어 underspecified=true로 표시(terminal cancer 부분은 생존기간 기준이 명시되어 있으나 전체를 하나의 OR 규칙으로 유지). E4는 여러 OR 하위 조건(HbA1c>6.5% 포함)을 포함하므로 단일 비구조화 규칙으로 유지하고 time_window_days는 'last 24 months' 기준을 반영. E7(BMI)과 E9(알코올 단위)는 field 목록에 해당 항목이 없어 구조화 필드 매핑을 하지 않음. I4는 ClinicalTrials.gov 구조화 필드(sex=ALL)를 반영해 추가함."
+ },
+ "rule_meta": {
+  "I1": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I2": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I3": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I4": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E1": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E2": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_confirmed",
+   "added_by_validator": false
+  },
+  "E3": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E4": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E5": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E6": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E7": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E8": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E9": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  }
+ },
+ "validation": {
+  "deterministic": {},
+  "risk": {
+   "E2": [
+    "underspecified (파서 한 번의 판단)",
+    "다른 파싱 실행과 다름(underspecified)"
+   ],
+   "E7": [
+    "다른 파싱 실행과 다름(engine)"
+   ],
+   "E9": [
+    "category=other (근거 수준을 유형으로 정할 수 없음)"
+   ]
+  },
+  "coverage_gaps": [],
+  "llm_checked": [
+   "E2",
+   "E7",
+   "E9"
+  ],
+  "changes": [],
+  "review": {},
+  "added_rules": [],
+  "evidence_conflicts": [
+   "E2: 유형 규칙(comorbidity: self_report_ok)과 검증 제안(clinical_record)이 달라 clinical_record 적용"
+  ],
+  "notes": [],
+  "llm_output": null
+ }
+}

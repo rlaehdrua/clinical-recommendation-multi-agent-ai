@@ -1,0 +1,506 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT07369063",
+ "trial_hash": "c5dfda10fc08de32",
+ "parser_prompt_hash": "2e69d96de0305d7b",
+ "model": "claude-sonnet-5",
+ "compiled_at": "2026-10-11T06:40:05+00:00",
+ "runs": 3,
+ "canonical_run": 2,
+ "parsed": {
+  "trial_id": "NCT07369063",
+  "title": "Impact of Vitamin D Therapy on Thyroid Function and Antibody Levels in Pediatric Graves' Disease",
+  "target_population": "Pediatric patients aged 9-17 years newly diagnosed with Graves' disease who will be started on methimazole",
+  "intervention_summary": "Randomized 1:1 to methimazole plus high-dose vitamin D2 (ergocalciferol 50,000 IU weekly x8 weeks then every 2 weeks x16 weeks) versus methimazole alone (with optional OTC vitamin D2 up to 1000 IU/day)",
+  "key_conditions": [
+   "Graves Disease",
+   "Hyperthyroidism"
+  ],
+  "cohorts": [],
+  "rules": [
+   {
+    "rule_id": "I1",
+    "kind": "inclusion",
+    "text": "minimum_age=9 Years (structured eligibility)",
+    "category": "demographic",
+    "field": "age",
+    "operator": ">=",
+    "value": "9",
+    "unit": "years",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I2",
+    "kind": "inclusion",
+    "text": "maximum_age=17 Years (structured eligibility)",
+    "category": "demographic",
+    "field": "age",
+    "operator": "<=",
+    "value": "17",
+    "unit": "years",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I3",
+    "kind": "inclusion",
+    "text": "sex=ALL (structured eligibility)",
+    "category": "demographic",
+    "field": "sex",
+    "operator": "==",
+    "value": "all",
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I4",
+    "kind": "inclusion",
+    "text": "All new pediatric participants aged 9-17 years with a new diagnosis of GD who will be started on methimazole, will be offered to participate at the time of diagnosis.",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I5",
+    "kind": "inclusion",
+    "text": "Suppressed TSH <0.1",
+    "category": "lab",
+    "field": "lab:tsh",
+    "operator": "<",
+    "value": "0.1",
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I6",
+    "kind": "inclusion",
+    "text": "Elevated T3",
+    "category": "lab",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I7",
+    "kind": "inclusion",
+    "text": "Elevated Free T4",
+    "category": "lab",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I8",
+    "kind": "inclusion",
+    "text": "Elevated T4",
+    "category": "lab",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I9",
+    "kind": "inclusion",
+    "text": "Positive TSI or TRAb. The presence of antibodies is diagnostic.",
+    "category": "biomarker",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I10",
+    "kind": "inclusion",
+    "text": "Our study will offer enrollment to non-English speaking participants",
+    "category": "consent_or_logistics",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E1",
+    "kind": "exclusion",
+    "text": "Initial hydroxy vitamin D levels >80 ng/mL",
+    "category": "lab",
+    "field": "lab:25-hydroxyvitamin d",
+    "operator": ">",
+    "value": "80",
+    "unit": "ng/mL",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E2",
+    "kind": "exclusion",
+    "text": "Hypocalcemia, corrected calcium based on albumin <8.4 mg/dL",
+    "category": "lab",
+    "field": "lab:corrected calcium",
+    "operator": "<",
+    "value": "8.4",
+    "unit": "mg/dL",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E3",
+    "kind": "exclusion",
+    "text": "Hypercalcemia, corrected calcium based on albumin >10.5 mg/dL",
+    "category": "lab",
+    "field": "lab:corrected calcium",
+    "operator": ">",
+    "value": "10.5",
+    "unit": "mg/dL",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E4",
+    "kind": "exclusion",
+    "text": "Conditions that affect vitamin D metabolism such as: malabsorption, chronic kidney or liver disease, nephrocalcinosis, hyperparathyroidism",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E5",
+    "kind": "exclusion",
+    "text": "Current use of medications which are known to affect thyroid function or vitamin D metabolism such as thyroid hormone replacement, corticosteroids, anticonvulsants",
+    "category": "medication",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E6",
+    "kind": "exclusion",
+    "text": "Allergy to vitamin D or methimazole",
+    "category": "medication",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E7",
+    "kind": "exclusion",
+    "text": "Diagnosis of Hashitoxicosis or thyrotoxicosis (both TSH receptor antibody (TRAb) and thyroid-stimulating immunoglobulin (TSI) levels are negative)",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E8",
+    "kind": "exclusion",
+    "text": "Participants under the age of 9 years at the time of diagnosis",
+    "category": "demographic",
+    "field": "age",
+    "operator": "<",
+    "value": "9",
+    "unit": "years",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E9",
+    "kind": "exclusion",
+    "text": "Pregnant participants",
+    "category": "reproductive",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E10",
+    "kind": "exclusion",
+    "text": "Active or uncontrolled infections",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E11",
+    "kind": "exclusion",
+    "text": "Other significant medical conditions deemed by the investigator to interfere with study participation or pose undue risk to the participant.",
+    "category": "other",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   }
+  ],
+  "parsing_notes": "Elevated T3/Free T4/T4 and TSI/TRAb positivity criteria lack specific numeric thresholds in the source text, so they are left as non-structured lab/biomarker criteria rather than underspecified (the concept is clear, just lacking a cutoff value tied to local lab reference ranges). The age<9 exclusion duplicates the inclusion age range but is kept as a separate explicit rule per source text. The study has no distinct eligibility cohorts (intervention vs control arms share identical eligibility criteria), so cohorts list is empty and all rules apply to all participants."
+ },
+ "rule_meta": {
+  "I1": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I2": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I3": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I4": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I5": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I6": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_suspected",
+   "added_by_validator": false
+  },
+  "I7": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_suspected",
+   "added_by_validator": false
+  },
+  "I8": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_suspected",
+   "added_by_validator": false
+  },
+  "I9": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I10": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E1": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E2": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E3": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E4": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E5": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E6": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E7": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E8": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E9": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E10": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E11": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_confirmed",
+   "added_by_validator": false
+  }
+ },
+ "validation": {
+  "deterministic": {},
+  "risk": {
+   "I5": [
+    "규칙 엔진 확정 판정 (검사·ECOG)"
+   ],
+   "I6": [
+    "다른 파싱 실행과 다름(underspecified)"
+   ],
+   "I7": [
+    "다른 파싱 실행과 다름(underspecified)"
+   ],
+   "I8": [
+    "다른 파싱 실행과 다름(underspecified)"
+   ],
+   "I10": [
+    "절차 선정 기준 (미확인이어도 적격을 막지 않음)"
+   ],
+   "E1": [
+    "규칙 엔진 확정 판정 (검사·ECOG)",
+    "다른 파싱 실행과 다름(engine)"
+   ],
+   "E2": [
+    "규칙 엔진 확정 판정 (검사·ECOG)",
+    "다른 파싱 실행과 다름(engine)"
+   ],
+   "E3": [
+    "규칙 엔진 확정 판정 (검사·ECOG)",
+    "다른 파싱 실행과 다름(engine)"
+   ],
+   "E11": [
+    "underspecified (파서 한 번의 판단)",
+    "category=other (근거 수준을 유형으로 정할 수 없음)"
+   ]
+  },
+  "coverage_gaps": [
+   "[inclusion] Biochemical features include:"
+  ],
+  "llm_checked": [
+   "E1",
+   "E11",
+   "E2",
+   "E3",
+   "I10",
+   "I5",
+   "I6",
+   "I7",
+   "I8"
+  ],
+  "changes": [],
+  "review": {},
+  "added_rules": [],
+  "evidence_conflicts": [],
+  "notes": [
+   "I6: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정",
+   "I7: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정",
+   "I8: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정"
+  ],
+  "llm_output": null
+ }
+}

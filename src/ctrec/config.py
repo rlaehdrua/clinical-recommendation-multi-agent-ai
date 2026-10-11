@@ -11,6 +11,8 @@ ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT / "data"
 TRIALS_DIR = DATA_DIR / "trials"
 CACHE_DIR = DATA_DIR / "cache"
+# 사전 컴파일(파싱 + 검증)한 시험 기준 고정 저장소 (git에 포함, 팀원 모두 같은 기준 목록 사용)
+PARSED_DIR = DATA_DIR / "parsed"
 OUTPUT_DIR = ROOT / "outputs"
 
 MODEL = os.getenv("CTREC_MODEL", "claude-sonnet-5")
@@ -23,6 +25,7 @@ EFFORT = {
     "orchestrator": "high",
     "screener": "high",
     "criteria_parser": "high",
+    "parser_validator": "high",
     "patient_profiler": "medium",
     "matcher": "high",
     "question_generator": "medium",
@@ -34,12 +37,27 @@ EFFORT = {
 # 확인 질문 라운드 최대 횟수, 라운드당 최대 질문 수
 MAX_CLARIFY_ROUNDS = int(os.getenv("CTREC_MAX_CLARIFY_ROUNDS", "2"))
 MAX_QUESTIONS_PER_ROUND = int(os.getenv("CTREC_MAX_QUESTIONS", "5"))
+# 한 라운드에 질문을 몇 개 묶을지 (팀 결정 D4)
+# single: 항상 1개 / batch: 라운드 한도까지 / adaptive: 서로 독립적이고 판정을 바꿀 질문만 함께, 나머지는 다음 라운드
+QUESTION_POLICY = os.getenv("CTREC_QUESTION_POLICY", "adaptive")
+
+# 보고서(설명 에이전트) 작성 여부. 평가 실험에서 비용을 줄일 때 0
+WRITE_REPORT = os.getenv("CTREC_WRITE_REPORT", "1") == "1"
 
 # 후보 추림: 전체 시험 풀에서 자세히 평가할 시험 수 상한
 SCREEN_MAX_CANDIDATES = int(os.getenv("CTREC_SCREEN_MAX", "5"))
 
 # 매칭 에이전트가 일부 규칙의 판정을 빠뜨렸을 때, 빠진 규칙만 다시 요청하는 횟수
 MATCHER_MISSING_RETRIES = int(os.getenv("CTREC_MATCHER_RETRIES", "1"))
+
+# 고정 저장소에 없는 시험(대회 범위 밖, 예: 검색으로 새로 찾은 시험)의 처리 (팀 결정 D8 Option C)
+# 0(기본): 파싱하지 않고 COMPILATION_PENDING(NOT_EVALUATED)으로 기록 -> scripts/compile_trials.py로 추가
+# 1: 그 자리에서 파싱(검증 없음, 결과가 실행마다 달라질 수 있음). 데모·검색 시연용
+LAZY_COMPILE = os.getenv("CTREC_LAZY_COMPILE", "0") == "1"
+
+# 환자 거주 국가 (팀 결정 D5 Option C). 기본은 위치를 표시만 하고 후보에서 빼지 않습니다.
+# "이 나라에서 참여 가능한 시험만" 원할 때만 --country-only로 hard filter를 켭니다.
+PATIENT_COUNTRY = os.getenv("CTREC_COUNTRY", "South Korea")
 
 # 오케스트레이터 에이전트 루프 최대 반복 횟수
 MAX_ORCHESTRATOR_STEPS = int(os.getenv("CTREC_MAX_STEPS", "15"))

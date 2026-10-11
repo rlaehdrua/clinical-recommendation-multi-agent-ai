@@ -50,6 +50,20 @@ class Rule(BaseModel):
     )
 
 
+RequiredEvidence = Literal["self_report_ok", "clinical_record"]
+
+
+class RuleMeta(BaseModel):
+    """파싱 검증(D1·D6)과 근거 수준(D2) 결과. 사전 컴파일 때 정해져 고정 저장소에 함께 저장됩니다."""
+    # 원문과 구조화 결과가 맞지 않아 자동 판정하지 않는 규칙(UNSUPPORTED). 값은 사유
+    review: str | None = None
+    # 이 기준의 판정 근거로 무엇이 필요한가 (자기 보고로 충분 / 진료 기록 필요)
+    required_evidence: RequiredEvidence = "self_report_ok"
+    # underspecified 처리 상태 (D6): 원문이 애매함을 확인 / 원문은 구체적이라 다시 분류 / 애매해 보이나 적용 안 함
+    underspecified_state: Literal["vague_confirmed", "reparsed_concrete", "vague_suspected"] | None = None
+    added_by_validator: bool = False  # 파서가 빠뜨려 검증 단계에서 추가한 기준
+
+
 class ParsedTrial(BaseModel):
     trial_id: str
     title: str
@@ -63,6 +77,8 @@ class ParsedTrial(BaseModel):
     parsing_notes: str = Field(description="모호하거나 해석이 필요한 기준에 대한 메모")
     # 코드 무결성 검사 결과 (LLM 출력 스키마에는 포함되지 않음, criteria_parser.check_integrity가 채움)
     _integrity_issues: list[str] = PrivateAttr(default_factory=list)
+    # 규칙별 검증 메타데이터 (LLM 출력 스키마에는 포함되지 않음, 고정 저장소(trial_store)에서 불러올 때 채움)
+    _rule_meta: dict[str, RuleMeta] = PrivateAttr(default_factory=dict)
 
     @property
     def integrity_issues(self) -> list[str]:
@@ -71,6 +87,14 @@ class ParsedTrial(BaseModel):
     @integrity_issues.setter
     def integrity_issues(self, value: list[str]) -> None:
         self._integrity_issues = value
+
+    @property
+    def rule_meta(self) -> dict[str, RuleMeta]:
+        return self._rule_meta
+
+    @rule_meta.setter
+    def rule_meta(self, value: dict[str, RuleMeta]) -> None:
+        self._rule_meta = value
 
 
 # ---------------------------------------------------------------------------
@@ -154,6 +178,10 @@ class CriterionAssessment(BaseModel):
     underspecified: bool = False  # 원문에 구체 기준이 없어 '의사 확인 필요'로 분류
     cohort: str | None = None  # 특정 코호트 전용 기준이면 코호트 이름
     applicable: bool = True  # False = 조건부 기준의 대상이 아님(해당 없음 → 통과)
+    # 근거 수준 (D2): 판정 근거가 어디서 왔는지, 이 기준에 필요한 근거 수준, 기록 확인이 필요한지
+    evidence_source: Literal["record", "self_report", "none"] = "none"
+    required_evidence: RequiredEvidence = "self_report_ok"
+    needs_verification: bool = False  # 진료 기록이 필요한 기준을 환자 답변(자기 보고)만으로 판정함
 
 
 class TrialMatch(BaseModel):
@@ -216,6 +244,11 @@ class RankedTrial(BaseModel):
         default_factory=list,
         description="코드가 채움: 원문에 구체 기준이 없어 의사가 전체 프로토콜과 대조해야 할 항목. 빈 목록으로 두세요.",
     )
+    verification_needed: list[str] = Field(
+        default_factory=list,
+        description="코드가 채움: 환자 답변만으로 판정해 진료 기록 확인이 필요한 항목. 빈 목록으로 두세요.",
+    )
+    location_note: str = Field(default="", description="코드가 채움: 시험 기관 위치. 빈 문자열로 두세요.")
 
 
 class ExcludedTrial(BaseModel):

@@ -1,0 +1,598 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT07087314",
+ "trial_hash": "e533bd3e77eb81cd",
+ "parser_prompt_hash": "2e69d96de0305d7b",
+ "model": "claude-sonnet-5",
+ "compiled_at": "2026-10-11T06:39:46+00:00",
+ "runs": 3,
+ "canonical_run": 1,
+ "parsed": {
+  "trial_id": "NCT07087314",
+  "title": "A Study of Anti-CD38 Monoclonal Antibody (SG301) Subcutaneous Injection in Children With Nephrotic Syndrome With Frequent Relapses or Steroid Dependence",
+  "target_population": "Children aged 6-18 years with steroid-sensitive nephrotic syndrome exhibiting frequent relapses (FRNS) or steroid dependence (SDNS)",
+  "intervention_summary": "SG301 (anti-CD38 monoclonal antibody) subcutaneous injection 10 mg/kg, weekly for 6 weeks then every 2 weeks for 3 doses (total 9 injections) over a 12-week treatment phase, with 40-week follow-up",
+  "key_conditions": [
+   "Nephrotic Syndrome in Children",
+   "Frequently Relapsing Nephrotic Syndrome (FRNS)",
+   "Steroid-Dependent Nephrotic Syndrome (SDNS)"
+  ],
+  "cohorts": [],
+  "rules": [
+   {
+    "rule_id": "I1",
+    "kind": "inclusion",
+    "text": "Aged 6 - 18 years (minimum age).",
+    "category": "demographic",
+    "field": "age",
+    "operator": ">=",
+    "value": "6",
+    "unit": "years",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I2",
+    "kind": "inclusion",
+    "text": "Aged 6 - 18 years (maximum age).",
+    "category": "demographic",
+    "field": "age",
+    "operator": "<=",
+    "value": "18",
+    "unit": "years",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I3",
+    "kind": "inclusion",
+    "text": "Sex: All (structured eligibility field).",
+    "category": "demographic",
+    "field": "sex",
+    "operator": "==",
+    "value": "all",
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I4",
+    "kind": "inclusion",
+    "text": "Steroid-sensitive nephrotic syndrome with frequent relapses (FRNS) or steroid dependence (SDNS).",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I5",
+    "kind": "inclusion",
+    "text": "Normal renal function: eGFR≥90 ml/min/1.73m².",
+    "category": "lab",
+    "field": "lab:egfr",
+    "operator": ">=",
+    "value": "90",
+    "unit": "ml/min/1.73m2",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I6",
+    "kind": "inclusion",
+    "text": "After steroid treatment, morning urine protein<1+ or urine protein/creatinine<0.2 g/g (<20 mg/mmol) for ≥3 consecutive days.",
+    "category": "lab",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I7",
+    "kind": "inclusion",
+    "text": "Within 7 days before enrollment, hemoglobin>80 g/L (without growth factors or transfusions).",
+    "category": "lab",
+    "field": "lab:hemoglobin",
+    "operator": ">",
+    "value": "80",
+    "unit": "g/L",
+    "time_window_days": 7,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I8",
+    "kind": "inclusion",
+    "text": "Within 7 days before enrollment, platelets>75×10⁹/L (without growth factors or transfusions).",
+    "category": "lab",
+    "field": "lab:platelets",
+    "operator": ">",
+    "value": "75",
+    "unit": "10^9/L",
+    "time_window_days": 7,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I9",
+    "kind": "inclusion",
+    "text": "Within 7 days before enrollment, neutrophils>1.5×10⁹/L (without growth factors or transfusions).",
+    "category": "lab",
+    "field": "lab:absolute neutrophil count",
+    "operator": ">",
+    "value": "1.5",
+    "unit": "10^9/L",
+    "time_window_days": 7,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I10",
+    "kind": "inclusion",
+    "text": "Prothrombin time/INR≤1.5×ULN, unless due to anticoagulation.",
+    "category": "lab",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I11",
+    "kind": "inclusion",
+    "text": "No Tacrolimus, cyclosporine A, mycophenolate mofetil, belimumab, levamisole, azathioprine, or cyclophosphamide in prior 2 months.",
+    "category": "medication",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 60,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I12",
+    "kind": "inclusion",
+    "text": "No rituximab or obinutuzumab in prior 6 months.",
+    "category": "medication",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 180,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E1",
+    "kind": "exclusion",
+    "text": "Family history of nephrotic syndrome, chronic glomerulonephritis, or uremia.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E2",
+    "kind": "exclusion",
+    "text": "Alanine aminotransferase>2×ULN or total bilirubin>2×ULN with a sustained increase for 2 weeks.",
+    "category": "lab",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E3",
+    "kind": "exclusion",
+    "text": "HBsAg or HBcAb positive with Hepatitis B virus DNA above the lower limit of normal.",
+    "category": "lab",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E4",
+    "kind": "exclusion",
+    "text": "Hepatitis C virus antibody-positive with Hepatitis C virus RNA positive.",
+    "category": "lab",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E5",
+    "kind": "exclusion",
+    "text": "HIV antibody-positive.",
+    "category": "lab",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E6",
+    "kind": "exclusion",
+    "text": "Chronic active infections (e.g., Epstein-Barr Virus, Cytomegalovirus, tuberculosis) that may worsen with steroids/immunosuppressants.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E7",
+    "kind": "exclusion",
+    "text": "Acute active infection (excluding onychomycosis) requiring systemic antibiotics/antivirals.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E8",
+    "kind": "exclusion",
+    "text": "Secondary nephrotic syndrome (e.g., immunoglobulin A-associated, lupus nephritis).",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E9",
+    "kind": "exclusion",
+    "text": "Steroid-resistant nephrotic syndrome (SRNS).",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E10",
+    "kind": "exclusion",
+    "text": "Other autoimmune diseases.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E11",
+    "kind": "exclusion",
+    "text": "Primary immunodeficiency.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E12",
+    "kind": "exclusion",
+    "text": "Malignancy.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E13",
+    "kind": "exclusion",
+    "text": "Prior anti-cluster of differentiation 38 (CD38) treatment.",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E14",
+    "kind": "exclusion",
+    "text": "Live/attenuated vaccine receipt within 4 weeks before first dose.",
+    "category": "medication",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 28,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E15",
+    "kind": "exclusion",
+    "text": "Major surgery (non-diagnostic) within 4 weeks before first dose.",
+    "category": "procedure",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 28,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   }
+  ],
+  "parsing_notes": "Age range (6-18 years) split into two separate numeric rules (I1, I2); sex field added from CT.gov structured eligibility (ALL) even though not explicitly stated in free text. Labs expressed relative to ULN (INR, ALT, bilirubin) were left unstructured since no absolute cutoff is given. Blood count criteria (hemoglobin, platelets, neutrophils) under a shared 7-day time window were split into three atomic rules sharing time_window_days=7. Medication washout criteria with two different windows (2 months vs 6 months for different drug lists) were split accordingly. Exclusion criteria combining multiple distinct disease entities joined by 'or' (e.g., secondary nephrotic syndrome/SRNS; autoimmune disease/immunodeficiency/malignancy; infection list; vaccine/surgery) were split into separate atomic rules for clearer matching, while true single-condition 'or' statements (e.g., FRNS or SDNS, urine protein criteria, HBsAg/HBcAb combined condition) were kept as one rule since they represent a single overall qualifying/disqualifying state described with internal alternatives. No cohort-specific eligibility differences were found; the age-stratified recruitment groups (≥6-<12 and ≥12-<18) are a recruitment/staging strategy, not distinct eligibility cohorts, so cohorts list is empty."
+ },
+ "rule_meta": {
+  "I1": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I2": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I3": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I4": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I5": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I6": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I7": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I8": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I9": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I10": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I11": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I12": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E1": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E2": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E3": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E4": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E5": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E6": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E7": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E8": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E9": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E10": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E11": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E12": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E13": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E14": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E15": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  }
+ },
+ "validation": {
+  "deterministic": {},
+  "risk": {
+   "I5": [
+    "규칙 엔진 확정 판정 (검사·ECOG)",
+    "다른 파싱 실행과 다름(engine)"
+   ],
+   "I7": [
+    "규칙 엔진 확정 판정 (검사·ECOG)"
+   ],
+   "I8": [
+    "규칙 엔진 확정 판정 (검사·ECOG)"
+   ],
+   "I9": [
+    "규칙 엔진 확정 판정 (검사·ECOG)"
+   ]
+  },
+  "coverage_gaps": [],
+  "llm_checked": [
+   "I5",
+   "I7",
+   "I8",
+   "I9"
+  ],
+  "changes": [],
+  "review": {},
+  "added_rules": [],
+  "evidence_conflicts": [],
+  "notes": [],
+  "llm_output": null
+ }
+}

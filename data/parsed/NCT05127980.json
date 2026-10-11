@@ -1,0 +1,275 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT05127980",
+ "trial_hash": "cd93bee0f165d4e8",
+ "parser_prompt_hash": "2e69d96de0305d7b",
+ "model": "claude-sonnet-5",
+ "compiled_at": "2026-10-11T06:39:06+00:00",
+ "runs": 3,
+ "canonical_run": 2,
+ "parsed": {
+  "trial_id": "NCT05127980",
+  "title": "Occurrence of Antibodies Cross-reacting With Autoantigens in Primary EBV Infection",
+  "target_population": "Adults (≥18 years) presenting with either a primary Epstein-Barr virus (EBV) infection (infectious mononucleosis group) or an upper respiratory tract infection/confirmed primary CMV infection (control group), without immunosuppression or history of autoimmune disease.",
+  "intervention_summary": "Observational study involving collection of clinical data, blood samples (EBV serology, autoantibody testing/biobanking, RNA expression, procalcitonin) and patient-reported fatigue questionnaires; no therapeutic intervention.",
+  "key_conditions": [
+   "Primary EBV infection (infectious mononucleosis)",
+   "Upper respiratory tract infection",
+   "Primary CMV infection",
+   "Autoimmune disease history",
+   "Immunosuppression"
+  ],
+  "cohorts": [
+   "IM group",
+   "control group"
+  ],
+  "rules": [
+   {
+    "rule_id": "I1",
+    "kind": "inclusion",
+    "text": "Informed consent as documented by signature",
+    "category": "consent_or_logistics",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I2",
+    "kind": "inclusion",
+    "text": "Minimum age 18 years (structured eligibility)",
+    "category": "demographic",
+    "field": "age",
+    "operator": ">=",
+    "value": "18",
+    "unit": "years",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I3",
+    "kind": "inclusion",
+    "text": "Sex: all (structured eligibility)",
+    "category": "demographic",
+    "field": "sex",
+    "operator": "==",
+    "value": "all",
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I4",
+    "kind": "inclusion",
+    "text": "Confirmed primary EBV infection as confirmed by the treating clinician",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "IM group"
+   },
+   {
+    "rule_id": "I5",
+    "kind": "inclusion",
+    "text": "Compatible clinical picture: infectious mononucleosis symptoms including but not limited to malaise, headache, fever, tonsillitis, pharyngitis, cervical lymph nodes enlargement (not all features required)",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "IM group"
+   },
+   {
+    "rule_id": "I6",
+    "kind": "inclusion",
+    "text": "Compatible laboratory picture: lymphocyte count elevation, LUC cells, reactive lymphocytes in manual differential, elevated liver enzymes (not all features required)",
+    "category": "lab",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "IM group"
+   },
+   {
+    "rule_id": "I7",
+    "kind": "inclusion",
+    "text": "Serology compatible with primary EBV infection: anti-EBNA IgG negative, anti-VCA IgG negative, anti-VCA IgM positive OR anti-EBNA IgG negative, anti-VCA IgG positive, anti-VCA IgM positive",
+    "category": "biomarker",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "IM group"
+   },
+   {
+    "rule_id": "I8",
+    "kind": "inclusion",
+    "text": "One of the following: (1) Clinical picture of upper respiratory tract infection (including but not limited to tonsillitis/pharyngitis, malaise, headache, cough, rhinitis, cervical node enlargement) OR (2) confirmed primary Cytomegalovirus (CMV) infection",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "control group"
+   },
+   {
+    "rule_id": "E1",
+    "kind": "exclusion",
+    "text": "Suspicion/diagnosis of IM as per judgement of the treating clinician (control group only); such individual may be eligible later for the IM group if primary EBV infection is confirmed subsequently",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "control group"
+   },
+   {
+    "rule_id": "E2",
+    "kind": "exclusion",
+    "text": "Immunosuppression (broadly defined as primary/secondary immunodeficiency or treatment with an immunosuppressive medication including ≥ 10mg prednisone equivalent)",
+    "category": "medication",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E3",
+    "kind": "exclusion",
+    "text": "History of autoimmune disease (e.g. SLE, vasculitis etc.)",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   }
+  ],
+  "parsing_notes": "시험은 IM 그룹과 대조군(control group)으로 나뉘며 일부 기준이 그룹별로 다름. 동의서(I1), 연령(I2), 성별(I3) 기준은 두 그룹 모두에 공통 적용. IM 그룹의 진단 기준(I4~I7)은 임상적 증상, 검사 소견, 혈청학 조건이 복합적으로 결합되어 있어 단일 구조화 필드로 환원하기 어려움(특히 혈청학 조건은 OR로 묶인 다중 항목). 대조군 포함 기준(I8)도 OR 조건으로 단일 규칙 처리함. 제외 기준 중 면역억제 정의는 구체적 약물 용량 기준(prednisone ≥10mg equivalent)이 있으나 표준화된 lab/medication 필드로 환원하기 어려워 structured_evaluable=false로 처리함. 자가면역질환 및 IM 의심 제외 기준은 구체적 예시가 있어 underspecified=false로 판단함."
+ },
+ "rule_meta": {
+  "I1": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I2": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I3": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I4": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I5": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I6": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I7": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I8": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E1": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E2": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E3": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  }
+ },
+ "validation": {
+  "deterministic": {},
+  "risk": {
+   "I1": [
+    "절차 선정 기준 (미확인이어도 적격을 막지 않음)"
+   ]
+  },
+  "coverage_gaps": [
+   "[inclusion] Participants fulfilling all of the following inclusion criteria are eligible for the infectious mononucleosis (IM) group:",
+   "[inclusion] Participants fulfilling all of the following inclusion criteria will be eligible for the control group:"
+  ],
+  "llm_checked": [
+   "I1"
+  ],
+  "changes": [],
+  "review": {},
+  "added_rules": [],
+  "evidence_conflicts": [
+   "I1: 유형 규칙(consent_or_logistics: self_report_ok)과 검증 제안(clinical_record)이 달라 clinical_record 적용"
+  ],
+  "notes": [],
+  "llm_output": null
+ }
+}

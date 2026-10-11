@@ -331,8 +331,13 @@ python eval/evaluate.py --labels data/labels/masked_labels.csv --outputs outputs
 | `--max-rounds N` | 확인 질문 최대 라운드 | 2 |
 | `--candidates screen` | 불러온 시험 전체를 풀로 보고 후보 추림 에이전트가 고름 | ✅ |
 | `--candidates given` | 환자 파일의 `candidate_trials` 또는 `--topic-map`에 정한 후보만 평가 (이전 방식, 라벨이 있는 쌍만 평가할 때) | |
-| `--max-candidates N` | 후보 추림 후 자세히 평가할 최대 시험 수. 시험 풀이 이보다 작으면 추림 없이 전부 평가. **5는 실험 전 임시값**이며 실제 값은 팀 결정 D3(후보 예산)에 따라 실험으로 정합니다 | 5 (임시) |
-| `CTREC_MAX_QUESTIONS` (환경변수) | 라운드당 최대 질문 수. **5는 실험 전 임시값**이며 팀 결정 D4(라운드당 질문 수)에 따라 1개씩 vs 묶음 질문을 비교해 정합니다 | 5 (임시) |
+| `--max-candidates N` | 후보 추림 후 자세히 평가할 최대 시험 수. 시험 풀이 이보다 작으면 추림 없이 전부 평가. **5는 실험 전 임시값**입니다. D3 결정에 따라 `scripts/screen_budget.py`(recall@k)로 정합니다 | 5 (임시) |
+| `CTREC_MAX_QUESTIONS` (환경변수) | 라운드당 최대 질문 수 (`batch`·`adaptive` 정책의 한도). **5는 실험 전 임시값**입니다 | 5 (임시) |
+| `CTREC_QUESTION_POLICY` (환경변수) | 한 라운드에 묶을 질문 수 정책 (D4). `single` 항상 1개 / `batch` 한도까지 / `adaptive` 서로 독립적이고 판정을 바꿀 질문만 함께. 기본 `adaptive`는 권장안이며 `scripts/question_policy_sweep.py` 결과로 확정합니다 | adaptive (임시) |
+| `--country 국가` | 환자 거주 국가. 시험 기관 위치를 추천·보고서에 표시만 합니다 (D5, 빈 문자열이면 표시 안 함) | South Korea |
+| `--country-only` | `--country`에 기관이 있는 시험만 평가 (사용자가 원할 때만 쓰는 hard filter). 기관 목록이 없는 시험은 '위치 미확인'으로 남깁니다 | off |
+| `CTREC_LAZY_COMPILE=1` (환경변수) | 고정 저장소(`data/parsed/`)에 없는 시험을 그 자리에서 파싱합니다(검증 없음). 기본은 `COMPILATION_PENDING`(NOT_EVALUATED)으로 기록 (D8). `--search`·`--nct`로 새 시험을 시연할 때 씁니다 | 0 |
+| `CTREC_WRITE_REPORT=0` (환경변수) | 보고서(설명 에이전트) 생략. 평가 실험 비용 절감용 | 1 |
 | `--question-budget N` | 환자 1명당 전체 라운드 합산 최대 질문 수 (질문 예산 실험용). 라운드당 한도(`CTREC_MAX_QUESTIONS`, 기본 5)와 남은 예산 중 작은 값만큼 묻습니다 | 제한 없음 |
 | `--search` | CT.gov 추가 검색 허용 (agent 모드) | off |
 | `--trials`, `--trials-dir`, `--nct` | 후보 시험 지정 | |
@@ -448,10 +453,15 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 │   ├── orchestrator.py         # 오케스트레이터 에이전트 (agent 모드, tool use 루프)
 │   ├── trace.py                # trace.jsonl 기록 (+ 웹 UI 실시간 구독)
 │   ├── metrics.py              # 평가 지표 (정확도, Rescue/Cleanup, False Removal 등)
+│   ├── trial_store.py          # 사전 컴파일 기준 고정 저장소 (D8)
+│   ├── evidence.py             # 기준별 근거 수준 정책 (D2)
+│   ├── acquisition.py          # 부족한 정보의 확보 순서 (D7)
+│   ├── location.py             # 시험 기관 위치 표시·필터 (D5)
 │   ├── web/                    # 웹 UI: app.py(FastAPI + SSE), static/index.html
 │   ├── agents/
 │   │   ├── screener.py         # 후보 추림 에이전트
 │   │   ├── criteria_parser.py  # 기준 파싱 에이전트
+│   │   ├── parser_validator.py # 파싱 검증 에이전트 (D1·D6, 사전 컴파일 때만 실행)
 │   │   ├── patient_profiler.py # 환자 정보 이해 에이전트
 │   │   ├── matcher.py          # 추론·매칭 에이전트 (+ 적격성 결정 규칙)
 │   │   ├── question_generator.py # 질문 생성 에이전트
@@ -467,11 +477,15 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 │   ├── budget_sweep.py         # 질문 예산별 성능 곡선
 │   ├── build_masked_benchmark.py  # 정보 가리기 평가셋 생성
 │   ├── expand_labels.py        # 라벨을 전체 시험 풀로 확장 (후보 추림 평가용)
-│   └── parse_consistency.py    # 기준 파싱 일관성 측정 + 전체 시험 사전 파싱
+│   ├── parse_consistency.py    # 기준 파싱 일관성 측정
+│   ├── compile_trials.py       # 시험 기준 사전 컴파일 (파싱 + 검증 -> data/parsed/)
+│   ├── screen_budget.py        # 후보 수 실험 (D3, 추림 recall@k)
+│   └── question_policy_sweep.py # 라운드당 질문 정책 비교 (D4)
 ├── eval/evaluate.py            # 매칭 정확성 평가
-├── tests/                      # API 없이 도는 단위 테스트 (test_offline, test_recommender, test_reliability, test_masked_benchmark, test_screening, test_safety, test_stage05)
+├── tests/                      # API 없이 도는 단위 테스트 (test_offline, test_recommender, test_reliability, test_masked_benchmark, test_screening, test_safety, test_stage05, test_decisions)
 └── data/
     ├── trials/                 # 시험 프로토콜 (CT.gov 캐시 + 가상 데모)
+    ├── parsed/                 # 사전 컴파일한 기준 고정 저장소 (git 포함, 환자 평가 때 이것만 사용)
     ├── topic_map.json          # 사업단 환자 S001–S010 → 후보 시험
     ├── patients/synthetic/     # 합성 환자 30명 (cases_*.json) + 데모 2명
     ├── patients/provided/      # 사업단 제공 예시 10명
@@ -486,11 +500,11 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 - **모델**: 모든 에이전트는 기본값 `claude-sonnet-5`를 씁니다($2 / $10 per 1M 입력·출력 토큰). 데모 환자 1명 기준 약 $0.2로, 같은 환자를 `claude-opus-5`로 돌렸을 때(약 $0.57)보다 저렴했습니다. 에이전트마다 추론 강도(`effort`)를 다르게 둡니다. 판정 정확도가 중요한 기준 파싱, 매칭, 추천, 오케스트레이터는 `high`이고, 추출과 문장 생성 위주 단계는 `medium`입니다. 값은 `config.py`의 `EFFORT`에서 조정합니다.
 - **캐싱**
   - 에이전트별 시스템 프롬프트에 프롬프트 캐싱을 적용합니다.
-  - 파싱된 시험 규칙은 `data/cache/parsed/`에 저장되어, 같은 시험을 여러 환자에 쓸 때 다시 파싱하지 않습니다. 모델이나 프롬프트, 시험 내용이 바뀌면 캐시 키가 자동으로 달라집니다.
+  - 시험 기준은 `scripts/compile_trials.py`로 미리 파싱·검증해 `data/parsed/`(git 포함)에 고정합니다. 환자를 평가할 때는 파싱하지 않습니다. 시험 기준 원문이 바뀌면 그 시험은 `COMPILATION_PENDING`이 되므로 다시 컴파일합니다. `data/cache/parsed/`는 컴파일·즉석 파싱용 내부 캐시입니다.
 - **안전 분류기 대응**: 의료 텍스트가 드물게 모델의 안전 분류기에 의해 거절될 수 있습니다. 이 경우를 대비해 Claude API의 서버측 refusal fallback(`fallbacks: "default"`)을 기본으로 켜 두었습니다. Bedrock이나 Vertex 등 다른 플랫폼에서는 `.env`에 `CTREC_FALLBACKS=0`을 설정하세요.
 - **비용 규모**: 환자 1명 × 시험 N개 기준으로 대략 다음 횟수만큼 Claude를 호출합니다.
   - 후보 추림: 1회 (약 $0.03. 시험 풀 설명은 시스템 프롬프트에 넣어 환자가 바뀌어도 캐시로 재사용). 자세한 판정은 고른 시험 N개(최대 5개)에만 합니다
-  - 기준 파싱: N회 (최초 1회만, 이후 캐시)
+  - 기준 파싱: 0회 (사전 컴파일한 고정 저장소 사용. 컴파일은 시험당 파싱 3회 + 검증 1회를 한 번만)
   - 매칭: N회
   - 질문 라운드: 라운드마다 3회 이상
   - 추천과 설명: 2회
@@ -510,6 +524,40 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 ## 10. 변경 이력
 
 수정할 때마다 무엇을 왜 바꿨는지 여기에 기록합니다. 최신 항목이 위에 옵니다.
+
+### 2026-10-11 — 팀 결정 D1–D8 반영 (회의 자료의 제안안 적용)
+
+배경: 팀 결정 대기 문서의 8개 항목을 회의 자료에서 제안한 안대로 적용했습니다. 정책만 정하는 항목(D3·D4)은 실험 도구를 만들었고, 수치는 실험 후 확정합니다.
+
+| 결정 | 적용한 안 | 구현 | 파일 |
+|---|---|---|---|
+| D8 사전 파싱 범위 | C: 대회 범위 전체 사전 컴파일, 범위 밖은 `COMPILATION_PENDING` | 26개 시험을 컴파일해 `data/parsed/`(git 포함)에 고정. 환자 평가 때 다시 파싱하지 않음. 저장소에 없거나 기준 원문이 바뀐 시험은 `NOT_EVALUATED`(`COMPILATION_PENDING`) | `trial_store.py`, `scripts/compile_trials.py`, `data/parsed/` |
+| D1 파서 검증 | D: 결정적 검사 → 위험 탐지 → 위험 항목만 LLM 검증 → 심각한 불일치는 의사 확인 | 결정적 검사(수치·부등호, 필드 형식, 선정/제외 절 방향, 코호트, 누락 문장) 후 위험 항목(underspecified, 절차 선정 기준, 검사·ECOG 규칙 엔진, 다른 실행과 속성이 다른 규칙, category=other)만 LLM이 원문과 대조. 뜻이 바뀐 규칙은 자동 판정하지 않고 의사 확인(UNSUPPORTED) | `agents/parser_validator.py`, `agents/matcher.py` |
+| D6 underspecified | C: 상태 기반 | underspecified 규칙은 모두 검증. 원문이 구체적이면 규칙 단위로 재분류(`reparsed_concrete`), 정말 애매하면 `vague_confirmed`. 반대로 켜는 것(false → true)은 기록만(`vague_suspected`) | `agents/parser_validator.py` |
+| D2 근거 수준 | D: 유형별 고정 규칙 + 애매한 유형만 검증 제안 + 충돌 시 엄격한 쪽 | 판정 근거가 처음 기록인지 확인 질문 답변(자기 보고)인지 구분. 진료 기록이 필요한 기준(바이오마커·검사·병기 등)을 답변만으로 판정하면 '기록 확인 필요'로 표시(판정은 막지 않음) | `evidence.py`, `agents/matcher.py`, `agents/recommender.py`, `agents/explainer.py` |
+| D7 정보 확보 순서 | 주요 4개 유형(바이오마커, 검사 수치, 복용 약, 치료 이력)만 명시 정책 | 판정 불가 항목마다 확보 단계(결과지 요청 → 자기 보고)·시도 기록·미해결 시 결과를 관리. 모든 단계를 시도한 항목은 다시 묻지 않고 보고서에 영향 표시 | `acquisition.py`, `pipeline.py`, `agents/question_generator.py` |
+| D5 위치 | C: 사용자 의도 기반 | 기본은 위치 표시만(현재 26개 중 한국 기관이 있는 시험 0개). `--country-only`일 때만 hard filter | `location.py`, `cli.py` |
+| D3 후보 예산 | 개념만 유지, 수치는 실험 | `scripts/screen_budget.py`: 추림 순위로 k=3/5/8/전체의 적격·같은 분야 recall 계산. 두 recall이 95% 이상인 가장 작은 k를 제안 | `scripts/screen_budget.py` |
+| D4 라운드당 질문 수 | C 후보, 1개 vs 묶음 비교 후 확정 | `CTREC_QUESTION_POLICY`(single/batch/adaptive) 추가, 기본 adaptive. `scripts/question_policy_sweep.py`로 같은 예산(3개)에서 세 정책 비교 | `config.py`, `agents/question_generator.py`, `scripts/question_policy_sweep.py` |
+
+**사전 컴파일 결과** (시험 26개, 어제 측정한 3회 파싱 중 다른 실행과 가장 많이 겹치는 실행을 기준으로 선택, 검증 비용 약 $0.7)
+
+| 항목 | 결과 |
+|---|---|
+| 규칙 | 471개 (검증 단계에서 누락 기준 1개 추가: NCT06908096 피임 요건) |
+| 위험 항목 → LLM 검증 | 129개 (27%) |
+| 코드가 바꾼 것 | 11건: category 재분류 9건, 나이 규칙 엔진 필드 제거 2건(원문은 18–100세·40–80세 범위인데 하한만 구조화됨) |
+| underspecified | 32개 모두 원문이 애매함을 확인(재분류 0건). 검증이 애매하다고 본 비-underspecified 17건은 적용하지 않고 기록만 |
+| 의사 확인(UNSUPPORTED) | 0건 |
+| 근거 수준 | 진료 기록 필요 206개 / 자기 보고 가능 265개. 유형 규칙과 검증 제안이 다른 22건은 엄격한 쪽 |
+
+- 판단 기록: 처음 컴파일에서는 검증 LLM이 '애매하다'고 본 규칙 17건의 underspecified를 켰습니다. 그런데 underspecified 기준은 ELIGIBLE을 막고 확인 질문 대상에서도 빠집니다. 그래서 "백신 중증 반응 이력"처럼 환자에게 물으면 판정 가능한 기준까지 시험을 적격 불가로 만들었습니다. 절차 선정 기준 2건은 면제 대상에서 빠져 ELIGIBLE을 막았습니다. D6 문서도 "파서가 underspecified라고 한 것을 검증"하는 방향이므로 false → true는 자동 적용하지 않도록 바꿨습니다. 같은 LLM 판정에 바뀐 규칙만 다시 적용했습니다(재호출 없음).
+- 동작 변화: 환자 평가 때 시험 기준을 파싱하지 않습니다(고정 저장소만 사용). 기존 테스트 2개는 가짜 시험을 쓰므로 `LAZY_COMPILE`을 켜도록 고쳤습니다.
+- 확인: 오프라인 테스트 102개 통과(새로 20개, `tests/test_decisions.py`). 저장소의 모든 시험이 최신 컴파일로 불러와지는지도 테스트합니다.
+- **실행하지 못한 것**: D3·D4 실험은 API 크레딧 소진으로 실행하지 못했습니다(재컴파일 시도 중 `credit balance is too low`). `--max-candidates 5`, `CTREC_MAX_QUESTIONS 5`, `CTREC_QUESTION_POLICY=adaptive`는 아직 임시값입니다. 크레딧을 충전한 뒤 아래를 실행해 확정합니다.
+  - `python scripts/screen_budget.py --ks 3,5,8,26` (환자 32명 × 프로필·추림 2회, 약 $2 예상)
+  - `python scripts/question_policy_sweep.py --policies single,batch,adaptive --budget 3 --per-type 5` (표본 20명 × 3정책, 보고서 생략, 약 $15–25 예상)
+- 검증 LLM 원본 응답은 이번 저장소 기록에는 없습니다. 다음 컴파일부터 `validation.llm_output`에 저장됩니다.
 
 ### 2026-10-10 — 안전 패치 브랜치 병합, 파싱 일관성 측정, 전체 시험 사전 파싱
 

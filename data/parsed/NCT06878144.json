@@ -1,0 +1,192 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT06878144",
+ "trial_hash": "402c74bbc12bb3b5",
+ "parser_prompt_hash": "2e69d96de0305d7b",
+ "model": "claude-sonnet-5",
+ "compiled_at": "2026-10-11T06:39:39+00:00",
+ "runs": 3,
+ "canonical_run": 2,
+ "parsed": {
+  "trial_id": "NCT06878144",
+  "title": "Mucormycosis Clinical Core for the MUCOR-ADVANCE P01 Project",
+  "target_population": "18-100세 성인 암 환자 중 침습성 모균증(mucormycosis), 침습성 아스페르길루스증, 세균성 폐렴이 있거나 진균 감염 위험이 있으나 감염 증거가 없는 환자",
+  "intervention_summary": "관찰 연구로, 혈액·조직·BAL 검체 수집 및 의무기록 검토(중재 없음, 행동학적 분류)",
+  "key_conditions": [
+   "Mucormycosis",
+   "Invasive aspergillosis",
+   "Bacterial pneumonia",
+   "Risk for fungal infection without evidence of infection"
+  ],
+  "cohorts": [],
+  "rules": [
+   {
+    "rule_id": "I1",
+    "kind": "inclusion",
+    "text": "Patients must be 18-100 years old",
+    "category": "demographic",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": "years",
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I2",
+    "kind": "inclusion",
+    "text": "Patients must be 18-100 years old",
+    "category": "demographic",
+    "field": "age",
+    "operator": "<=",
+    "value": "100",
+    "unit": "years",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I3",
+    "kind": "inclusion",
+    "text": "Structured eligibility: sex=ALL",
+    "category": "demographic",
+    "field": "sex",
+    "operator": "==",
+    "value": "all",
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I4",
+    "kind": "inclusion",
+    "text": "Patients must ... have cancer",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I5",
+    "kind": "inclusion",
+    "text": "Patients must ... have invasive mucormycosis, invasive aspergillosis, bacterial pneumonia, or a risk for fungal infection but no evidence of such infection",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I6",
+    "kind": "inclusion",
+    "text": "Patients must be willing to undergo routine diagnostic procedures (e.g., phlebotomy, bronchoscopy, biopsy) as part of their regular care",
+    "category": "consent_or_logistics",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E1",
+    "kind": "exclusion",
+    "text": "Patients who are unwilling to undergo routine diagnostic procedures as part of their regular care",
+    "category": "consent_or_logistics",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   }
+  ],
+  "parsing_notes": "구조화된 성별(ALL) 및 연령(18-100) 필드는 CT.gov 메타데이터에서 가져와 규칙으로 포함함. 'cancer and (invasive mucormycosis, invasive aspergillosis, bacterial pneumonia, or risk for fungal infection without evidence)'는 and/or가 혼합된 복합 조건으로, 'cancer' 보유 여부와 4가지 감염/위험 상태 중 하나 해당 여부를 별도 규칙(I4, I5)으로 분리함. Outline에 언급된 Group M/A/B/C는 연구 설계상 환자군 구분으로 보이나, 선정/제외 기준 본문에서 군별로 별도 기준을 명시하지 않아 코호트로 분리하지 않음(cohorts=[]). 구체적 수치나 검사 기준이 없어 lab 관련 규칙은 존재하지 않음."
+ },
+ "rule_meta": {
+  "I1": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I2": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I3": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I4": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I5": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I6": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E1": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  }
+ },
+ "validation": {
+  "deterministic": {},
+  "risk": {
+   "I1": [
+    "다른 파싱 실행과 다름(engine)"
+   ],
+   "I6": [
+    "절차 선정 기준 (미확인이어도 적격을 막지 않음)"
+   ]
+  },
+  "coverage_gaps": [],
+  "llm_checked": [
+   "I1",
+   "I6"
+  ],
+  "changes": [
+   "I1: 규칙 엔진 필드 제거 (age >= 18 years) - 원문은 18-100세로 상한이 있으나 구조화된 값은 하한(18)만 반영하고 상한 100세를 누락했다."
+  ],
+  "review": {},
+  "added_rules": [],
+  "evidence_conflicts": [],
+  "notes": [],
+  "llm_output": null
+ }
+}

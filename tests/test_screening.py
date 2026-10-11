@@ -51,6 +51,7 @@ def test_session_evaluates_only_screened_candidates(monkeypatch):
     s.screen()
     assert s.candidate_ids() == ["B", "E"]
     parsed = []
+    monkeypatch.setattr("ctrec.config.LAZY_COMPILE", True)  # 고정 저장소에 없는 가짜 시험 -> 즉석 파싱
     monkeypatch.setattr("ctrec.pipeline.criteria_parser.parse_trial", lambda t: parsed.append(t["trial_id"]) or None)
     s.parse_criteria()
     assert sorted(parsed) == ["B", "E"]

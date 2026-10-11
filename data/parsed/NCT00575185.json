@@ -1,0 +1,465 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT00575185",
+ "trial_hash": "41c92491fd1a3080",
+ "parser_prompt_hash": "2e69d96de0305d7b",
+ "model": "claude-sonnet-5",
+ "compiled_at": "2026-10-11T06:39:08+00:00",
+ "runs": 3,
+ "canonical_run": 2,
+ "parsed": {
+  "trial_id": "NCT00575185",
+  "title": "Activity of Valomaciclovir in Infectious Mononucleosis Due to Primary Epstein-Barr Virus Infection",
+  "target_population": "15세 이상, 발병 14일 이내 전염성 단핵구증(원발성 EBV 감염으로 확인) 환자",
+  "intervention_summary": "Valomaciclovir 4g/day(2g BID) 21일 투여 vs placebo, 무작위 배정, 이중맹검",
+  "key_conditions": [
+   "Infectious Mononucleosis",
+   "Primary EBV infection"
+  ],
+  "cohorts": [],
+  "rules": [
+   {
+    "rule_id": "I1",
+    "kind": "inclusion",
+    "text": "Age 15 years or older",
+    "category": "demographic",
+    "field": "age",
+    "operator": ">=",
+    "value": "15",
+    "unit": "years",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I2",
+    "kind": "inclusion",
+    "text": "Within 14 days of initial symptoms of present illness",
+    "category": "disease_stage",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 14,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I3",
+    "kind": "inclusion",
+    "text": "Diagnosed by a health care provider as infectious mononucleosis",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I4",
+    "kind": "inclusion",
+    "text": "Confirmed to be due to primary EBV by antibody profile: positive for anti-EBV VCA IgM antibody and negative for anti-EBV EBNA1 IgG antibody",
+    "category": "biomarker",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I5",
+    "kind": "inclusion",
+    "text": "Willingness to sign the Informed Consent Form (ICF)",
+    "category": "consent_or_logistics",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I6",
+    "kind": "inclusion",
+    "text": "Willingness to contribute samples of blood and oral washings at regular intervals",
+    "category": "consent_or_logistics",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I7",
+    "kind": "inclusion",
+    "text": "Males and females must use effective contraception during treatment and for at least 90 days following treatment",
+    "category": "reproductive",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I8",
+    "kind": "inclusion",
+    "text": "Negative pregnancy test result at the Screening Visit for females of childbearing potential (including females who have had a bilateral tubal ligation)",
+    "category": "reproductive",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I9",
+    "kind": "inclusion",
+    "text": "Female patients of childbearing potential must be willing to use an approved method of double-barrier contraception (hormonal plus barrier or barrier plus barrier, eg, diaphragm plus condom) from the time of first dose administration until 90 days after completion of dosing and male patients with female partners of childbearing potential must be willing to use a condom; patients who are sterile or infertile (postmenopausal or complete hysterectomy) are eligible",
+    "category": "reproductive",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I10",
+    "kind": "inclusion",
+    "text": "Estimated creatinine clearance (Cockcroft and Gault method) ≥ 60 ml/min",
+    "category": "lab",
+    "field": "lab:creatinine clearance",
+    "operator": ">=",
+    "value": "60",
+    "unit": "ml/min",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I11",
+    "kind": "inclusion",
+    "text": "Absolute neutrophil count ≥ 1000 cells/microliter",
+    "category": "lab",
+    "field": "lab:absolute neutrophil count",
+    "operator": ">=",
+    "value": "1000",
+    "unit": "cells/microliter",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I12",
+    "kind": "inclusion",
+    "text": "Platelets ≥ 100,000/microliter",
+    "category": "lab",
+    "field": "lab:platelets",
+    "operator": ">=",
+    "value": "100000",
+    "unit": "cells/microliter",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I13",
+    "kind": "inclusion",
+    "text": "Hemoglobin ≥ 9.5 g/dL",
+    "category": "lab",
+    "field": "lab:hemoglobin",
+    "operator": ">=",
+    "value": "9.5",
+    "unit": "g/dL",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E1",
+    "kind": "exclusion",
+    "text": "Previous history of infectious mononucleosis-like illness",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E2",
+    "kind": "exclusion",
+    "text": "Immunosuppressed due to medical disease and/or immunosuppressive or immunomodulating medications (e.g., corticosteroids prior to enrollment, cytotoxic drugs, interferons)",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E3",
+    "kind": "exclusion",
+    "text": "Another intercurrent viral infection (including HIV), based on history or referring physician medical evaluation",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E4",
+    "kind": "exclusion",
+    "text": "More than 7 days elapsed since onset of illness (including screening time)",
+    "category": "disease_stage",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 7,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E5",
+    "kind": "exclusion",
+    "text": "The following concomitant medications are prohibited: probenecid, trimethoprim, myelosuppressive therapies, and medications known to be nephrotoxic",
+    "category": "medication",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E6",
+    "kind": "exclusion",
+    "text": "Breast feeding during the study",
+    "category": "reproductive",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E7",
+    "kind": "exclusion",
+    "text": "Corticosteroids are not permitted; if prescribed by the subject's primary physician for treatment of this acute disease after enrollment, the subject will be replaced",
+    "category": "medication",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   }
+  ],
+  "parsing_notes": "creatinine clearance(Cockcroft-Gault)는 원문 검사명 'lab:creatinine clearance'로 비표준 필드명을 사용했음(지정 목록에 없으나 명확한 숫자 기준이 있어 structured_evaluable=true 처리). 항체 확인(VCA IgM/EBNA1 IgG)은 field 매핑 대상 lab 목록에 없어 구조화 불가로 처리. 발병 후 14일/7일 기준은 특정 임상 이벤트(초기 증상 발생) 기준 시간창으로 환자 정보의 'age/lab' 필드로 평가 불가하여 structured_evaluable=false."
+ },
+ "rule_meta": {
+  "I1": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I2": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I3": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I4": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I5": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I6": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I7": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I8": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I9": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I10": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I11": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I12": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I13": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E1": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E2": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E3": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E4": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E5": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E6": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E7": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  }
+ },
+ "validation": {
+  "deterministic": {},
+  "risk": {
+   "I5": [
+    "절차 선정 기준 (미확인이어도 적격을 막지 않음)"
+   ],
+   "I6": [
+    "절차 선정 기준 (미확인이어도 적격을 막지 않음)"
+   ],
+   "I10": [
+    "규칙 엔진 확정 판정 (검사·ECOG)",
+    "다른 파싱 실행과 다름(engine)"
+   ],
+   "I11": [
+    "규칙 엔진 확정 판정 (검사·ECOG)"
+   ],
+   "I12": [
+    "규칙 엔진 확정 판정 (검사·ECOG)"
+   ],
+   "I13": [
+    "규칙 엔진 확정 판정 (검사·ECOG)"
+   ]
+  },
+  "coverage_gaps": [],
+  "llm_checked": [
+   "I10",
+   "I11",
+   "I12",
+   "I13",
+   "I5",
+   "I6"
+  ],
+  "changes": [],
+  "review": {},
+  "added_rules": [],
+  "evidence_conflicts": [],
+  "notes": [],
+  "llm_output": null
+ }
+}

@@ -1,0 +1,226 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT02415049",
+ "trial_hash": "724397afa28d8f39",
+ "parser_prompt_hash": "2e69d96de0305d7b",
+ "model": "claude-sonnet-5",
+ "compiled_at": "2026-10-11T06:39:05+00:00",
+ "runs": 3,
+ "canonical_run": 2,
+ "parsed": {
+  "trial_id": "NCT02415049",
+  "title": "A Trial to Assess Optimal Postoperative Feeding Regiments Following Pyloromyotomy",
+  "target_population": "생후 2주~10주의 유문협착증(pyloric stenosis) 진단을 받고 유문근절개술(pyloromyotomy)을 시행받을 영아",
+  "intervention_summary": "유문근절개술 후 수술 후 4시간 금식 후, 표준/점진적 수유 요법(Standard/Incremental) 대 자율 수유 요법(Ad-lib)을 비교하는 무작위 배정 연구",
+  "key_conditions": [
+   "Postoperative Feeding Following Pyloromyotomy",
+   "Infantile hypertrophic pyloric stenosis"
+  ],
+  "cohorts": [],
+  "rules": [
+   {
+    "rule_id": "I1",
+    "kind": "inclusion",
+    "text": "Subjects to be included in the study include infants who have a diagnosis of pyloric stenosis who will undergo pyloromyotomy.",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I2",
+    "kind": "inclusion",
+    "text": "minimum_age=2 Weeks",
+    "category": "demographic",
+    "field": "age",
+    "operator": ">=",
+    "value": "2",
+    "unit": "weeks",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I3",
+    "kind": "inclusion",
+    "text": "maximum_age=10 Weeks",
+    "category": "demographic",
+    "field": "age",
+    "operator": "<=",
+    "value": "10",
+    "unit": "weeks",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I4",
+    "kind": "inclusion",
+    "text": "sex=ALL",
+    "category": "demographic",
+    "field": "sex",
+    "operator": "==",
+    "value": "all",
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E1",
+    "kind": "exclusion",
+    "text": "Patients with severe underlying medical conditions including but not limited to hypothermia will not be included in the study.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E2",
+    "kind": "exclusion",
+    "text": "Patients with severe underlying medical conditions including but not limited to sepsis will not be included in the study.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E3",
+    "kind": "exclusion",
+    "text": "Patients with severe underlying medical conditions including but not limited to glycemic instability will not be included in the study.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E4",
+    "kind": "exclusion",
+    "text": "Patients with severe underlying medical conditions including but not limited to need for care in the intensive care unit/neonatal intensive care unit will not be included in the study.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E5",
+    "kind": "exclusion",
+    "text": "Patients with severe underlying medical conditions including but not limited to hypothermia, sepsis, glycemic instability, or need for care in the intensive care unit/neonatal intensive care unit will not be included in the study.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   }
+  ],
+  "parsing_notes": "제외 기준의 'including but not limited to' 표현으로 인해 목록에 명시된 구체적 상태(저체온, 패혈증, 혈당 불안정, 중환자실/신생아중환자실 치료 필요)는 각각 별도 규칙(E1-E4)으로 분리했으며, 목록에 없는 기타 '중증 기저질환'을 포괄하는 개방형 조항은 별도로 E5로 두고 underspecified=true 처리함. 구조화된 성별·연령 필드는 본문에 명시적 서술이 없어도 CT.gov 구조화 필드 값을 기반으로 규칙화함(I2-I4). 진단 기준(I1)은 텍스트 기반 진단으로 구조화 불가능하지만 명확한 기준이라 underspecified는 아님."
+ },
+ "rule_meta": {
+  "I1": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I2": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I3": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I4": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E1": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E2": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E3": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E4": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E5": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_confirmed",
+   "added_by_validator": false
+  }
+ },
+ "validation": {
+  "deterministic": {},
+  "risk": {
+   "E5": [
+    "underspecified (파서 한 번의 판단)"
+   ]
+  },
+  "coverage_gaps": [],
+  "llm_checked": [
+   "E5"
+  ],
+  "changes": [],
+  "review": {},
+  "added_rules": [],
+  "evidence_conflicts": [
+   "E5: 유형 규칙(comorbidity: self_report_ok)과 검증 제안(clinical_record)이 달라 clinical_record 적용"
+  ],
+  "notes": [],
+  "llm_output": null
+ }
+}
