@@ -83,7 +83,6 @@ def _run_case(case: PatientCase, trials: dict[str, dict], args, answerer) -> Ses
         max_rounds=args.max_rounds, allow_search=args.search, question_budget=args.question_budget,
         screen_trials=args.candidates == "screen" and len(trials) > args.max_candidates,
         max_candidates=args.max_candidates,
-        country=args.country or None, country_only=args.country_only,
     )
     llm.reset_usage()
     tracer.log("pipeline", "start", message=f"mode={args.mode} model={config.MODEL} trials={len(trials)}")
@@ -114,10 +113,6 @@ def _add_common(p: argparse.ArgumentParser) -> None:
                    help="후보 추림 후 자세히 평가할 최대 시험 수")
     p.add_argument("--question-budget", type=int, default=None,
                    help="환자 1명당 전체 라운드 합산 최대 질문 수 (질문 예산 실험용, 기본: 라운드당 한도만 적용)")
-    p.add_argument("--country", default=config.PATIENT_COUNTRY,
-                   help="환자 거주 국가. 기본은 시험 기관 위치를 표시만 함 (빈 문자열이면 표시 안 함)")
-    p.add_argument("--country-only", action="store_true",
-                   help="--country에 기관이 있는 시험만 평가 (사용자가 원할 때만 쓰는 hard filter)")
     p.add_argument("--out", default=str(config.OUTPUT_DIR))
     p.add_argument("--quiet", action="store_true")
     p.add_argument("--workers", type=int, default=1,

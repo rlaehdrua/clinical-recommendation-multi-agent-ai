@@ -1,6 +1,6 @@
 """팀 결정 D1–D8 반영 (API 호출 없음).
 
-D1·D6 파싱 검증, D2 근거 수준, D5 위치, D7 정보 확보 순서, D8 고정 저장소, D4 질문 정책.
+D1·D6 파싱 검증, D2 근거 수준, D7 정보 확보 순서, D8 고정 저장소, D4 질문 정책.
 """
 
 import sys
@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from ctrec import acquisition, config, evidence, location, trial_store
+from ctrec import acquisition, config, evidence, trial_store
 from ctrec.agents import matcher, parser_validator
 from ctrec.agents.answerers import NoAnswerer
 from ctrec.agents.parser_validator import MissingCriterion, RuleCheck, ValidationOutput, ValidationReport
@@ -264,19 +264,6 @@ def test_session_stops_asking_unresolved_fact():
     s.missing_facts["T1:I3"].attempted_actions = ["a", "b"]
     acquisition.update(s.missing_facts, s.matches.values())
     assert s.uncertain() == []
-
-
-# ------------------------------------------------------------------ D5 위치
-def test_location_display_by_default_and_hard_filter_on_request():
-    trials = {"US": {**TRIAL, "trial_id": "US"},
-              "KR": {**TRIAL, "trial_id": "KR", "locations": [{"country": "Korea, Republic of"}]},
-              "NA": {**TRIAL, "trial_id": "NA", "locations": []}}
-    s = _session(dict(trials), country="South Korea")
-    assert set(s.trials) == {"US", "KR", "NA"}  # 기본: 빼지 않음
-    s = _session(dict(trials), country="South Korea", country_only=True)
-    assert set(s.trials) == {"KR", "NA"} and set(s.location_removed) == {"US"}  # 위치 미확인은 남김
-    assert "South Korea 기관 있음" in location.note(trials["KR"], "South Korea")
-    assert "위치 미확인" in location.note(trials["NA"], "South Korea")
 
 
 # ------------------------------------------------------------------ D4 질문 정책

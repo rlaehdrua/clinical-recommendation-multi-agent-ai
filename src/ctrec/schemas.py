@@ -248,7 +248,6 @@ class RankedTrial(BaseModel):
         default_factory=list,
         description="코드가 채움: 환자 답변만으로 판정해 진료 기록 확인이 필요한 항목. 빈 목록으로 두세요.",
     )
-    location_note: str = Field(default="", description="코드가 채움: 시험 기관 위치. 빈 문자열로 두세요.")
 
 
 class ExcludedTrial(BaseModel):

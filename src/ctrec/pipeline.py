@@ -13,7 +13,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from . import DISCLAIMER, acquisition, config, llm, location, trial_store
+from . import DISCLAIMER, acquisition, config, llm, trial_store
 from .agents import criteria_parser, explainer, matcher, patient_profiler, question_generator, recommender, screener
 from .agents.answerers import Answerer
 from .schemas import ParsedTrial, PatientProfile, QAPair, Recommendation, TrialMatch
@@ -92,8 +92,6 @@ class Session:
     question_budget: int | None = None  # 전체 라운드 합산 최대 질문 수 (None = 라운드당 한도만 적용)
     screen_trials: bool = False  # True: trials 전체를 풀로 보고 후보 추림 후 자세히 평가
     max_candidates: int = config.SCREEN_MAX_CANDIDATES
-    country: str | None = config.PATIENT_COUNTRY  # 환자 거주 국가 (위치 표시용, D5)
-    country_only: bool = False  # True: 그 나라에 기관이 있는 시험만 평가 (사용자가 원할 때만, D5)
 
     profile: PatientProfile | None = None
     parsed: dict[str, ParsedTrial] = field(default_factory=dict)
@@ -111,13 +109,6 @@ class Session:
     reference_date: str = field(default_factory=config.reference_date)
     # 판정 불가 항목별 확보 시도 기록 (D7): "<trial_id>:<rule_id>" -> MissingFact
     missing_facts: dict[str, acquisition.MissingFact] = field(default_factory=dict)
-    location_removed: dict[str, str] | None = None  # country_only로 뺀 시험
-
-    def __post_init__(self) -> None:
-        if self.country_only and self.country:
-            self.trials, self.location_removed = location.hard_filter(self.trials, self.country)
-            self.tracer.log("pipeline", "location_filter", removed=self.location_removed,
-                            message=f"{self.country} 기관이 없는 시험 {len(self.location_removed)}개 제외")
 
     # ----------------------------------------------------------- 후보
     def candidate_ids(self) -> list[str]:
@@ -287,8 +278,7 @@ class Session:
         matches = list(self.matches.values())
         evaluated = {t: self.trials[t] for t in self.matches}
         self.tracer.log("recommender", "start", n_trials=len(matches))
-        self.recommendation = recommender.recommend(self.profile, matches, evaluated, self.qa_log,
-                                                    country=self.country)
+        self.recommendation = recommender.recommend(self.profile, matches, evaluated, self.qa_log)
         self.tracer.log("recommender", "done",
                         message=" > ".join(r.trial_id for r in self.recommendation.ranked) or "(추천 없음)")
         self.tracer.log("explainer", "start")
@@ -297,7 +287,6 @@ class Session:
         ranked_ids = [r.trial_id for r in self.recommendation.ranked]
         extra = (screener.report_section(self.screening) if self.screening else "")
         extra += acquisition.report_section(self.missing_facts, set(ranked_ids))
-        extra += location.report_section(self.trials, ranked_ids, self.country, self.location_removed)
         self.report = explainer.explain(
             self.profile, matches, self.recommendation, evaluated, self.qa_log, self.match_history,
             extra_section=extra,
@@ -328,8 +317,6 @@ class Session:
             "eligibility_history": self.match_history,
             "screening": self.screening.model_dump() if self.screening else None,
             "missing_facts": {k: f.model_dump() for k, f in self.missing_facts.items()},
-            "location": {"country": self.country, "country_only": self.country_only,
-                         "removed": self.location_removed},
             "recommendation": self.recommendation.model_dump() if self.recommendation else None,
             "trial_sources": {tid: self.trials[tid].get("source") for tid in self.matches},
             "errors": self.errors,

@@ -55,10 +55,6 @@ MATCHER_MISSING_RETRIES = int(os.getenv("CTREC_MATCHER_RETRIES", "1"))
 # 1: 그 자리에서 파싱(검증 없음, 결과가 실행마다 달라질 수 있음). 데모·검색 시연용
 LAZY_COMPILE = os.getenv("CTREC_LAZY_COMPILE", "0") == "1"
 
-# 환자 거주 국가 (팀 결정 D5 Option C). 기본은 위치를 표시만 하고 후보에서 빼지 않습니다.
-# "이 나라에서 참여 가능한 시험만" 원할 때만 --country-only로 hard filter를 켭니다.
-PATIENT_COUNTRY = os.getenv("CTREC_COUNTRY", "South Korea")
-
 # 오케스트레이터 에이전트 루프 최대 반복 횟수
 MAX_ORCHESTRATOR_STEPS = int(os.getenv("CTREC_MAX_STEPS", "15"))
 

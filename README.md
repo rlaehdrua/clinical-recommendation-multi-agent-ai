@@ -334,8 +334,6 @@ python eval/evaluate.py --labels data/labels/masked_labels.csv --outputs outputs
 | `--max-candidates N` | 후보 추림 후 자세히 평가할 최대 시험 수. 시험 풀이 이보다 작으면 추림 없이 전부 평가. **5는 실험 전 임시값**입니다. D3 결정에 따라 `scripts/screen_budget.py`(recall@k)로 정합니다 | 5 (임시) |
 | `CTREC_MAX_QUESTIONS` (환경변수) | 라운드당 최대 질문 수 (`batch`·`adaptive` 정책의 한도). **5는 실험 전 임시값**입니다 | 5 (임시) |
 | `CTREC_QUESTION_POLICY` (환경변수) | 한 라운드에 묶을 질문 수 정책 (D4). `single` 항상 1개 / `batch` 한도까지 / `adaptive` 서로 독립적이고 판정을 바꿀 질문만 함께. 기본 `adaptive`는 권장안이며 `scripts/question_policy_sweep.py` 결과로 확정합니다 | adaptive (임시) |
-| `--country 국가` | 환자 거주 국가. 시험 기관 위치를 추천·보고서에 표시만 합니다 (D5, 빈 문자열이면 표시 안 함) | South Korea |
-| `--country-only` | `--country`에 기관이 있는 시험만 평가 (사용자가 원할 때만 쓰는 hard filter). 기관 목록이 없는 시험은 '위치 미확인'으로 남깁니다 | off |
 | `CTREC_LAZY_COMPILE=1` (환경변수) | 고정 저장소(`data/parsed/`)에 없는 시험을 그 자리에서 파싱합니다(검증 없음). 기본은 `COMPILATION_PENDING`(NOT_EVALUATED)으로 기록 (D8). `--search`·`--nct`로 새 시험을 시연할 때 씁니다 | 0 |
 | `CTREC_WRITE_REPORT=0` (환경변수) | 보고서(설명 에이전트) 생략. 평가 실험 비용 절감용 | 1 |
 | `--question-budget N` | 환자 1명당 전체 라운드 합산 최대 질문 수 (질문 예산 실험용). 라운드당 한도(`CTREC_MAX_QUESTIONS`, 기본 5)와 남은 예산 중 작은 값만큼 묻습니다 | 제한 없음 |
@@ -456,7 +454,6 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 │   ├── trial_store.py          # 사전 컴파일 기준 고정 저장소 (D8)
 │   ├── evidence.py             # 기준별 근거 수준 정책 (D2)
 │   ├── acquisition.py          # 부족한 정보의 확보 순서 (D7)
-│   ├── location.py             # 시험 기관 위치 표시·필터 (D5)
 │   ├── web/                    # 웹 UI: app.py(FastAPI + SSE), static/index.html
 │   ├── agents/
 │   │   ├── screener.py         # 후보 추림 에이전트
@@ -525,9 +522,17 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 
 수정할 때마다 무엇을 왜 바꿨는지 여기에 기록합니다. 최신 항목이 위에 옵니다.
 
+### 2026-10-11 — 위치(D5) 기능 삭제
+
+배경: 시험 기관 위치는 이 시스템에 필요 없다고 판단해, 같은 날 추가한 위치 기능을 모두 걷어냈습니다.
+
+- 삭제: `location.py`, `--country`·`--country-only` 옵션, `CTREC_COUNTRY` 설정, 추천의 기관 위치 표시와 순위 고려, 보고서의 '참여 기관 위치' 섹션, `result.json`의 `location`, 관련 테스트 1개
+- 유지: CT.gov에서 시험을 가져올 때 저장하던 `locations` 필드는 원래 있던 데이터라 그대로 둡니다(어디에도 쓰지 않음)
+- 확인: 오프라인 테스트 101개 통과
+
 ### 2026-10-11 — 팀 결정 D1–D8 반영 (회의 자료의 제안안 적용)
 
-배경: 팀 결정 대기 문서의 8개 항목을 회의 자료에서 제안한 안대로 적용했습니다. 정책만 정하는 항목(D3·D4)은 실험 도구를 만들었고, 수치는 실험 후 확정합니다.
+배경: 팀 결정 대기 문서의 8개 항목을 회의 자료에서 제안한 안대로 적용했습니다(D5 위치는 이후 삭제, 위 항목 참고). 정책만 정하는 항목(D3·D4)은 실험 도구를 만들었고, 수치는 실험 후 확정합니다.
 
 | 결정 | 적용한 안 | 구현 | 파일 |
 |---|---|---|---|
@@ -536,7 +541,6 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 | D6 underspecified | C: 상태 기반 | underspecified 규칙은 모두 검증. 원문이 구체적이면 규칙 단위로 재분류(`reparsed_concrete`), 정말 애매하면 `vague_confirmed`. 반대로 켜는 것(false → true)은 기록만(`vague_suspected`) | `agents/parser_validator.py` |
 | D2 근거 수준 | D: 유형별 고정 규칙 + 애매한 유형만 검증 제안 + 충돌 시 엄격한 쪽 | 판정 근거가 처음 기록인지 확인 질문 답변(자기 보고)인지 구분. 진료 기록이 필요한 기준(바이오마커·검사·병기 등)을 답변만으로 판정하면 '기록 확인 필요'로 표시(판정은 막지 않음) | `evidence.py`, `agents/matcher.py`, `agents/recommender.py`, `agents/explainer.py` |
 | D7 정보 확보 순서 | 주요 4개 유형(바이오마커, 검사 수치, 복용 약, 치료 이력)만 명시 정책 | 판정 불가 항목마다 확보 단계(결과지 요청 → 자기 보고)·시도 기록·미해결 시 결과를 관리. 모든 단계를 시도한 항목은 다시 묻지 않고 보고서에 영향 표시 | `acquisition.py`, `pipeline.py`, `agents/question_generator.py` |
-| D5 위치 | C: 사용자 의도 기반 | 기본은 위치 표시만(현재 26개 중 한국 기관이 있는 시험 0개). `--country-only`일 때만 hard filter | `location.py`, `cli.py` |
 | D3 후보 예산 | 개념만 유지, 수치는 실험 | `scripts/screen_budget.py`: 추림 순위로 k=3/5/8/전체의 적격·같은 분야 recall 계산. 두 recall이 95% 이상인 가장 작은 k를 제안 | `scripts/screen_budget.py` |
 | D4 라운드당 질문 수 | C 후보, 1개 vs 묶음 비교 후 확정 | `CTREC_QUESTION_POLICY`(single/batch/adaptive) 추가, 기본 adaptive. `scripts/question_policy_sweep.py`로 같은 예산(3개)에서 세 정책 비교 | `config.py`, `agents/question_generator.py`, `scripts/question_policy_sweep.py` |
 
