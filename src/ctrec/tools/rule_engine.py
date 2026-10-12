@@ -7,6 +7,7 @@ LLM의 산술 오류를 막고, 판정 근거를 재현 가능하게 남깁니�
 
 from __future__ import annotations
 
+import math
 import operator as op
 import re
 from datetime import date, datetime
@@ -49,19 +50,68 @@ def canonical_lab(name: str) -> str:
 
 # 표기만 다른 같은 단위 (cells/µL = /mm³ 등)
 _UNIT_EQUIV = {
-    "/ul": {"/ul", "cells/ul", "/mm3", "cells/mm3"},
+    "/ul": {"/ul", "cells/ul", "/mm3", "cells/mm3", "/mm^3", "cells/mm^3",
+            "/microl", "cells/microl", "/microliter", "cells/microliter"},
     "x10^9/l": {"x10^9/l", "10^9/l", "x10e9/l", "10e9/l", "x10^3/ul", "10^3/ul", "k/ul"},
+    "x10^12/l": {"x10^12/l", "10^12/l", "x10e12/l", "10e12/l"},
     "%": {"%", "percent"},
 }
+_SUPERSCRIPT = str.maketrans("⁰¹²³⁴⁵⁶⁷⁸⁹", "0123456789")
+
+# 세포 수 검사: 1 µL당 개수로 바꾸는 배수. 1 x10^9/L = 10^9 / 10^6 µL = 1,000 /µL, 1 x10^12/L = 10^6 /µL
+_COUNT_PER_UL = {"/ul": 1.0, "x10^9/l": 1e3, "x10^12/l": 1e6}
+# 세포 수 단위 환산을 쓰는 검사 (이 밖의 검사는 표기만 다른 같은 단위끼리만 비교)
+COUNT_LABS = {"platelets", "white blood cell count", "absolute neutrophil count", "absolute lymphocyte count"}
+# 위 검사의 표준 보고 단위(/µL 계열, 10^9/L 계열). 기준이 다른 단위(예: 적혈구 단위인 10^12/L)로 적혀 있으면
+# 원문 수치·단위를 확인해야 하는 기준이므로, 환자 값의 단위와 관계없이 규칙 엔진이 판정하지 않음 (기준값은 정정하지 않음)
+_COUNT_RULE_UNITS = {"/ul", "x10^9/l"}
 
 
 def _norm_unit(u: str | None) -> str:
-    n = _norm(u or "").replace("µ", "u").replace("μ", "u").replace("×", "x").replace("mm³", "mm3").replace("³", "^3").replace("⁹", "^9")
-    n = n.replace(" ", "").replace("*", "x")
+    n = _norm(u or "").replace("µ", "u").replace("μ", "u").replace("×", "x").replace("mm³", "mm3")
+    n = re.sub(r"([⁰¹²³⁴⁵⁶⁷⁸⁹]+)", lambda m: "^" + m.group(1).translate(_SUPERSCRIPT), n)
+    n = re.sub(r"10\*(\d+)", r"10^\1", n.replace(" ", ""))  # '10*9/L' = 10^9/L
+    n = n.replace("*", "x")
     for canon, aliases in _UNIT_EQUIV.items():
         if n in aliases:
             return canon
     return n
+
+
+def _count_per_ul(u: str | None) -> float | None:
+    """세포 수 단위의 /µL 배수. 'G/L'(기가)은 대문자 G일 때만 인정('g/L'은 그램일 수 있어 추측하지 않음)."""
+    if u is not None and u.replace(" ", "") == "G/L":
+        return _COUNT_PER_UL["x10^9/l"]
+    return _COUNT_PER_UL.get(_norm_unit(u))
+
+
+def _same_scale(value: float, unit: str | None, rule_unit: str | None, lab: str) -> tuple[float, str] | None:
+    """환자 값을 기준 단위로 바꿈. 반환: (기준 단위의 값, 환산 설명). 단위를 확신할 수 없으면 None."""
+    if not unit and not rule_unit:
+        return value, ""
+    if unit and rule_unit and _norm_unit(unit) == _norm_unit(rule_unit):
+        return value, ""
+    if lab not in COUNT_LABS:
+        return None
+    src, dst = _count_per_ul(unit), _count_per_ul(rule_unit)
+    if src is None or dst is None:
+        return None
+    converted = value * src / dst
+    return converted, f"{value:g} {unit} = {converted:g} {rule_unit}"
+
+
+def _nonstandard_count_rule_unit(lab: str, rule_unit: str | None) -> bool:
+    """세포 수 기준이 알려진 세포 수 단위이지만 이 검사의 표준 보고 단위가 아닌가 (예: 혈소판 기준이 10^12/L)."""
+    if lab not in COUNT_LABS or _count_per_ul(rule_unit) is None:
+        return False
+    return not (_norm_unit(rule_unit) in _COUNT_RULE_UNITS or (rule_unit or "").replace(" ", "") == "G/L")
+
+
+def _compare(value: float, operator: str, target: float) -> bool:
+    """환산 후 부동소수점 오차(0.1 x10^9/L -> 100.00000000000001 /µL)로 경계 판정이 뒤집히지 않게 비교."""
+    if math.isclose(value, target, rel_tol=1e-9, abs_tol=1e-12):
+        value = target
+    return _OPS[operator](value, target)
 
 
 def _to_float(v: str | None) -> float | None:
@@ -223,11 +273,15 @@ def evaluate(rule: Rule, patient: PatientProfile) -> CriterionAssessment | None:
         lab = _latest(candidates)
         if lab is None:
             return None  # 같은 검사가 여러 번인데 최신 값을 날짜로 확정할 수 없음 -> LLM에 위임
-        if (rule.unit or lab.unit) and _norm_unit(rule.unit) != _norm_unit(lab.unit):
-            return None  # 단위가 다르거나 한쪽만 적혀 있으면 숫자만 비교하지 않음 (예: Hb 100 g/L vs 9 g/dL)
-        holds = _OPS[rule.operator](lab.value, target)
+        if _nonstandard_count_rule_unit(want, rule.unit):
+            return None  # 기준 단위가 이 검사의 표준 단위가 아님 (원문 확인 필요) -> 환자 단위와 관계없이 LLM에 위임
+        scaled = _same_scale(lab.value, lab.unit, rule.unit, want)
+        if scaled is None:
+            return None  # 단위가 호환되지 않거나 한쪽만 적혀 있으면 숫자만 비교하지 않음 (예: Hb 100 g/L vs 9 g/dL)
+        value, shown = scaled
+        holds = _compare(value, rule.operator, target)
         return _result(rule, "yes" if holds else "no",
                        f"{lab.name} {lab.value} {lab.unit or ''} ({lab.date or '날짜 미상'}) - \"{lab.source_quote}\"",
-                       f"{lab.value} {rule.operator} {rule.value} -> {holds}")
+                       f"{shown + ': ' if shown else ''}{value:g} {rule.operator} {rule.value} -> {holds}")
 
     return None
