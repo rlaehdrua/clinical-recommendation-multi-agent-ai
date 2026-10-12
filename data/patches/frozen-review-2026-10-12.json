@@ -1,0 +1,260 @@
+{
+ "format": 1,
+ "created_at": "2026-10-12T09:03:32+00:00",
+ "created_by": "scripts/review_store.py propose (자동 생성, 팀 검수 전)",
+ "base_frozen_at": "2026-10-12T08:10:03+00:00",
+ "patches": [
+  {
+   "patch_id": "NCT06125405-E4-flag-review",
+   "trial_id": "NCT06125405",
+   "rule_id": "E4",
+   "kind": "flag_review",
+   "before": {
+    "meta": {
+     "review": null
+    }
+   },
+   "after": {
+    "meta": {
+     "review": "원문 기준값·단위 확인 필요: 'Thrombocytopenia (platelet count <100*10^12/L)' - platelets 기준이 표준 보고 단위가 아닌 10^12/L로 적혀 있음(오기 의심). 자동 정정하지 않음"
+    }
+   },
+   "rationale": "원문 수치·단위가 의심스러우나 원문을 정정할 근거가 없음. 값은 그대로 두고 검수 전까지 자동 확정 판정에 쓰지 않도록 의사 확인 항목으로 표시.",
+   "evidence": {
+    "source_text": "Thrombocytopenia (platelet count <100*10^12/L)",
+    "structured": {
+     "field": "lab:platelets",
+     "operator": "<",
+     "value": "100",
+     "unit": "10^12/L"
+    }
+   },
+   "status": "proposed"
+  },
+  {
+   "patch_id": "NCT06878144-I1-restore-age",
+   "trial_id": "NCT06878144",
+   "rule_id": "I1",
+   "kind": "restore_engine_fields",
+   "before": {
+    "rule": {
+     "field": null,
+     "operator": null,
+     "value": null,
+     "unit": "years",
+     "structured_evaluable": false
+    }
+   },
+   "after": {
+    "rule": {
+     "field": "age",
+     "operator": ">=",
+     "value": "18",
+     "unit": "years",
+     "structured_evaluable": true
+    }
+   },
+   "rationale": "검증 단계가 범위의 한쪽만 보고 지운 나이 경계 복구(Phase 0-2 원인). 원문 범위의 반대쪽 경계는 I2에 있고, CT.gov 구조화 나이와 같은 값.",
+   "evidence": {
+    "source_text": "Patients must be 18-100 years old",
+    "ctgov": "minimum_age=18 Years",
+    "range_partner": "I2: age <= 100 years",
+    "removed_by_validator": "age >= 18 years"
+   },
+   "status": "proposed"
+  },
+  {
+   "patch_id": "NCT07516951-I5-clear-orphan-unit",
+   "trial_id": "NCT07516951",
+   "rule_id": "I5",
+   "kind": "clear_orphan_unit",
+   "before": {
+    "rule": {
+     "field": null,
+     "unit": "kg"
+    }
+   },
+   "after": {
+    "rule": {
+     "field": null,
+     "unit": null
+    }
+   },
+   "rationale": "규칙 엔진 필드 없이 단위만 남은 구조 정리. 다른 구조화 필드는 만들지 않으며 판정 의미는 바뀌지 않음(필드가 없어 규칙 엔진이 쓰지 않고 LLM이 원문으로 판정).",
+   "evidence": {
+    "source_text": "Body weight ≥45 kg."
+   },
+   "status": "proposed"
+  },
+  {
+   "patch_id": "NCT07516951-I8-clear-orphan-unit",
+   "trial_id": "NCT07516951",
+   "rule_id": "I8",
+   "kind": "clear_orphan_unit",
+   "before": {
+    "rule": {
+     "field": null,
+     "unit": "%"
+    }
+   },
+   "after": {
+    "rule": {
+     "field": null,
+     "unit": null
+    }
+   },
+   "rationale": "규칙 엔진 필드 없이 단위만 남은 구조 정리. 다른 구조화 필드는 만들지 않으며 판정 의미는 바뀌지 않음(필드가 없어 규칙 엔진이 쓰지 않고 LLM이 원문으로 판정).",
+   "evidence": {
+    "source_text": "FVC ≥45% of predicted normal value at screening."
+   },
+   "status": "proposed"
+  },
+  {
+   "patch_id": "NCT07516951-I10-clear-orphan-unit",
+   "trial_id": "NCT07516951",
+   "rule_id": "I10",
+   "kind": "clear_orphan_unit",
+   "before": {
+    "rule": {
+     "field": null,
+     "unit": "%"
+    }
+   },
+   "after": {
+    "rule": {
+     "field": null,
+     "unit": null
+    }
+   },
+   "rationale": "규칙 엔진 필드 없이 단위만 남은 구조 정리. 다른 구조화 필드는 만들지 않으며 판정 의미는 바뀌지 않음(필드가 없어 규칙 엔진이 쓰지 않고 LLM이 원문으로 판정).",
+   "evidence": {
+    "source_text": "Diffusing capacity of the lung for carbon monoxide (DLCO) corrected for haemoglobin ≥25% of predicted normal at screening."
+   },
+   "status": "proposed"
+  },
+  {
+   "patch_id": "NCT07516951-I11-clear-orphan-unit",
+   "trial_id": "NCT07516951",
+   "rule_id": "I11",
+   "kind": "clear_orphan_unit",
+   "before": {
+    "rule": {
+     "field": null,
+     "unit": "%"
+    }
+   },
+   "after": {
+    "rule": {
+     "field": null,
+     "unit": null
+    }
+   },
+   "rationale": "규칙 엔진 필드 없이 단위만 남은 구조 정리. 다른 구조화 필드는 만들지 않으며 판정 의미는 바뀌지 않음(필드가 없어 규칙 엔진이 쓰지 않고 LLM이 원문으로 판정).",
+   "evidence": {
+    "source_text": "Oxygen saturation measured by pulse oximetry (SpO2) >90% at rest when the maximum oxygen flow is 4 L/min by standard nasal cannula or the equivalent oxygen delivery via reservoir nasal cannula (≤2 L/min)."
+   },
+   "status": "proposed"
+  },
+  {
+   "patch_id": "NCT07516951-E5-clear-orphan-unit",
+   "trial_id": "NCT07516951",
+   "rule_id": "E5",
+   "kind": "clear_orphan_unit",
+   "before": {
+    "rule": {
+     "field": null,
+     "unit": "%"
+    }
+   },
+   "after": {
+    "rule": {
+     "field": null,
+     "unit": null
+    }
+   },
+   "rationale": "규칙 엔진 필드 없이 단위만 남은 구조 정리. 다른 구조화 필드는 만들지 않으며 판정 의미는 바뀌지 않음(필드가 없어 규칙 엔진이 쓰지 않고 LLM이 원문으로 판정).",
+   "evidence": {
+    "source_text": "HRCT shows the presence of emphysema ≥20%."
+   },
+   "status": "proposed"
+  },
+  {
+   "patch_id": "NCT07516951-E12-clear-orphan-unit",
+   "trial_id": "NCT07516951",
+   "rule_id": "E12",
+   "kind": "clear_orphan_unit",
+   "before": {
+    "rule": {
+     "field": null,
+     "unit": "mg/day"
+    }
+   },
+   "after": {
+    "rule": {
+     "field": null,
+     "unit": null
+    }
+   },
+   "rationale": "규칙 엔진 필드 없이 단위만 남은 구조 정리. 다른 구조화 필드는 만들지 않으며 판정 의미는 바뀌지 않음(필드가 없어 규칙 엔진이 쓰지 않고 LLM이 원문으로 판정).",
+   "evidence": {
+    "source_text": "Systemic (IV, intramuscular, or oral) corticosteroids prednisone-equivalent dose of >10 mg/day used for >10 days."
+   },
+   "status": "proposed"
+  },
+  {
+   "patch_id": "NCT07679893-I1-restore-age",
+   "trial_id": "NCT07679893",
+   "rule_id": "I1",
+   "kind": "restore_engine_fields",
+   "before": {
+    "rule": {
+     "field": null,
+     "operator": null,
+     "value": null,
+     "unit": "years",
+     "structured_evaluable": false
+    }
+   },
+   "after": {
+    "rule": {
+     "field": "age",
+     "operator": ">=",
+     "value": "40",
+     "unit": "years",
+     "structured_evaluable": true
+    }
+   },
+   "rationale": "검증 단계가 범위의 한쪽만 보고 지운 나이 경계 복구(Phase 0-2 원인). 원문 범위의 반대쪽 경계는 I2에 있고, CT.gov 구조화 나이와 같은 값.",
+   "evidence": {
+    "source_text": "40-80 years old when signing consent and entering screening.",
+    "ctgov": "minimum_age=40 Years",
+    "range_partner": "I2: age <= 80 years",
+    "removed_by_validator": "age >= 40 years"
+   },
+   "status": "proposed"
+  },
+  {
+   "patch_id": "NCT07679893-E26-clear-orphan-unit",
+   "trial_id": "NCT07679893",
+   "rule_id": "E26",
+   "kind": "clear_orphan_unit",
+   "before": {
+    "rule": {
+     "field": null,
+     "unit": "L/min"
+    }
+   },
+   "after": {
+    "rule": {
+     "field": null,
+     "unit": null
+    }
+   },
+   "rationale": "규칙 엔진 필드 없이 단위만 남은 구조 정리. 다른 구조화 필드는 만들지 않으며 판정 의미는 바뀌지 않음(필드가 없어 규칙 엔진이 쓰지 않고 LLM이 원문으로 판정).",
+   "evidence": {
+    "source_text": "Requires more than 6 L/min of oxygen while at rest."
+   },
+   "status": "proposed"
+  }
+ ]
+}
