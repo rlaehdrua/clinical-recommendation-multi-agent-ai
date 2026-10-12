@@ -9,13 +9,15 @@ from __future__ import annotations
 
 import contextvars
 import json
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from . import DISCLAIMER, acquisition, config, evidence, llm, trial_store
+from . import DISCLAIMER, acquisition, config, evidence, llm, profile_facts, trial_store
 from .agents import criteria_parser, explainer, matcher, patient_profiler, question_generator, recommender, screener
 from .agents.answerers import Answerer
+from .fact_store import FactStore
 from .schemas import ParsedTrial, PatientProfile, QAPair, Recommendation, TrialMatch
 from .trace import Tracer
 
@@ -118,6 +120,14 @@ class Session:
     reference_date: str = field(default_factory=config.reference_date)
     # 판정 불가 항목별 확보 시도 기록 (D7): "<trial_id>:<rule_id>" -> MissingFact
     missing_facts: dict[str, acquisition.MissingFact] = field(default_factory=dict)
+    # 환자 사실 저장소 병행 기록(shadow, Phase 1-3A): 프로필을 추출할 때마다 사실로 옮겨 이력·출처·충돌을 남김.
+    # 판정·질문·추천에는 쓰지 않으며(모두 기존 profile 사용), 기록에 실패해도 파이프라인은 그대로 진행.
+    # 기본은 이 Session의 메모리에만 두고 파일로 저장하지 않음. fact_store_dir는 개발·테스트용 명시 옵션.
+    session_id: str = field(default_factory=lambda: f"S-{uuid.uuid4().hex[:12]}")
+    fact_shadow: bool = True
+    fact_store_dir: Path | None = None
+    fact_store: FactStore = field(default_factory=FactStore)
+    fact_shadow_log: list[dict] = field(default_factory=list)  # 기록 결과 (건수·상태만, 환자 값은 넣지 않음)
 
     # ----------------------------------------------------------- 후보
     def candidate_ids(self) -> list[str]:
@@ -168,7 +178,39 @@ class Session:
         self.profile = patient_profiler.profile_patient(self.case.patient_id, self.case.raw_text,
                                                         reference_date=self.reference_date)
         self.tracer.log("patient_profiler", "done", missing=self.profile.missing_or_ambiguous)
+        self._shadow_record()
         return self.profile
+
+    def _shadow_record(self) -> None:
+        """프로필을 환자 사실 저장소에 병행 기록. 프로필 사본을 넘기고, 어떤 오류도 판정 흐름으로 번지지 않게 함.
+
+        출처는 profile_facts가 인용 위치로 정함: 처음 입력에서 확인되면 선언된 출처, 확인 질문 답변에서만 확인되면
+        self_report, 확인하지 못하면 unknown. 다시 추출한 프로필의 같은 근거는 새 사실을 만들지 않음.
+        """
+        if not self.fact_shadow or self.profile is None:
+            return
+        pid = self.case.patient_id
+        entry: dict = {"round": self.rounds, "session_id": self.session_id}
+        before = len(self.fact_store.facts(pid))
+        try:
+            r = profile_facts.ingest_profile(self.fact_store, self.profile.model_copy(deep=True),
+                                             raw_text=self.case.raw_text, input_source=self.case.input_source,
+                                             session_id=self.session_id)
+            entry.update(status="partial" if r.rejected else "ok", added=len(r.added), duplicates=len(r.duplicates),
+                         skipped=len(r.skipped), rejected=len(r.rejected),
+                         rejected_kinds=sorted({name.split(":")[0] for name, _ in r.rejected}))
+            if self.fact_store_dir is not None:
+                self.fact_store.root = self.fact_store_dir
+                self.fact_store.save()
+                entry["saved"] = True
+        except Exception as e:  # noqa: BLE001 - 병행 기록 실패는 판정에 영향을 주지 않고 상태로 남김
+            # 예외 메시지에는 환자 값이 들어 있을 수 있으므로 종류만 기록
+            entry.update(status="error", error_type=type(e).__name__,
+                         added_before_error=len(self.fact_store.facts(pid)) - before)
+            if self.fact_store_dir is not None:
+                entry["saved"] = False
+        self.fact_shadow_log.append(entry)
+        self.tracer.log("fact_store", entry["status"], **{k: v for k, v in entry.items() if k != "status"})
 
     # ----------------------------------------------------------- 단계 ③c, ④
     def match(self, trial_ids: list[str] | None = None) -> list[TrialMatch]:
@@ -334,6 +376,8 @@ class Session:
             # 사실 단위 가상 환자가 질문별로 공개한 사실 ID (정보 가리기 평가용)
             "revealed_facts": self.answerer.revealed(self.case.patient_id) if hasattr(self.answerer, "revealed") else [],
             "usage": self.usage,
+            # 사실 저장소 병행 기록 상태 (판정·추천과 별개, 건수·상태만)
+            "fact_shadow": self.fact_shadow_log,
         }
 
     def save(self, out_dir: Path) -> None:
