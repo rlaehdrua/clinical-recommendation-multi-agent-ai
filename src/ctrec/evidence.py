@@ -15,6 +15,8 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from .schemas import RequiredEvidence, Rule
 
 TYPE_POLICY: dict[str, RequiredEvidence] = {
@@ -52,6 +54,13 @@ def required_evidence(rule: Rule, proposal: RequiredEvidence | None = None) -> t
 # ---------------------------------------------------------------------------
 
 ANSWER_MARKER = "\n\n[추가 확인 정보"  # pipeline.Session.clarify가 답변을 붙일 때 쓰는 머리말
+
+# 최초 입력(환자 원문)의 출처. 입력을 넘기는 쪽(환자 파일의 input_source, CLI --input-source)이 밝힌 값이며
+# 검증 결과가 아니라 선언입니다. 밝히지 않으면 unknown: 문자열로 들어왔다는 이유만으로 진료 기록으로 보지 않습니다.
+InputSource = Literal["clinical_record", "self_report", "unknown"]
+INPUT_SOURCES: tuple[str, ...] = ("clinical_record", "self_report", "unknown")
+# 최초 입력에서 확인된 근거의 evidence_source
+INITIAL_EVIDENCE_SOURCE = {"clinical_record": "record", "self_report": "self_report", "unknown": "unknown"}
 
 
 def split_source(source_text: str) -> tuple[str, str]:

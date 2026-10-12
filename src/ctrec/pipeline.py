@@ -13,7 +13,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from . import DISCLAIMER, acquisition, config, llm, trial_store
+from . import DISCLAIMER, acquisition, config, evidence, llm, trial_store
 from .agents import criteria_parser, explainer, matcher, patient_profiler, question_generator, recommender, screener
 from .agents.answerers import Answerer
 from .schemas import ParsedTrial, PatientProfile, QAPair, Recommendation, TrialMatch
@@ -27,11 +27,14 @@ class PatientCase:
     hidden_details: str | None = None  # 가상 환자 시뮬레이션용 (파이프라인에는 노출되지 않음)
     candidate_trials: list[str] | None = None  # 이 환자에게 평가할 후보 시험 ID (없으면 전체)
     oracle_facts: list[dict] | None = None  # 정보 가리기 평가셋: 전체 사실 목록 (가상 환자만 사용, 파이프라인에는 노출되지 않음)
+    # 최초 입력(raw_text)의 선언된 출처: clinical_record / self_report / unknown (evidence.InputSource).
+    # 선언이 없으면 unknown -> 진료 기록이 필요한 기준은 UNVERIFIED (문자열이라는 이유로 진료 기록으로 보지 않음)
+    input_source: str = "unknown"
 
 
 # 파이프라인에 노출하지 않는 필드 (시뮬레이터·평가용 메타데이터)
 _HIDDEN_KEYS = {
-    "hidden_details", "labels", "design_note", "synthetic", "base_topic", "candidate_trials",
+    "hidden_details", "labels", "design_note", "synthetic", "base_topic", "candidate_trials", "input_source",
     # 정보 가리기 평가셋(scripts/build_masked_benchmark.py)의 정답·숨긴 사실
     "oracle_facts", "hidden_facts", "masked_fact_ids", "clue_fact_ids", "masked_criteria", "case_type", "source_patient",
 }
@@ -47,8 +50,12 @@ def _case_from_dict(data: dict, default_id: str) -> PatientCase:
     else:
         visible = {k: v for k, v in data.items() if k not in _HIDDEN_KEYS}
         text = json.dumps(visible, ensure_ascii=False, indent=1)
+    source = data.get("input_source", "unknown")
+    if source not in evidence.INPUT_SOURCES:
+        raise ValueError(f"{pid}: input_source는 {', '.join(evidence.INPUT_SOURCES)} 중 하나여야 합니다 (받은 값: {source!r})")
     return PatientCase(patient_id=pid, raw_text=text, hidden_details=hidden,
-                       candidate_trials=data.get("candidate_trials"), oracle_facts=data.get("oracle_facts"))
+                       candidate_trials=data.get("candidate_trials"), oracle_facts=data.get("oracle_facts"),
+                       input_source=source)
 
 
 def load_patients(path: Path) -> list[PatientCase]:
@@ -60,6 +67,8 @@ def load_patients(path: Path) -> list[PatientCase]:
     - {"topics": [{"num", "title"}, ...]}: 사업단 제공 예시(TREC topic) 형식, 여러 명
     - [{...}, {...}]: 여러 명
     그 외 JSON 필드는 텍스트로 직렬화해 환자 정보 이해 에이전트에 전달합니다.
+    JSON 환자마다 "input_source"(clinical_record / self_report / unknown)로 최초 입력의 출처를 밝힐 수 있고,
+    없으면(.txt 포함) unknown입니다.
     """
     if path.suffix.lower() == ".txt":
         return [PatientCase(patient_id=path.stem, raw_text=path.read_text(encoding="utf-8"))]
@@ -170,7 +179,8 @@ class Session:
         def work(tid: str):
             self.tracer.log("matcher", "start", trial_id=tid)
             m = matcher.match_trial(self.profile, self.parsed[tid], self.trials[tid],
-                                    reference_date=self.reference_date, source_text=self.case.raw_text)
+                                    reference_date=self.reference_date, source_text=self.case.raw_text,
+                                    input_source=self.case.input_source)
             self.tracer.log("matcher", "done", trial_id=tid, message=m.summary)
             return tid, m
 
@@ -309,6 +319,7 @@ class Session:
     def result(self) -> dict:
         return {
             "patient_id": self.case.patient_id,
+            "input_source": self.case.input_source,
             "model": config.MODEL,
             "disclaimer": DISCLAIMER,
             "profile": self.profile.model_dump() if self.profile else None,

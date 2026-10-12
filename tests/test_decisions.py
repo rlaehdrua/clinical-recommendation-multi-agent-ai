@@ -133,12 +133,12 @@ def test_required_evidence_policy():
     assert level == "clinical_record" and conflict
 
 
-def _lab_trial_match(monkeypatch, quote: str, source: str):
+def _lab_trial_match(monkeypatch, quote: str, source: str, input_source: str = "clinical_record"):
     rule = _rule(rule_id="I1", text="EGFR mutation positive", category="biomarker", structured_evaluable=False)
     la = LLMAssessment(rule_id="I1", applicable=True, holds="yes", evidence_type="explicit", confidence="high",
                        evidence=quote, reasoning="r", missing_info=None)
     monkeypatch.setattr(matcher.llm, "structured", lambda *a, **k: MatcherOutput(assessments=[la]))
-    return matcher.match_trial(_profile(), _parsed([rule]), TRIAL, source_text=source)
+    return matcher.match_trial(_profile(), _parsed([rule]), TRIAL, source_text=source, input_source=input_source)
 
 
 def test_self_reported_biomarker_is_unverified(monkeypatch):

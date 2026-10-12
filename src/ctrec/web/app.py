@@ -238,7 +238,8 @@ def start_run(req: RunRequest) -> dict:
             raise HTTPException(404, f"환자 {req.patient_id}를 찾을 수 없습니다.")
         src = cases[req.patient_id][0]
         # 확인 질문 답변이 raw_text에 누적되므로 원본을 복사해 사용
-        case = PatientCase(patient_id=src.patient_id, raw_text=src.raw_text, hidden_details=src.hidden_details)
+        case = PatientCase(patient_id=src.patient_id, raw_text=src.raw_text, hidden_details=src.hidden_details,
+                           input_source=src.input_source)
 
     _prune_runs()
     if len(RUNS) >= MAX_RUNS:

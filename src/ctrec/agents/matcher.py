@@ -232,40 +232,77 @@ def _review_assessment(rule: Rule, reason: str) -> CriterionAssessment:
     )
 
 
-def _evidence_source(a: CriterionAssessment, source_text: str | None) -> str:
-    """판정 근거가 처음 받은 기록에서 왔는지, 확인 질문 답변(자기 보고)에서 왔는지."""
+_FIELD_TEXT = {
+    "ecog": lambda v: rf"(?:ecog|performance\s*status|\bps\b|수행\s*상태|활동도)[^0-9\n]{{0,20}}(?<!\d){re.escape(v)}(?!\d)",
+    "age": lambda v: rf"(?<![\d.]){re.escape(v)}\s*(?:세|살|개월|주|일|years?|yrs?|months?|weeks?|days?|-year|yo\b|y/o)",
+    "sex": lambda v: {"female": r"female|\bwoman\b|\bgirl\b|여성|여자|여아",
+                      "male": r"(?<!fe)male\b|\bman\b|\bboy\b|남성|남자|남아"}.get(v, r"(?!)"),
+}
+_ENGINE_FIELD = [("ecog", re.compile(r"^ECOG (\S+)$")), ("sex", re.compile(r"^환자 성별 (\S+)$")),
+                 ("age", re.compile(r"^환자 나이 (\S+)"))]
+
+
+def _profile_field_source(refs: list[tuple[str, str]], initial: str, answers: str, initial_source: str) -> str:
+    """프로필 구조화 필드 값(나이·성별·ECOG)이 최초 입력에 있는지(그 출처), 답변에만 있는지. 둘 다 아니면 unknown."""
+    found = []
+    for field, value in refs:
+        pat = re.compile(_FIELD_TEXT[field](value.lower()), re.IGNORECASE)
+        found.append(initial_source if pat.search(initial) else "self_report" if pat.search(answers) else "unknown")
+    if found and all(s == "record" for s in found):
+        return "record"
+    return "self_report" if "self_report" in found else "unknown"
+
+
+def _evidence_source(a: CriterionAssessment, source_text: str | None, input_source: str = "unknown") -> str:
+    """판정 근거가 최초 입력에서 왔는지, 확인 질문 답변(자기 보고)에서 왔는지.
+
+    최초 입력에서 확인된 근거는 최초 입력의 선언된 출처(input_source)를 따릅니다: 진료 기록으로 선언된 입력만 record,
+    선언이 없으면 unknown(검증된 기록으로 인정하지 않음). 답변에서만 확인되면 self_report, 어디에서도 확인되지 않으면 unknown.
+    확인 질문 전(답변 없음)에는 최초 입력이 유일한 출처이므로 그 출처를 따릅니다.
+    """
     if a.passes is None or source_text is None:
         return "none"
-    record, answers = evidence.split_source(source_text)
+    initial_source = evidence.INITIAL_EVIDENCE_SOURCE[input_source]
+    initial, answers = evidence.split_source(source_text)
+    if not answers:
+        return initial_source
     quote = a.evidence
     if a.method == "rule_engine":
         quote = a.evidence.split(' - "', 1)[-1].rstrip('"') if ' - "' in a.evidence else ""
-        if not quote:
-            return "record"  # 나이·성별·ECOG 프로필 필드
-    if evidence_in_source(quote, record) or (a.method == "llm" and _FIELD_REF.search(quote)):
-        return "record"
-    if answers and evidence_in_source(quote, answers):
+        if not quote:  # 나이·성별·ECOG 프로필 필드: 인용 없이 프로필 값만 씀 -> 값이 어디에 적혀 있는지 확인
+            refs = [(f, m.group(1)) for f, pat in _ENGINE_FIELD if (m := pat.match(a.evidence))]
+            return _profile_field_source(refs, initial, answers, initial_source)
+    if evidence_in_source(quote, initial):
+        return initial_source
+    if evidence_in_source(quote, answers):
         return "self_report"
-    return "record"
+    if a.method == "llm" and _FIELD_REF.search(quote):
+        refs = [(k.lower(), v) for k, v in _FIELD_REF.findall(quote)]
+        return _profile_field_source(refs, initial, answers, initial_source)
+    return "unknown"
 
 
-def _apply_evidence_policy(a: CriterionAssessment, meta: RuleMeta, source_text: str | None) -> CriterionAssessment:
+def _apply_evidence_policy(a: CriterionAssessment, meta: RuleMeta, source_text: str | None,
+                           input_source: str = "unknown") -> CriterionAssessment:
     """근거 수준 (D2, 아키텍처 §19 User Answer ≠ Verified Clinical Truth).
 
     진료 기록이 필요한 기준을 환자 답변(자기 보고)만으로 판정했으면 판정을 확정하지 않고 UNVERIFIED(판정 불가)로 되돌립니다.
     답변이 가리킨 값은 self_reported_holds에 남기고, 같은 질문을 반복하지 않고 문서(검사 결과지·보고서) 확인을 요청합니다.
     """
     a.required_evidence = meta.required_evidence
-    a.evidence_source = _evidence_source(a, source_text)  # type: ignore[assignment]
-    if not (a.evidence_source == "self_report" and a.required_evidence == "clinical_record"):
+    a.evidence_source = _evidence_source(a, source_text, input_source)  # type: ignore[assignment]
+    if not (a.evidence_source in ("self_report", "unknown") and a.required_evidence == "clinical_record"):
         return a
     said = "해당 없음" if not a.applicable else {"yes": "해당", "no": "해당하지 않음"}.get(a.holds, a.holds)
     a.needs_verification = True
-    a.self_reported_holds = a.holds
-    a.self_reported_applicable = a.applicable
+    if a.evidence_source == "self_report":
+        a.self_reported_holds = a.holds
+        a.self_reported_applicable = a.applicable
+        why = f"근거가 환자 답변뿐이라 판정하지 않음 - 답변상 '{said}'"
+    else:  # 출처 불명: 답변 값으로 꾸미지 않음
+        why = f"근거 출처(기록/답변)를 확인할 수 없어 판정하지 않음 - 모델·규칙 판정 '{said}'"
     a.holds, a.passes, a.applicable = "unknown", None, True
-    a.reasoning = (f"[UNVERIFIED: 진료 기록이 필요한 기준인데 근거가 환자 답변뿐이라 판정하지 않음 - 답변상 '{said}'] "
-                   f"{a.reasoning}")
+    a.reasoning = f"[UNVERIFIED: 진료 기록이 필요한 기준인데 {why}] {a.reasoning}"
     a.missing_info = "진료 기록(검사 결과지, 병리·유전자 보고서 등)으로 확인 필요"
     return a
 
@@ -305,8 +342,10 @@ brief_summary: {trial.get('brief_summary', '')[:3000]}
 
 
 def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
-                reference_date: str | None = None, source_text: str | None = None) -> TrialMatch:
-    """source_text: 환자 원문(확인 질문 답변 포함). 주어지면 LLM 판정의 인용 근거를 원문과 대조합니다."""
+                reference_date: str | None = None, source_text: str | None = None,
+                input_source: str = "unknown") -> TrialMatch:
+    """source_text: 환자 원문(확인 질문 답변 포함). 주어지면 LLM 판정의 인용 근거를 원문과 대조합니다.
+    input_source: 최초 입력의 선언된 출처(evidence.InputSource). 밝히지 않으면 unknown(진료 기록으로 보지 않음)."""
     ref = reference_date or config.reference_date()
     by_id = {r.rule_id: r for r in parsed.rules}
     results: dict[str, CriterionAssessment] = {}
@@ -366,7 +405,8 @@ def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
                 cohort=rule.cohort,
             )
 
-    all_assessments = [_apply_evidence_policy(results[r.rule_id], _meta(parsed, r), source_text) for r in parsed.rules]
+    all_assessments = [_apply_evidence_policy(results[r.rule_id], _meta(parsed, r), source_text, input_source)
+                       for r in parsed.rules]
     assessments, matched_cohort, cohort_results = _select_cohort(all_assessments, parsed.cohorts)
     other = [a for a in all_assessments if a not in assessments]
     eligibility = decide(assessments)
