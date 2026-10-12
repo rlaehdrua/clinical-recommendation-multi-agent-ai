@@ -154,6 +154,12 @@ def _integrity_problem(rule: Rule, source_numbers: set[float]) -> str | None:
     return None
 
 
+def demote_engine_fields(rule: Rule) -> None:
+    """규칙 엔진 필드를 비워 LLM이 원문으로 판정하게 함. unit도 함께 비워 필드 없이 단위만 남지 않게 함."""
+    rule.field = rule.operator = rule.value = rule.unit = None
+    rule.structured_evaluable = False
+
+
 def check_integrity(parsed: ParsedTrial, trial: dict) -> list[str]:
     """원문과 어긋난 규칙은 규칙 엔진 대상에서 빼고(LLM이 원문으로 판정) 사유 목록을 반환.
 
@@ -167,8 +173,7 @@ def check_integrity(parsed: ParsedTrial, trial: dict) -> list[str]:
         if problem is None:
             continue
         issues.append(f"{rule.rule_id}: {problem} ({rule.field} {rule.operator} {rule.value}) -> LLM 판정으로 전환")
-        rule.field = rule.operator = rule.value = None
-        rule.structured_evaluable = False
+        demote_engine_fields(rule)
     if issues:
         parsed.parsing_notes += "\n[코드 검증] " + " / ".join(issues)
     return issues
