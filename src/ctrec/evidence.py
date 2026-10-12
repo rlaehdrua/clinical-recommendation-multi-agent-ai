@@ -8,8 +8,9 @@
 - self_report_ok : 환자·보호자 답변(자기 보고)으로 판정해도 됨 (나이, 복용 약, 치료 이력 등)
 - clinical_record: 진료 기록(검사 결과지, 병리·유전자 보고서 등)으로 확인해야 함 (바이오마커, 검사 수치 등)
 
-판정 자체는 막지 않습니다. 진료 기록이 필요한 기준을 환자 답변만으로 판정하면 needs_verification으로 표시하고,
-추천·보고서에 '기록 확인 필요'로 남깁니다(User Answer ≠ Verified Truth).
+진료 기록이 필요한 기준을 환자 답변만으로 판정하면 판정을 확정하지 않고 UNVERIFIED(판정 불가)로 남깁니다
+(아키텍처 §19 User Answer ≠ Verified Clinical Truth: UNKNOWN_UNVERIFIED -> REQUEST_DOCUMENT).
+답변이 가리킨 값은 보존하고, 같은 질문을 반복하지 않고 추천·보고서에 '문서 확인 필요'로 남깁니다(matcher._apply_evidence_policy).
 """
 
 from __future__ import annotations

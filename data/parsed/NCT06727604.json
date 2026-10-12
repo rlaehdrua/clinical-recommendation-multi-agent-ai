@@ -192,7 +192,7 @@
   "I1": {
    "review": null,
    "required_evidence": "self_report_ok",
-   "underspecified_state": "vague_suspected",
+   "underspecified_state": "reviewed_not_vague",
    "added_by_validator": false
   },
   "I2": {
@@ -294,7 +294,8 @@
    "E2: 유형 규칙(comorbidity: self_report_ok)과 검증 제안(clinical_record)이 달라 clinical_record 적용"
   ],
   "notes": [
-   "I1: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정"
+   "I1: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정",
+   "I1: 팀 검토(2026-10-12) 애매하지 않음 -> underspecified 적용 안 함 (동의·준수 능력은 등록 시 확인하는 절차 기준)"
   ],
   "llm_output": null
  }

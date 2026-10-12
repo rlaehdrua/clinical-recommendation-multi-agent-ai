@@ -10,6 +10,8 @@
     python scripts/compile_trials.py                      # data/trials 전체, 이미 최신인 시험은 건너뜀
     python scripts/compile_trials.py --only NCT07516951 --force
     python scripts/compile_trials.py --no-llm             # 결정적 검사·위험 탐지만 (비용 없음, 미리보기)
+
+잠긴 시험(data/parsed/FROZEN.json)은 건너뜁니다. 팀 검토 후 바꿀 때만 --unfreeze를 붙이고, 끝나면 scripts/freeze_parsed.py로 다시 잠급니다.
 """
 
 from __future__ import annotations
@@ -67,6 +69,7 @@ def main() -> None:
     ap.add_argument("--force", action="store_true", help="이미 최신이어도 다시 컴파일")
     ap.add_argument("--no-llm", action="store_true", help="LLM 의미 검증 없이 미리보기 (저장하지 않음)")
     ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--unfreeze", action="store_true", help="잠긴 시험도 다시 컴파일해 덮어씀 (팀 검토 후에만)")
     args = ap.parse_args()
 
     store = Path(args.store)
@@ -74,6 +77,11 @@ def main() -> None:
     if args.only:
         only = set(args.only.split(","))
         trials = [t for t in trials if t["trial_id"] in only]
+    if not args.unfreeze and not args.no_llm:
+        frozen = [t["trial_id"] for t in trials if trial_store.is_frozen(t["trial_id"], store)]
+        trials = [t for t in trials if t["trial_id"] not in frozen]
+        if frozen:
+            print(f"잠긴 기준표라 건너뜀: {len(frozen)}개 (바꾸려면 --unfreeze)")
     if not args.force and not args.no_llm:
         skipped = [t["trial_id"] for t in trials if trial_store.is_current(t, store)]
         trials = [t for t in trials if t["trial_id"] not in skipped]
@@ -90,7 +98,7 @@ def main() -> None:
         parsed, meta, report = parser_validator.validate(canonical, trial, others, use_llm=not args.no_llm)
         if not args.no_llm:
             trial_store.save(trial, parsed, meta, report, store,
-                             extra={"runs": len(runs), "canonical_run": best + 1})
+                             extra={"runs": len(runs), "canonical_run": best + 1}, allow_frozen=args.unfreeze)
         return trial["trial_id"], parsed, report
 
     with ThreadPoolExecutor(max_workers=args.workers) as pool:

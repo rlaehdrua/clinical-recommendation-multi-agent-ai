@@ -31,13 +31,13 @@ def test_all_trials_closed_but_eligible(no_llm):
     assert rec.no_recommendation_reason.startswith("현재 진행 중인 적절한 임상시험이 없습니다.")
     assert "모두 모집이 종료" in rec.no_recommendation_reason and "A" in rec.no_recommendation_reason
     reasons = {e.trial_id: e.reason for e in rec.excluded}
-    assert "모집 종료" in reasons["A"] and "적격 기준은 충족" in reasons["A"]
+    assert "모집 종료" in reasons["A"] and "공개 기준 충족" in reasons["A"]
 
 
 def test_open_ineligible_and_closed_eligible(no_llm):
     trials = {"A": {"overall_status": "RECRUITING"}, "B": {"overall_status": "TERMINATED"}}
     rec = recommender.recommend(_profile(), [_match("A", "INELIGIBLE"), _match("B", "ELIGIBLE")], trials)
-    assert "기준을 충족하거나 판정이 보류된 시험(B 적격·조기 종료(TERMINATED))은 모집이 종료" in rec.no_recommendation_reason
+    assert "기준을 충족하거나 판정이 보류된 시험(B 공개 기준 충족·조기 종료(TERMINATED))은 모집이 종료" in rec.no_recommendation_reason
 
 
 def test_all_open_ineligible(no_llm):
@@ -87,23 +87,48 @@ def _rt(tid, rank, elig):
     return RankedTrial(rank=rank, trial_id=tid, eligibility=elig, rationale="", key_matches=[], key_concerns=[], next_steps=[])
 
 
-def test_single_top_recommendation():
-    trials = {t: {"overall_status": "RECRUITING"} for t in "ABC"}
-    matches = [_match("A", "UNCERTAIN"), _match("B", "ELIGIBLE"), _match("C", "UNCERTAIN")]
-    draft = RecommendationDraft(patient_id="P", overall_comment="", excluded=[], selection_reason="B가 유일하게 적격",
-                                ranked=[_rt("B", 1, "ELIGIBLE"), _rt("A", 2, "UNCERTAIN"), _rt("C", 3, "UNCERTAIN")])
-    rec = recommender._validate(draft, "P", matches, trials)
-    assert [r.trial_id for r in rec.recommended] == ["B"]
-    assert [(r.trial_id, r.rank) for r in rec.ranked] == [("B", 1), ("A", 2), ("C", 3)]
-    assert rec.selection_reason == "B가 유일하게 적격"
-
-
-def test_tie_shown_together_only_within_same_eligibility():
-    trials = {t: {"overall_status": "RECRUITING"} for t in "ABC"}
+def test_display_order_ignores_llm_rank():
+    """시험 간 우열 순위 제거 (아키텍처 §50): LLM이 매긴 순서는 쓰지 않고 코드가 그룹·모집 상태·후보 순서로 정함."""
+    trials = {"A": {"overall_status": "NOT_YET_RECRUITING"}, "B": {"overall_status": "RECRUITING"},
+              "C": {"overall_status": "RECRUITING"}}
     matches = [_match("A", "ELIGIBLE"), _match("B", "ELIGIBLE"), _match("C", "UNCERTAIN")]
-    # LLM이 A·B·C를 모두 공동 1순위로 줘도, 적격(A·B)만 공동 1순위이고 판정 보류(C)는 뒤로
-    draft = RecommendationDraft(patient_id="P", overall_comment="", excluded=[],
-                                ranked=[_rt("A", 1, "ELIGIBLE"), _rt("B", 1, "ELIGIBLE"), _rt("C", 1, "UNCERTAIN")])
+    draft = RecommendationDraft(patient_id="P", overall_comment="", excluded=[], selection_reason="C가 가장 적합",
+                                ranked=[_rt("C", 1, "UNCERTAIN"), _rt("A", 2, "ELIGIBLE"), _rt("B", 3, "ELIGIBLE")])
     rec = recommender._validate(draft, "P", matches, trials)
-    assert sorted(r.trial_id for r in rec.recommended) == ["A", "B"]
-    assert {r.trial_id: r.rank for r in rec.ranked} == {"A": 1, "B": 1, "C": 3}
+    # 같은 그룹(공개 기준 충족) 안에서는 모집 중(B)이 모집 예정(A)보다 먼저, 판정 보류(C)는 뒤 그룹
+    assert [(r.trial_id, r.rank) for r in rec.ranked] == [("B", 1), ("A", 2), ("C", 3)]
+    assert [r.match_status for r in rec.ranked] == ["CRITERIA_MATCH", "CRITERIA_MATCH", "INSUFFICIENT_INFORMATION"]
+    # 추천 그룹 = 가장 앞 그룹 전체 (1순위 하나를 고르지 않음)
+    assert [r.trial_id for r in rec.recommended] == ["B", "A"]
+    assert "C가 가장 적합" not in rec.selection_reason and "우열을 뜻하지 않습니다" in rec.selection_reason
+
+
+def test_same_group_keeps_candidate_order():
+    trials = {t: {"overall_status": "RECRUITING"} for t in "XY"}
+    matches = [_match("Y", "ELIGIBLE"), _match("X", "ELIGIBLE")]  # Y가 후보 추림에서 앞
+    draft = RecommendationDraft(patient_id="P", overall_comment="", excluded=[], ranked=[_rt("X", 1, "ELIGIBLE")])
+    rec = recommender._validate(draft, "P", matches, trials)
+    assert [r.trial_id for r in rec.ranked] == ["Y", "X"]
+    assert all(r.rank == i for i, r in enumerate(rec.ranked, start=1))
+
+
+def test_demo_trial_blocked_unless_demo_mode(monkeypatch, no_llm):
+    """가상 데모 시험은 판정은 하되 데모 모드에서만 추천 (아키텍처 §67)."""
+    trials = {"DEMO": {"overall_status": "RECRUITING", "synthetic": True}}
+    monkeypatch.setattr(recommender.config, "DEMO_MODE", False)
+    rec = recommender.recommend(_profile(), [_match("DEMO", "ELIGIBLE")], trials)
+    assert rec.ranked == [] and "가상 데모 시험뿐" in rec.no_recommendation_reason
+    assert any(e.trial_id == "DEMO" and "가상 데모" in e.reason for e in rec.excluded)
+
+    monkeypatch.setattr(recommender.config, "DEMO_MODE", True)
+    rec = recommender._validate(RecommendationDraft(patient_id="P", overall_comment="", excluded=[], ranked=[]),
+                                "P", [_match("DEMO", "ELIGIBLE")], trials)
+    assert [r.trial_id for r in rec.recommended] == ["DEMO"]
+
+
+def test_demo_trial_noted_when_real_trials_fail(monkeypatch, no_llm):
+    monkeypatch.setattr(recommender.config, "DEMO_MODE", False)
+    trials = {"DEMO": {"overall_status": "RECRUITING", "synthetic": True}, "A": {"overall_status": "RECRUITING"}}
+    rec = recommender.recommend(_profile(), [_match("DEMO", "ELIGIBLE"), _match("A", "INELIGIBLE")], trials)
+    assert "모집 중인 후보 시험이 모두 선정/제외 기준에 맞지 않았습니다" in rec.no_recommendation_reason
+    assert "가상 데모 시험 1개(DEMO)" in rec.no_recommendation_reason

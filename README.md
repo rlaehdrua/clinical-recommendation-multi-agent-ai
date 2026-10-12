@@ -2,7 +2,9 @@
 
 **Healthcare Agentic AI Challenge 2026** 제출용 코드입니다. 주제는 *Interactive Clinical Trial Recommendation*입니다.
 
-이 시스템은 임상시험 프로토콜의 선정/제외 기준과 상세 설명을 환자 정보와 대조해 참여 가능성을 **근거와 함께 판정**합니다. 정보가 부족하면 **확인 질문을 생성**해 답변을 반영한 뒤 다시 평가하고, 마지막으로 환자별로 가장 적절한 임상시험을 **우선순위와 함께 추천**합니다.
+이 시스템은 임상시험 프로토콜의 선정/제외 기준과 상세 설명을 환자 정보와 대조해 참여 가능성을 **근거와 함께 판정**합니다. 정보가 부족하면 **확인 질문을 생성**해 답변을 반영한 뒤 다시 평가하고, 마지막으로 공개 기준에 맞는 임상시험을 **추천 그룹으로 묶어 근거와 함께 제시**합니다. 시험 사이의 임상적 우열은 정하지 않습니다.
+
+설계 기준 문서는 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)(Final Merged Architecture)입니다.
 
 역할이 나뉜 6개의 전문 에이전트와 이를 지휘하는 오케스트레이터 에이전트가 함께 동작합니다. 오케스트레이터는 스스로 계획을 세우고 도구를 호출하므로, 단일 질의응답형 챗봇이 아닙니다.
 
@@ -30,7 +32,7 @@
 | ③ 정보 추출 및 매칭 | 기준 파싱 → 환자 정보 추출 → 조건 매칭·추론 → 근거 제시 | 기준 파싱 → 환자 정보 이해 → **규칙 엔진 + 추론·매칭** | `ParsedTrial`, `PatientProfile`, `TrialMatch` |
 | ④ 부족 정보 탐지 | 충족이 불확실하거나 누락된 항목 식별 | 추론·매칭 에이전트 (`holds="unknown"`, `missing_info`) | `UNCERTAIN` 판정과 누락 항목 |
 | ⑤ 질문 생성 및 재평가 | 확인 질문 → 추가 정보 반영 → 최종 판정 | 질문 생성 에이전트 → 답변 제공자 → 환자 정보 재추출 → 재매칭 | `QAPair`, 판정 변화 이력 |
-| ⑥ 임상시험 추천 | 가장 적절한 시험 추천과 우선순위 | 추천 에이전트 → 결과 설명 에이전트 | `Recommendation`, `report.md` |
+| ⑥ 임상시험 추천 | 적절한 시험 추천 (추천 그룹 + 설명 가능한 표시 순서) | 추천 에이전트 → 결과 설명 에이전트 | `Recommendation`, `report.md` |
 
 ### 1.2 에이전트 구성도 (역할과 오케스트레이션)
 
@@ -50,7 +52,7 @@ flowchart TB
         RE[[규칙 엔진<br/>나이·성별·ECOG·검사수치<br/>결정론적 판정]]
         A3[③ 추론·매칭 에이전트<br/>규칙별 holds + 근거 인용]
         A4[④ 질문 생성 에이전트<br/>판정불가 항목 해소 질문]
-        A5[⑤ 추천 에이전트<br/>우선순위 + 사유]
+        A5[⑤ 추천 에이전트<br/>추천 그룹 + 사유]
         A6[⑥ 결과 설명 에이전트<br/>근거 보고서]
     end
 
@@ -107,7 +109,7 @@ sequenceDiagram
         M-->>O: 판정 변화 (예: UNCERTAIN → ELIGIBLE)
     end
     O->>R: finalize_recommendation
-    R->>E: 우선순위 + 사유
+    R->>E: 추천 그룹 + 사유
     E-->>O: 근거 보고서 (면책 고지 포함)
 ```
 
@@ -125,8 +127,23 @@ sequenceDiagram
   - 제외 사유는 ① 대상 질환 자체가 다름 ② 나이·성별 범위를 명백히 벗어남, 두 가지뿐입니다. 같은 질환이면 원인·병기·동반 질환 같은 세부 차이로는 제외하지 않고 다음 단계의 기준별 판정에 맡깁니다.
   - 모델이 판단을 빠뜨린 시험은 후보로 남기고(안전한 기본값), 목록에 없는 시험 ID는 버립니다. 선택·제외된 시험과 사유는 `result.json`의 `screening`과 `report.md`의 "후보 시험 추림" 섹션에 남습니다.
   - 이전 방식(질환별로 사람이 미리 정한 2–3개, `data/topic_map.json`)은 `--candidates given`으로 쓸 수 있습니다.
-- **최종 추천은 1개**: 후보 시험을 모두 평가한 뒤, 가장 적합한 시험 1개를 `recommended`로 추천하고 `selection_reason`에 차순위와 비교한 선정 이유를 적습니다.
-  - 적합성이 실질적으로 구분되지 않을 때만 공동 1순위로 함께 추천합니다. 공동 순위는 적격성 등급이 같을 때만 인정하고(적격 > 판정 보류), 나머지는 차순위 후보(`ranked`)로 남깁니다.
+- **추천은 그룹으로, 순서는 설명 가능한 기준으로 (아키텍처 §49–50)**: 시험 간 임상적 우열을 주장하지 않습니다.
+  - 사용자에게는 내부 판정(`eligibility`) 대신 외부 상태(`match_status`)를 보여 줍니다. 등록이 확정된 것처럼 읽히지 않도록 "공개 프로토콜 기준 사전 비교이며 실제 참여 여부는 연구기관 스크리닝과 연구자 판단으로 정해진다"는 안내를 함께 붙입니다.
+
+    | 내부 판정 | 외부 상태 (`match_status`) | 화면 표시 |
+    |---|---|---|
+    | ELIGIBLE | `CRITERIA_MATCH` | 공개 기준 충족 |
+    | UNCERTAIN (남은 항목이 UNVERIFIED이고 답변상 충족) | `POTENTIAL_MATCH` | 기록 확인 시 충족 가능 |
+    | UNCERTAIN (남은 항목이 의사 확인 항목) | `NEEDS_REVIEW` | 의료진 검토 필요 |
+    | UNCERTAIN (질문으로 확인할 항목이 남음) | `INSUFFICIENT_INFORMATION` | 추가 정보 필요 |
+    | INELIGIBLE | `CRITERIA_MISMATCH` | 공개 기준 불충족 |
+    | NOT_EVALUATED | `NOT_EVALUATED` | 평가 실패(부적격 아님) |
+
+  - 추천 에이전트(LLM)는 순위를 매기지 않고 시험별 근거만 씁니다. 표시 순서는 코드가 정합니다: 추천 그룹(위 표 순서) → 모집 상태(모집 중 → 모집 예정) → 남은 미확인 항목 수 → 후보 추림 순서. `rank`는 이 표시 순서(1, 2, 3…)이고, `selection_reason`에 이 기준을 적습니다.
+  - `recommended`는 가장 앞 그룹의 시험 전부입니다(1순위 하나를 고르지 않음).
+- **가상 데모 시험은 데모 모드에서만 추천 (아키텍처 §67)**: `"synthetic": true`인 시험(예: `DEMO-LUNG-001`)은 적격성 판정(평가용)은 하지만 추천에서는 빼고, 제외 목록에 "가상 데모 시험(실제 시험 아님)"이라고 남깁니다. `--demo` 또는 `CTREC_DEMO_MODE=1`일 때만 추천에 나옵니다.
+- **값싼 확정 제외 (아키텍처 §27)**: 후보 추림(LLM) 전에 코드가 명백히 맞지 않는 시험을 먼저 뺍니다(`hard_filter.py`). 모집 종료, CT.gov 구조화 나이 범위와 환자 나이 구간이 겹치지 않음, 한 성별 전용 시험과 환자 성별 불일치만 씁니다. 나이·성별을 모르거나 단위를 해석할 수 없으면 빼지 않습니다. 뺀 시험과 사유는 `screening.hard_filtered`와 보고서에 남습니다.
+- **환자 답변 ≠ 확인된 진료 기록 (UNVERIFIED, 아키텍처 §19)**: 검사 수치·바이오마커·진단·병기처럼 진료 기록이 필요한 기준을 환자 답변만으로 판정하면 판정을 확정하지 않고 `UNVERIFIED`(판정 불가)로 남깁니다. 답변이 가리킨 값은 `self_reported_holds`에 보존하고, 같은 질문을 반복하지 않고 문서(검사 결과지·보고서) 확인을 요청합니다(`missing_facts`의 `document_requested`). 추천의 `verification_needed`와 보고서의 "문서 확인 필요 사항 (UNVERIFIED)" 섹션에 표시됩니다.
 - **추천 가능 조건과 '추천 없음' 사유**: 시험은 **적격성(ELIGIBLE/UNCERTAIN)**과 **현재 모집 상태(모집 중·모집 예정)**를 모두 만족해야 추천됩니다.
   - 완료·조기 종료·철회 등 모집이 끝난 시험은 적격이어도 추천하지 않습니다. 대신 제외 목록에 "모집 종료된 시험으로 현재 참여 불가"라는 사유와 적격성 결과를 함께 남깁니다.
   - 추천할 시험이 하나도 없으면 코드가 상황별 이유를 `no_recommendation_reason`에 명시합니다. 이 이유는 콘솔 출력, `result.json`, `report.md` 맨 위에 모두 표시됩니다. 예: *"현재 진행 중인 적절한 임상시험이 없습니다. 환자 조건에 맞는 시험(NCT00195949)이 있었으나 후보 시험 2개가 모두 모집이 종료되었습니다: …"*
@@ -181,10 +198,11 @@ pytest -q
 
 ```bash
 # 오케스트레이터(agent) 모드 + 가상 환자 시뮬레이터로 확인 질문 자동 응답
+# --demo: 가상 데모 시험(DEMO-LUNG-001)도 추천에 표시 (없으면 판정만 하고 추천에서 제외)
 python -m ctrec run \
   --patient data/patients/synthetic/SYN-DEMO-A.json \
   --trials data/trials/DEMO-LUNG-001.json \
-  --answers simulated
+  --answers simulated --demo
 ```
 
 ### 3.2 웹 UI (실시간 시연)
@@ -200,12 +218,13 @@ python -m ctrec.web              # http://127.0.0.1:8000 (--port로 변경)
 | 입력 | 환자 선택(사업단 10명, 합성 32명) 또는 직접 입력. 후보 시험은 기본적으로 **전체 시험에서 자동 추림**하며, "직접 선택"으로 바꾸면 질환별로 미리 정한 후보가 선택된 목록에서 고를 수 있습니다. 모집 상태가 함께 표시됩니다. 웹 UI는 항상 오케스트레이터(agent) 모드로 실행됩니다 |
 | 에이전트 구성도 | 실행 중인 에이전트는 파란색, 완료된 에이전트는 초록색으로 표시됩니다. 오케스트레이터가 도구를 호출하면 해당 연결선이 켜집니다. 아래 단계 표시가 과제의 6단계 진행 상황을 보여줍니다 |
 | 진행 로그 | 오케스트레이터의 계획(말풍선), 도구 호출, 에이전트별 결과, 질문과 답변이 실시간으로 쌓입니다 |
-| 시험별 판정 | 시험마다 적격 / 부적격 / 판정 보류 배지를 표시하고, 판정 변화(예: 판정 보류 → 적격)를 보여줍니다 |
+| 시험별 판정 | 시험마다 공개 기준 충족 / 공개 기준 불충족 / 확인 필요 배지를 표시하고, 판정 변화(예: 확인 필요 → 공개 기준 충족)를 보여줍니다 |
 | 확인 질문 | 오케스트레이터가 필요하다고 판단할 때만 질문 폼이 뜹니다(필요 없으면 바로 결과). "모두 모름 · 건너뛰기"로 넘어갈 수도 있습니다. 파이프라인은 답을 받을 때까지 기다렸다가 재평가를 이어갑니다. 판정용 질문과 의사 참고용 질문은 구분해 표시됩니다 |
-| 최종 추천 | **가장 적합한 시험 1개**(적합성이 구분되지 않으면 공동 1순위)와 선정 이유를 먼저 보여주고, 차순위 후보는 접어서 보여줍니다. 근거, 의사 확인 필요 사항, "추천 없음" 사유, 결과 설명 보고서, 토큰 사용량을 보여줍니다 |
+| 최종 추천 | **추천 그룹**(예: 공개 기준 충족)의 시험을 표시 순서대로 보여주고, 표시 순서 기준과 "공개 기준 사전 비교" 안내를 붙입니다. 다른 후보는 접어서 보여줍니다. 근거, 의사 확인 필요 사항, 문서 확인 필요(UNVERIFIED) 항목, "추천 없음" 사유, 결과 설명 보고서, 토큰 사용량을 보여줍니다 |
 
 - 서버는 이 컴퓨터(127.0.0.1)에서만 접속할 수 있습니다.
 - 실행 기록은 `outputs/web/<실행 ID>/`에 저장됩니다.
+- 서버 메모리에는 실행 상태를 최대 20개(`CTREC_WEB_MAX_RUNS`)까지만 두고, 끝난 실행은 2시간(`CTREC_WEB_RUN_TTL_S`, 초) 뒤 지웁니다. 진행 중인 실행이 한도만큼 있으면 새 실행은 429로 거절됩니다. 저장된 결과 파일은 지우지 않습니다.
 - 실행할 때마다 Claude API 비용이 발생합니다. Sonnet 기준 환자 1명당 약 $0.2–0.7입니다.
 
 ### 3.3 사업단 제공 환자 + 실제 ClinicalTrials.gov 시험
@@ -334,8 +353,11 @@ python eval/evaluate.py --labels data/labels/masked_labels.csv --outputs outputs
 | `--max-candidates N` | 후보 추림 후 자세히 평가할 최대 시험 수. 시험 풀이 이보다 작으면 추림 없이 전부 평가. **5는 실험 전 임시값**입니다. D3 결정에 따라 `scripts/screen_budget.py`(recall@k)로 정합니다 | 5 (임시) |
 | `CTREC_MAX_QUESTIONS` (환경변수) | 라운드당 최대 질문 수 (`batch`·`adaptive` 정책의 한도). **5는 실험 전 임시값**입니다 | 5 (임시) |
 | `CTREC_QUESTION_POLICY` (환경변수) | 한 라운드에 묶을 질문 수 정책 (D4). `single` 항상 1개 / `batch` 한도까지 / `adaptive` 서로 독립적이고 판정을 바꿀 질문만 함께. 기본 `adaptive`는 권장안이며 `scripts/question_policy_sweep.py` 결과로 확정합니다 | adaptive (임시) |
+| `compile_trials.py --unfreeze` | 잠긴 기준표(`data/parsed/FROZEN.json`)의 시험도 다시 컴파일해 덮어씀. 팀 검토 후에만 쓰고, 끝나면 `scripts/freeze_parsed.py`로 다시 잠급니다 | off |
 | `CTREC_LAZY_COMPILE=1` (환경변수) | 고정 저장소(`data/parsed/`)에 없는 시험을 그 자리에서 파싱합니다(검증 없음). 기본은 `COMPILATION_PENDING`(NOT_EVALUATED)으로 기록 (D8). `--search`·`--nct`로 새 시험을 시연할 때 씁니다 | 0 |
 | `CTREC_WRITE_REPORT=0` (환경변수) | 보고서(설명 에이전트) 생략. 평가 실험 비용 절감용 | 1 |
+| `--demo` / `CTREC_DEMO_MODE=1` | 가상 데모 시험(`"synthetic": true`)도 추천에 표시. 끄면 판정만 하고 추천에서 제외 (§67) | off |
+| `CTREC_HARD_FILTER_STATUS=0` (환경변수) | 후보 추림 전 확정 제외에서 모집 종료 시험을 빼지 않음. 모집 종료 시험의 적격성까지 평가해야 하는 벤치마크용 | 1 |
 | `--question-budget N` | 환자 1명당 전체 라운드 합산 최대 질문 수 (질문 예산 실험용). 라운드당 한도(`CTREC_MAX_QUESTIONS`, 기본 5)와 남은 예산 중 작은 값만큼 묻습니다 | 제한 없음 |
 | `--search` | CT.gov 추가 검색 허용 (agent 모드) | off |
 | `--trials`, `--trials-dir`, `--nct` | 후보 시험 지정 | |
@@ -384,9 +406,13 @@ python eval/evaluate.py --labels data/labels/masked_labels.csv --outputs outputs
 
 | 평가 항목 | 비중 | 대응 |
 |---|---|---|
-| 매칭 정확성 | 30% | `eval/evaluate.py`로 계산합니다. 지표는 전체 정확도, 판정 확정 비율(coverage), 확정 판정 정확도, Rescue/Cleanup, False Removal/Premature Match, 혼동 행렬, 추천 Top-1 적중률, Precision@k입니다. 질문 예산별 곡선은 `scripts/budget_sweep.py`로 만듭니다(3.4 참고). `--mode fixed`와 `--mode agent`, `--answers none`과 `--answers simulated`를 비교하면 질문 라운드의 효과를 수치로 보여줄 수 있습니다. |
+| 매칭 정확성 | 30% | `eval/evaluate.py`로 계산하며, 모든 수치는 **"합성 벤치마크 성능"**으로 표기합니다(아래 참고). 지표는 전체 정확도, 판정 확정 비율(coverage), 확정 판정 정확도, Rescue/Cleanup, False Removal/Premature Match, 혼동 행렬, 추천 Top-1 적중률, Precision@k입니다. 질문 예산별 곡선은 `scripts/budget_sweep.py`로 만듭니다(3.4 참고). `--mode fixed`와 `--mode agent`, `--answers none`과 `--answers simulated`를 비교하면 질문 라운드의 효과를 수치로 보여줄 수 있습니다. |
 | 랩 내 정성 평가 | 30% | `report.md`의 규칙 단위 근거와 `trace.jsonl`의 에이전트 협업 과정을 근거로 평가받습니다. |
 | 발표 | 40% | 1.2와 1.3의 구성도를 활용하고, `trace.jsonl`로 실제 오케스트레이션 흐름을 시연합니다. |
+
+**정답 라벨과 성능 표기 (팀 결정, 2026-10-12)**: 임상의가 검토한 정답표(Gold Set)는 만들 수 없어, 합성 데이터를 만들 때 LLM이 정한 정답 라벨만 씁니다. 그래서 모든 평가 결과는 **"합성 벤치마크 성능"**으로 표기하고, 실제 임상 성능으로 주장하지 않습니다(아키텍처 §64). `eval/evaluate.py` 출력 첫 줄과 `--json` 결과의 `benchmark` 필드에 이 표기가 붙습니다.
+
+**기준선 비교 (팀 결정, 2026-10-12)**: 구조를 바꾸는 단계마다 기준선(현재 파이프라인)보다 정확도가 **1%p 넘게 떨어지면 다음 단계로 넘어가지 않습니다.** 기준선 지표를 `--json baseline.json`으로 저장해 두고, 이후 평가에 `--baseline baseline.json`을 붙이면 비교 결과를 출력하고 불합격이면 종료 코드 1을 냅니다.
 
 ### 5.1 합성 평가셋 구성
 
@@ -404,7 +430,7 @@ python eval/evaluate.py --labels data/labels/masked_labels.csv --outputs outputs
 - 02번: 검사 수치, 병용 약물, 동반 질환 등 자연스럽게 서술된 기준 위반이 있습니다.
 - 03번: 판정을 가르는 정보 1–3개를 공개 서술에서 빼고 `hidden_details`에만 넣었습니다. 확인 질문 단계를 평가하기 위한 사례입니다.
 
-라벨은 각 시험의 선정/제외 기준을 한 줄씩 대조해 작성했고, 근거는 `rationale` 열에 남겼습니다. 다만 **평가에 쓰기 전에 연구진이 검토해야 합니다.** 특히 다음 판단은 해석에 따라 달라질 수 있습니다.
+라벨은 각 시험의 선정/제외 기준을 한 줄씩 대조해 작성했고, 근거는 `rationale` 열에 남겼습니다. 임상의 검토는 거치지 않았으므로 결과는 "합성 벤치마크 성능"으로만 보고합니다. 특히 다음 판단은 해석에 따라 달라질 수 있습니다.
 - NCT06833073의 중앙 병리 검토, NCT06530004의 기관·기간 제한은 행정 절차로 보고 라벨에 반영하지 않았습니다.
 - NCT07616128의 "특정 약물 사용" 제외 기준은 원문에 약물 목록이 없습니다. 정답 라벨은 이 기준을 판정에 쓰지 않았고, 시스템도 "의사 확인 필요"로 분류합니다.
 - 유문협착증 시험 2개(NCT00195949, NCT02415049)는 이미 완료된 시험입니다. 라벨은 모집 상태와 관계없이 기준 충족 여부만으로 정했습니다.
@@ -441,6 +467,7 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 ```
 .
 ├── README.md
+├── docs/ARCHITECTURE.md        # 설계 기준 문서 (Final Merged Architecture)
 ├── pyproject.toml / requirements.txt / .env.example
 ├── src/ctrec/
 │   ├── cli.py                  # 명령행 진입점 (run / batch)
@@ -454,6 +481,8 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 │   ├── trial_store.py          # 사전 컴파일 기준 고정 저장소 (D8)
 │   ├── evidence.py             # 기준별 근거 수준 정책 (D2)
 │   ├── acquisition.py          # 부족한 정보의 확보 순서 (D7)
+│   ├── status.py               # 외부 표현(match_status)과 추천 그룹 순서 (§49–50)
+│   ├── hard_filter.py          # 후보 추림 전 값싼 확정 제외 (§27)
 │   ├── web/                    # 웹 UI: app.py(FastAPI + SSE), static/index.html
 │   ├── agents/
 │   │   ├── screener.py         # 후보 추림 에이전트
@@ -476,13 +505,14 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 │   ├── expand_labels.py        # 라벨을 전체 시험 풀로 확장 (후보 추림 평가용)
 │   ├── parse_consistency.py    # 기준 파싱 일관성 측정
 │   ├── compile_trials.py       # 시험 기준 사전 컴파일 (파싱 + 검증 -> data/parsed/)
+│   ├── freeze_parsed.py        # 고정 저장소 잠금 (data/parsed/FROZEN.json)
 │   ├── screen_budget.py        # 후보 수 실험 (D3, 추림 recall@k)
 │   └── question_policy_sweep.py # 라운드당 질문 정책 비교 (D4)
 ├── eval/evaluate.py            # 매칭 정확성 평가
-├── tests/                      # API 없이 도는 단위 테스트 (test_offline, test_recommender, test_reliability, test_masked_benchmark, test_screening, test_safety, test_stage05, test_decisions)
+├── tests/                      # API 없이 도는 단위 테스트 (test_offline, test_recommender, test_reliability, test_masked_benchmark, test_screening, test_safety, test_stage05, test_decisions, test_stage0)
 └── data/
     ├── trials/                 # 시험 프로토콜 (CT.gov 캐시 + 가상 데모)
-    ├── parsed/                 # 사전 컴파일한 기준 고정 저장소 (git 포함, 환자 평가 때 이것만 사용)
+    ├── parsed/                 # 사전 컴파일한 기준 고정 저장소 (git 포함, 환자 평가 때 이것만 사용, FROZEN.json으로 잠금)
     ├── topic_map.json          # 사업단 환자 S001–S010 → 후보 시험
     ├── patients/synthetic/     # 합성 환자 30명 (cases_*.json) + 데모 2명
     ├── patients/provided/      # 사업단 제공 예시 10명
@@ -497,7 +527,7 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 - **모델**: 모든 에이전트는 기본값 `claude-sonnet-5`를 씁니다($2 / $10 per 1M 입력·출력 토큰). 데모 환자 1명 기준 약 $0.2로, 같은 환자를 `claude-opus-5`로 돌렸을 때(약 $0.57)보다 저렴했습니다. 에이전트마다 추론 강도(`effort`)를 다르게 둡니다. 판정 정확도가 중요한 기준 파싱, 매칭, 추천, 오케스트레이터는 `high`이고, 추출과 문장 생성 위주 단계는 `medium`입니다. 값은 `config.py`의 `EFFORT`에서 조정합니다.
 - **캐싱**
   - 에이전트별 시스템 프롬프트에 프롬프트 캐싱을 적용합니다.
-  - 시험 기준은 `scripts/compile_trials.py`로 미리 파싱·검증해 `data/parsed/`(git 포함)에 고정합니다. 환자를 평가할 때는 파싱하지 않습니다. 시험 기준 원문이 바뀌면 그 시험은 `COMPILATION_PENDING`이 되므로 다시 컴파일합니다. `data/cache/parsed/`는 컴파일·즉석 파싱용 내부 캐시입니다.
+  - 시험 기준은 `scripts/compile_trials.py`로 미리 파싱·검증해 `data/parsed/`(git 포함)에 고정합니다. 2026-10-12에 26개 시험 전부를 공식 기준표로 잠갔습니다(`FROZEN.json`, 파일이 바뀌면 테스트 실패). 환자를 평가할 때는 파싱하지 않습니다. 시험 기준 원문이 바뀌면 그 시험은 `COMPILATION_PENDING`이 되므로 다시 컴파일합니다. `data/cache/parsed/`는 컴파일·즉석 파싱용 내부 캐시입니다.
 - **안전 분류기 대응**: 의료 텍스트가 드물게 모델의 안전 분류기에 의해 거절될 수 있습니다. 이 경우를 대비해 Claude API의 서버측 refusal fallback(`fallbacks: "default"`)을 기본으로 켜 두었습니다. Bedrock이나 Vertex 등 다른 플랫폼에서는 `.env`에 `CTREC_FALLBACKS=0`을 설정하세요.
 - **비용 규모**: 환자 1명 × 시험 N개 기준으로 대략 다음 횟수만큼 Claude를 호출합니다.
   - 후보 추림: 1회 (약 $0.03. 시험 풀 설명은 시스템 프롬프트에 넣어 환자가 바뀌어도 캐시로 재사용). 자세한 판정은 고른 시험 N개(최대 5개)에만 합니다
@@ -513,7 +543,8 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 
 - 규칙 엔진은 단위가 같은 수치 비교만 판정합니다. 단위 환산과 "정상 상한의 1.5배(ULN)" 같은 상대 기준은 LLM이 판정합니다.
 - 확인 질문의 답변은 원문에 덧붙인 뒤 환자 정보를 다시 추출하는 방식으로 반영합니다. 답변이 기존 정보와 충돌하면 최신 답변을 우선합니다.
-- 추천 우선순위는 적격성과 대상군 적합도, 모집 상태를 기준으로 합니다. 지리적 접근성이나 환자 선호는 반영하지 않습니다.
+- 추천 표시 순서는 추천 그룹, 모집 상태, 남은 미확인 항목 수, 후보 추림 순서로만 정합니다. 시험 간 임상적 우열, 지리적 접근성, 환자 선호는 반영하지 않습니다.
+- `INSUFFICIENT_INFORMATION`과 `POTENTIAL_MATCH`의 구분은 남은 항목의 종류로만 정합니다. 판정을 바꿀 수 있는 정보인지(판정 영향)는 아직 계산하지 않습니다(아키텍처 Stage 2).
 - 가상 데이터로 측정한 정확도는 실제 임상 환경의 성능을 보장하지 않습니다.
 
 ---
@@ -521,6 +552,35 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 ## 10. 변경 이력
 
 수정할 때마다 무엇을 왜 바꿨는지 여기에 기록합니다. 최신 항목이 위에 옵니다.
+
+### 2026-10-12 — 팀 결정 반영: 합성 벤치마크 표기, 애매한 기준 검토 후 기준표 잠금, 기준선 1%p 조건
+
+| # | 결정 | 변경 | 파일 |
+|---|---|---|---|
+| 1 | **Gold Set**: 임상의 검토가 불가능하므로 합성 정답만 쓰고 결과를 "합성 벤치마크 성능"으로 표기 | `evaluate.py` 출력과 JSON에 표기 추가, README 평가 절 수정 | `metrics.py`, `eval/evaluate.py` |
+| 2 | **애매함 검토**: 검증 LLM이 '애매하다'고만 표시한 17개 중 원문에 판단 기준이 없는 **7개만** underspecified(의사 확인 항목)로 적용 | NCT06468397 E4(마취 위험 요인 목록 없음), NCT06908096 I10·I11(PI가 '임상적으로 유의하지 않음' 판단), E9(체형은 진찰자 판단), E15('임상적으로 유의한' 기준 없음), NCT07516951 I4(연구자 판단 기대 수명), E13(부형제 목록 없음). 나머지 10개는 질문·검사 결과로 판정 가능해 `reviewed_not_vague`로 기록 (예: "Elevated T3"는 결과지 참고 범위로 판정, 백신 중증 반응 이력은 환자에게 확인) | `data/parsed/`(8개 파일), `schemas.py` |
+| 3 | **기준표 잠금**: 위 검토 반영 후 26개 시험 기준을 공식 기준표로 잠금. 이후 평가·비교는 모두 이 버전 기준 | `FROZEN.json`에 파일 해시 기록, `compile_trials.py`는 잠긴 시험을 건너뜀(`--unfreeze`로만 갱신), 파일이 바뀌면 테스트 실패, OS별 줄바꿈 변환 방지(`.gitattributes`) | `trial_store.py`, `scripts/compile_trials.py`, `scripts/freeze_parsed.py`(신규), `.gitattributes`(신규) |
+| 4 | **기준선 통과 조건**: 정확도 1%p 이내 하락 허용 | `evaluate.py --baseline`으로 비교, 불합격이면 종료 코드 1 | `metrics.py`, `eval/evaluate.py` |
+
+- 테스트: 오프라인 테스트 115개 통과 (잠금 유지·덮어쓰기 거부, 애매함 검토 반영, 기준선 비교 테스트 추가)
+- 아직 남은 일: 기준선 수치 측정(실제 LLM 실행, API 크레딧 필요). 측정 전까지는 1%p 조건을 적용할 기준값이 없습니다.
+
+### 2026-10-12 — UNVERIFIED 적용, Stage 0 즉시 수정 5개, 아키텍처 문서에서 위치 삭제
+
+배경: 팀 결정에 따라 (1) 진료 기록이 필요한 기준을 답변만으로 판정하면 UNVERIFIED로 남기고 문서 확인을 요청하도록 바꾸고, (2) 아키텍처 §67의 즉시 수정 5개를 적용하고, (3) 아키텍처 본문에서도 위치 항목을 뺐습니다.
+
+| # | 변경 | 파일 | 이유 |
+|---|---|---|---|
+| 1 | **UNVERIFIED**: 진료 기록이 필요한 기준(`clinical_record`)의 근거가 환자 답변뿐이면 판정 불가(`passes=None`)로 되돌리고 답변 값은 `self_reported_holds`에 보존. 다시 묻지 않고 문서 확인 요청(`missing_facts` 상태 `document_requested`, `REQUEST_DOCUMENT`) | `matcher.py`, `schemas.py`, `acquisition.py`, `question_generator.py`, `recommender.py`, `explainer.py`, `evidence.py` | 아키텍처 §19. 이전(10-11)에는 판정은 통과시키고 '기록 확인 필요' 표시만 붙였음 |
+| 2 | **데모 시험 추천 차단**: `"synthetic": true` 시험은 판정만 하고 추천에서 제외, `--demo`/`CTREC_DEMO_MODE=1`일 때만 추천 | `recommender.py`, `config.py`, `cli.py` | §67. `DEMO-LUNG-001`이 실제 추천에 나올 수 있었음 |
+| 3 | **외부 표현 변경**: 내부 판정은 그대로 두고, 화면·보고서·추천에는 `match_status`(공개 기준 충족 / 기록 확인 시 충족 가능 / 의료진 검토 필요 / 추가 정보 필요 / 공개 기준 불충족 / 평가 실패)와 "공개 기준 사전 비교" 안내를 표시 | `status.py`(신규), `schemas.py`, `explainer.py`, `cli.py`, `web/` | §49. "적격(ELIGIBLE)"이 등록 확정처럼 읽힘 |
+| 4 | **우열 순위 제거**: 추천 LLM은 시험별 근거만 쓰고 순위를 매기지 않음. 표시 순서는 코드가 그룹 → 모집 상태 → 미해결 항목 수 → 후보 순서로 정함. `recommended`는 가장 앞 그룹 전체, `pre_score`·공동 1순위 로직 삭제 | `recommender.py`, `orchestrator.py`, `web/static/index.html` | §50. 이전에는 LLM이 적합도로 1순위를 골랐음 |
+| 5 | **값싼 확정 제외**: 후보 추림 전에 모집 종료, 나이 범위 불일치, 성별 불일치 시험을 코드로 제외(확실할 때만). 지표에서 나이·성별 제외는 INELIGIBLE, 모집 종료 제외는 예측 없음으로 셈 | `hard_filter.py`(신규), `screener.py`, `metrics.py`, `pipeline.py` | §26–27. 명백히 안 맞는 시험에 LLM 비용을 쓰지 않도록 |
+| 6 | **웹 실행 기록 한도**: 메모리의 `RUNS`를 최대 20개, 끝난 실행은 2시간 뒤 삭제. 한도에 차면 새 실행 429 | `web/app.py` | §67. 실행 상태가 메모리에 무한히 쌓였음 |
+| 7 | **아키텍처 문서 저장소에 추가 + 위치 삭제**: §8·§25·§31·§50·§56·Stage 5의 location 항목 삭제 | `docs/ARCHITECTURE.md`(신규) | 팀 결정 (위치 기능 불필요) |
+
+- 테스트: 오프라인 테스트 111개 통과 (D2 테스트를 새 동작으로 바꾸고, 추천 순서·데모 차단·외부 상태·확정 제외·웹 정리 테스트 추가)
+- 평가 수치에 주는 영향(실제 LLM 재측정 전): 답변으로 해소하던 기록 필요 기준이 UNVERIFIED로 남아 ELIGIBLE과 Rescue가 줄어들 수 있습니다. 후보 추림 실행에서는 모집 종료 시험(3개)이 예측 없음이 되고, 데모 시험은 추천 적중률 계산에서 추천되지 않습니다. 이전 수치와 비교하려면 `CTREC_HARD_FILTER_STATUS=0`, `CTREC_DEMO_MODE=1`로 실행합니다.
 
 ### 2026-10-11 — 위치(D5) 기능 삭제
 

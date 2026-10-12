@@ -168,7 +168,7 @@
     "unit": null,
     "time_window_days": null,
     "structured_evaluable": false,
-    "underspecified": false,
+    "underspecified": true,
     "cohort": null
    },
    {
@@ -484,7 +484,7 @@
   "I3": {
    "review": null,
    "required_evidence": "self_report_ok",
-   "underspecified_state": "vague_suspected",
+   "underspecified_state": "reviewed_not_vague",
    "added_by_validator": false
   },
   "I4": {
@@ -532,7 +532,7 @@
   "E4": {
    "review": null,
    "required_evidence": "clinical_record",
-   "underspecified_state": "vague_suspected",
+   "underspecified_state": "vague_confirmed",
    "added_by_validator": false
   },
   "E5": {
@@ -720,7 +720,9 @@
   ],
   "notes": [
    "I3: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정",
-   "E4: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정"
+   "E4: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정",
+   "I3: 팀 검토(2026-10-12) 애매하지 않음 -> underspecified 적용 안 함 (방문·준수 의사는 등록 시 확인하는 절차 기준)",
+   "E4: 팀 검토(2026-10-12) 원문이 애매함 확인 -> underspecified 적용 ('마취 위험 요인'의 구체 목록이 원문에 없음)"
   ],
   "llm_output": null
  }

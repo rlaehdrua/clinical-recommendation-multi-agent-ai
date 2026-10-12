@@ -47,6 +47,14 @@ WRITE_REPORT = os.getenv("CTREC_WRITE_REPORT", "1") == "1"
 # 후보 추림: 전체 시험 풀에서 자세히 평가할 시험 수 상한
 SCREEN_MAX_CANDIDATES = int(os.getenv("CTREC_SCREEN_MAX", "5"))
 
+# 후보 추림 전 값싼 확정 제외(hard filter, 아키텍처 §27)에서 모집 종료 시험도 뺄지.
+# 모집이 끝난 시험은 어차피 추천하지 않으므로 기본은 제외. 모집 종료 시험의 적격성까지 평가해야 하는 벤치마크는 0
+HARD_FILTER_STATUS = os.getenv("CTREC_HARD_FILTER_STATUS", "1") == "1"
+
+# 데모 모드(아키텍처 §67): 가상 데모 시험("synthetic": true, 예: DEMO-LUNG-001)은 이 모드에서만 추천에 나옵니다.
+# 꺼져 있어도 적격성 판정(평가용)은 하고, 추천에서만 빼고 제외 사유를 남깁니다.
+DEMO_MODE = os.getenv("CTREC_DEMO_MODE", "0") == "1"
+
 # 매칭 에이전트가 일부 규칙의 판정을 빠뜨렸을 때, 빠진 규칙만 다시 요청하는 횟수
 MATCHER_MISSING_RETRIES = int(os.getenv("CTREC_MATCHER_RETRIES", "1"))
 

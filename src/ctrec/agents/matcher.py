@@ -5,6 +5,7 @@
 3) 시험 단위 적격성은 아래 결정 규칙으로 계산 (LLM이 아닌 코드가 최종 결정)
    - 선정 기준 불충족 또는 제외 기준 해당이 하나라도 있으면 INELIGIBLE
    - 그렇지 않고 판정 불가(unknown)가 하나라도 있으면 UNCERTAIN
+     (진료 기록이 필요한 기준을 환자 답변만으로 판정한 항목도 UNVERIFIED로 판정 불가 - 아키텍처 §19)
      (예외: 동의·방문 가능 여부 같은 절차·행정 '선정' 기준의 unknown만 적격성을 막지 않고 '절차 확인 필요'로 남김.
       원문에 구체 기준이 없는 underspecified 기준의 unknown은 '의사 확인 필요'로 분류하되 ELIGIBLE을 막음 -
       파서 LLM의 분류 하나로 미확인 기준이 통과 처리되지 않도록)
@@ -60,7 +61,8 @@ def is_waivable_logistics(a: CriterionAssessment) -> bool:
     제외 기준은 절차로 분류돼도(예: 다른 임상시험 참여 중) 환자에게 확인할 수 있고,
     파서가 임상 기준을 절차로 잘못 분류할 수 있으므로 면제하지 않습니다.
     """
-    return a.passes is None and a.category == LOGISTICS and a.kind == "inclusion" and not a.underspecified
+    return (a.passes is None and a.category == LOGISTICS and a.kind == "inclusion" and not a.underspecified
+            and not a.needs_verification)
 
 
 def is_blocking_unknown(a: CriterionAssessment) -> bool:
@@ -69,8 +71,11 @@ def is_blocking_unknown(a: CriterionAssessment) -> bool:
 
 
 def is_askable_unknown(a: CriterionAssessment) -> bool:
-    """확인 질문으로 해소를 시도할 미확인 항목 (underspecified는 의사 참고용 질문으로 따로 다룸)."""
-    return is_blocking_unknown(a) and not a.underspecified
+    """확인 질문으로 해소를 시도할 미확인 항목.
+
+    underspecified는 의사 참고용 질문으로 따로 다루고, UNVERIFIED는 이미 답을 받았으므로 다시 묻지 않고 문서 확인을 요청합니다.
+    """
+    return is_blocking_unknown(a) and not a.underspecified and not a.needs_verification
 
 
 def needs_physician_review(a: CriterionAssessment) -> bool:
@@ -245,13 +250,28 @@ def _evidence_source(a: CriterionAssessment, source_text: str | None) -> str:
 
 
 def _apply_evidence_policy(a: CriterionAssessment, meta: RuleMeta, source_text: str | None) -> CriterionAssessment:
+    """근거 수준 (D2, 아키텍처 §19 User Answer ≠ Verified Clinical Truth).
+
+    진료 기록이 필요한 기준을 환자 답변(자기 보고)만으로 판정했으면 판정을 확정하지 않고 UNVERIFIED(판정 불가)로 되돌립니다.
+    답변이 가리킨 값은 self_reported_holds에 남기고, 같은 질문을 반복하지 않고 문서(검사 결과지·보고서) 확인을 요청합니다.
+    """
     a.required_evidence = meta.required_evidence
     a.evidence_source = _evidence_source(a, source_text)  # type: ignore[assignment]
-    a.needs_verification = a.evidence_source == "self_report" and a.required_evidence == "clinical_record"
+    if not (a.evidence_source == "self_report" and a.required_evidence == "clinical_record"):
+        return a
+    said = "해당 없음" if not a.applicable else {"yes": "해당", "no": "해당하지 않음"}.get(a.holds, a.holds)
+    a.needs_verification = True
+    a.self_reported_holds = a.holds
+    a.self_reported_applicable = a.applicable
+    a.holds, a.passes, a.applicable = "unknown", None, True
+    a.reasoning = (f"[UNVERIFIED: 진료 기록이 필요한 기준인데 근거가 환자 답변뿐이라 판정하지 않음 - 답변상 '{said}'] "
+                   f"{a.reasoning}")
+    a.missing_info = "진료 기록(검사 결과지, 병리·유전자 보고서 등)으로 확인 필요"
     return a
 
 
 def needs_record_check(a: CriterionAssessment) -> bool:
+    """UNVERIFIED: 답변은 있으나 진료 기록으로 확인해야 판정할 수 있는 항목."""
     return a.needs_verification
 
 
@@ -364,7 +384,7 @@ def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
     if n_logistics:
         summary += f" (+절차 기준 확인 필요 {n_logistics})"
     if n_verify:
-        summary += f" (+답변 기반·기록 확인 필요 {n_verify})"
+        summary += f" (+UNVERIFIED·문서 확인 필요 {n_verify})"
     if matched_cohort:
         summary += f" [코호트: {matched_cohort}]"
     if failed:
@@ -391,6 +411,7 @@ def compact(match: TrialMatch) -> dict:
     return {
         "trial_id": match.trial_id,
         "eligibility": match.eligibility,
+        "match_status": match.match_status,
         "summary": match.summary,
         "unknown": [
             {"rule_id": a.rule_id, "criterion": a.criterion_text, "missing_info": a.missing_info}
@@ -400,7 +421,7 @@ def compact(match: TrialMatch) -> dict:
             {"rule_id": a.rule_id, "criterion": a.criterion_text, "info_needed": a.missing_info}
             for a in match.assessments if needs_physician_review(a)
         ],
-        "record_check_needed": [
+        "unverified_document_needed": [
             a.criterion_text for a in match.assessments if needs_record_check(a)
         ],
         "logistics_to_confirm": [

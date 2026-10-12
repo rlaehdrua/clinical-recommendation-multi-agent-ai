@@ -186,7 +186,7 @@
   "E1": {
    "review": null,
    "required_evidence": "clinical_record",
-   "underspecified_state": "vague_suspected",
+   "underspecified_state": "reviewed_not_vague",
    "added_by_validator": false
   },
   "E2": {
@@ -229,7 +229,8 @@
   "added_rules": [],
   "evidence_conflicts": [],
   "notes": [
-   "E1: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정"
+   "E1: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정",
+   "E1: 팀 검토(2026-10-12) 애매하지 않음 -> underspecified 적용 안 함 (다른 1차성 두통 진단 여부는 기록·질문으로 확인 가능)"
   ],
   "llm_output": null
  }

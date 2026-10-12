@@ -13,7 +13,8 @@ from ctrec.agents import matcher, parser_validator
 from ctrec.agents.answerers import NoAnswerer
 from ctrec.agents.parser_validator import MissingCriterion, RuleCheck, ValidationOutput, ValidationReport
 from ctrec.pipeline import PatientCase, Session
-from ctrec.schemas import ClarifyingQuestion, LabValue, LLMAssessment, MatcherOutput, ParsedTrial, RuleMeta
+from ctrec.schemas import (ClarifyingQuestion, CriterionAssessment, LabValue, LLMAssessment, MatcherOutput, ParsedTrial,
+                           RuleMeta, TrialMatch)
 from ctrec.trace import Tracer
 from test_offline import _profile, _rule
 
@@ -140,12 +141,45 @@ def _lab_trial_match(monkeypatch, quote: str, source: str):
     return matcher.match_trial(_profile(), _parsed([rule]), TRIAL, source_text=source)
 
 
-def test_self_reported_biomarker_needs_record_check(monkeypatch):
+def test_self_reported_biomarker_is_unverified(monkeypatch):
+    """진료 기록이 필요한 기준을 답변만으로 판정하면 UNVERIFIED(판정 불가)로 남고 답변 값은 보존 (아키텍처 §19)."""
     src = "62세 여성 폐암.\n\n[추가 확인 정보 - 라운드 1]\nQ: EGFR 검사 결과?\nA: 의사가 EGFR 변이 양성이라고 했어요"
     m = _lab_trial_match(monkeypatch, "의사가 EGFR 변이 양성이라고 했어요", src)
     a = m.assessments[0]
-    assert a.passes is True and a.evidence_source == "self_report" and a.needs_verification
-    assert m.eligibility == "ELIGIBLE" and "기록 확인 필요" in m.summary
+    assert a.passes is None and a.holds == "unknown" and a.needs_verification
+    assert a.evidence_source == "self_report" and a.self_reported_holds == "yes"
+    assert "UNVERIFIED" in a.reasoning and "진료 기록" in a.missing_info
+    # 다시 묻지 않고(질문 대상 아님) 문서 확인을 요청, 외부 상태는 '기록 확인 시 충족 가능'
+    assert not matcher.is_askable_unknown(a) and matcher.is_blocking_unknown(a)
+    assert m.eligibility == "UNCERTAIN" and m.match_status == "POTENTIAL_MATCH"
+    assert "UNVERIFIED" in m.summary
+
+
+def test_self_reported_failure_is_also_unverified(monkeypatch):
+    """답변상 불충족이어도 기록 근거가 아니면 확정하지 않음 -> 추가 정보 필요."""
+    src = "62세 여성 폐암.\n\n[추가 확인 정보 - 라운드 1]\nQ: EGFR 검사 결과?\nA: EGFR 음성이라고 들었어요"
+    rule = _rule(rule_id="I1", text="EGFR mutation positive", category="biomarker", structured_evaluable=False)
+    la = LLMAssessment(rule_id="I1", applicable=True, holds="no", evidence_type="explicit", confidence="high",
+                       evidence="EGFR 음성이라고 들었어요", reasoning="r", missing_info=None)
+    monkeypatch.setattr(matcher.llm, "structured", lambda *a, **k: MatcherOutput(assessments=[la]))
+    m = matcher.match_trial(_profile(), _parsed([rule]), TRIAL, source_text=src)
+    assert m.assessments[0].passes is None and m.assessments[0].self_reported_holds == "no"
+    assert m.eligibility == "UNCERTAIN" and m.match_status == "INSUFFICIENT_INFORMATION"
+
+
+def test_unverified_fact_requests_document_not_question():
+    a = CriterionAssessment(rule_id="I1", kind="inclusion", criterion_text="EGFR+", holds="unknown", passes=None,
+                            confidence="low", evidence="e", reasoning="r", missing_info="m", method="llm",
+                            category="biomarker", needs_verification=True, self_reported_holds="yes")
+    m = TrialMatch(patient_id="P", trial_id="T", eligibility="UNCERTAIN", assessments=[a],
+                   n_pass=0, n_fail=0, n_unknown=1, summary="UNCERTAIN")
+    facts = {}
+    acquisition.update(facts, [m])
+    f = facts["T:I1"]
+    assert f.status == "document_requested" and not acquisition.is_open(facts, "T:I1")
+    assert any("REQUEST_DOCUMENT" in s for s in f.attempted_actions)
+    acquisition.update(facts, [m])  # 같은 상태로 다시 갱신해도 기록이 중복되지 않음
+    assert len(f.attempted_actions) == 1
 
 
 def test_record_biomarker_does_not_need_check(monkeypatch):
@@ -159,7 +193,8 @@ def test_rule_engine_lab_from_answer_is_self_report():
     p = _profile(labs=[LabValue(name="hemoglobin", value=11.0, unit="g/dL", date=None, source_quote="혈색소 11 정도였어요")])
     src = "기록\n\n[추가 확인 정보 - 라운드 1]\nQ: 혈색소?\nA: 혈색소 11 정도였어요"
     m = matcher.match_trial(p, _parsed([rule]), TRIAL, source_text=src)
-    assert m.assessments[0].method == "rule_engine" and m.assessments[0].needs_verification
+    a = m.assessments[0]
+    assert a.method == "rule_engine" and a.needs_verification and a.passes is None and a.self_reported_holds == "yes"
 
 
 # ------------------------------------------------------------------ D1 review(UNSUPPORTED) 규칙
@@ -211,6 +246,41 @@ def test_all_repository_trials_are_compiled():
     from ctrec.tools import ctgov
     for path in sorted(config.TRIALS_DIR.glob("*.json")):
         trial_store.load(ctgov.load_local(path))  # 하나라도 없거나 원문이 바뀌면 실패
+
+
+def test_frozen_store_unchanged():
+    """잠긴 기준표(2026-10-12)가 그대로인지: 파일이 바뀌면 실패 (바꾸려면 팀 검토 후 다시 잠금)."""
+    manifest = trial_store.frozen_manifest()
+    assert manifest.get("files"), "data/parsed/FROZEN.json이 없음"
+    for tid, digest in manifest["files"].items():
+        assert trial_store.file_hash(trial_store.path_for(tid)) == digest, f"{tid}: 잠긴 기준표가 바뀜"
+
+
+def test_frozen_store_refuses_overwrite(tmp_path):
+    p = _parsed(_rules())
+    trial_store.save(TRIAL, p, {}, ValidationReport(), tmp_path)
+    trial_store.freeze(tmp_path, "test")
+    with pytest.raises(trial_store.FrozenStore):
+        trial_store.save(TRIAL, p, {}, ValidationReport(), tmp_path)
+    trial_store.save(TRIAL, p, {}, ValidationReport(), tmp_path, allow_frozen=True)
+    # 잠금 목록 파일은 시험으로 세지 않음
+    assert set(trial_store.freeze(tmp_path)["files"]) == {TRIAL["trial_id"]}
+
+
+def test_team_vague_review_applied():
+    """팀 검토(2026-10-12): 진짜 애매한 7개만 underspecified, 나머지 10개는 질문·검사 결과로 판정."""
+    from ctrec.tools import ctgov
+    confirmed = {("NCT06468397", "E4"), ("NCT06908096", "I10"), ("NCT06908096", "I11"), ("NCT06908096", "E9"),
+                 ("NCT06908096", "E15"), ("NCT07516951", "I4"), ("NCT07516951", "E13")}
+    states = {}
+    for path in sorted(config.TRIALS_DIR.glob("*.json")):
+        p = trial_store.load(ctgov.load_local(path))
+        for r in p.rules:
+            m = p.rule_meta[r.rule_id]
+            states[(p.trial_id, r.rule_id)] = (m.underspecified_state, r.underspecified)
+    assert all(states[k] == ("vague_confirmed", True) for k in confirmed)
+    assert not any(st == "vague_suspected" for st, _ in states.values())
+    assert sum(st == "reviewed_not_vague" and not u for st, u in states.values()) == 10
 
 
 def test_medoid_picks_most_typical_run():

@@ -157,7 +157,7 @@
     "unit": null,
     "time_window_days": 30,
     "structured_evaluable": false,
-    "underspecified": false,
+    "underspecified": true,
     "cohort": null
    },
    {
@@ -171,7 +171,7 @@
     "unit": null,
     "time_window_days": 30,
     "structured_evaluable": false,
-    "underspecified": false,
+    "underspecified": true,
     "cohort": null
    },
    {
@@ -367,7 +367,7 @@
     "unit": null,
     "time_window_days": null,
     "structured_evaluable": false,
-    "underspecified": false,
+    "underspecified": true,
     "cohort": null
    },
    {
@@ -451,7 +451,7 @@
     "unit": null,
     "time_window_days": null,
     "structured_evaluable": false,
-    "underspecified": false,
+    "underspecified": true,
     "cohort": null
    },
    {
@@ -683,13 +683,13 @@
   "I10": {
    "review": null,
    "required_evidence": "clinical_record",
-   "underspecified_state": "vague_suspected",
+   "underspecified_state": "vague_confirmed",
    "added_by_validator": false
   },
   "I11": {
    "review": null,
    "required_evidence": "clinical_record",
-   "underspecified_state": "vague_suspected",
+   "underspecified_state": "vague_confirmed",
    "added_by_validator": false
   },
   "I12": {
@@ -773,13 +773,13 @@
   "E9": {
    "review": null,
    "required_evidence": "clinical_record",
-   "underspecified_state": "vague_suspected",
+   "underspecified_state": "vague_confirmed",
    "added_by_validator": false
   },
   "E10": {
    "review": null,
    "required_evidence": "self_report_ok",
-   "underspecified_state": "vague_suspected",
+   "underspecified_state": "reviewed_not_vague",
    "added_by_validator": false
   },
   "E11": {
@@ -809,7 +809,7 @@
   "E15": {
    "review": null,
    "required_evidence": "clinical_record",
-   "underspecified_state": "vague_suspected",
+   "underspecified_state": "vague_confirmed",
    "added_by_validator": false
   },
   "E16": {
@@ -986,7 +986,12 @@
    "I11: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정",
    "E9: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정",
    "E10: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정",
-   "E15: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정"
+   "E15: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정",
+   "I10: 팀 검토(2026-10-12) 원문이 애매함 확인 -> underspecified 적용 (정상 범위가 아니면 PI가 '임상적으로 유의하지 않음'을 판단)",
+   "I11: 팀 검토(2026-10-12) 원문이 애매함 확인 -> underspecified 적용 (정상 범위가 아니면 PI가 '임상적으로 유의하지 않음'을 판단)",
+   "E9: 팀 검토(2026-10-12) 원문이 애매함 확인 -> underspecified 적용 (주사 부위 확인이 어려운 체형인지는 진찰자 판단)",
+   "E10: 팀 검토(2026-10-12) 애매하지 않음 -> underspecified 적용 안 함 (백신 중증 반응 이력은 환자에게 확인 가능)",
+   "E15: 팀 검토(2026-10-12) 원문이 애매함 확인 -> underspecified 적용 ('임상적으로 유의한' 자가면역·면역결핍의 기준이 원문에 없음)"
   ],
   "llm_output": null
  }

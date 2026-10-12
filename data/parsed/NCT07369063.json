@@ -349,19 +349,19 @@
   "I6": {
    "review": null,
    "required_evidence": "clinical_record",
-   "underspecified_state": "vague_suspected",
+   "underspecified_state": "reviewed_not_vague",
    "added_by_validator": false
   },
   "I7": {
    "review": null,
    "required_evidence": "clinical_record",
-   "underspecified_state": "vague_suspected",
+   "underspecified_state": "reviewed_not_vague",
    "added_by_validator": false
   },
   "I8": {
    "review": null,
    "required_evidence": "clinical_record",
-   "underspecified_state": "vague_suspected",
+   "underspecified_state": "reviewed_not_vague",
    "added_by_validator": false
   },
   "I9": {
@@ -499,7 +499,10 @@
   "notes": [
    "I6: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정",
    "I7: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정",
-   "I8: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정"
+   "I8: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정",
+   "I6: 팀 검토(2026-10-12) 애매하지 않음 -> underspecified 적용 안 함 ('상승'은 검사 결과지의 참고 범위로 판정 가능)",
+   "I7: 팀 검토(2026-10-12) 애매하지 않음 -> underspecified 적용 안 함 ('상승'은 검사 결과지의 참고 범위로 판정 가능)",
+   "I8: 팀 검토(2026-10-12) 애매하지 않음 -> underspecified 적용 안 함 ('상승'은 검사 결과지의 참고 범위로 판정 가능)"
   ],
   "llm_output": null
  }

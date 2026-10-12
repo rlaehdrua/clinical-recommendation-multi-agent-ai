@@ -15,7 +15,7 @@ from .pipeline import Session
 from .tools import ctgov
 
 SYSTEM = """당신은 인터랙티브 임상시험 추천 시스템의 '오케스트레이터 에이전트'입니다.
-한 명의 환자에 대해 후보 임상시험들의 참여 가능성을 근거와 함께 판정하고, 부족한 정보는 확인 질문으로 보완한 뒤, 가장 적절한 시험을 우선순위와 함께 추천하는 것이 목표입니다.
+한 명의 환자에 대해 후보 임상시험들의 참여 가능성을 근거와 함께 판정하고, 부족한 정보는 확인 질문으로 보완한 뒤, 공개 기준에 맞는 시험을 추천 그룹으로 묶어 근거와 함께 제시하는 것이 목표입니다(시험 간 우열은 정하지 않음).
 
 당신은 직접 판정하지 않고, 전문 에이전트를 도구로 호출해 일을 분담합니다.
 - profile_patient: 환자 정보 이해 에이전트 (환자 프로파일 구조화)
@@ -73,7 +73,7 @@ TOOLS = [
         ["trial_ids"],
     ),
     _tool("ask_clarifying_questions", "UNCERTAIN 시험의 판정 불가 항목에 대해 확인 질문 1라운드를 진행하고, 답변을 반영해 재평가한 결과를 반환합니다.", {}, []),
-    _tool("finalize_recommendation", "추천 에이전트와 결과 설명 에이전트를 실행해 최종 추천 순위와 보고서를 생성합니다. 모든 평가가 끝난 뒤 마지막에 한 번 호출합니다.", {}, []),
+    _tool("finalize_recommendation", "추천 에이전트와 결과 설명 에이전트를 실행해 추천 그룹·표시 순서와 보고서를 생성합니다. 모든 평가가 끝난 뒤 마지막에 한 번 호출합니다.", {}, []),
 ]
 
 
@@ -151,7 +151,7 @@ class Orchestrator:
         self.done = True
         rec = self.s.recommendation
         return {"recommended": [r.trial_id for r in rec.recommended],
-                "ranked": [(r.rank, r.trial_id, r.eligibility) for r in rec.ranked],
+                "ranked": [(r.rank, r.trial_id, r.match_status) for r in rec.ranked],
                 "no_recommendation_reason": rec.no_recommendation_reason}
 
     # ------------------------------------------------------------ 루프

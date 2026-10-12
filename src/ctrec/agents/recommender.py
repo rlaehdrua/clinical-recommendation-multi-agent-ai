@@ -1,8 +1,11 @@
-"""추천 에이전트: 매칭 결과를 종합해 환자별 임상시험 우선순위 제시.
+"""추천 에이전트: 매칭 결과를 추천 그룹과 표시 순서로 정리 (아키텍처 §49–50).
 
-추천 대상 = 적격성(ELIGIBLE/UNCERTAIN) + 현재 참여 가능한 모집 상태.
+추천 대상 = 적격성(ELIGIBLE/UNCERTAIN) + 현재 참여 가능한 모집 상태 + 실제 시험(가상 데모 시험은 데모 모드에서만).
 모집이 끝난 시험은 적격이어도 추천하지 않고 excluded에 사유를 남기며,
 추천할 시험이 하나도 없으면 그 이유(no_recommendation_reason)를 코드가 명시합니다.
+
+Eligibility와 순서를 분리합니다. 시험 간 임상적 우열을 주장하지 않으므로 LLM은 순위를 정하지 않고 시험별 근거만 씁니다.
+표시 순서는 코드가 설명 가능한 기준으로 정합니다: 추천 그룹(외부 상태) -> 모집 상태 -> 남은 미확인 항목 수 -> 후보 순서(추림 관련도).
 """
 
 from __future__ import annotations
@@ -13,7 +16,8 @@ from .. import config, llm
 from ..schemas import (
     ExcludedTrial, PatientProfile, QAPair, RankedTrial, Recommendation, RecommendationDraft, TrialMatch,
 )
-from .matcher import needs_physician_review, needs_record_check
+from ..status import GROUP_ORDER, LABEL_KO, label
+from .matcher import is_blocking_unknown, needs_physician_review, needs_record_check
 
 # 참여 신청이 가능한 모집 상태. UNKNOWN(직접 입력한 시험 등)은 막지 않고 확인 필요로 표시
 OPEN_STATUSES = {"RECRUITING", "NOT_YET_RECRUITING", "UNKNOWN"}
@@ -30,25 +34,24 @@ STATUS_KO = {
     "UNKNOWN": "모집 상태 미확인",
 }
 
-SYSTEM = """당신은 환자에게 가장 적절한 임상시험을 추천하는 '추천 에이전트'입니다.
-적격성 판정 결과와 시험 정보를 종합해 우선순위를 정합니다.
+SYSTEM = """당신은 임상시험 추천 결과를 시험별로 정리하는 '추천 에이전트'입니다.
 입력으로 받는 시험은 모두 현재 참여 가능한(모집 중·모집 예정) 시험입니다. 모집이 끝난 시험은 코드가 미리 걸러 냅니다.
+판정(match_status)과 화면 표시 순서는 코드가 정합니다. 당신은 시험마다 판정 근거를 정리합니다.
 
-우선순위 원칙(위에서부터 중요):
-1. 적격성: ELIGIBLE > UNCERTAIN. INELIGIBLE 시험은 ranked에 넣지 않고 excluded에 사유와 함께 넣습니다.
-2. UNCERTAIN 시험끼리는 판정 불가 항목이 적고, 남은 항목이 충족될 가능성이 높은 시험을 앞에 둡니다.
-3. 환자의 주 진단·병기·바이오마커·치료 이력과 시험 대상군(target population)의 적합도.
-4. 모집 상태(RECRUITING > NOT_YET_RECRUITING), 시험 단계 등 실무적 요소.
-pre_score는 코드로 계산한 참고 점수이며 위 원칙에 따라 조정할 수 있습니다.
+match_status (공개 프로토콜 기준 사전 비교 결과이며, 실제 참여 여부는 연구기관 스크리닝과 연구자 판단으로 정해짐):
+- CRITERIA_MATCH: 공개 기준 충족 / POTENTIAL_MATCH: 기록 확인 시 충족 가능 / NEEDS_REVIEW: 의료진 검토 필요
+- INSUFFICIENT_INFORMATION: 추가 정보 필요 / CRITERIA_MISMATCH: 공개 기준 불충족
 
 작성 원칙:
+- 시험 사이의 임상적 우열(어느 시험이 더 낫다·더 적합하다·1순위다)을 판단하거나 주장하지 않습니다. 시험마다 독립적으로 씁니다.
+- ranked에는 CRITERIA_MISMATCH가 아닌 시험을 하나씩 모두 넣고 rank는 모두 1로 둡니다(표시 순서는 코드가 정함).
+  CRITERIA_MISMATCH 시험은 ranked에 넣지 않고 excluded에 사유와 함께 넣습니다.
 - rationale, key_matches, key_concerns는 반드시 판정 결과에 있는 근거(규칙 ID와 환자 정보)에 기반합니다. 입력에 없는 효능·안전성 주장을 하지 않습니다.
-- next_steps에는 참여 전 확인해야 할 사항(미확인 기준, 담당의 상담 등)을 적습니다.
-- physician_review, verification_needed는 코드가 채우므로 비워 둡니다. 모집 상태가 UNKNOWN이면 "모집 상태 확인"을 포함합니다.
-- 최종 추천은 rank=1인 시험입니다. 원칙적으로 가장 적합한 시험 하나만 1순위로 정합니다.
-  위 원칙으로 적합성이 실질적으로 구분되지 않을 때만 같은 rank를 부여하고(공동 순위), selection_reason에 구분되지 않는 이유를 적습니다.
-- selection_reason에는 1순위를 고른 결정적 이유와 차순위 후보보다 나은 점을 근거(규칙 ID·환자 정보)와 함께 적습니다.
-- 모든 trial_id는 입력에 있는 값만 사용하고 rank는 1부터 시작하는 정수입니다.
+- '적격', 'ELIGIBLE', '참여 가능'처럼 등록이 확정된 것으로 읽히는 표현 대신 match_status의 한국어 표현을 씁니다.
+- next_steps에는 참여 전 확인해야 할 사항(미확인 기준, 문서 확인, 담당의 상담 등)을 적습니다. 모집 상태가 UNKNOWN이면 "모집 상태 확인"을 포함합니다.
+- match_status, physician_review, verification_needed는 코드가 채우므로 비워 두고, selection_reason은 빈 문자열로 둡니다.
+- overall_comment에는 시험 간 비교 없이 전체 결과를 요약합니다.
+- 모든 trial_id는 입력에 있는 값만 사용합니다.
 - 한국어로 작성합니다.
 """
 
@@ -71,20 +74,47 @@ def status_ko(trial: dict) -> str:
     return f"{STATUS_KO.get(s, s)}({s})"
 
 
-def pre_score(match: TrialMatch, trial: dict) -> float:
-    total = max(1, len(match.assessments))
-    score = {"ELIGIBLE": 100.0, "UNCERTAIN": 50.0}.get(match.eligibility, 0.0)
-    score += 30.0 * match.n_pass / total
-    score -= 5.0 * sum(a.passes is None and a.category != "consent_or_logistics" for a in match.assessments)
-    if status_of(trial) == "RECRUITING":
-        score += 5.0
-    return round(score, 1)
+def is_demo(trial: dict) -> bool:
+    """가상 데모 시험 (예: DEMO-LUNG-001). 실제 시험이 아니므로 데모 모드에서만 추천 (아키텍처 §67)."""
+    return bool(trial.get("synthetic"))
+
+
+def is_recommendable(m: TrialMatch, trial: dict) -> bool:
+    return is_candidate(m) and is_open(trial) and (config.DEMO_MODE or not is_demo(trial))
+
+
+_RECRUIT_ORDER = {"RECRUITING": 0, "NOT_YET_RECRUITING": 1}
+
+
+def unresolved_burden(m: TrialMatch) -> int:
+    """남은 미확인 항목 수 (등록 시 확인하는 절차 기준 제외)."""
+    return sum(is_blocking_unknown(a) for a in m.assessments)
+
+
+def display_key(m: TrialMatch, trial: dict, candidate_index: int) -> tuple:
+    """표시 순서 (시험 간 임상적 우열이 아니라 설명 가능한 기준)."""
+    return (GROUP_ORDER.index(m.match_status) if m.match_status in GROUP_ORDER else len(GROUP_ORDER),
+            _RECRUIT_ORDER.get(status_of(trial), 2), unresolved_burden(m), candidate_index, m.trial_id)
+
+
+DISPLAY_BASIS = ("표시 순서 기준: 추천 그룹(공개 기준 충족 → 기록 확인 시 충족 가능 → 의료진 검토 필요 → 추가 정보 필요) → "
+                 "모집 상태(모집 중 → 모집 예정) → 남은 미확인 항목 수 → 후보 추림 순서. "
+                 "같은 그룹 안의 순서는 시험 간 임상적 우열을 뜻하지 않습니다.")
 
 
 def no_recommendation_reason(matches: list[TrialMatch], trials: dict[str, dict]) -> str:
     """추천할 시험이 없을 때 그 이유를 상황별로 명시."""
     if not matches:
         return "평가할 후보 임상시험이 없어 추천할 수 있는 임상시험이 없습니다."
+    demo = [m for m in matches if is_demo(trials[m.trial_id]) and not config.DEMO_MODE]
+    if demo:
+        # 가상 데모 시험은 실제 추천 대상이 아니므로 빼고 이유를 판단한 뒤, 뺐다는 사실을 덧붙임
+        real = [m for m in matches if m not in demo]
+        note = (f" 가상 데모 시험 {len(demo)}개({', '.join(m.trial_id for m in demo)})는 실제 시험이 아니라 "
+                f"데모 모드에서만 추천에 표시합니다.")
+        if not real:
+            return "후보가 가상 데모 시험뿐이라 추천할 수 있는 실제 임상시험이 없습니다." + note
+        return no_recommendation_reason(real, trials) + note
     failed = [m for m in matches if m.eligibility == "NOT_EVALUATED"]
     if failed:
         # 평가 실패 시험이 있으면 '기준에 맞지 않음'으로 단정하지 않고 실패 사실을 명시
@@ -98,9 +128,8 @@ def no_recommendation_reason(matches: list[TrialMatch], trials: dict[str, dict])
     closed_fit = [m for m in closed if is_candidate(m)]
 
     def fit_desc(ms: list[TrialMatch], with_status: bool = False) -> str:
-        label = {"ELIGIBLE": "적격", "UNCERTAIN": "판정 보류"}
         return ", ".join(
-            f"{m.trial_id} {label[m.eligibility]}" + (f"·{status_ko(trials[m.trial_id])}" if with_status else "")
+            f"{m.trial_id} {label(m.match_status)}" + (f"·{status_ko(trials[m.trial_id])}" if with_status else "")
             for m in ms
         )
     closed_desc = ", ".join(f"{m.trial_id} {status_ko(trials[m.trial_id])}" for m in closed)
@@ -118,9 +147,7 @@ def no_recommendation_reason(matches: list[TrialMatch], trials: dict[str, dict])
 
 
 def _closed_reason(m: TrialMatch, trial: dict) -> str:
-    fit = {"ELIGIBLE": "적격 기준은 충족", "UNCERTAIN": "적격 여부 일부 미확인",
-           "INELIGIBLE": "선정/제외 기준 불충족", "NOT_EVALUATED": "평가 실패로 적격 여부 미판정"}[m.eligibility]
-    return f"모집 종료된 시험으로 현재 참여 불가 - {status_ko(trial)}. ({fit}: {m.summary})"
+    return f"모집 종료된 시험으로 현재 참여 불가 - {status_ko(trial)}. ({label(m.match_status)}: {m.summary})"
 
 
 def physician_notes(match: TrialMatch, profile: PatientProfile | None, qa_log: list[QAPair]) -> list[str]:
@@ -149,15 +176,20 @@ def physician_notes(match: TrialMatch, profile: PatientProfile | None, qa_log: l
 
 
 def verification_notes(match: TrialMatch) -> list[str]:
-    """진료 기록이 필요한 기준을 환자 답변만으로 판정한 항목 (D2, 코드가 작성)."""
-    return [f"{a.rule_id} \"{a.criterion_text[:100]}\": 환자 답변({a.evidence[:80]})으로 판정함 "
-            f"→ 등록 전 진료 기록(검사 결과지·보고서)으로 확인 필요"
+    """UNVERIFIED: 진료 기록이 필요한 기준인데 근거가 환자 답변뿐이라 판정하지 않은 항목 (D2, 코드가 작성)."""
+    def said(a) -> str:
+        if not a.self_reported_applicable:
+            return "해당 없음"
+        return {"yes": "해당", "no": "해당하지 않음"}.get(a.self_reported_holds or "", "불명")
+    return [f"{a.rule_id} \"{a.criterion_text[:100]}\": UNVERIFIED - 환자 답변상 '{said(a)}'({a.evidence[:80]}). "
+            f"진료 기록이 필요한 기준이라 판정하지 않음 → 검사 결과지·보고서 등 문서로 확인 필요"
             for a in match.assessments if needs_record_check(a)]
 
 
 def recommend(profile: PatientProfile, matches: list[TrialMatch], trials: dict[str, dict],
               qa_log: list[QAPair] | None = None) -> Recommendation:
-    open_fit = [m for m in matches if is_candidate(m) and is_open(trials[m.trial_id])]
+    """matches 순서 = 후보 순서(추림 관련도). 표시 순서의 마지막 기준으로 씁니다."""
+    open_fit = [m for m in matches if is_recommendable(m, trials[m.trial_id])]
 
     if not open_fit:
         # 추천할 시험이 없으면 LLM을 부르지 않고 코드가 결과와 이유를 작성
@@ -168,7 +200,9 @@ def recommend(profile: PatientProfile, matches: list[TrialMatch], trials: dict[s
         )
 
     items = []
-    for m in open_fit + [m for m in matches if m.eligibility == "INELIGIBLE" and is_open(trials[m.trial_id])]:
+    ineligible_open = [m for m in matches if m.eligibility == "INELIGIBLE" and is_open(trials[m.trial_id])
+                       and (config.DEMO_MODE or not is_demo(trials[m.trial_id]))]
+    for m in open_fit + ineligible_open:
         t = trials[m.trial_id]
         items.append({
             "trial_id": m.trial_id,
@@ -177,13 +211,13 @@ def recommend(profile: PatientProfile, matches: list[TrialMatch], trials: dict[s
             "phases": t.get("phases"),
             "conditions": t.get("conditions"),
             "interventions": [i.get("name") for i in t.get("interventions", [])],
-            "eligibility": m.eligibility,
+            "match_status": m.match_status,
             "matched_cohort": m.matched_cohort,
-            "pre_score": pre_score(m, t),
             "summary": m.summary,
             "assessments": [
                 {"rule_id": a.rule_id, "kind": a.kind, "criterion": a.criterion_text,
-                 "passes": a.passes, "evidence": a.evidence}
+                 "passes": a.passes, "evidence": a.evidence,
+                 **({"unverified_self_report": a.self_reported_holds} if a.needs_verification else {})}
                 for a in m.assessments
             ],
         })
@@ -195,7 +229,7 @@ def recommend(profile: PatientProfile, matches: list[TrialMatch], trials: dict[s
 {json.dumps(items, ensure_ascii=False, indent=1)}
 </trial_results>
 
-patient_id={profile.patient_id} 환자에 대한 임상시험 추천 순위를 작성하세요."""
+patient_id={profile.patient_id} 환자에 대해 시험별 근거를 정리하세요."""
     draft = llm.structured(
         RecommendationDraft,
         system=SYSTEM,
@@ -208,37 +242,35 @@ patient_id={profile.patient_id} 환자에 대한 임상시험 추천 순위를 �
 def _validate(draft: RecommendationDraft, patient_id: str, matches: list[TrialMatch],
               trials: dict[str, dict], profile: PatientProfile | None = None,
               qa_log: list[QAPair] | None = None) -> Recommendation:
-    """LLM 출력이 코드의 적격성 판정·모집 상태와 어긋나지 않도록 교정."""
+    """LLM 출력이 코드의 판정·모집 상태와 어긋나지 않도록 교정하고, 표시 순서를 코드가 정함.
+
+    LLM이 매긴 rank와 순서는 쓰지 않습니다(시험 간 우열 주장 제거). LLM 문장은 시험별 근거로만 씁니다.
+    """
     by_id = {m.trial_id: m for m in matches}
-    recommendable = {m.trial_id for m in matches
-                     if is_candidate(m) and is_open(trials[m.trial_id])}
+    index = {m.trial_id: i for i, m in enumerate(matches)}
+    order = sorted((m for m in matches if is_recommendable(m, trials[m.trial_id])),
+                   key=lambda m: display_key(m, trials[m.trial_id], index[m.trial_id]))
+    texts: dict[str, RankedTrial] = {}
+    for r in draft.ranked:
+        texts.setdefault(r.trial_id, r)
 
-    ranked, seen = [], set()
-    for r in sorted(draft.ranked, key=lambda x: x.rank):
-        if r.trial_id not in recommendable or r.trial_id in seen:
-            continue
-        r.eligibility = by_id[r.trial_id].eligibility  # 판정은 매칭 에이전트 결과를 따름
-        ranked.append(r)
-        seen.add(r.trial_id)
-
-    # LLM이 빠뜨린 추천 가능 시험은 pre_score 순으로 뒤에 추가 (LLM 순위보다 뒤)
-    missing = [by_id[t] for t in recommendable if t not in seen]
-    tail_rank = max((r.rank for r in ranked), default=0) + 1
-    for i, m in enumerate(sorted(missing, key=lambda m: -pre_score(m, trials[m.trial_id]))):
-        ranked.append(RankedTrial(
-            rank=tail_rank + i, trial_id=m.trial_id, eligibility=m.eligibility, rationale=m.summary,
-            key_matches=[], key_concerns=[], next_steps=["담당 의료진과 적격성 재확인"],
-        ))
-    _assign_ranks(ranked)
-    for r in ranked:
-        r.physician_review = physician_notes(by_id[r.trial_id], profile, qa_log or [])
+    ranked = []
+    for pos, m in enumerate(order, start=1):
+        r = texts.get(m.trial_id) or RankedTrial(
+            rank=pos, trial_id=m.trial_id, eligibility=m.eligibility, rationale=m.summary,
+            key_matches=[], key_concerns=[], next_steps=["담당 의료진과 기준 충족 여부 재확인"],
+        )
+        r.rank, r.eligibility, r.match_status = pos, m.eligibility, m.match_status  # 판정은 매칭 결과를 따름
+        r.physician_review = physician_notes(m, profile, qa_log or [])
         if r.physician_review and not any("의사" in s for s in r.next_steps):
             r.next_steps.append("원문에 구체 기준이 없는 항목은 담당 의사가 전체 프로토콜과 대조해 참여 여부 판단")
-        r.verification_needed = verification_notes(by_id[r.trial_id])
+        r.verification_needed = verification_notes(m)
         if r.verification_needed:
-            r.next_steps.append("환자 답변으로 판정한 항목은 진료 기록으로 확인")
+            r.next_steps.append("UNVERIFIED 항목은 검사 결과지·보고서 등 진료 기록(문서)으로 확인")
+        ranked.append(r)
 
-    # 제외 목록: 모집 종료 시험은 코드가 사유를 작성, 부적격 시험은 LLM 사유가 없으면 요약으로 채움
+    # 제외 목록: 모집 종료·데모 시험은 코드가 사유를 작성, 부적격 시험은 LLM 사유가 없으면 요약으로 채움
+    seen = {r.trial_id for r in ranked}
     llm_reasons = {e.trial_id: e.reason for e in draft.excluded}
     excluded = []
     for m in matches:
@@ -251,35 +283,20 @@ def _validate(draft: RecommendationDraft, patient_id: str, matches: list[TrialMa
                 f"원인: {(m.evaluation_error or '')[:200]}")))
         elif not is_open(t):
             excluded.append(ExcludedTrial(trial_id=m.trial_id, reason=_closed_reason(m, t)))
+        elif is_demo(t) and not config.DEMO_MODE:
+            excluded.append(ExcludedTrial(trial_id=m.trial_id, reason=(
+                f"가상 데모 시험(실제 시험 아님) - 데모 모드에서만 추천에 표시. ({label(m.match_status)}: {m.summary})")))
         elif m.eligibility == "INELIGIBLE":
             excluded.append(ExcludedTrial(trial_id=m.trial_id, reason=llm_reasons.get(m.trial_id) or m.summary))
 
     reason = None if ranked else no_recommendation_reason(matches, trials)
+    top_group = ranked[0].match_status if ranked else None
     return Recommendation(
         patient_id=patient_id,
         ranked=ranked,
-        recommended=[r for r in ranked if r.rank == 1],
+        recommended=[r for r in ranked if r.match_status == top_group],
         excluded=excluded,
-        selection_reason=draft.selection_reason if ranked else "",
+        selection_reason=(f"추천 그룹: {LABEL_KO.get(top_group or '', '')}. " + DISPLAY_BASIS) if ranked else "",
         overall_comment=reason or draft.overall_comment,
         no_recommendation_reason=reason,
     )
-
-
-_TIER = {"ELIGIBLE": 0, "UNCERTAIN": 1}
-
-
-def _assign_ranks(ranked: list[RankedTrial]) -> None:
-    """순위 정규화: 적격성 우선(ELIGIBLE > UNCERTAIN), 그다음 LLM 순위.
-
-    LLM이 같은 순위를 준 시험은 적격성 등급도 같을 때만 공동 순위로 인정합니다.
-    (예: ELIGIBLE과 UNCERTAIN을 공동 1순위로 두면 ELIGIBLE만 1순위)
-    """
-    ranked.sort(key=lambda r: (_TIER.get(r.eligibility, 2), r.rank))
-    prev_key, rank = None, 0
-    for i, r in enumerate(ranked, start=1):
-        key = (_TIER.get(r.eligibility, 2), r.rank)
-        if key != prev_key:
-            rank = i  # 공동 순위 다음은 건너뛴 순위 (1, 1, 3)
-        prev_key = key
-        r.rank = rank

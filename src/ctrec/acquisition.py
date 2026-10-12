@@ -7,7 +7,8 @@
   나머지 유형은 환자·보호자에게 한 번 직접 묻고, 답이 없으면 미해결로 둡니다.
 - 사다리의 모든 단계를 시도해도 판정 불가면 미해결(unresolved)로 표시하고 같은 항목을 다시 묻지 않습니다.
 - 미해결이어도 시험은 판정 보류(UNCERTAIN)로 추천 후보에 남고, 보고서에 결과(consequence)를 적습니다.
-- 자기 보고 단계로 얻은 답은 기록 확인이 필요할 수 있습니다(근거 수준 D2, evidence.py).
+- 자기 보고 단계로 얻은 답이 진료 기록이 필요한 기준이면 UNVERIFIED가 되어 더 묻지 않고 문서 확인을 요청합니다
+  (status=document_requested, 근거 수준 D2, evidence.py).
 """
 
 from __future__ import annotations
@@ -69,7 +70,8 @@ class MissingFact(BaseModel):
     alternative_acquisitions: list[str]
     attempted_actions: list[str] = []
     consequence_if_unresolved: str
-    status: Literal["open", "resolved", "unresolved"] = "open"
+    # document_requested: 답은 받았으나 진료 기록이 필요한 기준이라 UNVERIFIED -> 문서 확인 요청(REQUEST_DOCUMENT)
+    status: Literal["open", "resolved", "unresolved", "document_requested"] = "open"
 
     def steps(self) -> list[str]:
         return [self.preferred_acquisition, *self.alternative_acquisitions]
@@ -81,13 +83,16 @@ class MissingFact(BaseModel):
 
 def update(facts: dict[str, MissingFact], matches: Iterable[TrialMatch]) -> None:
     """최신 판정으로 갱신: 새 미확인 항목 추가, 해소된 항목 resolved, 모든 단계를 시도한 항목 unresolved."""
-    from .agents.matcher import is_askable_unknown
+    from .agents.matcher import is_askable_unknown, needs_record_check
 
     current: dict[str, tuple] = {}
+    unverified: dict[str, tuple] = {}
     for m in matches:
         for a in m.assessments:
             if is_askable_unknown(a):
                 current[f"{m.trial_id}:{a.rule_id}"] = (a, m)
+            elif needs_record_check(a):
+                unverified[f"{m.trial_id}:{a.rule_id}"] = (a, m)
     for key, (a, _) in current.items():
         if key not in facts:
             p = policy_for(a.category)
@@ -96,7 +101,21 @@ def update(facts: dict[str, MissingFact], matches: Iterable[TrialMatch]) -> None
                 preferred_acquisition=p.preferred, alternative_acquisitions=list(p.alternatives),
                 consequence_if_unresolved=p.consequence,
             )
+    for key, (a, _) in unverified.items():
+        f = facts.get(key)
+        if f is None:
+            p = policy_for(a.category)
+            f = facts[key] = MissingFact(
+                key=key, category=a.category, criterion=a.criterion_text, missing_info=a.missing_info,
+                preferred_acquisition=p.preferred, alternative_acquisitions=list(p.alternatives),
+                consequence_if_unresolved=p.consequence,
+            )
+        if f.status != "document_requested":
+            f.attempted_actions.append("REQUEST_DOCUMENT: 답변은 받았으나 진료 기록이 필요한 기준이라 문서 확인 요청")
+        f.status = "document_requested"
     for key, f in facts.items():
+        if key in unverified:
+            continue
         if key not in current:
             if f.status != "unresolved":
                 f.status = "resolved"

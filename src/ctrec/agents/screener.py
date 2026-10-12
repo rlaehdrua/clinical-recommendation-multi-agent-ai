@@ -8,7 +8,8 @@
 - 다른 질환·대상군이 명백할 때만 제외하고, 애매하면 남깁니다.
 - 모델이 판단을 빠뜨린 시험은 남깁니다(제외하려면 명시적 사유가 필요).
 - 목록에 없는 시험 ID는 버립니다.
-- 모집 상태는 여기서 보지 않습니다(추천 단계에서 코드가 처리).
+
+LLM 전에 값싼 확정 제외(hard_filter.py: 모집 종료, 나이·성별 구조화 필드의 명백한 불일치)를 코드로 먼저 적용합니다.
 """
 
 from __future__ import annotations
@@ -17,7 +18,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from .. import config, llm
+from .. import config, hard_filter, llm
+from ..hard_filter import HardFiltered
 from ..schemas import PatientProfile
 
 SYSTEM = """당신은 임상시험 추천 시스템의 '후보 추림 에이전트'입니다.
@@ -60,6 +62,7 @@ class ScreeningResult(BaseModel):
     excluded: list[ScreenedTrial]
     over_limit: list[ScreenedTrial] = []  # 해당 가능하지만 상한(max_candidates)을 넘어 자세히 평가하지 않은 시험
     kept_by_default: list[str] = []      # 모델이 판단을 빠뜨려 안전하게 남긴 시험
+    hard_filtered: list[HardFiltered] = []  # LLM 전에 코드가 확정 제외한 시험 (모집 종료, 나이·성별 명백한 불일치)
 
 
 def trial_card(t: dict) -> str:
@@ -94,6 +97,10 @@ _ORDER = {"high": 0, "medium": 1, "low": 2}
 
 
 def screen(profile: PatientProfile, pool: dict[str, dict], max_candidates: int, raw_text: str = "") -> ScreeningResult:
+    pool_size = len(pool)
+    pool, filtered = hard_filter.apply(pool, profile)
+    if not pool:
+        return ScreeningResult(pool_size=pool_size, selected=[], excluded=[], hard_filtered=filtered)
     ids = list(pool)
     # 시험 풀은 환자가 바뀌어도 같으므로 시스템 프롬프트에 넣어 프롬프트 캐싱으로 재사용
     system = SYSTEM + "\n<trial_pool>\n" + "\n".join(trial_card(pool[t]) for t in ids) + "\n</trial_pool>"
@@ -114,11 +121,12 @@ def screen(profile: PatientProfile, pool: dict[str, dict], max_candidates: int, 
     keep = sorted((judged[t] for t in ids if judged[t].decision == "keep"),
                   key=lambda s: (_ORDER[s.relevance], ids.index(s.trial_id)))
     return ScreeningResult(
-        pool_size=len(ids),
+        pool_size=pool_size,
         selected=keep[:max_candidates],
         excluded=[judged[t] for t in ids if judged[t].decision == "exclude"],
         over_limit=keep[max_candidates:],
         kept_by_default=missing,
+        hard_filtered=filtered,
     )
 
 
@@ -130,6 +138,10 @@ def report_section(r: ScreeningResult) -> str:
     if r.over_limit:
         lines += ["", f"해당 가능성이 있지만 상한을 넘어 자세히 평가하지 않은 시험 {len(r.over_limit)}개:"]
         lines += [f"- {s.trial_id} ({s.relevance}): {s.reason}" for s in r.over_limit]
+    if r.hard_filtered:
+        lines += ["", f"<details><summary>모집 종료·나이·성별이 명백히 맞지 않아 먼저 뺀 시험 {len(r.hard_filtered)}개</summary>", ""]
+        lines += [f"- {h.trial_id}: {h.reason}" for h in r.hard_filtered]
+        lines += ["", "</details>"]
     if r.excluded:
         lines += ["", f"<details><summary>대상이 달라 제외한 시험 {len(r.excluded)}개</summary>", ""]
         lines += [f"- {s.trial_id}: {s.reason}" for s in r.excluded]

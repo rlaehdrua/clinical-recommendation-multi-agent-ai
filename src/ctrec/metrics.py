@@ -27,6 +27,27 @@ CLASSES = ["ELIGIBLE", "INELIGIBLE", "UNCERTAIN", "NOT_EVALUATED"]
 UNDECIDED = ("UNCERTAIN", "NOT_EVALUATED")  # NOT_EVALUATED: 파싱·매칭 실패로 판정하지 못함 (부적격 아님)
 
 
+# 팀 결정(2026-10-12, Gold Set): 임상의 검토 골드셋은 만들 수 없으므로 합성 정답(LLM이 생성한 라벨)만 쓰고,
+# 모든 결과를 '합성 벤치마크 성능'으로 표기합니다 (아키텍처 §64: LLM 생성 라벨만으로 최종 성능을 주장하지 않음).
+BENCHMARK_LABEL = "합성 벤치마크 성능"
+BENCHMARK_NOTE = ("정답 라벨은 합성 데이터 생성 시 LLM이 정한 것이며 임상의 검토를 거치지 않았습니다. "
+                  "실제 임상 환경의 성능을 뜻하지 않습니다.")
+
+# 팀 결정(2026-10-12, Stage 통과 조건): 기준선(Baseline) 대비 정확도 하락 허용 폭
+BASELINE_TOLERANCE = 0.01  # 1%p
+
+
+def baseline_gate(current: dict, baseline: dict, tolerance: float = BASELINE_TOLERANCE) -> tuple[bool, str]:
+    """정확도가 기준선보다 tolerance 넘게 떨어지면 불합격. 반환: (통과 여부, 설명)."""
+    cur, base = current.get("accuracy"), baseline.get("accuracy")
+    if cur is None or base is None:
+        return False, "정확도가 없어 기준선과 비교할 수 없음"
+    diff = cur - base
+    ok = diff >= -tolerance - 1e-9
+    return ok, (f"정확도 {cur:.3f} (기준선 {base:.3f}, 차이 {diff * 100:+.1f}%p, 허용 -{tolerance * 100:.0f}%p) "
+                f"-> {'통과' if ok else '불합격'}")
+
+
 def load_labels(path: Path, column: str = "label") -> dict[tuple[str, str], str]:
     with open(path, encoding="utf-8") as f:
         return {(r["patient_id"], r["trial_id"]): r[column].strip().upper() for r in csv.DictReader(f)}
@@ -38,6 +59,7 @@ def load_predictions(outputs: Path) -> tuple[dict, dict, dict]:
     후보 추림을 한 실행에서는 자세히 평가하지 않은 시험도 예측으로 셉니다.
     - 대상이 달라 제외한 시험(excluded) -> INELIGIBLE
     - 해당 가능하지만 상한을 넘어 평가하지 않은 시험(over_limit) -> UNCERTAIN (판정하지 않음)
+    - 값싼 확정 제외(hard_filtered): 나이·성별 불일치 -> INELIGIBLE, 모집 종료 -> 예측 없음(적격성을 판정하지 않았으므로)
     """
     elig, ranked, top = {}, {}, {}
     for result in outputs.glob("*/result.json"):
@@ -48,6 +70,9 @@ def load_predictions(outputs: Path) -> tuple[dict, dict, dict]:
             elig[(pid, s["trial_id"])] = "INELIGIBLE"
         for s in sc.get("over_limit", []):
             elig[(pid, s["trial_id"])] = "UNCERTAIN"
+        for h in sc.get("hard_filtered", []):
+            if h["kind"] != "status":
+                elig[(pid, h["trial_id"])] = "INELIGIBLE"
         for tid, m in data["matches"].items():
             elig[(pid, tid)] = m["eligibility"]
         rec = data.get("recommendation") or {}

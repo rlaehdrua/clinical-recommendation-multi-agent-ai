@@ -9,12 +9,15 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field, PrivateAttr
+from pydantic import BaseModel, Field, PrivateAttr, model_validator
 
 Holds = Literal["yes", "no", "unknown"]
 # NOT_EVALUATED: 파싱·매칭 실패로 판정하지 못함 (부적격이 아님, 추천 대상도 아님)
 Eligibility = Literal["ELIGIBLE", "INELIGIBLE", "UNCERTAIN", "NOT_EVALUATED"]
 Confidence = Literal["high", "medium", "low"]
+# 외부 표현(아키텍처 §49): 등록 확정처럼 보이지 않도록 내부 판정(Eligibility)을 바꿔 보여 주는 상태. status.py가 계산
+MatchStatus = Literal["CRITERIA_MATCH", "POTENTIAL_MATCH", "CRITERIA_MISMATCH", "INSUFFICIENT_INFORMATION",
+                      "NOT_EVALUATED", "NEEDS_REVIEW"]
 
 RuleCategory = Literal[
     "demographic", "diagnosis", "disease_stage", "biomarker", "lab", "treatment_history",
@@ -59,8 +62,10 @@ class RuleMeta(BaseModel):
     review: str | None = None
     # 이 기준의 판정 근거로 무엇이 필요한가 (자기 보고로 충분 / 진료 기록 필요)
     required_evidence: RequiredEvidence = "self_report_ok"
-    # underspecified 처리 상태 (D6): 원문이 애매함을 확인 / 원문은 구체적이라 다시 분류 / 애매해 보이나 적용 안 함
-    underspecified_state: Literal["vague_confirmed", "reparsed_concrete", "vague_suspected"] | None = None
+    # underspecified 처리 상태 (D6): 원문이 애매함을 확인 / 원문은 구체적이라 다시 분류 / 애매해 보이나 적용 안 함(검토 전)
+    # / 검토 결과 애매하지 않음(질문·검사 결과로 판정 가능)
+    underspecified_state: Literal["vague_confirmed", "reparsed_concrete", "vague_suspected",
+                                  "reviewed_not_vague"] | None = None
     added_by_validator: bool = False  # 파서가 빠뜨려 검증 단계에서 추가한 기준
 
 
@@ -181,7 +186,11 @@ class CriterionAssessment(BaseModel):
     # 근거 수준 (D2): 판정 근거가 어디서 왔는지, 이 기준에 필요한 근거 수준, 기록 확인이 필요한지
     evidence_source: Literal["record", "self_report", "none"] = "none"
     required_evidence: RequiredEvidence = "self_report_ok"
-    needs_verification: bool = False  # 진료 기록이 필요한 기준을 환자 답변(자기 보고)만으로 판정함
+    # UNVERIFIED(아키텍처 §19 UNKNOWN_UNVERIFIED): 진료 기록이 필요한 기준을 환자 답변(자기 보고)만으로 판정할 수 없어
+    # 판정 불가(passes=None)로 남기고 문서 확인을 요청. 답변이 가리킨 값은 self_reported_holds에 보존
+    needs_verification: bool = False
+    self_reported_holds: Holds | None = None
+    self_reported_applicable: bool = True  # 답변상 '해당 없음'이었으면 False
 
 
 class TrialMatch(BaseModel):
@@ -198,6 +207,14 @@ class TrialMatch(BaseModel):
     other_cohort_assessments: list[CriterionAssessment] = []  # 다른 코호트 전용 기준 (판정 미적용, 기록용)
     retried_rule_ids: list[str] = []  # 매칭 응답에서 빠져 다시 요청한 규칙 (기록용)
     evaluation_error: str | None = None  # NOT_EVALUATED일 때 실패 단계와 원인
+    match_status: MatchStatus | None = None  # 외부 표현. 비워 두면 적격성과 기준별 판정으로 계산
+
+    @model_validator(mode="after")
+    def _fill_match_status(self) -> "TrialMatch":
+        if self.match_status is None:
+            from .status import external_status
+            self.match_status = external_status(self)
+        return self
 
 
 # ---------------------------------------------------------------------------
@@ -233,9 +250,10 @@ class QAPair(BaseModel):
 # ---------------------------------------------------------------------------
 
 class RankedTrial(BaseModel):
-    rank: int
+    rank: int = Field(description="표시 순서. 코드가 다시 매기므로 1로 두세요.")
     trial_id: str
     eligibility: Eligibility
+    match_status: MatchStatus | None = Field(default=None, description="코드가 채움. 비워 두세요.")
     rationale: str
     key_matches: list[str]
     key_concerns: list[str]
@@ -246,7 +264,7 @@ class RankedTrial(BaseModel):
     )
     verification_needed: list[str] = Field(
         default_factory=list,
-        description="코드가 채움: 환자 답변만으로 판정해 진료 기록 확인이 필요한 항목. 빈 목록으로 두세요.",
+        description="코드가 채움: 진료 기록이 필요한데 환자 답변만 있어 UNVERIFIED로 남은 항목. 빈 목록으로 두세요.",
     )
 
 
@@ -262,16 +280,17 @@ class RecommendationDraft(BaseModel):
     excluded: list[ExcludedTrial]
     selection_reason: str = Field(
         default="",
-        description="1순위 시험을 고른 이유와 다른 후보보다 나은 점(공동 1순위면 서로 구분되지 않는 이유)"
+        description="코드가 채움(표시 순서 기준 설명). 빈 문자열로 두세요."
     )
     overall_comment: str
 
 
 class Recommendation(RecommendationDraft):
-    """코드 검증을 거친 최종 추천.
+    """코드 검증을 거친 최종 추천 (아키텍처 §50: 적격성과 순서를 분리, 시험 간 임상적 우열을 주장하지 않음).
 
-    recommended: 최종 추천 = 1순위 시험 (적합성이 구분되지 않는 공동 1순위면 여러 개)
-    ranked: 추천 가능한 전체 후보 순위 (recommended 포함, 공동 순위 허용)
+    recommended: 가장 앞 추천 그룹(공개 기준 충족 > 기록 확인 시 충족 가능 > 의료진 검토 필요 > 추가 정보 필요)의 시험 전부
+    ranked: 추천 가능한 전체 후보의 표시 순서 (rank = 1, 2, 3 ...; 그룹 -> 모집 상태 -> 남은 미확인 항목 수 -> 후보 순서)
+    selection_reason: 표시 순서를 정한 기준 (코드가 작성)
     """
     recommended: list[RankedTrial] = []
     no_recommendation_reason: str | None = None

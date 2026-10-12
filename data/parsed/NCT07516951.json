@@ -70,7 +70,7 @@
     "unit": null,
     "time_window_days": null,
     "structured_evaluable": false,
-    "underspecified": false,
+    "underspecified": true,
     "cohort": null
    },
    {
@@ -350,7 +350,7 @@
     "unit": null,
     "time_window_days": null,
     "structured_evaluable": false,
-    "underspecified": false,
+    "underspecified": true,
     "cohort": null
    },
    {
@@ -392,7 +392,7 @@
   "I4": {
    "review": null,
    "required_evidence": "clinical_record",
-   "underspecified_state": "vague_suspected",
+   "underspecified_state": "vague_confirmed",
    "added_by_validator": false
   },
   "I5": {
@@ -512,7 +512,7 @@
   "E13": {
    "review": null,
    "required_evidence": "self_report_ok",
-   "underspecified_state": "vague_suspected",
+   "underspecified_state": "vague_confirmed",
    "added_by_validator": false
   },
   "E14": {
@@ -584,7 +584,9 @@
   ],
   "notes": [
    "I4: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정",
-   "E13: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정"
+   "E13: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정",
+   "I4: 팀 검토(2026-10-12) 원문이 애매함 확인 -> underspecified 적용 (기대 수명은 연구자 판단)",
+   "E13: 팀 검토(2026-10-12) 원문이 애매함 확인 -> underspecified 적용 (제형의 부형제 목록이 공개 원문에 없음)"
   ],
   "llm_output": null
  }

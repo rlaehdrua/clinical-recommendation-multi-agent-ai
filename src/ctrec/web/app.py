@@ -34,11 +34,15 @@ from ..agents.recommender import is_open
 from ..orchestrator import Orchestrator
 from ..pipeline import PatientCase, Session, load_patients
 from ..schemas import ClarifyingQuestion
+from ..status import MATCH_NOTE
 from ..tools import ctgov
 from ..trace import Tracer
 
 STATIC = Path(__file__).parent / "static"
 ANSWER_TIMEOUT_S = 30 * 60
+# 실행 기록(RUNS) 보관 한도 (아키텍처 §67 web RUNS lifecycle): 메모리에 무한히 쌓이지 않도록
+MAX_RUNS = int(os.getenv("CTREC_WEB_MAX_RUNS", "20"))          # 동시에 보관하는 실행 수
+RUN_TTL_S = int(os.getenv("CTREC_WEB_RUN_TTL_S", str(2 * 60 * 60)))  # 끝난 실행을 보관하는 시간
 
 app = FastAPI(title="ctrec - Interactive Clinical Trial Recommendation")
 
@@ -100,6 +104,8 @@ class Run:
     answer_ready: threading.Event = field(default_factory=threading.Event)
     answers: dict[str, str] = field(default_factory=dict)
     done: bool = False
+    created_at: float = field(default_factory=time.time)
+    finished_at: float | None = None
 
     def emit(self, type_: str, **data: Any) -> None:
         with self.lock:
@@ -107,6 +113,22 @@ class Run:
 
 
 RUNS: dict[str, Run] = {}
+RUNS_LOCK = threading.Lock()
+
+
+def _prune_runs(now: float | None = None) -> None:
+    """끝난 지 RUN_TTL_S가 지난 실행을 지우고, 그래도 MAX_RUNS 이상이면 오래 전에 끝난 실행부터 지움.
+
+    진행 중인 실행은 지우지 않습니다(답변 대기 중일 수 있음). 결과 파일(outputs/web/<run_id>)은 남습니다.
+    """
+    now = time.time() if now is None else now
+    with RUNS_LOCK:
+        for rid, r in list(RUNS.items()):
+            if r.done and r.finished_at is not None and now - r.finished_at > RUN_TTL_S:
+                del RUNS[rid]
+        finished = sorted((r for r in RUNS.values() if r.done), key=lambda r: r.finished_at or r.created_at)
+        while len(RUNS) >= MAX_RUNS and finished:
+            del RUNS[finished.pop(0).run_id]
 
 
 class WebAnswerer:
@@ -153,13 +175,14 @@ def _execute(run: Run, req: RunRequest, case: PatientCase, trials: dict[str, dic
         Orchestrator(session).run()
         session.save(out_dir)
         tracer.log("pipeline", "saved", message=str(out_dir))
-        run.emit("result", result=session.result(), report=session.report,
+        run.emit("result", result=session.result(), report=session.report, match_note=MATCH_NOTE,
                  trials={tid: {"title": t.get("title"), "overall_status": t.get("overall_status"),
                                "url": (t.get("source") or {}).get("url")} for tid, t in session.trials.items()})
     except Exception as e:  # 오류도 화면에 표시
         run.emit("error", message=f"{type(e).__name__}: {e}")
     finally:
         run.done = True
+        run.finished_at = time.time()
         run.emit("end")
 
 
@@ -217,8 +240,12 @@ def start_run(req: RunRequest) -> dict:
         # 확인 질문 답변이 raw_text에 누적되므로 원본을 복사해 사용
         case = PatientCase(patient_id=src.patient_id, raw_text=src.raw_text, hidden_details=src.hidden_details)
 
+    _prune_runs()
+    if len(RUNS) >= MAX_RUNS:
+        raise HTTPException(429, f"진행 중인 실행이 {MAX_RUNS}개라 새 실행을 시작할 수 없습니다. 잠시 후 다시 시도하세요.")
     run = Run(run_id=time.strftime("%Y%m%d-%H%M%S-") + uuid.uuid4().hex[:4])
-    RUNS[run.run_id] = run
+    with RUNS_LOCK:
+        RUNS[run.run_id] = run
     run.emit("status", message="파이프라인 시작", patient_id=case.patient_id, patient_text=case.raw_text,
              trial_ids=list(trials))
     ctx = contextvars.copy_context()  # 실행별 토큰 사용량 집계

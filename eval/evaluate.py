@@ -24,9 +24,9 @@ from collections import defaultdict
 from pathlib import Path
 
 from ctrec.agents.recommender import is_open
-from ctrec.metrics import (CLASSES, accuracy_by_group, eligibility_metrics, fact_acquisition_metrics, fmt,
-                           load_label_rows, load_labels, load_predictions, load_reveals, load_usage,
-                           screening_metrics)
+from ctrec.metrics import (BENCHMARK_LABEL, BENCHMARK_NOTE, CLASSES, accuracy_by_group, baseline_gate,
+                           eligibility_metrics, fact_acquisition_metrics, fmt, load_label_rows, load_labels,
+                           load_predictions, load_reveals, load_usage, screening_metrics)
 
 
 def main() -> None:
@@ -39,6 +39,7 @@ def main() -> None:
                     help="서술만으로 본 정답 열. 있으면 Rescue/Cleanup을 계산 (없으면 생략)")
     ap.add_argument("--trials-dir", default="data/trials", help="모집 상태 확인용")
     ap.add_argument("--json", help="지표를 JSON 파일로도 저장")
+    ap.add_argument("--baseline", help="기준선 지표 JSON(--json으로 저장한 파일). 정확도가 1%%p 넘게 떨어지면 종료 코드 1")
     args = ap.parse_args()
 
     gold = load_labels(Path(args.labels), args.label_column)
@@ -53,6 +54,7 @@ def main() -> None:
     m = eligibility_metrics(gold, pred, text_only)
     confusion = m["confusion"]
 
+    print(f"[{BENCHMARK_LABEL}] {BENCHMARK_NOTE}\n")
     print(f"평가 쌍: {m['pairs']} (예측 누락 {m['missing_predictions']})")
     print(f"전체 정확도 (UNCERTAIN·NOT_EVALUATED 예측=오답): {fmt(m['accuracy'])}")
     print(f"판정 확정 비율 (coverage):          {fmt(m['coverage'])}")
@@ -114,7 +116,7 @@ def main() -> None:
         if not want:
             none_ok.append(1.0 if not r else 0.0)  # 추천할 시험이 없는 환자
             continue
-        # 최종 추천(1순위, 공동 1순위면 모두)이 모두 정답 추천 대상이면 적중
+        # 최종 추천(가장 앞 추천 그룹의 시험 전부)이 모두 정답 추천 대상이면 적중
         rec_top = top.get(pid, [])
         top1.append(1.0 if rec_top and all(t in want for t in rec_top) else 0.0)
         topk = r[: args.k]
@@ -131,7 +133,14 @@ def main() -> None:
         m["no_recommendation_accuracy"] = sum(none_ok) / len(none_ok) if none_ok else None
         m["usage"] = load_usage(Path(args.outputs))
         m["confusion"] = {f"{g}->{p}": n for (g, p), n in confusion.items()}
+        m["benchmark"] = BENCHMARK_LABEL
         Path(args.json).write_text(json.dumps(m, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    if args.baseline:
+        ok, msg = baseline_gate(m, json.loads(Path(args.baseline).read_text(encoding="utf-8")))
+        print(f"\n기준선 비교: {msg}")
+        if not ok:
+            raise SystemExit(1)
 
 
 if __name__ == "__main__":

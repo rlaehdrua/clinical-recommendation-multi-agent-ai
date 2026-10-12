@@ -131,7 +131,7 @@ class Session:
         self.candidates = [s.trial_id for s in r.selected]
         self.tracer.log("screener", "done", selected=self.candidates,
                         message=f"전체 {r.pool_size}개 중 {len(r.selected)}개 선택 "
-                                f"(제외 {len(r.excluded)}, 상한 초과 {len(r.over_limit)})")
+                                f"(확정 제외 {len(r.hard_filtered)}, 제외 {len(r.excluded)}, 상한 초과 {len(r.over_limit)})")
         return r
 
     # ----------------------------------------------------------- 단계 ①+③a

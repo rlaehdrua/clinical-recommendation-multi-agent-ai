@@ -359,7 +359,7 @@
   "I7": {
    "review": null,
    "required_evidence": "clinical_record",
-   "underspecified_state": "vague_suspected",
+   "underspecified_state": "reviewed_not_vague",
    "added_by_validator": false
   },
   "I8": {
@@ -383,7 +383,7 @@
   "E2": {
    "review": null,
    "required_evidence": "clinical_record",
-   "underspecified_state": "vague_suspected",
+   "underspecified_state": "reviewed_not_vague",
    "added_by_validator": false
   },
   "E3": {
@@ -481,7 +481,9 @@
   ],
   "notes": [
    "I7: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정",
-   "E2: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정"
+   "E2: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정",
+   "I7: 팀 검토(2026-10-12) 애매하지 않음 -> underspecified 적용 안 함 (방광 내 치료 거부 여부는 환자에게 확인 가능)",
+   "E2: 팀 검토(2026-10-12) 애매하지 않음 -> underspecified 적용 안 함 (방광 밖 요로상피암 병력은 기록·질문으로 확인 가능)"
   ],
   "llm_output": null
  }

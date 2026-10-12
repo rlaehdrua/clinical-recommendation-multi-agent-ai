@@ -6,6 +6,8 @@
 - 저장소에 없거나 시험 원문이 바뀐 시험(범위 밖) -> CompilationPending (파이프라인이 NOT_EVALUATED로 기록)
 - config.LAZY_COMPILE=1이면 그 자리에서 파싱 (검증 없음, 데모·검색 시연용)
 - 추가·갱신: python scripts/compile_trials.py
+- 잠금(freeze): data/parsed/FROZEN.json에 적힌 시험은 공식 기준표로 잠겨 있어 다시 컴파일해도 덮어쓰지 않습니다
+  (compile_trials.py --unfreeze로만 갱신). 평가·비교는 모두 이 버전을 기준으로 합니다. 잠금 갱신: scripts/freeze_parsed.py
 """
 
 from __future__ import annotations
@@ -21,10 +23,38 @@ from .agents.parser_validator import ValidationReport
 from .schemas import ParsedTrial, RuleMeta
 
 FORMAT_VERSION = 1
+FREEZE_FILE = "FROZEN.json"
 
 
 class CompilationPending(RuntimeError):
     """고정 저장소에 컴파일된 기준이 없는 시험."""
+
+
+class FrozenStore(RuntimeError):
+    """잠긴 시험의 기준을 덮어쓰려 함."""
+
+
+def file_hash(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def frozen_manifest(store_dir: Path | None = None) -> dict:
+    """잠금 목록 {"frozen_at", "note", "files": {trial_id: 파일 sha256}}. 잠금이 없으면 빈 dict."""
+    path = (store_dir or config.PARSED_DIR) / FREEZE_FILE
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+
+
+def is_frozen(trial_id: str, store_dir: Path | None = None) -> bool:
+    return trial_id in frozen_manifest(store_dir).get("files", {})
+
+
+def freeze(store_dir: Path | None = None, note: str = "") -> dict:
+    """저장소의 모든 시험을 현재 내용으로 잠금."""
+    store = store_dir or config.PARSED_DIR
+    files = {p.stem: file_hash(p) for p in sorted(store.glob("*.json")) if p.name != FREEZE_FILE}
+    manifest = {"frozen_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "note": note, "files": files}
+    (store / FREEZE_FILE).write_text(json.dumps(manifest, ensure_ascii=False, indent=1), encoding="utf-8")
+    return manifest
 
 
 def trial_hash(trial: dict) -> str:
@@ -41,7 +71,9 @@ def path_for(trial_id: str, store_dir: Path | None = None) -> Path:
 
 
 def save(trial: dict, parsed: ParsedTrial, meta: dict[str, RuleMeta], report: ValidationReport,
-         store_dir: Path | None = None, extra: dict | None = None) -> Path:
+         store_dir: Path | None = None, extra: dict | None = None, allow_frozen: bool = False) -> Path:
+    if is_frozen(trial["trial_id"], store_dir) and not allow_frozen:
+        raise FrozenStore(f"{trial['trial_id']}는 잠긴 기준표입니다 - 바꾸려면 팀 검토 후 compile_trials.py --unfreeze")
     path = path_for(trial["trial_id"], store_dir)
     path.parent.mkdir(parents=True, exist_ok=True)
     record = {

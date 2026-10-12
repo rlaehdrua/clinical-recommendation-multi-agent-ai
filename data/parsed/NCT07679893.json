@@ -769,7 +769,7 @@
   "E21": {
    "review": null,
    "required_evidence": "self_report_ok",
-   "underspecified_state": "vague_suspected",
+   "underspecified_state": "reviewed_not_vague",
    "added_by_validator": false
   },
   "E22": {
@@ -883,7 +883,8 @@
    "E20: 유형 규칙(medication: self_report_ok)과 검증 제안(clinical_record)이 달라 clinical_record 적용"
   ],
   "notes": [
-   "E21: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정"
+   "E21: 원문이 애매할 수 있음(적용 안 함) - 검증 LLM이 raw_is_vague=true로 판정",
+   "E21: 팀 검토(2026-10-12) 애매하지 않음 -> underspecified 적용 안 함 (다른 임상시험 참여 여부와 시기는 환자에게 확인 가능)"
   ],
   "llm_output": null
  }

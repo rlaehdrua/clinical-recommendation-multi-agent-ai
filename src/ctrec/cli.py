@@ -1,7 +1,7 @@
 """명령행 인터페이스.
 
 예)
-  python -m ctrec run --patient data/patients/synthetic/SYN-001.json --trials data/trials/DEMO-LUNG-001.json
+  python -m ctrec run --patient data/patients/synthetic/SYN-DEMO-A.json --trials data/trials/DEMO-LUNG-001.json --demo
   python -m ctrec run --patient p.json --nct NCT01234567,NCT07654321 --answers interactive
   python -m ctrec batch --patients-dir data/patients/synthetic --trials-dir data/trials --answers simulated
 """
@@ -20,6 +20,8 @@ from .agents.answerers import (FactRevealAnswerer, InteractiveAnswerer, NoAnswer
                                SimulatedPatientAnswerer)
 from .orchestrator import Orchestrator
 from .pipeline import PatientCase, Session, load_patients
+from .status import MATCH_NOTE
+from .status import label as status_label
 from .tools import ctgov
 from .trace import Tracer
 
@@ -117,6 +119,8 @@ def _add_common(p: argparse.ArgumentParser) -> None:
     p.add_argument("--quiet", action="store_true")
     p.add_argument("--workers", type=int, default=1,
                    help="동시에 처리할 환자 수 (batch 또는 여러 환자 파일). interactive 답변 모드에서는 1로 고정")
+    p.add_argument("--demo", action="store_true",
+                   help="데모 모드: 가상 데모 시험(DEMO-LUNG-001 등)도 추천에 표시 (기본은 판정만 하고 추천에서 제외)")
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -134,6 +138,8 @@ def main(argv: list[str] | None = None) -> None:
 
     args = parser.parse_args(argv)
     print(DISCLAIMER + "\n")
+    if args.demo:
+        config.DEMO_MODE = True
 
     trials = _load_trials(args)
     if not trials and not args.search:
@@ -181,16 +187,18 @@ def main(argv: list[str] | None = None) -> None:
             total[k] = total.get(k, 0) + v
         if session.recommendation:
             rec = session.recommendation
-            print(f"\n[{case.patient_id}] 최종 추천" + (" (공동 1순위)" if len(rec.recommended) > 1 else ""))
+            if rec.recommended:
+                print(f"\n[{case.patient_id}] 추천 그룹: {status_label(rec.recommended[0].match_status)}")
             for r in rec.recommended:
-                print(f"  ★ {r.trial_id} ({r.eligibility}) - {r.rationale[:100]}")
+                print(f"  ★ {r.trial_id} ({status_label(r.match_status)}) - {r.rationale[:100]}")
                 for note in r.physician_review:
                     print(f"     [의사 확인 필요] {note[:160]}")
-            if rec.recommended and rec.selection_reason:
-                print(f"  선정 이유: {rec.selection_reason[:200]}")
-            others = [r for r in rec.ranked if r.rank != 1]
+            if rec.recommended:
+                print(f"  {MATCH_NOTE}\n  {rec.selection_reason}")
+            others = [r for r in rec.ranked if r not in rec.recommended]
             if others:
-                print("  차순위 후보: " + ", ".join(f"{r.rank}. {r.trial_id}({r.eligibility})" for r in others))
+                print("  다른 후보(표시 순서): " + ", ".join(f"{r.rank}. {r.trial_id}({status_label(r.match_status)})"
+                                                    for r in others))
             if session.recommendation.no_recommendation_reason:
                 print(f"  {session.recommendation.no_recommendation_reason}")
         print(f"  -> {Path(args.out) / case.patient_id / 'report.md'}\n")

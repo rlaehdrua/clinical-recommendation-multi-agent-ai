@@ -1,0 +1,2 @@
+# 잠긴 기준표(data/parsed/FROZEN.json)의 파일 해시가 OS별 줄바꿈 변환으로 달라지지 않도록
+data/parsed/*.json -text

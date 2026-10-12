@@ -273,8 +273,11 @@ function statusBadge(s) {
     WITHDRAWN: ["철회","bad"], ACTIVE_NOT_RECRUITING: ["모집 종료","bad"], SUSPENDED: ["중단","bad"], UNKNOWN: ["상태 미확인","warn"] };
   const [t, c] = map[s] || [s || "-", ""]; return `<span class="badge ${c}">${esc(t)}</span>`;
 }
+// 외부 표현(아키텍처 §49): 등록 확정처럼 보이지 않는 표현. 진행 중 카드는 내부 판정을, 최종 결과는 match_status를 받음
 function eligBadge(e) {
-  const m = { ELIGIBLE: ["적격","ok"], INELIGIBLE: ["부적격","bad"], UNCERTAIN: ["판정 보류","warn"], NOT_EVALUATED: ["평가 실패","warn"] };
+  const m = { ELIGIBLE: ["공개 기준 충족","ok"], INELIGIBLE: ["공개 기준 불충족","bad"], UNCERTAIN: ["확인 필요","warn"], NOT_EVALUATED: ["평가 실패","warn"],
+    CRITERIA_MATCH: ["공개 기준 충족","ok"], POTENTIAL_MATCH: ["기록 확인 시 충족 가능","warn"], NEEDS_REVIEW: ["의료진 검토 필요","warn"],
+    INSUFFICIENT_INFORMATION: ["추가 정보 필요","warn"], CRITERIA_MISMATCH: ["공개 기준 불충족","bad"] };
   const [t, c] = m[e] || ["평가 중","accent"]; return `<span class="badge ${c}">${t}</span>`;
 }
 function onPatient() {
@@ -477,22 +480,24 @@ function showResult(ev) {
   let html = "";
   if (rec.no_recommendation_reason) html += `<div class="callout">${esc(rec.no_recommendation_reason)}</div>`;
   const recCard = (r, top) => `<div class="rec"${top ? ' style="border:2px solid var(--accent)"' : ""}><div class="head" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-      ${top ? '<span class="badge accent">최종 추천</span>' : `<span class="rank">${r.rank}</span>`}<b>${esc(r.trial_id)}</b>${eligBadge(r.eligibility)}${statusBadge((ev.trials[r.trial_id] || {}).overall_status)}
+      <span class="rank">${r.rank}</span><b>${esc(r.trial_id)}</b>${eligBadge(r.match_status || r.eligibility)}${statusBadge((ev.trials[r.trial_id] || {}).overall_status)}
       ${(ev.trials[r.trial_id] || {}).url ? `<a class="link" href="${esc(ev.trials[r.trial_id].url)}" target="_blank" rel="noopener">CT.gov ↗</a>` : ""}</div>
       <div class="ttl" style="font-size:12.5px;color:var(--muted)">${esc((ev.trials[r.trial_id] || {}).title || "")}</div>
       <div style="margin-top:6px;font-size:13px">${esc(r.rationale)}</div>
       ${r.key_concerns.length ? `<ul>${r.key_concerns.map(k => `<li>${esc(k)}</li>`).join("")}</ul>` : ""}
       ${r.next_steps.length ? `<div class="hint" style="margin-top:6px">다음 단계: ${r.next_steps.map(esc).join(" · ")}</div>` : ""}
       ${r.physician_review.length ? `<div class="phys"><b>의사 확인 필요 (${r.physician_review.length})</b>${r.physician_review.map(n => `<div style="margin-top:4px">• ${esc(n)}</div>`).join("")}</div>` : ""}
+      ${(r.verification_needed || []).length ? `<div class="phys"><b>문서 확인 필요 · UNVERIFIED (${r.verification_needed.length})</b>${r.verification_needed.map(n => `<div style="margin-top:4px">• ${esc(n)}</div>`).join("")}</div>` : ""}
     </div>`;
-  const top = rec.recommended && rec.recommended.length ? rec.recommended : rec.ranked.filter(r => r.rank === 1);
+  const top = rec.recommended || [];
   if (top.length) {
-    if (top.length > 1) html += `<div class="hint" style="margin-bottom:6px">적합성이 구분되지 않아 ${top.length}개 시험을 공동 1순위로 추천합니다.</div>`;
+    html += `<div class="hint" style="margin-bottom:6px"><b>추천 그룹</b> · ${eligBadge(top[0].match_status)} ${top.length}개</div>`;
     html += top.map(r => recCard(r, true)).join("");
-    if (rec.selection_reason) html += `<div class="card" style="margin-top:8px;background:var(--accent-soft);border:0"><b style="font-size:12.5px">선정 이유</b><div class="sum">${esc(rec.selection_reason)}</div></div>`;
+    if (ev.match_note) html += `<div class="hint" style="margin-top:8px">${esc(ev.match_note)}</div>`;
+    if (rec.selection_reason) html += `<div class="card" style="margin-top:8px;background:var(--accent-soft);border:0"><b style="font-size:12.5px">표시 순서</b><div class="sum">${esc(rec.selection_reason)}</div></div>`;
   }
   const others = rec.ranked.filter(r => !top.some(t => t.trial_id === r.trial_id));
-  if (others.length) html += `<details style="margin-top:10px"><summary class="hint">차순위 후보 ${others.length}개 (1순위 시험의 스크리닝에서 탈락할 경우 참고)</summary><div style="margin-top:6px">${others.map(r => recCard(r, false)).join("")}</div></details>`;
+  if (others.length) html += `<details style="margin-top:10px"><summary class="hint">다른 후보 ${others.length}개 (추가 확인이 필요한 시험)</summary><div style="margin-top:6px">${others.map(r => recCard(r, false)).join("")}</div></details>`;
   if (rec.excluded.length) html += `<details style="margin-top:10px"><summary class="hint">제외된 시험 ${rec.excluded.length}개</summary>${rec.excluded.map(x => `<div class="card" style="margin-top:6px"><b>${esc(x.trial_id)}</b><div class="sum">${esc(x.reason)}</div></div>`).join("")}</details>`;
   if (ev.report) {
     const md = window.marked && window.DOMPurify ? DOMPurify.sanitize(marked.parse(ev.report)) : `<pre style="white-space:pre-wrap">${esc(ev.report)}</pre>`;
