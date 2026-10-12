@@ -15,6 +15,10 @@
   - contradictory   : 다른 값인데 관찰 시점이 같거나 모름, 또는 시간에 따라 바뀌지 않는 항목(성별 등)
   - time_dependent  : 관찰 시점이 서로 달라 실제 변화일 수 있음 -> 추가 확인 필요
   - incomparable    : 단위가 달라 값을 비교할 수 없음 -> 추가 확인 필요 (단위를 추측해 환산하지 않음)
+  - not_compared    : 여러 값을 가질 수 있는 항목(진단·바이오마커·투약 목록 등, MULTI_VALUED_FIELDS)에서 값 문자열이 다름.
+                      서로 다른 항목(고혈압·당뇨)일 수도, 같은 대상의 상반된 결과(EGFR 양성·음성)일 수도 있으나
+                      의미를 해석하지 않으므로 일치도 모순도 확정하지 않고 '비교하지 않음'으로 표시합니다(충돌 목록에는 넣지 않음).
+                      값 문자열이 같을 때만 consistent입니다.
 """
 
 from __future__ import annotations
@@ -33,14 +37,16 @@ FORMAT_VERSION = 1
 
 SourceType = Literal["clinical_record", "self_report", "unknown"]
 VerificationStatus = Literal["unknown", "unverified", "document_verified", "unverifiable"]
-Relation = Literal["consistent", "contradictory", "time_dependent", "incomparable"]
-ConflictStatus = Literal["none", "consistent", "contradictory", "time_dependent", "incomparable"]
+Relation = Literal["consistent", "not_compared", "contradictory", "time_dependent", "incomparable"]
+ConflictStatus = Literal["none", "consistent", "not_compared", "contradictory", "time_dependent", "incomparable"]
 Scalar = Union[bool, int, float, str]
 
 # 충돌 표시의 우선순위 (사실 하나가 여러 사실과 관계가 있으면 가장 심각한 것)
-_SEVERITY = {"none": 0, "consistent": 1, "incomparable": 2, "time_dependent": 3, "contradictory": 4}
+_SEVERITY = {"none": 0, "consistent": 1, "not_compared": 2, "incomparable": 3, "time_dependent": 4, "contradictory": 5}
 # 관찰 시점이 달라도 값이 바뀔 수 없는 항목
 TIME_INVARIANT_FIELDS = {"sex", "birth_date"}
+# 한 환자에게 여러 값이 동시에 있을 수 있는 항목 (값이 다르면 not_compared: 일치·모순을 확정하지 않음)
+MULTI_VALUED_FIELDS = {"diagnosis", "biomarker", "medication", "treatment_history", "other_fact"}
 
 _FIELD = re.compile(r"^[a-z0-9][a-z0-9_.:\-() /]*$")
 _PATIENT_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.\-]*$")
@@ -78,6 +84,7 @@ class PatientFact(BaseModel):
     verification_status: VerificationStatus = "unknown"
     verification_history: list[VerificationEvent] = []
     observed_at: str | None = None  # 실제 측정·관찰 시점 (YYYY, YYYY-MM, YYYY-MM-DD)
+    observed_at_text: str | None = None  # 해석하지 못한 원래 날짜 표기 (observed_at으로 바꾸지 않고 보존)
     recorded_at: str  # 시스템에 기록한 시점
     version: int  # 같은 환자·항목 안에서의 순번 (1, 2, ...)
     previous_fact_id: str | None = None  # 같은 항목의 직전 사실
@@ -129,6 +136,8 @@ def relation(a: PatientFact, b: PatientFact) -> Relation:
     """같은 항목의 두 사실의 관계. 어느 쪽도 채택하지 않음."""
     if a.field != b.field:
         raise FactStoreError("다른 항목의 사실은 비교하지 않음")
+    if a.field in MULTI_VALUED_FIELDS:
+        return "consistent" if _same_unit(a.unit, b.unit) and _same_value(a.value, b.value) else "not_compared"
     if not _same_unit(a.unit, b.unit):
         return "incomparable"
     if _same_value(a.value, b.value):
@@ -150,7 +159,7 @@ class FactStore:
     # ------------------------------------------------------------ 추가·조회
     def add(self, patient_id: str, field: str, value, *, unit: str | None = None, source_type: str = "unknown",
             source_reference: SourceReference | dict | None = None, observed_at: str | None = None,
-            session_id: str | None = None) -> PatientFact:
+            observed_at_text: str | None = None, session_id: str | None = None) -> PatientFact:
         """새 사실 추가. 검증 상태는 항상 unknown으로 시작 (검증은 set_verification으로 사유와 함께)."""
         if not isinstance(patient_id, str) or not _PATIENT_ID.match(patient_id):
             raise FactStoreError(f"잘못된 patient_id: {patient_id!r}")
@@ -165,7 +174,8 @@ class FactStore:
         fact = PatientFact(
             fact_id=f"F-{uuid.uuid4().hex[:12]}", patient_id=patient_id, session_id=session_id, field=field,
             value=value, unit=(unit or None), source_type=source_type, source_reference=ref,
-            observed_at=observed_at, recorded_at=_now(), version=len(same) + 1,
+            observed_at=observed_at, observed_at_text=(observed_at_text or None), recorded_at=_now(),
+            version=len(same) + 1,
             previous_fact_id=same[-1].fact_id if same else None,
         )
         self._facts.setdefault(patient_id, []).append(fact)
@@ -224,14 +234,14 @@ class FactStore:
                                     default="none")  # type: ignore[assignment]
 
     def conflicts(self, patient_id: str) -> list[dict]:
-        """같은 항목에서 값이 일치하지 않는 사실 쌍 (consistent 제외). 어느 값도 채택하지 않음."""
+        """같은 항목에서 값이 일치하지 않는 사실 쌍 (consistent, not_compared 제외). 어느 값도 채택하지 않음."""
         out = []
         for field in sorted({f.field for f in self.facts(patient_id)}):
             group = self.facts(patient_id, field)
             for i, a in enumerate(group):
                 for b in group[i + 1:]:
                     r = relation(a, b)
-                    if r != "consistent":
+                    if r not in ("consistent", "not_compared"):
                         out.append({"field": field, "relation": r, "fact_ids": [a.fact_id, b.fact_id],
                                     "values": [a.value, b.value], "observed_at": [a.observed_at, b.observed_at]})
         return out

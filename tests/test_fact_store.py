@@ -181,3 +181,61 @@ def test_invalid_input_rejected(pid, field, value, kw):
     with pytest.raises(FactStoreError):
         s.add(pid, field, value, **kw)
     assert s.patients() == []
+
+
+def test_multi_valued_field_items_are_not_conflicts():
+    """목록 항목(투약)은 값이 달라도 충돌이 아니고 일치도 아님(not_compared). 값 문자열이 같을 때만 consistent."""
+    s = FactStore()
+    a = s.add(P, "medication", "amlodipine")
+    b = s.add(P, "medication", "metformin")
+    c = s.add(P, "medication", "Amlodipine")
+    assert relation(a, b) == "not_compared" and relation(a, c) == "consistent" and s.conflicts(P) == []
+    assert a.related_fact_ids == {b.fact_id: "not_compared", c.fact_id: "consistent"}
+    assert {a.conflict_status, b.conflict_status, c.conflict_status} == {"not_compared"}
+    assert s.facts(P, "medication") == [a, b, c]  # 모두 별도 사실로 보존
+
+
+def test_different_diagnoses_not_conflict_and_not_consistent():
+    s = FactStore()
+    a = s.add(P, "diagnosis", "hypertension")
+    b = s.add(P, "diagnosis", "type 2 diabetes")
+    assert relation(a, b) == "not_compared"
+    assert "contradictory" not in (a.conflict_status, b.conflict_status) and s.conflicts(P) == []
+
+
+def test_different_biomarkers_are_not_judged_consistent():
+    s = FactStore()
+    a = s.add(P, "biomarker", "EGFR exon 19 deletion positive")
+    b = s.add(P, "biomarker", "ALK negative")
+    assert relation(a, b) == "not_compared" and a.related_fact_ids[b.fact_id] != "consistent"
+
+
+def test_opposite_results_for_same_biomarker_not_consistent_nor_auto_contradictory():
+    """같은 바이오마커의 양성·음성: 의미를 해석하지 않으므로 consistent로 묶지도, 모순으로 확정하지도 않고 드러냄."""
+    s = FactStore()
+    a = s.add(P, "biomarker", "EGFR positive")
+    b = s.add(P, "biomarker", "EGFR negative")
+    assert relation(a, b) == "not_compared"
+    assert a.conflict_status == b.conflict_status == "not_compared"  # 'none'(비교 대상 없음)과 구분됨
+
+
+def test_multi_valued_relations_survive_save_and_load(tmp_path):
+    s = FactStore(tmp_path)
+    a = s.add(P, "biomarker", "EGFR positive")
+    b = s.add(P, "biomarker", "EGFR negative")
+    c = s.add(P, "biomarker", "egfr positive")
+    s.save()
+    t = FactStore.load(tmp_path)
+    ta, tb, tc = t.facts(P, "biomarker")
+    assert ta.related_fact_ids == {b.fact_id: "not_compared", c.fact_id: "consistent"}
+    assert (ta.conflict_status, tb.conflict_status, tc.conflict_status) == ("not_compared",) * 3
+    assert [f.model_dump() for f in t.facts(P)] == [f.model_dump() for f in s.facts(P)]
+    assert t.conflicts(P) == []
+
+
+def test_unparsed_date_text_preserved(tmp_path):
+    s = FactStore(tmp_path)
+    f = s.add(P, "lab:platelets", 150, unit="10^9/L", observed_at_text="Aug 2026")
+    assert f.observed_at is None and f.observed_at_text == "Aug 2026"
+    s.save()
+    assert FactStore.load(tmp_path).facts(P)[0].observed_at_text == "Aug 2026"
