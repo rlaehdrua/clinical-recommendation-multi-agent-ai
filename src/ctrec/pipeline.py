@@ -14,9 +14,10 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from . import DISCLAIMER, acquisition, config, evidence, fact_compare, llm, profile_facts, trial_store
+from . import DISCLAIMER, acquisition, config, evidence, fact_compare, incremental, llm, profile_facts, trial_store
 from .agents import criteria_parser, explainer, matcher, patient_profiler, question_generator, recommender, screener
 from .agents.answerers import Answerer
+from .fact_changes import take_snapshot
 from .fact_store import FactStore
 from .schemas import ParsedTrial, PatientProfile, QAPair, Recommendation, TrialMatch
 from .trace import Tracer
@@ -134,6 +135,12 @@ class Session:
     fact_compare: str = "off"
     fact_compare_strict: bool = False  # True면 진료 기록 기준에 문서 검증(document_verified)을 요구
     fact_comparison: dict | None = None
+    # 의존 그래프·부분 재평가 진단 (Phase 2): 기본 off. 매칭이 끝날 때마다 사실 스냅샷으로 부분 재평가와 전체 평가를 하고
+    # 비교 결과를 dependency_diagnostics에만 둠. LLM 판정은 기존 Matcher가 이미 낸 값만 쓰며(새 호출 없음),
+    # 판정·질문·추천에는 쓰지 않음. 실패해도 추천 흐름은 그대로.
+    dependency_diagnostic: bool = False
+    dependency_diagnostics: list[dict] = field(default_factory=list)
+    _dependency_tracker: incremental.DependencyTracker | None = field(default=None, repr=False)
 
     # ----------------------------------------------------------- 후보
     def candidate_ids(self) -> list[str]:
@@ -269,7 +276,32 @@ class Session:
                 out.append(m)
         self._snapshot(f"match(round={self.rounds})")
         acquisition.update(self.missing_facts, self.matches.values())
+        self._run_dependency_diagnostic({tid for tid, _ in results})
         return out
+
+    def _run_dependency_diagnostic(self, fresh: set[str]) -> None:
+        """부분 재평가 진단 (기본 off). 사실 저장소의 스냅샷과 판정 사본만 읽고, 결과는 dependency_diagnostics에만 둠."""
+        if not self.dependency_diagnostic:
+            return
+        entry: dict = {"round": self.rounds}
+        if not self.fact_shadow:
+            entry.update(status="skipped", reason="fact_shadow가 꺼져 있어 사실이 없음")
+        else:
+            try:
+                pid = self.case.patient_id
+                if self._dependency_tracker is None:
+                    self._dependency_tracker = incremental.DependencyTracker(
+                        pid, incremental.EvaluationPolicy(reference_date=self.reference_date))
+                matches = {t: m.model_copy(deep=True) for t, m in self.matches.items()}
+                parsed = {t: None if m.eligibility == "NOT_EVALUATED" else self.parsed.get(t) for t, m in matches.items()}
+                out = self._dependency_tracker.observe(take_snapshot(self.fact_store, pid), parsed,
+                                                       incremental.baseline_assessor(matches, fresh))
+                entry.update(status="ok", **out)
+            except Exception as e:  # noqa: BLE001 - 진단 실패는 추천에 영향을 주지 않고 상태로 남김 (종류만 기록)
+                entry.update(status="error", error_type=type(e).__name__)
+        self.dependency_diagnostics.append(entry)
+        self.tracer.log("dependency", entry["status"], round=self.rounds, mode=entry.get("mode"),
+                        equivalence=entry.get("equivalence", {}).get("status"))
 
     def uncertain(self) -> list[TrialMatch]:
         """확인 질문 대상: 판정 보류이면서 현재 참여 가능한(모집 중) 시험 중 질문으로 해소할 항목이 있는 시험.
@@ -409,6 +441,8 @@ class Session:
             "fact_shadow": self.fact_shadow_log,
             # 사실 기반 비교 (진단용, 켰을 때만. ID·상태·이유 코드만)
             **({"fact_comparison": self.fact_comparison} if self.fact_compare != "off" else {}),
+            # 의존 그래프·부분 재평가 진단 (켰을 때만. 항목 이름·ID·건수·이유 코드만)
+            **({"dependency_diagnostic": self.dependency_diagnostics} if self.dependency_diagnostic else {}),
         }
 
     def save(self, out_dir: Path) -> None:
