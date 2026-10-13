@@ -1,0 +1,36 @@
+{
+ "seed": 20261013,
+ "cases": 100,
+ "case_types": {
+  "single": 77,
+  "cohort": 4,
+  "shared": 4,
+  "provisional": 15
+ },
+ "target_kinds": {
+  "inclusion": 56,
+  "exclusion": 50
+ },
+ "target_categories": {
+  "lab": 22,
+  "comorbidity": 8,
+  "reproductive": 5,
+  "diagnosis": 44,
+  "medication": 6,
+  "other": 3,
+  "procedure": 9,
+  "disease_stage": 5,
+  "treatment_history": 3,
+  "performance_status": 1
+ },
+ "structured_targets": 18,
+ "trials_used": 23,
+ "dev_trials_overlap": 23,
+ "dev_gt_reused": 0,
+ "skipped": {},
+ "independence_limits": [
+  "모집 중인 시험 23개를 개발셋도 모두 사용 -> 시험 단위 중복 (기준·환자는 새로 생성)",
+  "숨김 대상 선택은 결정적 무작위 층화(선정/제외 같은 수)이며 '판정을 가르는 기준'이라는 임상 판단이 아님",
+  "확정 불충족 사례는 만들지 않음(문서 검증 경로 없음)"
+ ]
+}

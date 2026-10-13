@@ -127,3 +127,25 @@ PYTHONPATH=src python scripts/eval_question_plans.py --dry-run-cost --max-cost-u
 - 대역 상태에서는 대부분의 시험이 판정 보류로 남아 '불필요 질문' 지표가 두 방식을 가르지 못했습니다(0).
 - 숨긴 기준 90개 중 18개는 EXACT가 아닙니다(INFERRED 8, UNMAPPED 10). 기준표 파서가 한 기준을 여러 원자 규칙으로 나눈 경우가 많습니다.
 - 답변 시뮬레이터는 질문 문장 품질을 보지 않고, 대상 규칙 일치만 봅니다.
+
+## 8. Phase 4-2: 동점 처리 정책 검증 (평가 전용)
+
+**Phase 3 Decision Policy는 바꾸지 않았습니다.** `src/ctrec/question_priority.py`는 평가 코드에서만 쓰는 동점 처리 정책 A–E입니다.
+- 다섯 정책 모두 같은 후보, 같은 단계(tier), 같은 가치 점수를 씁니다.
+- 같은 단계·같은 점수의 동점만 다르게 정합니다.
+- 어느 정책도 정답을 보지 않습니다.
+
+정책 정의는 파일 머리말을 보세요.
+
+- **검증셋:** `scripts/build_validation_set.py` → `data/patients/masked_validation/validation_cases.json`
+  - LLM 없이 결정적으로 만든 합성 100개입니다(seed 고정).
+  - 개발셋 정답 기준 재사용 0개, 선정 56 / 제외 50.
+  - 사례 유형: single, cohort(OR 경로), shared(여러 시험 공통 정보), provisional(나이로 잠정 불충족인 시험 포함).
+- **독립성 한계:**
+  - 모집 중 시험 23개를 개발셋도 모두 써서 시험 단위로 겹칩니다.
+  - 숨김 대상은 층화 무작위 선택이며, "판정을 가르는 기준"이라는 임상 판단이 아닙니다.
+  - 확정 불충족 사례는 만들 수 없습니다(문서 검증 경로 없음).
+- **비교 실행:** `scripts/eval_question_priority.py`
+  - 개발셋과 검증셋을 따로 평가합니다.
+  - 정답 기준 단위로 선정·제외, 기준 유형, 사례 유형별 결과를 냅니다.
+  - 개발셋에는 매핑 실패 원인 분석과 완화 매핑 민감도 분석을 함께 냅니다.

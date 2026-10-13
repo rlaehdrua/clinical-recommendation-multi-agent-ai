@@ -404,7 +404,8 @@ class MethodRun:
 
 
 def run_method(method: str, case: PatientCase, gt: CaseGroundTruth, trials: dict, rounds: int, budget: int,
-               deadline: float | None = None, cancel: "callable | None" = None) -> MethodRun:
+               deadline: float | None = None, cancel: "callable | None" = None,
+               factories: dict | None = None) -> MethodRun:
     from . import pipeline
     from .decision_loop import DecisionTracker, LoopConfig
     from .decision_state import Budget
@@ -413,8 +414,11 @@ def run_method(method: str, case: PatientCase, gt: CaseGroundTruth, trials: dict
     c = PatientCase(patient_id=case.patient_id, raw_text=case.raw_text, input_source=case.input_source,
                     candidate_trials=list(case.candidate_trials or []))
     ref: dict = {}
-    gen = (baseline_generator if method == "baseline" else ablation_generator(ref) if method == ABLATION
-           else candidate_generator(ref))
+    if factories and method in factories:  # 평가 전용 정책 후보 (question_priority 등)
+        gen = factories[method](ref)
+    else:
+        gen = (baseline_generator if method == "baseline" else ablation_generator(ref) if method == ABLATION
+               else candidate_generator(ref))
     answerer = OracleAnswerer(gt)
     s = Session(case=c, trials={t: trials[t] for t in gt.candidate_trials}, answerer=answerer, tracer=_NullTracer(),
                 max_rounds=rounds, question_budget=None,
@@ -505,7 +509,8 @@ def _record(gt: CaseGroundTruth, method: str, round_id: int, i: int, q: Clarifyi
             "question_ref": f"{gt.case_id}:{method}:{round_id}:{q.question_id}",
             "fact_version": view.snapshot.version, "target_fact_ids": [], "target_criterion_ids": keys,
             "target_trial_ids": sorted({k.split(':')[0] for k in keys}), "question_type": q.purpose, "priority": i + 1,
-            "source": {"baseline": BASELINE_SOURCE, "candidate": CANDIDATE_SOURCE}.get(method, ABLATION_SOURCE),
+            "source": {"baseline": BASELINE_SOURCE, "candidate": CANDIDATE_SOURCE,
+                       ABLATION: ABLATION_SOURCE}.get(method, f"policy:{method}"),
             "normalized_target": sorted(set(norm_targets)), "mapping_status": status, "mapping_confidence": conf,
             "relevance": _classify(view, keys), "same_criterion_reasked": sorted(set(keys) & prev),
             "answered_reasked": sorted(set(keys) & prev_answered)}
@@ -588,33 +593,38 @@ def aggregate(rows: list[dict], method: str) -> dict:
 
 def run_evaluation(parsed: dict, trials: dict, *, only: list[str] | None = None, rounds: int = 2, budget: int = 3,
                    case_timeout_s: float = 30.0, cancel=None, cases_path: Path = DEFAULT_CASES,
-                   labels_path: Path = DEFAULT_LABELS, ablation: bool = False) -> dict:
+                   labels_path: Path = DEFAULT_LABELS, ablation: bool = False, methods: tuple | None = None,
+                   factories: dict | None = None) -> dict:
     """오프라인 평가 실행. 결과는 메모리 dict (파일 저장은 save_outputs로 명시적으로)."""
     cases = load_cases(parsed, cases_path, labels_path, only)
+    all_methods = tuple(methods) if methods else METHODS + ((ABLATION,) if ablation else ())
     rows, records, matcher_mismatch, t0 = [], [], [], time.time()
     with OfflineEnvironment(budget) as env:
         for case, gt in cases:
             runs = {}
-            for method in METHODS + ((ABLATION,) if ablation else ()):
+            for method in all_methods:
                 runs[method] = run_method(method, case, gt, trials, rounds, budget,
-                                          deadline=time.time() + case_timeout_s, cancel=cancel)
+                                          deadline=time.time() + case_timeout_s, cancel=cancel, factories=factories)
                 rows.append(case_metrics(gt, runs[method], budget))
                 records.extend({k: v for k, v in q.items() if k != "relevance"} | {"relevance": q["relevance"]}
                                for q in runs[method].questions)
-            if runs["baseline"].round0_matches != runs["candidate"].round0_matches:
-                matcher_mismatch.append(gt.case_id)  # 라운드 1(같은 상태)의 Matcher 판정이 달라지면 안 됨
+            if len({json.dumps(r.round0_matches, sort_keys=True, default=str) for r in runs.values()}) > 1:
+                matcher_mismatch.append(gt.case_id)  # 라운드 1(같은 상태)의 Matcher 판정이 방식마다 달라지면 안 됨
         stub_calls = dict(env.stub.calls)
     per_case = {}
     for r in rows:
         per_case.setdefault(r["case_id"], {})[r["method"]] = r
-    diffs = [{"case_id": cid, "case_type": d["baseline"]["case_type"],
+    if not {"baseline", "candidate"} <= set(all_methods):
+        diffs = []
+    else:
+        diffs = [{"case_id": cid, "case_type": d["baseline"]["case_type"],
               "baseline_first_exact": d["baseline"]["first_exact_hit_rank"],
               "candidate_first_exact": d["candidate"]["first_exact_hit_rank"],
               "baseline_questions": d["baseline"]["questions"], "candidate_questions": d["candidate"]["questions"],
               "baseline_irrelevant": d["baseline"]["irrelevant_questions"],
               "candidate_irrelevant": d["candidate"]["irrelevant_questions"]}
-             for cid, d in per_case.items() if "baseline" in d and "candidate" in d]
-    agg = {m: aggregate(rows, m) for m in METHODS + ((ABLATION,) if ablation else ())}
+                 for cid, d in per_case.items() if "baseline" in d and "candidate" in d]
+    agg = {m: aggregate(rows, m) for m in all_methods}
     return {
         "mode": "offline_stub", "rounds": rounds, "question_budget_per_round": budget,
         "cases_total": len(cases), "seconds": round(time.time() - t0, 2), "stub_llm_calls": stub_calls,
@@ -623,7 +633,8 @@ def run_evaluation(parsed: dict, trials: dict, *, only: list[str] | None = None,
             k: round(agg["candidate"][k]["value"] - agg["baseline"][k]["value"], 4)
             for k in ("coverage_exact", "coverage_exact_within_budget", "coverage_exact_or_inferred",
                       "duplicate_same_criterion_rate", "duplicate_semantic_rate", "irrelevant_rate")
-            if agg["candidate"][k]["value"] is not None and agg["baseline"][k]["value"] is not None},
+            if "candidate" in agg and "baseline" in agg
+            and agg["candidate"][k]["value"] is not None and agg["baseline"][k]["value"] is not None},
         "round1_matcher_identical": not matcher_mismatch, "round1_matcher_mismatch_cases": matcher_mismatch,
         "case_rows": rows, "case_diffs": diffs, "question_records": records,
         "limitations": LIMITATIONS,
