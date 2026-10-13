@@ -241,6 +241,7 @@ class RunRequest(BaseModel):
     screen: bool = True  # True: 전체 시험에서 후보 추림 에이전트가 고름 / False: trial_ids만 평가
     allow_search: bool = False
     max_rounds: int = Field(default=config.MAX_CLARIFY_ROUNDS, ge=0, le=config.MAX_CLARIFY_ROUNDS)
+    decision_diagnostic: bool = False  # 개발자용 Decision Loop 진단 (기본 off, 판정·질문·추천에 쓰지 않음)
 
 
 class AnswerRequest(BaseModel):
@@ -249,6 +250,14 @@ class AnswerRequest(BaseModel):
 
 # 화면으로 보내는 실행 기록 중 예외 문구를 담는 이벤트: 예외 메시지에는 환자 정보가 들어 있을 수 있으므로 종류만 보냄
 _ERROR_TRACES = {("orchestrator", "tool_error"), ("pipeline", "error")}
+
+
+def _forward(run: "Run", rec: dict) -> None:
+    """실행 기록을 화면으로 전달. Decision Loop 진단은 별도 이벤트(decision_diagnostic)로 구분 (켰을 때만 생김)."""
+    if rec.get("agent") == "decision":
+        run.emit("decision_diagnostic", diagnostic=rec.get("diagnostic"))
+        return
+    run.emit("trace", record=_client_record(rec))
 
 
 def _client_record(rec: dict) -> dict:
@@ -269,11 +278,12 @@ def _execute(run: Run, req: RunRequest, case: PatientCase, trials: dict[str, dic
         # 저장은 기본 off (retention.save_enabled). 켜져 있을 때만 trace.jsonl·result.json·report.md를 씀
         out_dir = retention.prepare_run_dir(run.run_id) if retention.save_enabled() else None
         tracer = Tracer(out_dir / "trace.jsonl" if out_dir else None, verbose=False,
-                        listener=lambda rec: run.emit("trace", record=_client_record(rec)))
+                        listener=lambda rec: _forward(run, rec))
         # 웹 UI: 확인 질문이 필요하면 화면에서 사용자가 직접 답변 (가상 환자·답변 없음 모드는 CLI 평가용)
         session = Session(case=case, trials=trials, answerer=WebAnswerer(run), tracer=tracer,
                           max_rounds=req.max_rounds, allow_search=req.allow_search,
-                          screen_trials=req.screen and len(trials) > config.SCREEN_MAX_CANDIDATES)
+                          screen_trials=req.screen and len(trials) > config.SCREEN_MAX_CANDIDATES,
+                          decision_loop="diagnostic" if req.decision_diagnostic else "off")
         # 웹 UI는 오케스트레이터(agent) 모드로만 실행
         tracer.log("pipeline", "start", message=f"mode=agent model={config.MODEL} trials={len(trials)}")
         Orchestrator(session).run()

@@ -141,6 +141,12 @@ class Session:
     dependency_diagnostic: bool = False
     dependency_diagnostics: list[dict] = field(default_factory=list)
     _dependency_tracker: incremental.DependencyTracker | None = field(default=None, repr=False)
+    # Agentic Decision Loop 진단 (Phase 3): 기본 "off". "diagnostic"이면 매칭이 끝날 때마다 현재 사실·판정을 읽어
+    # 다음 행동 계획(질문 후보·문서 요청·검토·종료 사유)을 decision_diagnostics에만 기록. 질문을 보내거나 판정·질문·추천을
+    # 바꾸지 않고 LLM을 부르지 않음. 실패해도 추천 흐름은 그대로.
+    decision_loop: str = "off"
+    decision_diagnostics: list[dict] = field(default_factory=list)
+    _decision_tracker: object | None = field(default=None, repr=False)
 
     # ----------------------------------------------------------- 후보
     def candidate_ids(self) -> list[str]:
@@ -277,7 +283,29 @@ class Session:
         self._snapshot(f"match(round={self.rounds})")
         acquisition.update(self.missing_facts, self.matches.values())
         self._run_dependency_diagnostic({tid for tid, _ in results})
+        self._run_decision_diagnostic({tid for tid, _ in results})
         return out
+
+    def _run_decision_diagnostic(self, fresh: set[str]) -> None:
+        """Decision Loop 진단 (기본 off). Session 사본만 읽고 결과는 decision_diagnostics에만 둠."""
+        if self.decision_loop == "off":
+            return
+        entry: dict = {"round": self.rounds}
+        if self.decision_loop != "diagnostic":
+            entry.update(status="error", error_type="InvalidMode")
+        elif not self.fact_shadow:
+            entry.update(status="skipped", reason="fact_shadow가 꺼져 있어 사실이 없음")
+        else:
+            try:
+                from . import decision_loop
+                if self._decision_tracker is None:
+                    self._decision_tracker = decision_loop.DecisionTracker()
+                entry.update(status="ok", **self._decision_tracker.observe(self, fresh))
+            except Exception as e:  # noqa: BLE001 - 진단 실패는 추천에 영향을 주지 않고 상태로 남김 (종류만 기록)
+                entry.update(status="error", error_type=type(e).__name__)
+        self.decision_diagnostics.append(entry)
+        self.tracer.log("decision", entry["status"], round=self.rounds,
+                        stop_reason=entry.get("stop_reason"), diagnostic=entry)
 
     def _run_dependency_diagnostic(self, fresh: set[str]) -> None:
         """부분 재평가 진단 (기본 off). 사실 저장소의 스냅샷과 판정 사본만 읽고, 결과는 dependency_diagnostics에만 둠."""
@@ -443,6 +471,8 @@ class Session:
             **({"fact_comparison": self.fact_comparison} if self.fact_compare != "off" else {}),
             # 의존 그래프·부분 재평가 진단 (켰을 때만. 항목 이름·ID·건수·이유 코드만)
             **({"dependency_diagnostic": self.dependency_diagnostics} if self.dependency_diagnostic else {}),
+            # Decision Loop 진단 (켰을 때만. 행동·이유 코드·ID·건수만, 판정·추천이 아님)
+            **({"decision_diagnostic": self.decision_diagnostics} if self.decision_loop != "off" else {}),
         }
 
     def save(self, out_dir: Path) -> None:

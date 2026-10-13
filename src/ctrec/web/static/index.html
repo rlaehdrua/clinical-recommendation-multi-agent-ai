@@ -186,6 +186,11 @@ details.report summary { cursor: pointer; font-weight: 700; padding: 4px 0; }
       <h2>시험별 판정</h2>
       <div class="body" id="cards"><div class="empty">아직 평가된 시험이 없습니다.</div></div>
     </div>
+    <!-- 개발자용 진단 (주소에 ?diagnostic=1일 때만): 판정·질문·추천에 쓰이지 않음 -->
+    <details class="panel" id="decision-panel" hidden>
+      <summary style="padding:10px 14px;cursor:pointer"><b>개발자 진단 · Decision Loop</b> <span class="hint">판정·추천에 쓰이지 않는 참고 정보</span></summary>
+      <div class="body" id="decision-body"></div>
+    </details>
   </section>
 </main>
 
@@ -307,6 +312,18 @@ function countTrials() {
   if (clear) clear.onclick = () => { document.querySelectorAll("#trials input").forEach(i => i.checked = false); countTrials(); };
 }
 
+// ------------------------------------------------------------ 개발자 진단 (Decision Loop, 기본 off)
+const DIAGNOSTIC = new URLSearchParams(location.search).get("diagnostic") === "1";
+function showDecision(d) {
+  $("#decision-panel").hidden = false;
+  const acts = (d.actions || []).map(a => `<div style="margin-top:4px">• <span class="chip">${esc(a.action_type)}</span> ${esc(a.reason_code)}
+    <span class="hint">${esc(a.human_readable_reason)} · ${esc(a.status)}</span></div>`).join("");
+  const div = document.createElement("div"); div.className = "card"; div.style.marginTop = "6px";
+  div.innerHTML = `<b>라운드 ${esc(d.round)}</b> · ${esc(d.status)}${d.stop_reason ? ` · 종료 사유 ${esc(d.stop_reason)}` : ""}
+    ${d.error_type ? ` · 오류 ${esc(d.error_type)}` : ""}${acts}`;
+  $("#decision-body").appendChild(div);
+}
+
 // ------------------------------------------------------------ 실행
 // 실행 ID만 탭 단위(sessionStorage)로 기억해 새로고침 후 이어 봄. 접근 권한은 서버가 HttpOnly 쿠키로 확인
 const RUN_KEY = "ctrec-run-id";
@@ -342,6 +359,7 @@ async function resume() {
 }
 async function start() {
   const body = { trial_ids: screenMode() ? [] : selectedTrials(), screen: screenMode(), allow_search: $("#search").checked };
+  if (DIAGNOSTIC) body.decision_diagnostic = true;
   if (state.custom) { body.custom_text = $("#custom").value.trim(); if (!body.custom_text) return hint("환자 정보를 입력하세요."); }
   else body.patient_id = $("#patient").value;
   if (!body.screen && !body.trial_ids.length && !body.allow_search) return hint("후보 임상시험을 하나 이상 선택하세요.");
@@ -361,6 +379,7 @@ function hint(t) { $("#start-hint").textContent = t; }
 function setRunState(t, c) { const el = $("#run-state"); el.textContent = t; el.className = "badge " + (c || ""); }
 function resetView() {
   drawGraph(); drawSteps(); state.cards = {}; state.feedN = 0;
+  $("#decision-body").innerHTML = ""; $("#decision-panel").hidden = !DIAGNOSTIC;
   showPage("run"); $('#pages [data-page="result"]').disabled = true;
   $("#feed").innerHTML = ""; $("#cards").innerHTML = '<div class="empty">아직 평가된 시험이 없습니다.</div>';
   $("#final").innerHTML = '<div class="empty">추천 에이전트가 완료되면 결과가 표시됩니다.</div>'; $("#qslot").innerHTML = ""; $("#usage").textContent = "";
@@ -386,6 +405,7 @@ function handle(ev) {
   if (ev.type === "questions") return showQuestions(ev.questions);
   if (ev.type === "answers") { $("#qslot").innerHTML = ""; return; }
   if (ev.type === "result") return showResult(ev);
+  if (ev.type === "decision_diagnostic") return showDecision(ev.diagnostic || {});
   if (ev.type === "error") { feed(null, "pipeline", `<span style="color:var(--bad)">오류: ${esc(ev.message)}</span>`); setRunState("오류", "bad"); return; }
   if (ev.type === "end") {
     const END = { completed: ["완료", "ok"], cancelled: ["취소됨", "warn"], timed_out: ["시간 초과", "bad"], error: ["오류", "bad"] };

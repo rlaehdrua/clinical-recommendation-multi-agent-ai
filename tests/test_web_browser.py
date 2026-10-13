@@ -111,9 +111,9 @@ def test_browser_shows_server_validation_message(server):
         browser.close()
 
 
-def _open_custom_run(page, base):
+def _open_custom_run(page, base, path=""):
     page.route("**/*", lambda route: route.continue_() if route.request.url.startswith(base) else route.abort())
-    page.goto(base)
+    page.goto(base + path)
     page.wait_for_selector("#patient option", state="attached")
     page.click("#to-custom")
     page.fill("#custom", h.SYN_TEXT)
@@ -154,5 +154,30 @@ def test_browser_cancel_refresh_and_other_profile(server):
         page.wait_for_function("document.querySelector('#run-state').textContent === '취소됨'", timeout=10000)
         assert page.is_hidden("#cancel") and not page.is_disabled("#start")
         assert page.inner_html("#qslot") == ""
+        browser.close()
+    assert errors == [], errors
+
+
+def test_browser_decision_diagnostic_panel(server):
+    """개발자 진단 패널: 기본 숨김, ?diagnostic=1일 때만 진단 이벤트를 따로 표시하고 추천 화면은 그대로."""
+    base, _ = server
+    errors = []
+    with sync_api.sync_playwright() as p:
+        browser = _browser(p)
+        page = browser.new_page()
+        page.on("pageerror", lambda e: errors.append(str(e)))
+        page.route("**/*", lambda route: route.continue_() if route.request.url.startswith(base) else route.abort())
+        page.goto(base)
+        page.wait_for_selector("#patient option", state="attached")
+        assert page.is_hidden("#decision-panel")
+        _open_custom_run(page, base, "/?diagnostic=1")
+        page.wait_for_selector("#decision-body .card", state="attached", timeout=20000)
+        assert page.is_visible("#decision-panel")  # 접힌 개발자 영역으로 표시
+        body = page.text_content("#decision-body")
+        assert "라운드 0" in body and "ASK_USER" in body
+        page.fill("#qslot input[data-q='Q1']", h.SYN_ANSWER)
+        page.click("#send")
+        page.wait_for_selector("#final .rec", timeout=30000)
+        assert page.locator("#decision-body .card").count() == 2 and "NCT04063540" in page.inner_text("#final")
         browser.close()
     assert errors == [], errors
