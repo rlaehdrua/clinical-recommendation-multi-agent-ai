@@ -313,13 +313,15 @@ async function start() {
   resetView();
   $("#start").disabled = true; hint("");
   const r = await fetch("/api/runs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-  if (!r.ok) { $("#start").disabled = false; return hint((await r.json()).detail || "실행 실패"); }
+  if (!r.ok) { $("#start").disabled = false; let d = null; try { d = (await r.json()).detail; } catch (e) {} return hint(typeof d === "string" ? d : `실행 실패 (${r.status})`); }
   state.runId = (await r.json()).run_id;
   setRunState("실행 중", "accent");
   state.t0 = Date.now(); $("#elapsed").hidden = false;
   state.timer = setInterval(() => $("#elapsed").textContent = Math.round((Date.now() - state.t0) / 1000) + "s", 500);
   state.es = new EventSource(`/api/runs/${state.runId}/events`);
   state.es.onmessage = (m) => handle(JSON.parse(m.data));
+  // 실행 기록이 없어졌거나(서버 재시작·보관 기간 경과) 연결이 끊겨 재연결도 안 되면 '실행 중'에 멈추지 않게 표시
+  state.es.onerror = () => { if (state.es && state.es.readyState === EventSource.CLOSED) { setRunState("연결 끊김", "bad"); finish(); } };
 }
 function showPage(name) {
   $("#page-run").hidden = name !== "run"; $("#page-result").hidden = name !== "result";
@@ -464,7 +466,9 @@ function showQuestions(qs) {
   const submit = async (skip) => {
     const answers = {}; document.querySelectorAll("#qslot input").forEach(i => answers[i.dataset.q] = (!skip && i.value.trim()) || "모름");
     $("#send").disabled = $("#skip").disabled = true;
-    await fetch(`/api/runs/${state.runId}/answers`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ answers }) });
+    const r = await fetch(`/api/runs/${state.runId}/answers`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ answers }) });
+    if (!r.ok) { $("#send").disabled = $("#skip").disabled = false; let d = null; try { d = (await r.json()).detail; } catch (e) {}
+      return feed(null, "pipeline", `<span style="color:var(--bad)">답변 전송 실패: ${esc(typeof d === "string" ? d : r.status)}</span>`); }
     setRunState("실행 중", "accent");
   };
   $("#send").onclick = () => submit(false);

@@ -4,5 +4,6 @@ pydantic>=2.6
 requests>=2.31
 python-dotenv>=1.0
 pytest>=8
+httpx>=0.27  # 웹 통합 테스트(FastAPI TestClient)
 fastapi>=0.110
 uvicorn>=0.29

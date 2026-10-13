@@ -26,8 +26,9 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, Response, StreamingResponse
-from pydantic import BaseModel
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
+from pydantic import BaseModel, Field
 
 from .. import DISCLAIMER, config, llm
 from ..agents.recommender import is_open
@@ -43,6 +44,8 @@ ANSWER_TIMEOUT_S = 30 * 60
 # 실행 기록(RUNS) 보관 한도 (아키텍처 §67 web RUNS lifecycle): 메모리에 무한히 쌓이지 않도록
 MAX_RUNS = int(os.getenv("CTREC_WEB_MAX_RUNS", "20"))          # 동시에 보관하는 실행 수
 RUN_TTL_S = int(os.getenv("CTREC_WEB_RUN_TTL_S", str(2 * 60 * 60)))  # 끝난 실행을 보관하는 시간
+MAX_TEXT_CHARS = 20000  # 직접 입력 환자 정보 최대 길이
+MAX_ANSWER_CHARS = 2000  # 확인 질문 답변 하나의 최대 길이
 
 app = FastAPI(title="ctrec - Interactive Clinical Trial Recommendation")
 
@@ -63,6 +66,13 @@ async def basic_auth(request: Request, call_next):
         if secrets.compare_digest(pw.encode(), PASSWORD.encode()):
             return await call_next(request)
     return Response(status_code=401, headers={"WWW-Authenticate": 'Basic realm="ctrec"'})
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error(request: Request, exc: RequestValidationError):
+    # 기본 422 응답은 보낸 값(환자 정보일 수 있음)을 그대로 돌려주므로, 필드 위치와 오류 종류만 알림
+    fields = sorted({".".join(str(x) for x in e.get("loc", ()) if x != "body") or "body" for e in exc.errors()})
+    return JSONResponse(status_code=422, content={"detail": f"요청 형식이 올바르지 않습니다: {', '.join(fields)}"})
 
 
 # ---------------------------------------------------------------------------
@@ -103,6 +113,7 @@ class Run:
     lock: threading.Lock = field(default_factory=threading.Lock)
     answer_ready: threading.Event = field(default_factory=threading.Event)
     answers: dict[str, str] = field(default_factory=dict)
+    pending_questions: set[str] = field(default_factory=set)  # 답변을 기다리는 질문 ID (없으면 답변을 받지 않음)
     done: bool = False
     created_at: float = field(default_factory=time.time)
     finished_at: float | None = None
@@ -139,31 +150,47 @@ class WebAnswerer:
 
     def answer(self, questions: list[ClarifyingQuestion], patient_id: str) -> dict[str, str]:
         self.run.answer_ready.clear()
-        self.run.answers = {}
+        with self.run.lock:
+            self.run.answers = {}
+            self.run.pending_questions = {q.question_id for q in questions}
         self.run.emit("questions", questions=[q.model_dump() for q in questions])
         if not self.run.answer_ready.wait(ANSWER_TIMEOUT_S):
+            with self.run.lock:
+                self.run.pending_questions = set()
             self.run.emit("status", message="답변 대기 시간이 초과되어 '모름'으로 처리합니다.")
         return {q.question_id: (self.run.answers.get(q.question_id) or "모름") for q in questions}
 
 
 class RunRequest(BaseModel):
     patient_id: str | None = None
-    custom_text: str | None = None
+    custom_text: str | None = Field(default=None, max_length=MAX_TEXT_CHARS)
     trial_ids: list[str] = []
     screen: bool = True  # True: 전체 시험에서 후보 추림 에이전트가 고름 / False: trial_ids만 평가
     allow_search: bool = False
-    max_rounds: int = config.MAX_CLARIFY_ROUNDS
+    max_rounds: int = Field(default=config.MAX_CLARIFY_ROUNDS, ge=0, le=config.MAX_CLARIFY_ROUNDS)
 
 
 class AnswerRequest(BaseModel):
     answers: dict[str, str]
 
 
+# 화면으로 보내는 실행 기록 중 예외 문구를 담는 이벤트: 예외 메시지에는 환자 정보가 들어 있을 수 있으므로 종류만 보냄
+# (서버의 trace.jsonl에는 원래 기록이 그대로 남음)
+_ERROR_TRACES = {("orchestrator", "tool_error"), ("pipeline", "error")}
+
+
+def _client_record(rec: dict) -> dict:
+    if (rec.get("agent"), rec.get("event")) not in _ERROR_TRACES:
+        return rec
+    kind = str(rec.get("message", "")).split("(", 1)[0].split(":", 1)[0].strip() or "Error"
+    return {**rec, "message": f"{kind} (자세한 내용은 서버 실행 기록 참고)"}
+
+
 def _execute(run: Run, req: RunRequest, case: PatientCase, trials: dict[str, dict]) -> None:
     llm.reset_usage()
     out_dir = config.OUTPUT_DIR / "web" / run.run_id
     tracer = Tracer(out_dir / "trace.jsonl", verbose=False,
-                    listener=lambda rec: run.emit("trace", record=rec))
+                    listener=lambda rec: run.emit("trace", record=_client_record(rec)))
     # 웹 UI: 확인 질문이 필요하면 화면에서 사용자가 직접 답변 (가상 환자·답변 없음 모드는 CLI 평가용)
     answerer = WebAnswerer(run)
     session = Session(case=case, trials=trials, answerer=answerer, tracer=tracer,
@@ -178,8 +205,8 @@ def _execute(run: Run, req: RunRequest, case: PatientCase, trials: dict[str, dic
         run.emit("result", result=session.result(), report=session.report, match_note=MATCH_NOTE,
                  trials={tid: {"title": t.get("title"), "overall_status": t.get("overall_status"),
                                "url": (t.get("source") or {}).get("url")} for tid, t in session.trials.items()})
-    except Exception as e:  # 오류도 화면에 표시
-        run.emit("error", message=f"{type(e).__name__}: {e}")
+    except Exception as e:  # 오류도 화면에 표시 (예외 메시지에는 환자 정보가 있을 수 있으므로 종류만)
+        run.emit("error", message=f"실행 중 오류가 발생했습니다 ({type(e).__name__}). 다시 시도하거나 관리자에게 문의하세요.")
     finally:
         run.done = True
         run.finished_at = time.time()
@@ -230,12 +257,16 @@ def start_run(req: RunRequest) -> dict:
     trials = dict(all_trials) if req.screen else {t: all_trials[t] for t in req.trial_ids if t in all_trials}
     if not trials and not req.allow_search:
         raise HTTPException(400, "평가할 임상시험을 하나 이상 선택하세요.")
+    if req.custom_text is not None and not req.custom_text.strip() and not req.patient_id:
+        raise HTTPException(400, "환자 정보를 입력하세요.")
     if req.custom_text and req.custom_text.strip():
         case = PatientCase(patient_id=f"WEB-{uuid.uuid4().hex[:6].upper()}", raw_text=req.custom_text.strip())
     else:
+        if not req.patient_id:
+            raise HTTPException(400, "환자를 선택하거나 환자 정보를 입력하세요.")
         cases = _load_cases()
         if req.patient_id not in cases:
-            raise HTTPException(404, f"환자 {req.patient_id}를 찾을 수 없습니다.")
+            raise HTTPException(404, "선택한 환자를 찾을 수 없습니다.")
         src = cases[req.patient_id][0]
         # 확인 질문 답변이 raw_text에 누적되므로 원본을 복사해 사용
         case = PatientCase(patient_id=src.patient_id, raw_text=src.raw_text, hidden_details=src.hidden_details,
@@ -244,11 +275,11 @@ def start_run(req: RunRequest) -> dict:
     _prune_runs()
     if len(RUNS) >= MAX_RUNS:
         raise HTTPException(429, f"진행 중인 실행이 {MAX_RUNS}개라 새 실행을 시작할 수 없습니다. 잠시 후 다시 시도하세요.")
-    run = Run(run_id=time.strftime("%Y%m%d-%H%M%S-") + uuid.uuid4().hex[:4])
+    # 실행 ID는 그 실행의 질문·결과에 접근하는 열쇠이므로 추측할 수 없게 만듦 (128비트 난수)
+    run = Run(run_id=time.strftime("%Y%m%d-%H%M%S-") + secrets.token_hex(16))
     with RUNS_LOCK:
         RUNS[run.run_id] = run
-    run.emit("status", message="파이프라인 시작", patient_id=case.patient_id, patient_text=case.raw_text,
-             trial_ids=list(trials))
+    run.emit("status", message="파이프라인 시작", patient_id=case.patient_id, trial_ids=list(trials))
     ctx = contextvars.copy_context()  # 실행별 토큰 사용량 집계
     threading.Thread(target=ctx.run, args=(_execute, run, req, case, trials), daemon=True).start()
     return {"run_id": run.run_id}
@@ -259,8 +290,15 @@ def submit_answers(run_id: str, body: AnswerRequest) -> dict:
     run = RUNS.get(run_id)
     if run is None:
         raise HTTPException(404, "실행을 찾을 수 없습니다.")
-    run.answers = body.answers
-    run.emit("answers", answers=body.answers)
+    if any(len(v) > MAX_ANSWER_CHARS for v in body.answers.values()):
+        raise HTTPException(400, f"답변은 {MAX_ANSWER_CHARS}자 이하로 입력하세요.")
+    with run.lock:
+        pending = run.pending_questions
+        if run.done or not pending:  # 끝난 실행, 질문 전, 이미 답한 질문(중복 제출)
+            raise HTTPException(409, "지금은 답변을 받을 수 있는 질문이 없습니다.")
+        run.answers = {q: a for q, a in body.answers.items() if q in pending}
+        run.pending_questions = set()
+    run.emit("answers", n_answered=sum(bool(a.strip()) for a in run.answers.values()))  # 답변 내용은 다시 보내지 않음
     run.answer_ready.set()
     return {"ok": True}
 
@@ -270,7 +308,10 @@ async def stream_events(run_id: str, request: Request) -> StreamingResponse:
     run = RUNS.get(run_id)
     if run is None:
         raise HTTPException(404, "실행을 찾을 수 없습니다.")
-    start = int(request.headers.get("last-event-id", -1)) + 1
+    try:
+        start = max(int(request.headers.get("last-event-id", -1)) + 1, 0)
+    except ValueError:  # 잘못된 Last-Event-ID는 처음부터
+        start = 0
 
     async def gen():
         i = start
