@@ -14,7 +14,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from . import DISCLAIMER, acquisition, config, evidence, llm, profile_facts, trial_store
+from . import DISCLAIMER, acquisition, config, evidence, fact_compare, llm, profile_facts, trial_store
 from .agents import criteria_parser, explainer, matcher, patient_profiler, question_generator, recommender, screener
 from .agents.answerers import Answerer
 from .fact_store import FactStore
@@ -128,6 +128,12 @@ class Session:
     fact_store_dir: Path | None = None
     fact_store: FactStore = field(default_factory=FactStore)
     fact_shadow_log: list[dict] = field(default_factory=list)  # 기록 결과 (건수·상태만, 환자 값은 넣지 않음)
+    # 사실 기반 비교 Matcher (진단용, Phase 1-3B/1-4): 기본 off. "deterministic"은 LLM 없이 규칙 엔진 기준만,
+    # "llm"은 Matcher를 사실 기반 프로필로 한 번 더 실행(유료 API, 명시적 선택). 결과는 fact_comparison에만 두고
+    # 판정·질문·추천에는 쓰지 않음. 실패해도 추천 흐름은 그대로.
+    fact_compare: str = "off"
+    fact_compare_strict: bool = False  # True면 진료 기록 기준에 문서 검증(document_verified)을 요구
+    fact_comparison: dict | None = None
 
     # ----------------------------------------------------------- 후보
     def candidate_ids(self) -> list[str]:
@@ -211,6 +217,28 @@ class Session:
                 entry["saved"] = False
         self.fact_shadow_log.append(entry)
         self.tracer.log("fact_store", entry["status"], **{k: v for k, v in entry.items() if k != "status"})
+
+    def _run_fact_comparison(self) -> None:
+        """사실 기반 비교 (진단용). 추천이 끝난 뒤 기준선 판정 사본과 비교하고, 결과는 fact_comparison에만 둠."""
+        if self.fact_compare == "off":
+            return
+        if self.fact_compare not in ("deterministic", "llm"):
+            self.fact_comparison = {"status": "error", "error_type": "InvalidMode"}
+        elif not self.fact_shadow:
+            self.fact_comparison = {"status": "skipped", "reason": "fact_shadow가 꺼져 있어 사실이 없음"}
+        else:
+            try:
+                out = fact_compare.compare_session(
+                    self.fact_store, self.case.patient_id,
+                    {t: m.model_copy(deep=True) for t, m in self.matches.items()}, self.parsed, self.trials,
+                    self.reference_date, mode=self.fact_compare,  # type: ignore[arg-type]
+                    require_document_verification=self.fact_compare_strict)
+                self.fact_comparison = {"status": "ok", **out}
+            except Exception as e:  # noqa: BLE001 - 비교 실패는 추천에 영향을 주지 않고 상태로 남김
+                self.fact_comparison = {"status": "error", "error_type": type(e).__name__}
+        c = self.fact_comparison
+        self.tracer.log("fact_compare", c["status"], mode=self.fact_compare,
+                        risks=len(c.get("risks", [])), changes=c.get("summary", {}).get("changes"))
 
     # ----------------------------------------------------------- 단계 ③c, ④
     def match(self, trial_ids: list[str] | None = None) -> list[TrialMatch]:
@@ -333,6 +361,7 @@ class Session:
         self.recommendation = recommender.recommend(self.profile, matches, evaluated, self.qa_log)
         self.tracer.log("recommender", "done",
                         message=" > ".join(r.trial_id for r in self.recommendation.ranked) or "(추천 없음)")
+        self._run_fact_comparison()
         self.tracer.log("explainer", "start")
         if not config.WRITE_REPORT:  # 평가 실험용: 보고서(설명 에이전트) 생략
             return
@@ -378,6 +407,8 @@ class Session:
             "usage": self.usage,
             # 사실 저장소 병행 기록 상태 (판정·추천과 별개, 건수·상태만)
             "fact_shadow": self.fact_shadow_log,
+            # 사실 기반 비교 (진단용, 켰을 때만. ID·상태·이유 코드만)
+            **({"fact_comparison": self.fact_comparison} if self.fact_compare != "off" else {}),
         }
 
     def save(self, out_dir: Path) -> None:
