@@ -234,21 +234,69 @@ def link_evidence(evidence: str, view: "FactEvidenceView") -> Link:
 # ---------------------------------------------------------------------------
 
 # 표적 -> 단어 경계로 찾는 표기. 일반 영어 단어와 겹치는 기호(MET 등)는 넣지 않음 -> 표적을 모르는 것으로 처리
+# 검사 약어와 겹치는 표적은 따로 처리 (_ambiguous_targets): EGFR(유전자) vs eGFR(사구체 여과율), ALK vs Alk phos(알칼리 인산분해효소)
 BIOMARKER_TARGETS = {
     "EGFR": [r"egfr"], "ALK": [r"alk"], "ROS1": [r"ros1"], "BRAF": [r"braf"], "KRAS": [r"kras"],
     "HER2": [r"her2", r"erbb2"], "PD-L1": [r"pd-?\s?l1"], "RET": [r"ret"], "NTRK": [r"ntrk[1-3]?"],
     "BRCA1": [r"brca1"], "BRCA2": [r"brca2"],
 }
+_SPECIAL = {"EGFR", "ALK"}
 _TARGET_RE = {t: re.compile(r"(?<![a-z0-9])(?:" + "|".join(p) + r")(?![a-z0-9])", re.I)
-              for t, p in BIOMARKER_TARGETS.items()}
+              for t, p in BIOMARKER_TARGETS.items() if t not in _SPECIAL}
+_EGFR_ANY = re.compile(r"(?<![a-z0-9])e\s?gfr(?![a-z0-9])", re.I)
+_KIDNEY_CONTEXT = re.compile(r"ml\s*/\s*min|1\.73|\brenal\b|kidney|glomerular|ckd[\s-]?epi|\bmdrd\b|creatinine clearance"
+                             r"|신장|사구체", re.I)
+_ALK_ANY = re.compile(r"(?<![a-z0-9])alk(?![a-z0-9])", re.I)
+_ALK_PHOS = re.compile(r"(?<![a-z0-9])alk(?:aline)?\s*[-.]?\s*(?:phos|p\b)", re.I)
+_CLAUSE_END = re.compile(r"[;\n]|,\s|\.\s|\.$")
+
+
+def _clause(text: str, start: int, end: int) -> str:
+    """언급이 들어 있는 절 (; , 줄바꿈, 마침표+공백 사이). 한 문장의 다른 절에 있는 단어로 판단하지 않게."""
+    before = [m.end() for m in _CLAUSE_END.finditer(text, 0, start)]
+    after = _CLAUSE_END.search(text, end)
+    return text[before[-1] if before else 0: after.start() if after else len(text)]
+
+
+def _ambiguous_targets(text: str) -> tuple[set[str], set[str]]:
+    """(바이오마커 표적, 바이오마커가 아닌 검사로 확인된 항목). 확인되지 않으면 둘 다 넣지 않음(표적 미상).
+
+    - EGFR 유전자: 대문자 'EGFR' 그대로이고, 같은 절에 신장 기능 문맥(mL/min, 1.73, renal 등)이 없을 때만
+    - eGFR 검사: 표기와 상관없이 같은 절에 신장 기능 문맥이 있으면 lab:egfr로 표시 (바이오마커로 잇지 않음)
+    - 그 밖(소문자 'egfr' 등 문맥이 없는 경우)은 어느 쪽으로도 단정하지 않음
+    - ALK: 'Alk phos'·'alkaline phosphatase'(검사)는 제외하고 lab:alkaline phosphatase로 표시
+    """
+    targets, labs = set(), set()
+    for m in _EGFR_ANY.finditer(text):
+        if _KIDNEY_CONTEXT.search(_clause(text, m.start(), m.end())):
+            labs.add("lab:egfr")
+        elif m.group(0) == "EGFR":
+            targets.add("EGFR")
+    phos = [(m.start(), m.end()) for m in _ALK_PHOS.finditer(text)]
+    if phos:
+        labs.add("lab:alkaline phosphatase")
+    for m in _ALK_ANY.finditer(text):
+        if not any(s <= m.start() < e for s, e in phos):
+            targets.add("ALK")
+    return targets, labs
 
 
 def targets_in(text) -> set[str]:
-    return {t for t, rx in _TARGET_RE.items() if text and rx.search(str(text))}
+    """글에 적힌 바이오마커 표적. 검사 약어와 겹치는 표기는 문맥으로 확인될 때만 (불확실하면 넣지 않음)."""
+    if not text:
+        return set()
+    s = str(text)
+    return {t for t, rx in _TARGET_RE.items() if rx.search(s)} | _ambiguous_targets(s)[0]
+
+
+def non_biomarker_mentions(text) -> set[str]:
+    """바이오마커처럼 보이지만 검사 항목으로 확인된 언급 (예: 신장 기능 eGFR -> lab:egfr)."""
+    return _ambiguous_targets(str(text))[1] if text else set()
 
 
 def _fact_targets(r: FactRef) -> set[str]:
-    return targets_in(r.value) | targets_in(r.quote)
+    """사실이 가리키는 표적. 검사로 확인된 언급은 표시를 남겨 '표적 미상'(모든 기준에 관련)으로 보지 않게 함."""
+    return targets_in(r.value) | targets_in(r.quote) | non_biomarker_mentions(r.value) | non_biomarker_mentions(r.quote)
 
 
 def relevant_biomarker_facts(rule: Rule, view: "FactEvidenceView") -> tuple[set[str], list[FactRef]]:

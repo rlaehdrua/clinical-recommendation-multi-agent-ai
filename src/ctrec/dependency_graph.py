@@ -29,7 +29,7 @@ from pydantic import BaseModel
 
 from .agents import matcher
 from .fact_changes import FactChangeSet, FactSnapshot, changed_facts
-from .fact_view import FactEvidenceView, _engine_field, link_evidence, targets_in
+from .fact_view import FactEvidenceView, _engine_field, link_evidence, non_biomarker_mentions, targets_in
 from .schemas import CriterionAssessment, ParsedTrial, Rule, RuleMeta
 
 Resolution = Literal["static_review", "explicit_field", "llm_all_fields", "fallback_all_fields"]
@@ -199,7 +199,9 @@ class ImpactReport(BaseModel):
 
 
 def _fact_targets(f) -> set[str]:
-    return targets_in(f.value) | targets_in(f.source_reference.quote)
+    # 검사로 확인된 언급(예: 신장 기능 eGFR)도 표시해 '표적 미상'으로 보지 않음 (fact_view._fact_targets와 같은 규칙)
+    return (targets_in(f.value) | targets_in(f.source_reference.quote)
+            | non_biomarker_mentions(f.value) | non_biomarker_mentions(f.source_reference.quote))
 
 
 def analyze_impact(changes: FactChangeSet, graph: DependencyGraph, before: FactSnapshot,

@@ -169,3 +169,22 @@ Phase 4-3부터 정책 후보는 다음 경로로 실행합니다.
 - cohort 10, confirmed 15, biomarker 2
 - **임상적 유효성은 검증되지 않았습니다.**
 - confirmed 사례는 평가용 상태 구성(`setup_verified_fields`)으로 나이 사실을 문서 검증된 것으로 두어, 확정 불충족을 만듭니다.
+
+## 10. Phase 4-4: 표적 구분 보강과 유료 평가 준비
+
+**표적 구분**
+
+- 원인: `fact_view.targets_in`이 바이오마커 표기를 대소문자 구분 없이 찾았습니다. 그래서 신장 기능 검사 eGFR과 검사 약어 "Alk phos"(알칼리 인산분해효소)가 각각 유전자 EGFR, ALK로 인식됐습니다.
+- 수정 범위는 표적 추론 경로뿐입니다. Matcher·규칙 엔진은 이 함수를 쓰지 않습니다.
+  - EGFR 유전자: 대문자 `EGFR` 그대로이고, 같은 절에 신장 기능 문맥(mL/min, 1.73, renal, kidney, glomerular, CKD-EPI, MDRD, creatinine clearance)이 없을 때만 인식합니다.
+  - 신장 기능 문맥이 확인되면 표기와 관계없이 `lab:egfr` 표시(`non_biomarker_mentions`)를 남깁니다. 그래서 '표적 미상'으로 보지 않습니다.
+  - 문맥이 없는 소문자·혼합 표기(`egfr`, `Egfr`)는 어느 쪽으로도 단정하지 않습니다(표적 미상 → 기존처럼 보수적으로 관련 있음).
+  - ALK: `Alk phos`·`alkaline phosphatase`를 제외하고 `lab:alkaline phosphatase`로 표시합니다.
+- 구조화 필드(`lab:egfr` 등)가 있는 기준은 원래대로 그 필드를 우선합니다.
+
+**유료 평가 준비**
+
+`scripts/prepare_paid_pilot.py`(dry-run)는 A·B 비교용 합성 표본과 비용 추정, 차단 상태를 냅니다.
+- 표본: 선정·제외 균형, cohort·biomarker·confirmed·shared 포함.
+- 비용: 단가·토큰은 가정값입니다.
+- 실제 호출 경로는 없습니다.

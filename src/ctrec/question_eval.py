@@ -712,7 +712,7 @@ REFERENCE_NOTE = "README의 환자당 약 $0.2–0.7은 과거 참고값이며 �
 
 def estimate_cost(n_cases: int, avg_trials: float, rounds: int, *, retry_rate: float = 0.1,
                   prices: dict | None = None, tokens: dict | None = None, cap_usd: float | None = None,
-                  methods: int = 2) -> dict:
+                  methods: int = 2, disabled: tuple = ()) -> dict:
     """유료 평가 비용 추정 (dry-run). 단계별 호출 수 = 실제 고정 순서(run_fixed) 기준의 상한."""
     prices = prices or ASSUMED_PRICES_PER_MTOK
     tokens = tokens or ASSUMED_TOKENS
@@ -724,6 +724,8 @@ def estimate_cost(n_cases: int, avg_trials: float, rounds: int, *, retry_rate: f
         "simulated_patient": rounds,
         "recommender": 1,
     }
+    for k in disabled:  # 이 실행에서 LLM을 쓰지 않는 단계 (예: 질문 계획 어댑터, 결정적 답변 시뮬레이터)
+        per_case[k] = 0
     calls = {k: v * n_cases * methods for k, v in per_case.items()}
     inp = sum(calls[k] * tokens[k][0] for k in calls)
     out = sum(calls[k] * tokens[k][1] for k in calls)
@@ -735,7 +737,7 @@ def estimate_cost(n_cases: int, avg_trials: float, rounds: int, *, retry_rate: f
         "calls_total": {k: round(v, 1) for k, v in calls.items()}, "input_tokens": int(inp), "output_tokens": int(out),
         "estimated_usd": round(total, 2), "retry_overhead_rate": retry_rate,
         "price_per_mtok": price, "prices_confirmed": bool(price.get("confirmed")), "tokens_confirmed": False,
-        "cap_usd": cap_usd, "within_cap": None if cap_usd is None else total <= cap_usd,
+        "cap_usd": cap_usd, "within_cap": None if cap_usd is None else total <= cap_usd, "disabled_stages": list(disabled),
         "reference_note": REFERENCE_NOTE,
     }
 

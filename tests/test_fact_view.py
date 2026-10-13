@@ -186,7 +186,7 @@ def test_undecided_assessment_left_as_is():
 
 
 # ------------------------------------------------------------ 바이오마커 표적 관련성
-from ctrec.fact_view import link_evidence, targets_in  # noqa: E402
+from ctrec.fact_view import link_evidence, non_biomarker_mentions, targets_in  # noqa: E402
 
 PDL1 = _rule(rule_id="I6", text="PD-L1 TPS >= 50%", category="biomarker", structured_evaluable=False)
 DRIVER = _rule(rule_id="I7", text="Actionable driver mutation present", category="biomarker", structured_evaluable=False)
@@ -202,7 +202,8 @@ def _bm(value, quote=None, **kw):
 def test_target_table_is_explicit_and_word_bounded():
     assert targets_in("EGFR exon 19") == {"EGFR"} and targets_in("PD-L1 TPS 60%") == {"PD-L1"}
     assert targets_in("ERBB2 amplification") == {"HER2"}
-    assert targets_in("eGFR 85 mL/min") == {"EGFR"}  # 표기만 보고 정함 (의미 추론 없음) - 바이오마커 항목에만 씀
+    # Phase 4-4: 신장 기능 eGFR은 유전자 EGFR이 아님 (이전에는 대소문자 무시로 EGFR로 잘못 잡았음)
+    assert targets_in("eGFR 85 mL/min") == set() and non_biomarker_mentions("eGFR 85 mL/min") == {"lab:egfr"}
     assert targets_in("criteria met, retained") == set()  # MET은 목록에 없음, 'ret'는 단어 경계로만
 
 
