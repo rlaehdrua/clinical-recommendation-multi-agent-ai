@@ -11,7 +11,7 @@ from __future__ import annotations
 import contextvars
 import logging
 import threading
-from typing import Any, TypeVar
+from typing import Any, Callable, TypeVar
 
 import anthropic
 from pydantic import BaseModel
@@ -55,6 +55,27 @@ def _record_usage(response) -> None:
         usage["calls"] = usage.get("calls", 0) + 1
         for key in ("input_tokens", "output_tokens", "cache_creation_input_tokens", "cache_read_input_tokens"):
             usage[key] = usage.get(key, 0) + (getattr(u, key, 0) or 0)
+
+
+class RunCancelled(RuntimeError):
+    """협력적 취소: 실행이 취소됐거나 시간 제한을 넘어 더 이상 API를 호출하지 않음 (args[0]: 'cancelled' / 'timeout')."""
+
+
+# 실행별 취소 확인 함수 (웹 실행이 설정). contextvars라 같은 실행의 하위 스레드(copy_context)에도 전달되고,
+# 다른 실행·CLI에는 영향이 없음. 설정하지 않으면 아무것도 하지 않음
+_guard_var: contextvars.ContextVar[Callable[[], str | None] | None] = contextvars.ContextVar("ctrec_guard", default=None)
+
+
+def set_guard(fn: Callable[[], str | None] | None) -> None:
+    _guard_var.set(fn)
+
+
+def guard() -> None:
+    """API 호출 직전 확인 지점. 취소·시간 초과면 RunCancelled (이미 보낸 호출은 중단하지 못함)."""
+    fn = _guard_var.get()
+    reason = fn() if fn is not None else None
+    if reason:
+        raise RunCancelled(reason)
 
 
 def usage_snapshot() -> dict[str, int]:
@@ -120,6 +141,7 @@ def create(
     output_schema: dict[str, Any] | None = None,
 ):
     """Messages API 단일 호출. 거절 시 RefusalError."""
+    guard()
     output_config: dict[str, Any] = {"effort": effort}
     if output_schema is not None:
         output_config["format"] = {"type": "json_schema", "schema": output_schema}

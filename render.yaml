@@ -6,7 +6,9 @@ services:
     plan: free            # 무료 플랜은 15분간 접속이 없으면 잠듦 (첫 접속 30초 내외 지연)
     numInstances: 1       # 실행 상태를 메모리에 보관하므로 반드시 1개
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn ctrec.web.app:app --host 0.0.0.0 --port $PORT --log-level warning
+    # Render는 TLS를 앞단 프록시가 처리하고 서비스는 그 프록시를 통해서만 접근됨 -> 프록시 헤더를 신뢰해야 HTTPS가 인식됨.
+    # '*'는 이 전제(외부에서 직접 접근 불가)에서만 안전. 다른 플랫폼에서는 실제 프록시 주소로 좁히세요.
+    startCommand: uvicorn ctrec.web.app:app --host 0.0.0.0 --port $PORT --log-level warning --proxy-headers --forwarded-allow-ips '*'
     healthCheckPath: /healthz
     envVars:
       - key: PYTHON_VERSION
@@ -17,6 +19,10 @@ services:
         sync: false       # 대시보드에서 직접 입력
       - key: CTREC_PASSWORD
         sync: false       # 접속 비밀번호 (비우면 누구나 접속 가능)
+      - key: CTREC_REQUIRE_HTTPS
+        value: "1"        # HTTPS만 허용 (프록시 설정이 빠져 HTTPS가 인식되지 않으면 403으로 실패)
+      - key: CTREC_COOKIE_SECURE
+        value: "1"        # 실행 소유권 쿠키를 항상 Secure로
       - key: CTREC_MODEL
         value: claude-sonnet-5
       - key: CTREC_FALLBACKS

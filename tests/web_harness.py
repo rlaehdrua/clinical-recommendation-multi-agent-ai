@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import re
+import threading
 import time
 import uuid
 from types import SimpleNamespace
@@ -33,12 +34,17 @@ def _tool_use(name: str, args: dict | None = None):
 class FakeLLM:
     """LLM 호출을 기록하고 합성 출력을 돌려줌. fail_on: 이 출력 형식 요청에서 예외(오류 처리 확인용)."""
 
-    def __init__(self, fail_on: str | None = None, fail_message: str = "합성 오류"):
+    def __init__(self, fail_on: str | None = None, fail_message: str = "합성 오류", block_on: str | None = None):
         self.calls: list[str] = []
         self.fail_on = fail_on
         self.fail_message = fail_message
+        # block_on: 이 출력 형식의 첫 요청에서 release가 설정될 때까지 멈춤 (진행 중인 외부 호출 흉내, 취소 경합 확인용)
+        self.block_on = block_on
+        self.entered = threading.Event()
+        self.release = threading.Event()
 
     def create(self, *, system, messages, tools=None, **k):
+        llm.guard()  # 실제 llm.create와 같은 취소 확인 지점
         self.calls.append("orchestrator")
         if self.fail_on == "orchestrator":
             raise RuntimeError(self.fail_message)
@@ -48,10 +54,14 @@ class FakeLLM:
         return SimpleNamespace(content=[SimpleNamespace(type="text", text="완료")], stop_reason="end_turn")
 
     def structured(self, model_cls, *, system, user, **k):
+        llm.guard()
         name = model_cls.__name__
         self.calls.append(name)
         if self.fail_on == name:
             raise RuntimeError(self.fail_message)
+        if self.block_on == name and not self.entered.is_set():
+            self.entered.set()
+            self.release.wait(20)
         if model_cls is PatientProfile:
             answered = SYN_ANSWER in user
             return PatientProfile(
@@ -79,6 +89,7 @@ class FakeLLM:
         raise AssertionError(f"예상하지 않은 LLM 출력 형식: {name}")
 
     def plain(self, *, system, user, **k):
+        llm.guard()
         self.calls.append("plain")
         return "# 합성 보고서\n\n오프라인 대역이 만든 보고서입니다."
 
@@ -95,7 +106,21 @@ def install(monkeypatch, tmp_path, fake: FakeLLM | None = None) -> FakeLLM:
     monkeypatch.setattr(config, "OUTPUT_DIR", tmp_path / "outputs")
     monkeypatch.setattr(web, "ANSWER_TIMEOUT_S", 20)
     web.RUNS.clear()
+    web.CLIENT_STARTS.clear()
+    for name in ("CTREC_WEB_SAVE_OUTPUTS", "CTREC_REQUIRE_HTTPS", "CTREC_ALLOW_INSECURE_HTTP", "CTREC_COOKIE_SECURE"):
+        monkeypatch.delenv(name, raising=False)  # 기본값(저장 안 함, 쿠키 auto)에서 시작
     return fake
+
+
+def browser(app=None, base_url: str = "https://testserver", client: tuple[str, int] = ("198.51.100.20", 50000)):
+    """실제 화면처럼 동작하는 HTTP 클라이언트 하나 = 브라우저 하나 (쿠키 보관, 상태 변경 요청에 확인 헤더).
+
+    기본은 운영과 같은 HTTPS 접속(외부 주소). 로컬 개발(http + 루프백)은 base_url·client로 바꿈.
+    """
+    from fastapi.testclient import TestClient
+
+    from ctrec.web import app as web
+    return TestClient(app or web.app, base_url=base_url, client=client, headers={"X-CTREC-Request": "1"})
 
 
 def wait_for(run, kind: str, timeout: float = 20.0) -> dict:

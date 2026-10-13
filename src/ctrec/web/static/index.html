@@ -123,6 +123,7 @@ details.report summary { cursor: pointer; font-weight: 700; padding: 4px 0; }
   <span class="badge accent" id="model">모델 -</span>
   <span class="badge" id="run-state">대기 중</span>
   <span class="badge" id="elapsed" hidden>0s</span>
+  <button class="badge" id="cancel" hidden style="cursor:pointer">실행 취소</button>
   <nav class="seg" id="pages">
     <button class="on" data-page="run">① 진행</button>
     <button data-page="result" disabled>② 최종 추천</button>
@@ -264,9 +265,11 @@ async function init() {
   document.querySelectorAll('input[name="cand-mode"]').forEach(r => r.onchange = countTrials);
   $("#to-custom").onclick = () => setCustom(true); $("#to-list").onclick = () => setCustom(false);
   $("#start").onclick = start;
+  $("#cancel").onclick = cancelRun;
   document.querySelectorAll("#pages button").forEach(b => b.onclick = () => showPage(b.dataset.page));
   const first = state.patients.find(p => p.group === "사업단 제공") || state.patients[0];
   if (first) { $("#patient").value = first.patient_id; onPatient(); }
+  resume();
 }
 function statusBadge(s) {
   const map = { RECRUITING: ["모집 중","ok"], NOT_YET_RECRUITING: ["모집 예정","ok"], COMPLETED: ["완료","bad"], TERMINATED: ["조기 종료","bad"],
@@ -305,23 +308,49 @@ function countTrials() {
 }
 
 // ------------------------------------------------------------ 실행
+// 실행 ID만 탭 단위(sessionStorage)로 기억해 새로고침 후 이어 봄. 접근 권한은 서버가 HttpOnly 쿠키로 확인
+const RUN_KEY = "ctrec-run-id";
+function remember(id) { try { id ? sessionStorage.setItem(RUN_KEY, id) : sessionStorage.removeItem(RUN_KEY); } catch (e) {} }
+function remembered() { try { return sessionStorage.getItem(RUN_KEY); } catch (e) { return null; } }
+function post(url, body) {
+  return fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "X-CTREC-Request": "1" }, body: JSON.stringify(body || {}) });
+}
+async function detailOf(r) { let d = null; try { d = (await r.json()).detail; } catch (e) {} return typeof d === "string" ? d : `요청 실패 (${r.status})`; }
+function connect(runId) {
+  if (state.es) state.es.close();
+  state.runId = runId; remember(runId);
+  setRunState("실행 중", "accent"); $("#cancel").hidden = false; $("#cancel").disabled = false; $("#start").disabled = true;
+  state.t0 = Date.now(); $("#elapsed").hidden = false; clearInterval(state.timer);
+  state.timer = setInterval(() => $("#elapsed").textContent = Math.round((Date.now() - state.t0) / 1000) + "s", 500);
+  state.es = new EventSource(`/api/runs/${runId}/events`);
+  state.es.onmessage = (m) => handle(JSON.parse(m.data));
+  // 실행 기록이 없어졌거나(보관 기간 경과·서버 재시작) 권한이 없어 재연결도 안 되면 '실행 중'에 멈추지 않게 표시
+  state.es.onerror = () => { if (state.es && state.es.readyState === EventSource.CLOSED) { setRunState("연결 끊김", "bad"); finish(); } };
+}
+async function cancelRun() {
+  if (!state.runId) return;
+  $("#cancel").disabled = true;
+  const r = await post(`/api/runs/${state.runId}/cancel`);
+  if (r.ok) setRunState("취소 중", "warn");
+  else { $("#cancel").disabled = false; feed(null, "pipeline", `<span style="color:var(--bad)">취소 실패: ${esc(await detailOf(r))}</span>`); }
+}
+async function resume() {
+  const id = remembered(); if (!id) return;
+  const r = await fetch(`/api/runs/${id}`);
+  if (!r.ok) { remember(null); return hint("이전 실행에 접근할 수 없습니다(종료 후 보관 기간 경과 또는 권한 없음)."); }
+  resetView(); connect(id);
+}
 async function start() {
   const body = { trial_ids: screenMode() ? [] : selectedTrials(), screen: screenMode(), allow_search: $("#search").checked };
   if (state.custom) { body.custom_text = $("#custom").value.trim(); if (!body.custom_text) return hint("환자 정보를 입력하세요."); }
   else body.patient_id = $("#patient").value;
   if (!body.screen && !body.trial_ids.length && !body.allow_search) return hint("후보 임상시험을 하나 이상 선택하세요.");
+  if (state.es) { state.es.close(); state.es = null; }  // 이전 실행의 연결·상태 정리
   resetView();
   $("#start").disabled = true; hint("");
-  const r = await fetch("/api/runs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-  if (!r.ok) { $("#start").disabled = false; let d = null; try { d = (await r.json()).detail; } catch (e) {} return hint(typeof d === "string" ? d : `실행 실패 (${r.status})`); }
-  state.runId = (await r.json()).run_id;
-  setRunState("실행 중", "accent");
-  state.t0 = Date.now(); $("#elapsed").hidden = false;
-  state.timer = setInterval(() => $("#elapsed").textContent = Math.round((Date.now() - state.t0) / 1000) + "s", 500);
-  state.es = new EventSource(`/api/runs/${state.runId}/events`);
-  state.es.onmessage = (m) => handle(JSON.parse(m.data));
-  // 실행 기록이 없어졌거나(서버 재시작·보관 기간 경과) 연결이 끊겨 재연결도 안 되면 '실행 중'에 멈추지 않게 표시
-  state.es.onerror = () => { if (state.es && state.es.readyState === EventSource.CLOSED) { setRunState("연결 끊김", "bad"); finish(); } };
+  const r = await post("/api/runs", body);
+  if (!r.ok) { $("#start").disabled = false; return hint(await detailOf(r)); }
+  connect((await r.json()).run_id);
 }
 function showPage(name) {
   $("#page-run").hidden = name !== "run"; $("#page-result").hidden = name !== "result";
@@ -337,6 +366,7 @@ function resetView() {
   $("#final").innerHTML = '<div class="empty">추천 에이전트가 완료되면 결과가 표시됩니다.</div>'; $("#qslot").innerHTML = ""; $("#usage").textContent = "";
 }
 function finish() {
+  $("#cancel").hidden = true;
   state.es && state.es.close(); clearInterval(state.timer); $("#start").disabled = false; clearEdges();
   document.querySelectorAll(".node.active").forEach(n => n.classList.remove("active"));
 }
@@ -350,13 +380,19 @@ const TOOL_KO = { screen_trials: "후보 시험 추림", profile_patient: "환�
   ask_clarifying_questions: "확인 질문 라운드", finalize_recommendation: "최종 추천 생성" };
 
 function handle(ev) {
+  if (ev.type === "status" && ev.cancelling) { setRunState("취소 중", "warn"); $("#qslot").innerHTML = ""; }
   if (ev.type === "status") { if (ev.patient_id) feed(0, "pipeline", `환자 <b>${esc(ev.patient_id)}</b> · 시험 ${ev.trial_ids.length}개`); else feed(null, "pipeline", esc(ev.message)); return; }
   if (ev.type === "trace") return onTrace(ev.record);
   if (ev.type === "questions") return showQuestions(ev.questions);
   if (ev.type === "answers") { $("#qslot").innerHTML = ""; return; }
   if (ev.type === "result") return showResult(ev);
   if (ev.type === "error") { feed(null, "pipeline", `<span style="color:var(--bad)">오류: ${esc(ev.message)}</span>`); setRunState("오류", "bad"); return; }
-  if (ev.type === "end") { if ($("#run-state").textContent === "실행 중") setRunState("완료", "ok"); finish(); }
+  if (ev.type === "end") {
+    const END = { completed: ["완료", "ok"], cancelled: ["취소됨", "warn"], timed_out: ["시간 초과", "bad"], error: ["오류", "bad"] };
+    const [t, c] = END[ev.state] || ["완료", "ok"]; setRunState(t, c);
+    if (ev.state !== "completed") $("#qslot").innerHTML = "";
+    finish();
+  }
 }
 
 function onTrace(r) {
@@ -466,9 +502,9 @@ function showQuestions(qs) {
   const submit = async (skip) => {
     const answers = {}; document.querySelectorAll("#qslot input").forEach(i => answers[i.dataset.q] = (!skip && i.value.trim()) || "모름");
     $("#send").disabled = $("#skip").disabled = true;
-    const r = await fetch(`/api/runs/${state.runId}/answers`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ answers }) });
-    if (!r.ok) { $("#send").disabled = $("#skip").disabled = false; let d = null; try { d = (await r.json()).detail; } catch (e) {}
-      return feed(null, "pipeline", `<span style="color:var(--bad)">답변 전송 실패: ${esc(typeof d === "string" ? d : r.status)}</span>`); }
+    const r = await post(`/api/runs/${state.runId}/answers`, { answers });
+    if (!r.ok) { $("#send").disabled = $("#skip").disabled = false;
+      return feed(null, "pipeline", `<span style="color:var(--bad)">답변 전송 실패: ${esc(await detailOf(r))}</span>`); }
     setRunState("실행 중", "accent");
   };
   $("#send").onclick = () => submit(false);

@@ -18,7 +18,6 @@ pytest.importorskip("httpx")
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from fastapi.testclient import TestClient
 
 import web_harness as h
 from ctrec import store_patch
@@ -35,7 +34,7 @@ def fake(monkeypatch, tmp_path):
 
 @pytest.fixture()
 def client(fake):
-    return TestClient(web.app)
+    return h.browser()  # 실행을 만드는 브라우저 (소유권 쿠키를 받음)
 
 
 def _start(client, text=h.SYN_TEXT, **kw):
@@ -199,7 +198,7 @@ SECRET = "합성-민감-문구-58세"
 @pytest.mark.parametrize("where", ["orchestrator", "PatientProfile"])
 def test_pipeline_failure_reported_without_details(monkeypatch, tmp_path, where):
     h.install(monkeypatch, tmp_path, h.FakeLLM(fail_on=where, fail_message=SECRET))
-    c = TestClient(web.app)
+    c = h.browser()
     rid, run = _start(c)
     h.wait_for(run, "end", 30)
     events = h.sse_events(c.get(f"/api/runs/{rid}/events").text)
@@ -210,7 +209,7 @@ def test_pipeline_failure_reported_without_details(monkeypatch, tmp_path, where)
 
 def test_matcher_failure_marks_not_evaluated(monkeypatch, tmp_path):
     h.install(monkeypatch, tmp_path, h.FakeLLM(fail_on="MatcherOutput", fail_message=SECRET))
-    c = TestClient(web.app)
+    c = h.browser()
     rid, run = _start(c)
     h.wait_for(run, "end", 30)
     events = h.sse_events(c.get(f"/api/runs/{rid}/events").text)
@@ -231,7 +230,7 @@ def test_llm_provider_not_configured(monkeypatch, tmp_path):
     def no_key():
         raise TypeError("Could not resolve authentication method")
     monkeypatch.setattr(llm, "client", no_key)
-    c = TestClient(web.app)
+    c = h.browser()
     rid, run = _start(c)
     h.wait_for(run, "end", 30)
     [err] = _of(h.sse_events(c.get(f"/api/runs/{rid}/events").text), "error")
@@ -241,28 +240,31 @@ def test_llm_provider_not_configured(monkeypatch, tmp_path):
 
 # ------------------------------------------------------------ 반복 요청, 격리, 실행 ID
 def test_repeated_requests_are_independent_runs(client):
+    """다른 브라우저 두 곳의 실행은 서로 독립 (같은 브라우저의 동시 실행 제한은 test_web_security에서 확인)."""
+    other = h.browser()
     a, _ = _start(client)
-    b, _ = _start(client)
+    b, _ = _start(other)
     assert a != b and len(web.RUNS) == 2
-    for rid in (a, b):
+    for c, rid in ((client, a), (other, b)):
         h.wait_for(web.RUNS[rid], "questions")
-        client.post(f"/api/runs/{rid}/answers", json={"answers": {"Q1": "모름"}})
+        c.post(f"/api/runs/{rid}/answers", json={"answers": {"Q1": "모름"}})
         h.wait_for(web.RUNS[rid], "end", 30)
 
 
 def test_sessions_isolated(client):
+    other = h.browser()
     text_a, text_b = h.SYN_TEXT + " 합성A", h.SYN_TEXT + " 합성B"
     a, run_a = _start(client, text_a)
-    b, run_b = _start(client, text_b)
+    b, run_b = _start(other, text_b)
     h.wait_for(run_a, "questions")
     h.wait_for(run_b, "questions")
     client.post(f"/api/runs/{a}/answers", json={"answers": {"Q1": "A만의-답변"}})
     h.wait_for(run_a, "end", 30)
     assert not run_b.done and run_b.pending_questions == {"Q1"}  # A의 답변이 B를 진행시키지 않음
-    client.post(f"/api/runs/{b}/answers", json={"answers": {"Q1": "B만의-답변"}})
+    other.post(f"/api/runs/{b}/answers", json={"answers": {"Q1": "B만의-답변"}})
     h.wait_for(run_b, "end", 30)
     ra = _of(h.sse_events(client.get(f"/api/runs/{a}/events").text), "result")[0]["result"]
-    rb = _of(h.sse_events(client.get(f"/api/runs/{b}/events").text), "result")[0]["result"]
+    rb = _of(h.sse_events(other.get(f"/api/runs/{b}/events").text), "result")[0]["result"]
     assert ra["patient_id"] != rb["patient_id"]
     assert [q["answer"] for q in ra["qa_log"]] == ["A만의-답변"] and [q["answer"] for q in rb["qa_log"]] == ["B만의-답변"]
     dump_a = json.dumps(h.sse_events(client.get(f"/api/runs/{a}/events").text), ensure_ascii=False)
@@ -275,18 +277,18 @@ def test_run_id_not_guessable(client):
     assert len(token) == 32 and int(token, 16) >= 0  # 128비트 난수 (이전: 4자리 16진수)
 
 
-def test_no_paid_api_and_files_only_in_temp(client, fake, tmp_path):
+def test_no_paid_api_and_no_files_by_default(client, fake, tmp_path):
     _complete(client)
     assert "orchestrator" in fake.calls and "MatcherOutput" in fake.calls  # 모든 LLM 호출이 대역으로 감
-    written = [p for p in tmp_path.rglob("*") if p.is_file()]
-    assert written and all("outputs" in p.parts for p in written)
+    assert [p for p in tmp_path.rglob("*") if p.is_file()] == []  # 웹 실행은 기본적으로 디스크에 저장하지 않음
     assert store_patch.verify_frozen() == []
 
 
 def test_run_limit_returns_429(client, monkeypatch):
     monkeypatch.setattr(web, "MAX_RUNS", 1)
     rid, run = _start(client)
-    assert client.post("/api/runs", json={"custom_text": "x", "trial_ids": h.TRIAL_IDS, "screen": False}).status_code == 429
+    other = h.browser()  # 다른 브라우저도 전체 상한에 걸림
+    assert other.post("/api/runs", json={"custom_text": "x", "trial_ids": h.TRIAL_IDS, "screen": False}).status_code == 429
     h.wait_for(run, "questions")
     client.post(f"/api/runs/{rid}/answers", json={"answers": {"Q1": "모름"}})
     h.wait_for(run, "end", 30)

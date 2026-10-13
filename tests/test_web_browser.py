@@ -109,3 +109,50 @@ def test_browser_shows_server_validation_message(server):
         page.wait_for_function("document.querySelector('#start-hint').textContent.startsWith('요청 형식')")
         assert not page.is_disabled("#start")
         browser.close()
+
+
+def _open_custom_run(page, base):
+    page.route("**/*", lambda route: route.continue_() if route.request.url.startswith(base) else route.abort())
+    page.goto(base)
+    page.wait_for_selector("#patient option", state="attached")
+    page.click("#to-custom")
+    page.fill("#custom", h.SYN_TEXT)
+    page.check('input[name="cand-mode"][value="given"]')
+    page.evaluate("ids => document.querySelectorAll('#trials input').forEach(i => i.checked = ids.includes(i.value))",
+                  h.TRIAL_IDS)
+    page.click("#start")
+    page.wait_for_selector("#qslot input[data-q='Q1']", timeout=20000)
+
+
+def test_browser_cancel_refresh_and_other_profile(server):
+    """취소 버튼, 새로고침 후 이어 보기, 다른 브라우저 프로필(쿠키 없음)의 접근 거부."""
+    base, _ = server
+    errors = []
+    with sync_api.sync_playwright() as p:
+        browser = _browser(p)
+        owner = browser.new_context()
+        page = owner.new_page()
+        page.on("pageerror", lambda e: errors.append(str(e)))
+        _open_custom_run(page, base)
+        run_id = page.evaluate("sessionStorage.getItem('ctrec-run-id')")
+        assert run_id and page.evaluate("document.cookie") == ""  # 토큰은 HttpOnly라 스크립트가 읽지 못함
+        # 새로고침: 같은 탭에서 실행을 이어 보고 질문이 다시 표시됨
+        page.reload()
+        page.wait_for_selector("#qslot input[data-q='Q1']", timeout=20000)
+        assert page.is_visible("#cancel")
+        # 다른 프로필(다른 브라우저와 같음): 실행 ID를 알아도 접근 불가
+        stranger = browser.new_context().new_page()
+        stranger.route("**/*", lambda route: route.continue_() if route.request.url.startswith(base) else route.abort())
+        stranger.goto(base)
+        status = stranger.evaluate("async id => (await fetch(`/api/runs/${id}/events`)).status", run_id)
+        answer = stranger.evaluate("""async id => (await fetch(`/api/runs/${id}/answers`, {method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CTREC-Request': '1'},
+            body: JSON.stringify({answers: {Q1: 'x'}})})).status""", run_id)
+        assert (status, answer) == (404, 404)
+        # 취소
+        page.click("#cancel")
+        page.wait_for_function("document.querySelector('#run-state').textContent === '취소됨'", timeout=10000)
+        assert page.is_hidden("#cancel") and not page.is_disabled("#start")
+        assert page.inner_html("#qslot") == ""
+        browser.close()
+    assert errors == [], errors

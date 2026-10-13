@@ -16,6 +16,7 @@ import asyncio
 import base64
 import contextvars
 import json
+import logging
 import os
 import secrets
 import threading
@@ -38,12 +39,28 @@ from ..schemas import ClarifyingQuestion
 from ..status import MATCH_NOTE
 from ..tools import ctgov
 from ..trace import Tracer
+from . import access, retention
 
 STATIC = Path(__file__).parent / "static"
-ANSWER_TIMEOUT_S = 30 * 60
+log = logging.getLogger("ctrec.web")
+
+
+def _env_int(name: str, default: int, minimum: int = 1) -> int:
+    try:
+        return max(minimum, int(os.getenv(name, "") or default))
+    except ValueError:
+        return default
+
+
+ANSWER_TIMEOUT_S = _env_int("CTREC_WEB_ANSWER_TIMEOUT_S", 30 * 60)  # 확인 질문 답변 대기 (넘으면 '모름'으로 진행)
+RUN_TIMEOUT_S = _env_int("CTREC_WEB_RUN_TIMEOUT_S", 60 * 60)  # 실행 전체 시간 제한 (협력적: 다음 확인 지점에서 중단)
 # 실행 기록(RUNS) 보관 한도 (아키텍처 §67 web RUNS lifecycle): 메모리에 무한히 쌓이지 않도록
 MAX_RUNS = int(os.getenv("CTREC_WEB_MAX_RUNS", "20"))          # 동시에 보관하는 실행 수
 RUN_TTL_S = int(os.getenv("CTREC_WEB_RUN_TTL_S", str(2 * 60 * 60)))  # 끝난 실행을 보관하는 시간
+ENDED_TTL_S = _env_int("CTREC_WEB_ENDED_TTL_S", 120)  # 취소·오류·시간 초과로 끝난 실행 기록 보관 (종료 이벤트 전달용)
+MAX_ACTIVE_PER_CLIENT = _env_int("CTREC_WEB_MAX_ACTIVE_PER_CLIENT", 1)  # 같은 브라우저의 동시 실행 수
+MAX_STARTS_PER_HOUR = _env_int("CTREC_WEB_MAX_STARTS_PER_HOUR", 20)  # 같은 브라우저의 시간당 실행 시작 수
+MAX_BODY_BYTES = 256 * 1024  # 요청 본문 최대 크기
 MAX_TEXT_CHARS = 20000  # 직접 입력 환자 정보 최대 길이
 MAX_ANSWER_CHARS = 2000  # 확인 질문 답변 하나의 최대 길이
 
@@ -51,6 +68,14 @@ app = FastAPI(title="ctrec - Interactive Clinical Trial Recommendation")
 
 # 배포용 접근 제한: CTREC_PASSWORD가 설정되어 있으면 HTTP Basic 인증 (아이디는 아무거나)
 PASSWORD = os.getenv("CTREC_PASSWORD", "")
+
+
+@app.middleware("http")
+async def limit_body(request: Request, call_next):
+    length = request.headers.get("content-length")
+    if length is not None and (not length.isdigit() or int(length) > MAX_BODY_BYTES):
+        return JSONResponse(status_code=413, content={"detail": "요청이 너무 큽니다."})
+    return await call_next(request)
 
 
 @app.middleware("http")
@@ -73,6 +98,17 @@ async def validation_error(request: Request, exc: RequestValidationError):
     # 기본 422 응답은 보낸 값(환자 정보일 수 있음)을 그대로 돌려주므로, 필드 위치와 오류 종류만 알림
     fields = sorted({".".join(str(x) for x in e.get("loc", ()) if x != "body") or "body" for e in exc.errors()})
     return JSONResponse(status_code=422, content={"detail": f"요청 형식이 올바르지 않습니다: {', '.join(fields)}"})
+
+
+@app.middleware("http")
+async def require_https(request: Request, call_next):
+    """루프백이 아닌 평문 HTTP 요청 거절 (상태 확인 /healthz 제외). HTTPS 응답에는 HSTS."""
+    if request.url.path != "/healthz" and not access.transport_allowed(request):
+        return JSONResponse(status_code=403, content={"detail": "HTTPS로 접속하세요."})
+    response = await call_next(request)
+    if access.is_https(request):
+        response.headers["Strict-Transport-Security"] = "max-age=31536000"
+    return response
 
 
 # ---------------------------------------------------------------------------
@@ -106,76 +142,112 @@ def _load_cases() -> dict[str, tuple[PatientCase, str]]:
 # 실행 상태
 # ---------------------------------------------------------------------------
 
+# 실행 상태 전이 (run.lock 안에서만 바꿈. 끝 상태는 한 번 정해지면 바뀌지 않음)
+#   running -> cancelling (취소 요청: 작업 스레드가 다음 확인 지점에서 멈춤) -> cancelled
+#   running -> completed (결과 전송과 같은 잠금 구간에서 확정 -> 이후 취소 요청은 409) / error / timed_out
+#   cancelling -> cancelled (작업이 결과를 냈어도 결과를 보내지 않음)
+# 결과 이벤트가 있으면 end 상태는 반드시 completed, 없으면 completed가 아님
+
+
 @dataclass
 class Run:
     run_id: str
+    owner_digest: str = ""  # 소유권 토큰의 SHA-256 (평문은 저장하지 않음)
+    client_digest: str = ""  # 브라우저 식별 쿠키의 SHA-256 (같은 브라우저 실행 수 제한용)
     events: list[dict] = field(default_factory=list)
-    lock: threading.Lock = field(default_factory=threading.Lock)
+    lock: threading.RLock = field(default_factory=threading.RLock)
     answer_ready: threading.Event = field(default_factory=threading.Event)
+    cancel_requested: threading.Event = field(default_factory=threading.Event)
     answers: dict[str, str] = field(default_factory=dict)
     pending_questions: set[str] = field(default_factory=set)  # 답변을 기다리는 질문 ID (없으면 답변을 받지 않음)
-    done: bool = False
+    state: str = "running"
+    done: bool = False  # 작업 스레드가 실제로 끝났는가 (동시 실행 슬롯은 이때만 반환)
     created_at: float = field(default_factory=time.time)
+    deadline: float = 0.0
     finished_at: float | None = None
 
     def emit(self, type_: str, **data: Any) -> None:
         with self.lock:
             self.events.append({"id": len(self.events), "type": type_, "ts": time.time(), **data})
 
+    def stop_reason(self) -> str | None:
+        """협력적 취소 확인: 'cancelled' / 'timeout' / None."""
+        if self.cancel_requested.is_set():
+            return "cancelled"
+        if self.deadline and time.time() > self.deadline:
+            return "timeout"
+        return None
+
 
 RUNS: dict[str, Run] = {}
 RUNS_LOCK = threading.Lock()
+CLIENT_STARTS: dict[str, list[float]] = {}  # 브라우저 식별값(해시) -> 최근 1시간 실행 시작 시각
+
+
+def _active(r: Run) -> bool:
+    return not r.done
 
 
 def _prune_runs(now: float | None = None) -> None:
-    """끝난 지 RUN_TTL_S가 지난 실행을 지우고, 그래도 MAX_RUNS 이상이면 오래 전에 끝난 실행부터 지움.
-
-    진행 중인 실행은 지우지 않습니다(답변 대기 중일 수 있음). 결과 파일(outputs/web/<run_id>)은 남습니다.
-    """
+    """끝난 실행 기록 정리. 정상 완료는 RUN_TTL_S, 취소·오류·시간 초과는 ENDED_TTL_S 뒤 삭제하고,
+    그래도 MAX_RUNS 이상이면 오래 전에 끝난 실행부터 지움. 작업 스레드가 아직 도는 실행은 지우지 않음."""
     now = time.time() if now is None else now
     with RUNS_LOCK:
         for rid, r in list(RUNS.items()):
-            if r.done and r.finished_at is not None and now - r.finished_at > RUN_TTL_S:
+            ttl = RUN_TTL_S if r.state == "completed" else ENDED_TTL_S
+            if r.done and r.finished_at is not None and now - r.finished_at > ttl:
                 del RUNS[rid]
         finished = sorted((r for r in RUNS.values() if r.done), key=lambda r: r.finished_at or r.created_at)
         while len(RUNS) >= MAX_RUNS and finished:
             del RUNS[finished.pop(0).run_id]
+        for key, starts in list(CLIENT_STARTS.items()):
+            CLIENT_STARTS[key] = [t for t in starts if now - t < 3600]
+            if not CLIENT_STARTS[key]:
+                del CLIENT_STARTS[key]
 
 
 class WebAnswerer:
-    """확인 질문을 브라우저로 보내고 답변이 올 때까지 대기."""
+    """확인 질문을 브라우저로 보내고 답변이 올 때까지 대기 (취소·실행 시간 제한을 짧은 간격으로 확인)."""
 
     def __init__(self, run: Run):
         self.run = run
 
     def answer(self, questions: list[ClarifyingQuestion], patient_id: str) -> dict[str, str]:
-        self.run.answer_ready.clear()
-        with self.run.lock:
-            self.run.answers = {}
-            self.run.pending_questions = {q.question_id for q in questions}
-        self.run.emit("questions", questions=[q.model_dump() for q in questions])
-        if not self.run.answer_ready.wait(ANSWER_TIMEOUT_S):
-            with self.run.lock:
-                self.run.pending_questions = set()
-            self.run.emit("status", message="답변 대기 시간이 초과되어 '모름'으로 처리합니다.")
-        return {q.question_id: (self.run.answers.get(q.question_id) or "모름") for q in questions}
+        run = self.run
+        llm.guard()
+        run.answer_ready.clear()
+        with run.lock:
+            run.answers = {}
+            run.pending_questions = {q.question_id for q in questions}
+        run.emit("questions", questions=[q.model_dump() for q in questions])
+        wait_until = time.time() + ANSWER_TIMEOUT_S
+        while not run.answer_ready.wait(0.2):
+            reason = run.stop_reason()
+            if reason or time.time() > wait_until:
+                with run.lock:
+                    run.pending_questions = set()
+                if reason:
+                    raise llm.RunCancelled(reason)
+                run.emit("status", message="답변 대기 시간이 초과되어 '모름'으로 처리합니다.")
+                break
+        llm.guard()  # 답변을 받는 사이 취소됐으면 재평가(유료 호출)로 넘어가지 않음
+        return {q.question_id: (run.answers.get(q.question_id) or "모름") for q in questions}
 
 
 class RunRequest(BaseModel):
-    patient_id: str | None = None
+    patient_id: str | None = Field(default=None, max_length=100)
     custom_text: str | None = Field(default=None, max_length=MAX_TEXT_CHARS)
-    trial_ids: list[str] = []
+    trial_ids: list[str] = Field(default=[], max_length=200)
     screen: bool = True  # True: 전체 시험에서 후보 추림 에이전트가 고름 / False: trial_ids만 평가
     allow_search: bool = False
     max_rounds: int = Field(default=config.MAX_CLARIFY_ROUNDS, ge=0, le=config.MAX_CLARIFY_ROUNDS)
 
 
 class AnswerRequest(BaseModel):
-    answers: dict[str, str]
+    answers: dict[str, str] = Field(max_length=50)
 
 
 # 화면으로 보내는 실행 기록 중 예외 문구를 담는 이벤트: 예외 메시지에는 환자 정보가 들어 있을 수 있으므로 종류만 보냄
-# (서버의 trace.jsonl에는 원래 기록이 그대로 남음)
 _ERROR_TRACES = {("orchestrator", "tool_error"), ("pipeline", "error")}
 
 
@@ -186,31 +258,58 @@ def _client_record(rec: dict) -> dict:
     return {**rec, "message": f"{kind} (자세한 내용은 서버 실행 기록 참고)"}
 
 
+_END_MESSAGE = {"cancelled": "실행이 취소되었습니다.", "timed_out": "실행 시간 제한을 넘어 중단했습니다."}
+
+
 def _execute(run: Run, req: RunRequest, case: PatientCase, trials: dict[str, dict]) -> None:
     llm.reset_usage()
-    out_dir = config.OUTPUT_DIR / "web" / run.run_id
-    tracer = Tracer(out_dir / "trace.jsonl", verbose=False,
-                    listener=lambda rec: run.emit("trace", record=_client_record(rec)))
-    # 웹 UI: 확인 질문이 필요하면 화면에서 사용자가 직접 답변 (가상 환자·답변 없음 모드는 CLI 평가용)
-    answerer = WebAnswerer(run)
-    session = Session(case=case, trials=trials, answerer=answerer, tracer=tracer,
-                      max_rounds=req.max_rounds, allow_search=req.allow_search,
-                      screen_trials=req.screen and len(trials) > config.SCREEN_MAX_CANDIDATES)
+    llm.set_guard(run.stop_reason)  # 이 실행(과 하위 스레드)의 API 호출 직전마다 취소·시간 초과 확인
+    outcome, error_type = "completed", None
     try:
+        # 저장은 기본 off (retention.save_enabled). 켜져 있을 때만 trace.jsonl·result.json·report.md를 씀
+        out_dir = retention.prepare_run_dir(run.run_id) if retention.save_enabled() else None
+        tracer = Tracer(out_dir / "trace.jsonl" if out_dir else None, verbose=False,
+                        listener=lambda rec: run.emit("trace", record=_client_record(rec)))
+        # 웹 UI: 확인 질문이 필요하면 화면에서 사용자가 직접 답변 (가상 환자·답변 없음 모드는 CLI 평가용)
+        session = Session(case=case, trials=trials, answerer=WebAnswerer(run), tracer=tracer,
+                          max_rounds=req.max_rounds, allow_search=req.allow_search,
+                          screen_trials=req.screen and len(trials) > config.SCREEN_MAX_CANDIDATES)
         # 웹 UI는 오케스트레이터(agent) 모드로만 실행
         tracer.log("pipeline", "start", message=f"mode=agent model={config.MODEL} trials={len(trials)}")
         Orchestrator(session).run()
-        session.save(out_dir)
-        tracer.log("pipeline", "saved", message=str(out_dir))
-        run.emit("result", result=session.result(), report=session.report, match_note=MATCH_NOTE,
-                 trials={tid: {"title": t.get("title"), "overall_status": t.get("overall_status"),
-                               "url": (t.get("source") or {}).get("url")} for tid, t in session.trials.items()})
-    except Exception as e:  # 오류도 화면에 표시 (예외 메시지에는 환자 정보가 있을 수 있으므로 종류만)
-        run.emit("error", message=f"실행 중 오류가 발생했습니다 ({type(e).__name__}). 다시 시도하거나 관리자에게 문의하세요.")
+        llm.guard()  # 오케스트레이터가 끝난 뒤라도 취소·시간 초과였으면 결과를 완료로 내보내지 않음
+        if out_dir is not None:
+            session.save(out_dir)
+        with run.lock:  # 취소 요청과 경합: 아직 running일 때만 결과를 보내고, 같은 잠금 안에서 completed로 확정
+            if run.state == "running":
+                run.state = "completed"
+                run.emit("result", result=session.result(), report=session.report, match_note=MATCH_NOTE,
+                         trials={tid: {"title": t.get("title"), "overall_status": t.get("overall_status"),
+                                       "url": (t.get("source") or {}).get("url")} for tid, t in session.trials.items()})
+    except llm.RunCancelled as e:
+        outcome = "timed_out" if e.args and e.args[0] == "timeout" else "cancelled"
+    except Exception as e:  # noqa: BLE001 - 오류도 화면에 표시 (예외 메시지에는 환자 정보가 있을 수 있으므로 종류만)
+        outcome, error_type = "error", type(e).__name__
     finally:
-        run.done = True
-        run.finished_at = time.time()
-        run.emit("end")
+        with run.lock:
+            if run.state == "completed":
+                outcome = "completed"  # 결과를 보낸 실행은 이후 무슨 일이 있어도 완료 (취소·오류로 바뀌지 않음)
+            elif run.state == "cancelling":
+                outcome = "cancelled"  # 취소 요청 뒤에 끝났으면 결과·오류와 상관없이 취소
+            elif outcome == "completed":
+                outcome = "error"  # 결과 없이 정상 종료된 경우(예: 취소·실행 상태 불일치)는 완료로 보이지 않게
+                error_type = error_type or "NoResult"
+            if outcome == "error":
+                run.emit("error", message=f"실행 중 오류가 발생했습니다 ({error_type}). 다시 시도하거나 관리자에게 문의하세요.")
+            elif outcome in _END_MESSAGE:
+                run.emit("status", message=_END_MESSAGE[outcome])
+            run.state = outcome
+            run.pending_questions = set()
+            run.done = True
+            run.finished_at = time.time()
+            run.emit("end", state=outcome)
+        if outcome != "completed":
+            log.warning("web run ended: state=%s error_type=%s", outcome, error_type)
 
 
 # ---------------------------------------------------------------------------
@@ -251,8 +350,35 @@ def list_trials() -> list[dict]:
     ]
 
 
+_NOT_FOUND = "실행을 찾을 수 없거나 접근 권한이 없습니다."
+
+
+def _owned_run(run_id: str, request: Request) -> Run:
+    """소유권 쿠키가 맞는 실행. 없는 실행과 권한 없음은 같은 응답 (존재 여부를 드러내지 않음)."""
+    run = RUNS.get(run_id)
+    if run is None or not access.matches(request.cookies.get(access.RUN_COOKIE), run.owner_digest):
+        raise HTTPException(404, _NOT_FOUND)
+    return run
+
+
+_last_purge = 0.0
+
+
+def _purge_outputs_periodically() -> None:
+    global _last_purge
+    now = time.time()
+    if now - _last_purge < 600:
+        return
+    _last_purge = now
+    try:
+        retention.purge_expired(now)
+    except Exception as e:  # noqa: BLE001 - 정리 실패가 실행 시작을 막지 않음
+        log.warning("web output purge failed: %s", type(e).__name__)
+
+
 @app.post("/api/runs")
-def start_run(req: RunRequest) -> dict:
+def start_run(req: RunRequest, request: Request, response: Response) -> dict:
+    access.check_state_changing(request)
     all_trials = _load_trials()
     trials = dict(all_trials) if req.screen else {t: all_trials[t] for t in req.trial_ids if t in all_trials}
     if not trials and not req.allow_search:
@@ -272,42 +398,79 @@ def start_run(req: RunRequest) -> dict:
         case = PatientCase(patient_id=src.patient_id, raw_text=src.raw_text, hidden_details=src.hidden_details,
                            input_source=src.input_source)
 
+    _purge_outputs_periodically()
+    client_token = request.cookies.get(access.CLIENT_COOKIE) or access.new_token()
+    client_digest = access.digest(client_token)
+    owner_token = access.new_token()
+    # 실행 ID는 식별자일 뿐 권한이 아님 (권한은 소유권 쿠키). 그래도 추측하기 어렵게 128비트 난수
+    run = Run(run_id=time.strftime("%Y%m%d-%H%M%S-") + secrets.token_hex(16),
+              owner_digest=access.digest(owner_token), client_digest=client_digest)
+    run.deadline = run.created_at + RUN_TIMEOUT_S
     _prune_runs()
-    if len(RUNS) >= MAX_RUNS:
-        raise HTTPException(429, f"진행 중인 실행이 {MAX_RUNS}개라 새 실행을 시작할 수 없습니다. 잠시 후 다시 시도하세요.")
-    # 실행 ID는 그 실행의 질문·결과에 접근하는 열쇠이므로 추측할 수 없게 만듦 (128비트 난수)
-    run = Run(run_id=time.strftime("%Y%m%d-%H%M%S-") + secrets.token_hex(16))
     with RUNS_LOCK:
+        mine = [r for r in RUNS.values() if r.client_digest == client_digest and _active(r)]
+        if len(mine) >= MAX_ACTIVE_PER_CLIENT:
+            raise HTTPException(429, "이 브라우저에서 진행 중인 실행이 있습니다. 끝나거나 취소한 뒤 다시 시작하세요.")
+        if len(CLIENT_STARTS.get(client_digest, [])) >= MAX_STARTS_PER_HOUR:
+            raise HTTPException(429, "이 브라우저의 실행 횟수 한도를 넘었습니다. 잠시 후 다시 시도하세요.")
+        if len(RUNS) >= MAX_RUNS:
+            raise HTTPException(429, f"진행 중인 실행이 {MAX_RUNS}개라 새 실행을 시작할 수 없습니다. 잠시 후 다시 시도하세요.")
         RUNS[run.run_id] = run
+        CLIENT_STARTS.setdefault(client_digest, []).append(run.created_at)
+    access.set_cookie(response, request, access.RUN_COOKIE, owner_token, path=f"/api/runs/{run.run_id}",
+                      max_age=RUN_TIMEOUT_S + RUN_TTL_S)
+    access.set_cookie(response, request, access.CLIENT_COOKIE, client_token, path="/api", max_age=30 * 24 * 3600)
     run.emit("status", message="파이프라인 시작", patient_id=case.patient_id, trial_ids=list(trials))
-    ctx = contextvars.copy_context()  # 실행별 토큰 사용량 집계
+    ctx = contextvars.copy_context()  # 실행별 토큰 사용량 집계·취소 확인
     threading.Thread(target=ctx.run, args=(_execute, run, req, case, trials), daemon=True).start()
     return {"run_id": run.run_id}
 
 
+@app.get("/api/runs/{run_id}")
+def run_status(run_id: str, request: Request) -> dict:
+    """새로고침 후 이어 보기용 상태 확인 (소유자만)."""
+    run = _owned_run(run_id, request)
+    with run.lock:
+        return {"run_id": run.run_id, "state": run.state, "done": run.done,
+                "waiting_for_answers": bool(run.pending_questions)}
+
+
 @app.post("/api/runs/{run_id}/answers")
-def submit_answers(run_id: str, body: AnswerRequest) -> dict:
-    run = RUNS.get(run_id)
-    if run is None:
-        raise HTTPException(404, "실행을 찾을 수 없습니다.")
+def submit_answers(run_id: str, body: AnswerRequest, request: Request) -> dict:
+    access.check_state_changing(request)
+    run = _owned_run(run_id, request)
     if any(len(v) > MAX_ANSWER_CHARS for v in body.answers.values()):
         raise HTTPException(400, f"답변은 {MAX_ANSWER_CHARS}자 이하로 입력하세요.")
     with run.lock:
         pending = run.pending_questions
-        if run.done or not pending:  # 끝난 실행, 질문 전, 이미 답한 질문(중복 제출)
+        if run.state != "running" or not pending:  # 끝난·취소된 실행, 질문 전, 이미 답한 질문(중복 제출)
             raise HTTPException(409, "지금은 답변을 받을 수 있는 질문이 없습니다.")
         run.answers = {q: a for q, a in body.answers.items() if q in pending}
         run.pending_questions = set()
-    run.emit("answers", n_answered=sum(bool(a.strip()) for a in run.answers.values()))  # 답변 내용은 다시 보내지 않음
+        run.emit("answers", n_answered=sum(bool(a.strip()) for a in run.answers.values()))  # 답변 내용은 보내지 않음
     run.answer_ready.set()
     return {"ok": True}
 
 
+@app.post("/api/runs/{run_id}/cancel")
+def cancel_run(run_id: str, request: Request) -> dict:
+    """실행 취소 (소유자만). 작업 스레드는 다음 확인 지점(API 호출 직전, 답변 대기)에서 멈추고 end 이벤트를 보냄."""
+    access.check_state_changing(request)
+    run = _owned_run(run_id, request)
+    with run.lock:
+        if run.state != "running":
+            raise HTTPException(409, "이미 끝났거나 취소 중인 실행입니다.")
+        run.state = "cancelling"
+        run.pending_questions = set()
+        run.cancel_requested.set()
+        run.emit("status", message="취소 요청을 받았습니다. 진행 중인 단계가 끝나면 멈춥니다.", cancelling=True)
+    run.answer_ready.set()
+    return {"ok": True, "state": "cancelling"}
+
+
 @app.get("/api/runs/{run_id}/events")
 async def stream_events(run_id: str, request: Request) -> StreamingResponse:
-    run = RUNS.get(run_id)
-    if run is None:
-        raise HTTPException(404, "실행을 찾을 수 없습니다.")
+    run = _owned_run(run_id, request)
     try:
         start = max(int(request.headers.get("last-event-id", -1)) + 1, 0)
     except ValueError:  # 잘못된 Last-Event-ID는 처음부터
