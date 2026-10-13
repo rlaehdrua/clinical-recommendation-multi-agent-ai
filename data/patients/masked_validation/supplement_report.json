@@ -1,0 +1,16 @@
+{
+ "seed": 20261014,
+ "cases": 27,
+ "case_types": {
+  "biomarker": 2,
+  "cohort": 10,
+  "confirmed": 15
+ },
+ "target_kinds": {
+  "exclusion": 13,
+  "inclusion": 14
+ },
+ "reused_gt": 0,
+ "note": "confirmed 사례는 검증셋 single 사례의 숨김 대상을 재사용하고 나이 불충족 시험을 더한 것 (평가용 상태: 나이 문서 검증)",
+ "clinical_validity": "unverified_synthetic"
+}

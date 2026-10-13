@@ -149,3 +149,23 @@ PYTHONPATH=src python scripts/eval_question_plans.py --dry-run-cost --max-cost-u
   - 개발셋과 검증셋을 따로 평가합니다.
   - 정답 기준 단위로 선정·제외, 기준 유형, 사례 유형별 결과를 냅니다.
   - 개발셋에는 매핑 실패 원인 분석과 완화 매핑 민감도 분석을 함께 냅니다.
+
+## 9. Phase 4-3: 평가 충실도 (fidelity)
+
+Phase 4-2의 정책 실행 경로는 평가기가 상태를 다시 만들었습니다(`generator_factory`). 이 경로는 다시 매칭되지 않은 시험의 오래된 LLM 판정 처리를 빠뜨려, 실제 루프와 질문이 달랐습니다(검증셋 2개·보충 세트 2개 사례).
+
+Phase 4-3부터 정책 후보는 다음 경로로 실행합니다.
+- Session 안의 **실제 Decision Loop**(`DecisionTracker → run_loop`)를 그대로 돌립니다.
+- `question_priority.tie_order`가 루프가 부르는 `candidates` 결과에서 **우선순위가 같은 ASK_USER 묶음의 순서만** 바꿉니다(평가 중에만 바꿔 끼우고 원래 함수로 되돌림).
+- 상태 구성, 후보 생성, 안전 검사, 지문, 예산, 종료 판단은 모두 실제 코드입니다. 기본 코드와 동작은 바뀌지 않습니다.
+- D(균형)는 루프의 실행 이력을 보고, 이번 루프에서 덜 물은 종류부터 고릅니다.
+- `R_random_1..3`은 동점 안을 seed로 섞는 기준선입니다.
+
+`scripts/eval_question_fidelity.py`는 다음을 사례별로 비교합니다.
+- 정책 A(순서 변경 없음)와 실제 루프: 후보 목록, 단계, 점수, 우선순위, 제외 사유, 선택된 행동, 예산, 종료 사유, 사실 버전, 오래된 판정 처리, 질문
+- 실행마다 새로 만들어지는 사실 ID는 등장 순서 번호로 바꿔 비교합니다.
+
+보충 합성 세트(`data/patients/masked_validation/supplement_cases.json`, `--supplement`)도 추가했습니다.
+- cohort 10, confirmed 15, biomarker 2
+- **임상적 유효성은 검증되지 않았습니다.**
+- confirmed 사례는 평가용 상태 구성(`setup_verified_fields`)으로 나이 사실을 문서 검증된 것으로 두어, 확정 불충족을 만듭니다.

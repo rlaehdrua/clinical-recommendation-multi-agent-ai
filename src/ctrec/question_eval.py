@@ -71,6 +71,8 @@ class CaseGroundTruth:
     masked_fact_ids: tuple[str, ...]
     targets: tuple[GTTarget, ...]
     labels: tuple[tuple[str, str], ...] = ()  # (trial, 정보가 모두 있을 때의 정답 판정)
+    # 평가용 상태 구성(정답 아님): 환자 정보 추출 뒤 문서 검증된 것으로 표시할 항목 (확정 불충족 합성 사례용)
+    setup_verified_fields: tuple[str, ...] = ()
     _hidden_texts: tuple[tuple[str, str], ...] = field(default=(), repr=False)  # (fact_id, 원문) - 답변 시뮬레이터만
 
     def exact_keys(self) -> set[str]:
@@ -134,6 +136,7 @@ def load_cases(parsed: dict, path: Path = DEFAULT_CASES, labels_path: Path = DEF
             candidate_trials=tuple(raw["candidate_trials"]), masked_fact_ids=tuple(raw.get("masked_fact_ids", [])),
             targets=tuple(map_criterion(t, raw["candidate_trials"], parsed) for t in raw.get("masked_criteria", [])),
             labels=tuple(labels.get(raw["patient_id"], [])),
+            setup_verified_fields=tuple(raw.get("setup_verified_fields", [])),
             _hidden_texts=tuple((i, hidden[i]) for i in raw.get("masked_fact_ids", []) if i in hidden))
         out.append((case, gt))
     return out
@@ -400,12 +403,15 @@ class MethodRun:
     round0_matches: dict = field(default_factory=dict)
     final_gt_states: dict[str, str] = field(default_factory=dict)
     decision_finals: list[str] = field(default_factory=list)
+    diagnostics: list[dict] = field(default_factory=list)  # Decision Loop 진단 기록 (ID·코드만)
+    candidate_log: list = field(default_factory=list)  # tie_order recorder (후보 목록)
     safety: Counter = field(default_factory=Counter)
 
 
 def run_method(method: str, case: PatientCase, gt: CaseGroundTruth, trials: dict, rounds: int, budget: int,
                deadline: float | None = None, cancel: "callable | None" = None,
-               factories: dict | None = None) -> MethodRun:
+               factories: dict | None = None, tie_policy: str | None = None,
+               record_candidates: bool = False) -> MethodRun:
     from . import pipeline
     from .decision_loop import DecisionTracker, LoopConfig
     from .decision_state import Budget
@@ -414,7 +420,9 @@ def run_method(method: str, case: PatientCase, gt: CaseGroundTruth, trials: dict
     c = PatientCase(patient_id=case.patient_id, raw_text=case.raw_text, input_source=case.input_source,
                     candidate_trials=list(case.candidate_trials or []))
     ref: dict = {}
-    if factories and method in factories:  # 평가 전용 정책 후보 (question_priority 등)
+    if tie_policy is not None:  # 실제 Decision Loop 경로 + 동점 순서만 주입 (Phase 4-3)
+        gen = candidate_generator(ref)
+    elif factories and method in factories:  # Phase 4-2 방식(상태를 평가기가 다시 만듦) - 비교용으로만 보존
         gen = factories[method](ref)
     else:
         gen = (baseline_generator if method == "baseline" else ablation_generator(ref) if method == ABLATION
@@ -422,8 +430,8 @@ def run_method(method: str, case: PatientCase, gt: CaseGroundTruth, trials: dict
     answerer = OracleAnswerer(gt)
     s = Session(case=c, trials={t: trials[t] for t in gt.candidate_trials}, answerer=answerer, tracer=_NullTracer(),
                 max_rounds=rounds, question_budget=None,
-                decision_loop="diagnostic" if method == "candidate" else "off")
-    if method == "candidate":
+                decision_loop="diagnostic" if method == "candidate" or tie_policy is not None else "off")
+    if method == "candidate" or tie_policy is not None:
         s._decision_tracker = DecisionTracker(LoopConfig(budget=Budget(max_questions=budget)))
     ref["session"] = s
 
@@ -436,8 +444,9 @@ def run_method(method: str, case: PatientCase, gt: CaseGroundTruth, trials: dict
             run.questions.append(_record(gt, method, s.rounds, i, q, view, qa_log))
         st = build_state(view)  # 안전 불변식 (질문 계획과 무관하게 매 라운드 확인)
         run.safety["met_with_conflicting_basis"] += sum(c.status == "MET" and c.conflict_on_decided for c in st.criteria())
-        run.safety["document_verified_facts"] += sum(f.verification_status == "document_verified"
-                                                     for f in view.snapshot.facts)
+        run.safety["document_verified_facts"] += sum(  # 평가용 상태 구성으로 표시한 항목은 제외 (승격이 아님)
+            f.verification_status == "document_verified" and f.field not in gt.setup_verified_fields
+            for f in view.snapshot.facts)
         run.safety["mismatch_basis_not_not_met"] += sum(
             1 for t in st.trials.values() for k in t.mismatch_basis
             if next(c for c in t.criteria if c.key == k).status != "NOT_MET")
@@ -451,12 +460,28 @@ def run_method(method: str, case: PatientCase, gt: CaseGroundTruth, trials: dict
             return "timeout"
         return None
 
+    if gt.setup_verified_fields:  # 평가용 상태 구성: 추출된 해당 항목 사실을 문서 검증으로 표시 (확정 불충족 사례)
+        real_profile = s.profile_patient
+
+        def profile_and_verify():
+            out = real_profile()
+            for f in s.fact_store.facts(s.case.patient_id):
+                if f.field in gt.setup_verified_fields and f.verification_status != "document_verified":
+                    s.fact_store.set_verification(f.fact_id, "document_verified", reason="합성 평가 상태",
+                                                  by="question_eval", document_reference="SYNTHETIC")
+            return out
+        s.profile_patient = profile_and_verify
     original = pipeline.question_generator.generate_questions
     pipeline.question_generator.generate_questions = generate
+    from contextlib import nullcontext
+    from .question_priority import tie_order
+    recorder = [] if record_candidates else None
     try:
         def go():
             llm.set_guard(guard)
-            s.run_fixed()
+            with tie_order(tie_policy, ref, recorder) if (tie_policy is not None or recorder is not None) \
+                    else nullcontext():
+                s.run_fixed()
         contextvars.copy_context().run(go)
         if guard():
             raise llm.RunCancelled(guard())
@@ -475,6 +500,8 @@ def run_method(method: str, case: PatientCase, gt: CaseGroundTruth, trials: dict
         a = next((x for x in (m.assessments + m.other_cohort_assessments if m else []) if x.rule_id == rid), None)
         run.final_gt_states[k] = "UNKNOWN" if a is None or a.passes is None else ("MET" if a.passes else "NOT_MET")
     run.decision_finals = [d.get("stop_reason") or d.get("status") for d in s.decision_diagnostics]
+    run.diagnostics = s.decision_diagnostics
+    run.candidate_log = recorder or []
     if any(e.get("status") == "error" for e in s.decision_diagnostics):
         run.safety["decision_diagnostic_errors"] += 1
     run.revealed = sum(x["revealed"] for x in answerer.log)  # type: ignore[attr-defined]
@@ -594,7 +621,7 @@ def aggregate(rows: list[dict], method: str) -> dict:
 def run_evaluation(parsed: dict, trials: dict, *, only: list[str] | None = None, rounds: int = 2, budget: int = 3,
                    case_timeout_s: float = 30.0, cancel=None, cases_path: Path = DEFAULT_CASES,
                    labels_path: Path = DEFAULT_LABELS, ablation: bool = False, methods: tuple | None = None,
-                   factories: dict | None = None) -> dict:
+                   factories: dict | None = None, tie_policies: dict | None = None) -> dict:
     """오프라인 평가 실행. 결과는 메모리 dict (파일 저장은 save_outputs로 명시적으로)."""
     cases = load_cases(parsed, cases_path, labels_path, only)
     all_methods = tuple(methods) if methods else METHODS + ((ABLATION,) if ablation else ())
@@ -604,7 +631,8 @@ def run_evaluation(parsed: dict, trials: dict, *, only: list[str] | None = None,
             runs = {}
             for method in all_methods:
                 runs[method] = run_method(method, case, gt, trials, rounds, budget,
-                                          deadline=time.time() + case_timeout_s, cancel=cancel, factories=factories)
+                                          deadline=time.time() + case_timeout_s, cancel=cancel, factories=factories,
+                                          tie_policy=(tie_policies or {}).get(method))
                 rows.append(case_metrics(gt, runs[method], budget))
                 records.extend({k: v for k, v in q.items() if k != "relevance"} | {"relevance": q["relevance"]}
                                for q in runs[method].questions)

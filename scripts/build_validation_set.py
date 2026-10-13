@@ -210,12 +210,100 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--seed", type=int, default=20261013)
     ap.add_argument("--per-kind", type=int, default=2)
+    ap.add_argument("--supplement", action="store_true", help="보충 합성 세트(shared·cohort·biomarker·confirmed)도 생성")
     args = ap.parse_args()
     cases, summary = build(args.seed, args.per_kind)
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "validation_cases.json").write_text(json.dumps(cases, ensure_ascii=False, indent=1), encoding="utf-8")
     (OUT / "build_report.json").write_text(json.dumps(summary, ensure_ascii=False, indent=1), encoding="utf-8")
     print(json.dumps(summary, ensure_ascii=False, indent=1))
+    if args.supplement:
+        sup, sup_summary = build_supplement()
+        SUPPLEMENT.write_text(json.dumps(sup, ensure_ascii=False, indent=1), encoding="utf-8")
+        (OUT / "supplement_report.json").write_text(json.dumps(sup_summary, ensure_ascii=False, indent=1), encoding="utf-8")
+        print(json.dumps(sup_summary, ensure_ascii=False, indent=1))
+
+
+
+# ---------------------------------------------------------------------------
+# 보충 합성 세트 (Phase 4-3): 부족한 유형을 늘림. 임상적 유효성은 검증되지 않은 합성 사례
+# ---------------------------------------------------------------------------
+
+SUPPLEMENT = OUT / "supplement_cases.json"
+
+
+def build_supplement(seed: int = 20261014) -> tuple[list[dict], dict]:
+    """shared(모든 가능한 시험 쌍), cohort(남은 코호트 전용 기준 전부), biomarker(표적이 적힌 기준 전부),
+    confirmed(나이 사실을 문서 검증된 것으로 두는 평가용 상태 + 나이로 불충족인 시험). 개발셋·검증셋 정답 재사용 없음."""
+    from ctrec.fact_view import targets_in
+
+    parsed, trials = load_frozen(), load_trials()
+    rng = random.Random(seed)
+    dev_gt = {k for _, g in qe.load_cases(parsed) for k in g.exact_keys() | g.inferred_keys()}
+    val = json.loads((OUT / "validation_cases.json").read_text(encoding="utf-8"))
+    used = dev_gt | {m["rule_key"] for c in val for m in c["target_meta"]}
+    open_trials = sorted(t for t in parsed if is_open(trials[t]))
+    ranges = {t: _age_range(parsed[t]) for t in open_trials}
+    cases = []
+
+    def free(tid, r):
+        return f"{tid}:{r.rule_id}" not in used and (r.field or "").lower() not in ("age", "sex") \
+            and not matcher._meta(parsed[tid], r).review and r.category not in NO_HIDE
+
+    for tid in open_trials:
+        if ranges[tid] is None:
+            continue
+        p = parsed[tid]
+        age = (ranges[tid][0] + min(ranges[tid][1], ranges[tid][0] + 40)) // 2
+        for r in p.rules:
+            if not free(tid, r):
+                continue
+            kind = "cohort" if r.cohort else "biomarker" if (r.category == "biomarker" or targets_in(r.text)) and \
+                not _engine_field(r) else None
+            if kind:
+                vis = _visible(p, age, _sex(p), {r.rule_id, _engine_field(r) or "-"})
+                cases.append(_case(f"S-{tid}-{r.rule_id}-{kind}", kind, [tid], vis, [(tid, r)]))
+    by_field: dict[str, list] = {}
+    for tid in open_trials:
+        if ranges[tid] is None:
+            continue
+        for r in parsed[tid].rules:
+            f = _engine_field(r)
+            if f and r.structured_evaluable and r.cohort is None and free(tid, r):
+                by_field.setdefault(f, []).append((tid, r))
+    for f, items in sorted(by_field.items()):
+        ids = sorted({t for t, _ in items})
+        for i, a in enumerate(ids):
+            for b in ids[i + 1:]:
+                if _sex(parsed[a]) != _sex(parsed[b]) or max(ranges[a][0], ranges[b][0]) > min(ranges[a][1], ranges[b][1]):
+                    continue
+                age = max(ranges[a][0], ranges[b][0])
+                targets = [(t, r) for t, r in items if t in (a, b)]
+                vis = sorted(set(_visible(parsed[a], age, _sex(parsed[a]), {f})) | set(_visible(parsed[b], age, _sex(parsed[a]), {f})),
+                             key=lambda s: (not s.startswith("The patient is"), s))
+                cases.append(_case(f"S-{a}-{b}-{f.replace(':', '_').replace(' ', '_')}-shared", "shared", [a, b], vis, targets))
+    singles = [c for c in val if c["case_type"] == "single"]
+    for c in rng.sample(singles, min(15, len(singles))):
+        tid = c["candidate_trials"][0]
+        age = int(c["text"].split(" years old")[0].split()[-1])
+        others = [t for t in open_trials if t != tid and ranges[t] and not (ranges[t][0] <= age <= ranges[t][1])]
+        if others:
+            other = rng.choice(others)
+            cases.append({**c, "patient_id": c["patient_id"].replace("V-", "S-").replace("-single", f"-confirmed-{other}"),
+                          "case_type": "confirmed", "candidate_trials": [tid, other], "setup_verified_fields": ["age"],
+                          "split": "supplement"})
+    for c in cases:
+        c["split"] = "supplement"
+        c["clinical_validity"] = "unverified_synthetic"
+    assert len({c["patient_id"] for c in cases}) == len(cases)
+    summary = {"seed": seed, "cases": len(cases), "case_types": dict(Counter(c["case_type"] for c in cases)),
+               "target_kinds": dict(Counter(m["kind"] for c in cases for m in c["target_meta"])),
+               "reused_gt": sum(m["rule_key"] in used for c in cases if c["case_type"] != "confirmed"
+                                for m in c["target_meta"]),
+               "note": "confirmed 사례는 검증셋 single 사례의 숨김 대상을 재사용하고 나이 불충족 시험을 더한 것 (평가용 상태: 나이 문서 검증)",
+               "clinical_validity": "unverified_synthetic"}
+    return cases, summary
+
 
 
 if __name__ == "__main__":
