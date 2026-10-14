@@ -137,3 +137,63 @@ def wait_for(run, kind: str, timeout: float = 20.0) -> dict:
 
 def sse_events(text: str) -> list[dict]:
     return [json.loads(line[6:]) for line in text.splitlines() if line.startswith("data: ")]
+
+
+class SDKAdapter:
+    """FakeLLM을 실제 SDK 모양(messages.create / beta.messages.create)으로 감싼 기본 클라이언트 대역.
+
+    llm.create·llm.structured를 바꾸지 않고 llm._client 자리에 넣으므로 실제 llm.create 경로(웹 기록기 포함)를 탐.
+    usage=False면 응답에 사용량이 없음. requests: 받은 요청 인자(비교용, 테스트 안에서만)."""
+
+    max_retries = 0
+
+    def __init__(self, fake: FakeLLM | None = None, usage: bool = True, on_call=None):
+        from ctrec import llm_pilot  # 단계 구분용 (시스템 프롬프트 앞부분)
+        from ctrec.schemas import MatcherOutput, PatientProfile, QuestionSet, RecommendationDraft
+        self._stage_of = llm_pilot.stage_of
+        self._cls = {"patient_profiler": PatientProfile, "matcher": MatcherOutput, "question_generator": QuestionSet,
+                     "recommender": RecommendationDraft}
+        self.fake, self.usage, self._on_call = fake or FakeLLM(), usage, on_call
+        self.requests: list[dict] = []
+        self._lock = threading.Lock()
+        self.messages = SimpleNamespace(create=self._create)
+        self.beta = SimpleNamespace(messages=SimpleNamespace(create=self._create))
+
+    def _usage(self):
+        return SimpleNamespace(input_tokens=100, output_tokens=20, cache_creation_input_tokens=0,
+                               cache_read_input_tokens=7) if self.usage else None
+
+    def _create(self, **kw):
+        with self._lock:
+            self.requests.append(kw)
+        if self._on_call:
+            self._on_call(kw)
+        system = kw["system"]
+        text_system = system[0]["text"] if isinstance(system, list) else system
+        if kw.get("tools"):
+            r = self.fake.create(system=system, messages=kw["messages"], tools=kw["tools"])
+            r.model, r.usage = kw.get("model"), self._usage()
+            return r
+        user = kw["messages"][0]["content"]
+        if (kw.get("output_config") or {}).get("format"):
+            text = self.fake.structured(self._cls[self._stage_of(system)], system=text_system,
+                                        user=user).model_dump_json()
+        else:
+            text = self.fake.plain(system=text_system, user=user)
+        return SimpleNamespace(content=[SimpleNamespace(type="text", text=text)], stop_reason="end_turn",
+                               usage=self._usage(), model=kw.get("model"))
+
+
+def install_sdk(monkeypatch, tmp_path, sdk: "SDKAdapter") -> "SDKAdapter":
+    """install과 같지만 LLM 함수는 그대로 두고 기본 클라이언트(llm._client)만 대역으로 (실제 llm.create 경로)."""
+    from ctrec.web import app as web
+
+    monkeypatch.setattr(llm, "_client", sdk)
+    monkeypatch.setattr(config, "OUTPUT_DIR", tmp_path / "outputs")
+    monkeypatch.setattr(web, "ANSWER_TIMEOUT_S", 20)
+    web.RUNS.clear()
+    web.CLIENT_STARTS.clear()
+    for name in ("CTREC_WEB_SAVE_OUTPUTS", "CTREC_REQUIRE_HTTPS", "CTREC_ALLOW_INSECURE_HTTP", "CTREC_COOKIE_SECURE",
+                 "CTREC_WEB_METERING"):
+        monkeypatch.delenv(name, raising=False)
+    return sdk

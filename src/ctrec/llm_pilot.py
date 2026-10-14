@@ -31,7 +31,7 @@ from collections import Counter
 from dataclasses import asdict, dataclass, field
 from typing import Callable
 
-from . import acquisition, config, llm, question_eval as qe
+from . import acquisition, call_guard, config, llm, question_eval as qe
 from .agents import matcher, patient_profiler, question_generator, recommender
 from .decision_state import Budget, SessionView
 from .fact_view import non_biomarker_mentions, targets_in
@@ -494,7 +494,9 @@ class MeteredClient:
             tok = m.reserve(est_in, max_out, retry=attempt > 0)
             t0 = time.monotonic()
             try:
-                resp = inner_create(**kw)
+                # 이 스레드에서 이 SDK 클라이언트로 보내는 중이라는 표시: 배타 실행 중 SDK 훅은 이 표시가 있는 요청만 통과
+                with call_guard.mark("metered", self._inner) as mk:
+                    resp = inner_create(**kw)
             except Exception as e:  # noqa: BLE001 - 종류만 기록, 일시 오류만 재시도
                 m.fail(tok, stage, e, time.monotonic() - t0)
                 if not is_retryable(e) or attempt == lim.max_retries_per_call:
@@ -502,6 +504,8 @@ class MeteredClient:
                 self._sleep(min(2 ** attempt, 8))
                 continue
             m.settle(tok, resp, stage, time.monotonic() - t0, requested_model=model)
+            if mk.attempts > 1:  # SDK가 몰래 재시도함 (max_retries=0이면 생기지 않음): 정산은 했고 다음부터 중단
+                m.refuse("sdk_hidden_retry")
             if m.stopped in _FATAL_RESPONSE:  # 다른 모델이 만든 응답은 쓰지 않음
                 raise PilotStop(m.stopped)
             return resp
@@ -509,12 +513,14 @@ class MeteredClient:
 
 
 @contextlib.contextmanager
-def metered(meter: PilotMeter, inner, sleep: Callable[[float], None] = time.sleep):
+def metered(meter: PilotMeter, inner, sleep: Callable[[float], None] = time.sleep, exclusive: bool = False):
     """이 실행의 컨텍스트에서만 계측 대리 객체로 호출 (llm.use_client). 전역 llm.client는 바꾸지 않음.
 
-    같은 실행의 하위 스레드는 copy_context로 넘겨야 함 (Session._parallel·run_method가 그렇게 함)."""
+    같은 실행의 하위 스레드는 copy_context로 넘겨야 함 (Session._parallel·run_method가 그렇게 함).
+    exclusive=True: 끝날 때까지 프로세스 전체 fail-closed - 등록된 MeteredClient를 거치지 않는 LLM 호출·SDK 요청은
+    어느 스레드에서든 UnmeteredCallBlocked (call_guard)."""
     proxy = MeteredClient(inner, meter, sleep)
-    with llm.use_client(proxy):
+    with call_guard.register(proxy, "metered", exclusive=exclusive), llm.use_client(proxy):
         yield proxy
 
 

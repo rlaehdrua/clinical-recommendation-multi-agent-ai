@@ -319,6 +319,8 @@ class WebDefaultSDK:
 
 
 def test_web_run_and_pilot_concurrently(monkeypatch, tmp_path):
+    """Fake 파일럿을 프로세스 보호 없이(process_guard=False, Fake 전용) 돌릴 때 웹과 공존. 실제 유료 파일럿은 보호를
+    끌 수 없으므로 웹과 같은 프로세스에서 돌면 웹 호출이 막힘 (test_call_guard.py)."""
     from ctrec.web import app as web
     monkeypatch.setattr(config, "OUTPUT_DIR", tmp_path / "outputs")
     monkeypatch.setattr(web, "ANSWER_TIMEOUT_S", 20)
@@ -341,7 +343,7 @@ def test_web_run_and_pilot_concurrently(monkeypatch, tmp_path):
     pilot_fake = FakeSDKClient(on_call=lambda i, kw: once("pilot")())
     holder = {}
     pilot_thread = threading.Thread(target=lambda: holder.setdefault(
-        "r", _execute("A_pipeline", (SHARED, COHORT), pilot_fake, model=MODEL_B)))
+        "r", _execute("A_pipeline", (SHARED, COHORT), pilot_fake, model=MODEL_B, process_guard=False)))
     pilot_thread.start()
 
     browser = h.browser()

@@ -31,7 +31,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
 from pydantic import BaseModel, Field
 
-from .. import DISCLAIMER, config, llm
+from .. import DISCLAIMER, config, llm, web_metering
 from ..agents.recommender import is_open
 from ..orchestrator import Orchestrator
 from ..pipeline import PatientCase, Session, load_patients
@@ -165,6 +165,8 @@ class Run:
     created_at: float = field(default_factory=time.time)
     deadline: float = 0.0
     finished_at: float | None = None
+    meter: Any = None  # 실행별 LLM 호출 기록 (기록 전용, web_metering.WebRunMeter)
+    metering: dict | None = None  # 끝난 뒤 확정한 기록 요약 (숫자·코드만)
 
     def emit(self, type_: str, **data: Any) -> None:
         with self.lock:
@@ -271,9 +273,17 @@ _END_MESSAGE = {"cancelled": "실행이 취소되었습니다.", "timed_out": "�
 
 
 def _execute(run: Run, req: RunRequest, case: PatientCase, trials: dict[str, dict]) -> None:
+    """실행 스레드 입구. 이 실행의 LLM 호출을 기록 (기록 전용: 호출을 막거나 바꾸지 않음, 비용 상한 없음)."""
+    run.meter = web_metering.WebRunMeter(run.run_id)
+    with run.meter.recording():
+        _execute_run(run, req, case, trials)
+
+
+def _execute_run(run: Run, req: RunRequest, case: PatientCase, trials: dict[str, dict]) -> None:
     llm.reset_usage()
     llm.set_guard(run.stop_reason)  # 이 실행(과 하위 스레드)의 API 호출 직전마다 취소·시간 초과 확인
     outcome, error_type = "completed", None
+    session = None
     try:
         # 저장은 기본 off (retention.save_enabled). 켜져 있을 때만 trace.jsonl·result.json·report.md를 씀
         out_dir = retention.prepare_run_dir(run.run_id) if retention.save_enabled() else None
@@ -315,6 +325,13 @@ def _execute(run: Run, req: RunRequest, case: PatientCase, trials: dict[str, dic
                 run.emit("status", message=_END_MESSAGE[outcome])
             run.state = outcome
             run.pending_questions = set()
+            try:  # 기록 요약 실패가 실행 종료 처리에 영향을 주지 않음
+                run.meter.finish()
+                run.metering = run.meter.summary(llm_expected=session is not None and session.profile is not None)
+            except Exception as e:  # noqa: BLE001
+                run.metering = {"run_id": run.run_id, "status": web_metering.UNMETERED,
+                                "status_reason": f"metering_error:{type(e).__name__}",
+                                "cost_usd": web_metering.UNKNOWN, "cost_cap_enforced": False}
             run.done = True
             run.finished_at = time.time()
             run.emit("end", state=outcome)
@@ -443,6 +460,20 @@ def run_status(run_id: str, request: Request) -> dict:
     with run.lock:
         return {"run_id": run.run_id, "state": run.state, "done": run.done,
                 "waiting_for_answers": bool(run.pending_questions)}
+
+
+@app.get("/api/runs/{run_id}/metering")
+def run_metering(run_id: str, request: Request) -> dict:
+    """이 실행의 LLM 호출 기록 (소유자만, 숫자·코드·모델 이름만). 기록 전용 - 비용 상한을 보장하지 않음."""
+    run = _owned_run(run_id, request)
+    with run.lock:
+        if run.metering is not None:
+            return {**run.metering, "in_progress": False}
+        meter = run.meter
+    if meter is None:
+        return {"run_id": run.run_id, "status": web_metering.UNMETERED, "status_reason": "not_started",
+                "cost_usd": web_metering.UNKNOWN, "cost_cap_enforced": False, "in_progress": True}
+    return {**meter.summary(llm_expected=False), "in_progress": True}  # 진행 중: 확정 전 값
 
 
 @app.post("/api/runs/{run_id}/answers")

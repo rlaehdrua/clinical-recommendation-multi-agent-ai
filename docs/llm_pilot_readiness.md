@@ -125,3 +125,35 @@ run_pilot -> authorize (12개 조건 + 코드 스위치) -> ExecutionTicket
   - `src` 안의 스레드 생성 지점은 정적 테스트로 검사합니다.
 - 오프라인 전용 전역 교체는 남아 있습니다: `OfflineEnvironment`, 비용 측정용 `_recording`, `tie_order`. 파일럿 실제 경로에서는 쓰지 않습니다.
 - 웹 비용 통제 설계: `docs/web_cost_control_design.md`
+
+## 7. Phase 5-3: 미계측 호출 차단과 웹 기록 전용 계측
+
+### 파일럿 fail-closed (`call_guard`)
+
+`execute`는 기본으로 `process_guard=True`입니다. 실제 SDK 실행에서는 끌 수 없습니다. 실행 동안 프로세스 전체에 다음을 적용합니다.
+
+| 지점 | 통과 조건 | 막는 것 |
+|---|---|---|
+| `llm.client()` / `llm.current_client()` (전역 관문) | 지금 컨텍스트의 클라이언트가 **등록된 MeteredClient** | 컨텍스트 없는 스레드, 기본 클라이언트, 등록되지 않은 대리 객체 |
+| SDK `SyncAPIClient.request` / `_attempt_request` | 같은 스레드에서 MeteredClient가 **바로 이 SDK 클라이언트**로 보내는 중이라는 표시(mark) | 표시 없는 직접 SDK 사용, SDK 자동 재시도(요청별 `max_retries>0`, 재시도 회차>0), 미들웨어(클라이언트 측 대체 모델) |
+| SDK `AsyncAPIClient.request` | 없음 (전부 차단) | async SDK 사용 |
+
+- 관문은 contextvar가 아니라 **모듈 전역 상태**입니다. 그래서 컨텍스트를 넘기지 않은 스레드에서도 작동합니다.
+- 막힌 호출이 하나라도 생기면 그 시점에 진행 중인 파일럿은 `unmetered_call_blocked`로 중단합니다(어느 실행 것인지 알 수 없으므로).
+- 실행이 모두 끝나면 SDK 훅을 걷고 관문을 끕니다. 그 뒤의 CLI·웹은 기존 동작 그대로입니다.
+
+**막지 못하는 것:**
+- SDK를 쓰지 않는 직접 HTTP 요청
+- 다른 프로세스
+- `call_guard`나 SDK 내부를 다시 바꿔 끼우는 코드
+- 다른 제공자의 SDK
+
+따라서 유료 파일럿은 **전용 프로세스**에서 실행합니다.
+
+### 웹 기록 전용 계측 (`web_metering`)
+
+- 웹 실행마다 `RecordingClient`를 실행 컨텍스트에 겁니다. 호출 인자·응답·예외·재시도·대체 모델 동작은 바꾸지 않습니다.
+- 기록은 소유자 전용 `GET /api/runs/{id}/metering`으로 확인합니다. 기존 SSE와 상태 응답은 바뀌지 않습니다.
+- 내용: 단계별 호출, 토큰, 캐시, 재시도(보일 때만), 응답 모델, 실행 시간, 계측 상태(`FULLY_METERED` / `PARTIALLY_METERED` / `UNMETERED` / `USAGE_UNKNOWN`)
+- 비용은 항상 `UNKNOWN`이고 `cost_cap_enforced: false`입니다.
+- 끄기: `CTREC_WEB_METERING=off` (끄면 상태는 `UNMETERED`로 표시됩니다)

@@ -446,6 +446,7 @@ def test_frozen_store_and_policy_files_unchanged():
                            "src/ctrec/agents/matcher.py", "src/ctrec/agents/patient_profiler.py",
                            "src/ctrec/agents/recommender.py", "src/ctrec/decision_loop.py",
                            "src/ctrec/decision_policy.py", "src/ctrec/decision_state.py",
-                           "src/ctrec/question_priority.py", "src/ctrec/web", "data"],
+                           "src/ctrec/question_priority.py", "src/ctrec/web/access.py",
+                           "src/ctrec/web/retention.py", "src/ctrec/web/static", "data"],
                           cwd=ROOT, capture_output=True, text=True)
     assert diff.returncode == 0 and diff.stdout.strip() == ""

@@ -20,13 +20,14 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Callable
 
-from . import config, llm_pilot as lp, store_patch
+from . import call_guard, config, llm_pilot as lp, store_patch
 from .llm_pilot_fake import FakeSDKClient
 
 # 사례를 '중단'으로 보는 상태 코드 (meter 중단 이유 + 취소·시간 제한)
 _STOP_CODES = {"cancelled", "timeout", "call_cap", "cost_cap", "input_token_cap", "output_token_cap", "retry_cap",
                "consecutive_failures", "usage_missing", "model_mismatch", "fallback_detected", "fallback_requested",
-               "model_price_mismatch", "sdk_retries_enabled", "retry_exhausted"}
+               "model_price_mismatch", "sdk_retries_enabled", "retry_exhausted", "unmetered_call_blocked",
+               "sdk_hidden_retry", "shared_cost_cap", "shared_concurrency_cap"}
 
 
 def _is_real_sdk(inner) -> bool:
@@ -83,12 +84,17 @@ def summarize_a(rows: list[dict]) -> dict:
 def execute(plan: dict, price: lp.PriceTable, limits: lp.PilotLimits, inner, pairs, trials: dict, *,
             ticket=None, approval=None, cancel: Callable[[], bool] | None = None,
             clock: Callable[[], float] = time.monotonic, sleep: Callable[[float], None] = time.sleep,
-            save_to: Path | None = None, shared: lp.SharedBudget | None = None) -> dict:
+            save_to: Path | None = None, shared: lp.SharedBudget | None = None, process_guard: bool = True) -> dict:
     """계획대로 실험 하나를 사례 순서대로 실행. 상한·중단에 걸리면 남은 사례는 건너뜀(skipped).
 
     실행마다 새 PilotMeter·MeteredClient·실행 ID를 만들고, 클라이언트·설정은 이 실행의 컨텍스트에만 적용하므로
-    동시에 도는 다른 실행·일반 요청에 영향이 없음. shared(공용 상한)는 여러 실행이 함께 쓰는 별도 계층."""
+    동시에 도는 다른 실행·일반 요청에 영향이 없음. shared(공용 상한)는 여러 실행이 함께 쓰는 별도 계층.
+
+    process_guard(기본 True): 실행 동안 프로세스 전체 fail-closed (call_guard). 컨텍스트를 잃은 스레드·기본 SDK·
+    SDK 자동 재시도·대체 모델 미들웨어로는 호출할 수 없음. 실제 SDK 실행에서는 끌 수 없음."""
     kind = client_kind(inner, ticket, plan, approval)
+    if kind == "sdk" and not process_guard:  # pragma: no cover - 실제 실행은 표가 유효할 수 없음
+        raise lp.PaidRunNotApproved("실제 SDK 실행은 프로세스 보호(fail-closed)를 끌 수 없음")
     exp = plan.get("experiment")
     if exp not in lp.EXPERIMENTS:
         raise ValueError("실험은 A_pipeline 또는 B_question_plan")
@@ -104,7 +110,7 @@ def execute(plan: dict, price: lp.PriceTable, limits: lp.PilotLimits, inner, pai
     run_id = uuid.uuid4().hex[:12]
     rows = []
     with shared.run_slot() if shared is not None else contextlib.nullcontext(), \
-            live_environment(budget, plan["model"]), lp.metered(meter, inner, sleep):
+            live_environment(budget, plan["model"]), lp.metered(meter, inner, sleep, exclusive=process_guard):
         for case, gt in pairs:
             row: dict = {"case_id": gt.case_id, "case_type": gt.case_type}
             with contextlib.suppress(lp.PilotStop):
@@ -114,11 +120,15 @@ def execute(plan: dict, price: lp.PriceTable, limits: lp.PilotLimits, inner, pai
                 rows.append(row)
                 continue
             before, t0 = meter.snapshot(), clock()
+            blocked_before = call_guard.counters()["blocked"]
             stopped_before = meter.stopped
             if exp == "A_pipeline":
                 m = lp.run_experiment_a(case, gt, trials, rounds, budget, cancel=cancel)
             else:
                 m = lp.compare_plans(case, gt, trials, budget)
+            if call_guard.counters()["blocked"] > blocked_before and not meter.stopped:
+                # 실행 도중 어딘가에서 미계측 호출이 막힘 (컨텍스트를 잃은 스레드 등) -> 이 실행은 믿을 수 없으니 중단
+                meter.stopped = "unmetered_call_blocked"
             stopped_now = meter.stopped if meter.stopped != stopped_before else (
                 m.get("status") if m.get("status") in _STOP_CODES else None)
             row.update(status=_outcome(exp, m, stopped_now), detail_status=m.get("status"),
@@ -142,6 +152,7 @@ def execute(plan: dict, price: lp.PriceTable, limits: lp.PilotLimits, inner, pai
         "frozen_store_intact": frozen_before == [] and store_patch.verify_frozen() == [],
         "patient_data_saved": False, "redacted": True, "limits": asdict(limits),
         "shared_budget": shared.report() if shared is not None else None,
+        "process_guard": process_guard,
     }
     lp.assert_redacted(result, lp.forbidden_texts(pairs))
     if save_to is not None:  # 기본 꺼짐. 비식별 검사를 지난 결과만

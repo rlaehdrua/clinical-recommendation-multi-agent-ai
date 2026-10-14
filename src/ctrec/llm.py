@@ -84,8 +84,16 @@ def usage_snapshot() -> dict[str, int]:
         return dict(_usage_var.get(None) or {})
 
 
+# 프로세스 전역 호출 관문 (call_guard가 실행 중에만 설정, 평소에는 None이라 기존 동작과 같음).
+# 컨텍스트를 넘기지 않은 스레드에서도 작동하도록 contextvar가 아니라 모듈 전역
+_gate: Callable[[Any], None] | None = None
+
+
 def client() -> anthropic.Anthropic:
     global _client
+    gate = _gate
+    if gate is not None:
+        gate(None)  # 기본 클라이언트 사용 (파일럿 배타 실행 중이면 차단)
     if _client is None:
         # 자격 증명: ANTHROPIC_API_KEY -> ANTHROPIC_AUTH_TOKEN -> `ant auth login` 프로필
         _client = anthropic.Anthropic(max_retries=4)
@@ -110,7 +118,12 @@ def use_client(c):
 
 def current_client():
     c = _client_var.get()
-    return c if c is not None else client()
+    if c is None:
+        return client()
+    gate = _gate
+    if gate is not None:
+        gate(c)
+    return c
 
 
 # ---------------------------------------------------------------------------
