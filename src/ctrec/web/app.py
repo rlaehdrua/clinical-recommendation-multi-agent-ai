@@ -512,9 +512,12 @@ def cancel_run(run_id: str, request: Request) -> dict:
 @app.get("/api/runs/{run_id}/events")
 async def stream_events(run_id: str, request: Request) -> StreamingResponse:
     run = _owned_run(run_id, request)
+    # 이어 받기: 브라우저 자동 재연결은 Last-Event-ID 헤더, 화면이 직접 다시 연결할 때는 ?after=<마지막 id>
+    # (EventSource는 헤더를 직접 지정할 수 없음). 둘 다 없으면 처음부터
+    resume_from = request.headers.get("last-event-id", request.query_params.get("after", -1))
     try:
-        start = max(int(request.headers.get("last-event-id", -1)) + 1, 0)
-    except ValueError:  # 잘못된 Last-Event-ID는 처음부터
+        start = max(int(resume_from) + 1, 0)
+    except ValueError:  # 잘못된 값은 처음부터
         start = 0
 
     async def gen():

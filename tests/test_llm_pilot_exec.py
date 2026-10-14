@@ -447,6 +447,7 @@ def test_frozen_store_and_policy_files_unchanged():
                            "src/ctrec/agents/recommender.py", "src/ctrec/decision_loop.py",
                            "src/ctrec/decision_policy.py", "src/ctrec/decision_state.py",
                            "src/ctrec/question_priority.py", "src/ctrec/web/access.py",
-                           "src/ctrec/web/retention.py", "src/ctrec/web/static", "data"],
+                           "src/ctrec/web/retention.py", "src/ctrec/status.py", "data"],
+                           # 웹 화면(static)은 Phase 6-1 사용자 흐름 작업 범위라 제외. 보안·보관 정책(access·retention)은 유지
                           cwd=ROOT, capture_output=True, text=True)
     assert diff.returncode == 0 and diff.stdout.strip() == ""
