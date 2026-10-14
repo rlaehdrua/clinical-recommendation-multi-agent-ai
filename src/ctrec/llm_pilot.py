@@ -209,6 +209,49 @@ def same_model(requested: str, served: str | None) -> bool:
     return bool(served) and re.fullmatch(re.escape(requested) + r"(-\d{8})?", served) is not None
 
 
+class SharedBudget:
+    """여러 실행이 함께 쓰는 공용 상한 (실행별 PilotMeter와 별도 계층): 공용 비용(예약 포함)·동시 실행 수.
+
+    실행별 상한을 지켜도 실행이 많으면 공용 상한을 넘을 수 있으므로 따로 둠. 프로세스 메모리에만 있음
+    (서버 재시작 시 사라짐 -> 웹 통합 시 영속 저장 필요, docs 참고)."""
+
+    def __init__(self, max_cost_usd: float, max_concurrent_runs: int):
+        self.max_cost_usd, self.max_concurrent_runs = max_cost_usd, max_concurrent_runs
+        self._lock = threading.Lock()
+        self.committed = 0.0
+        self.reserved = 0.0
+        self.active = 0
+
+    @contextlib.contextmanager
+    def run_slot(self):
+        with self._lock:
+            if self.active >= self.max_concurrent_runs:
+                raise PilotStop("shared_concurrency_cap")
+            self.active += 1
+        try:
+            yield self
+        finally:
+            with self._lock:
+                self.active -= 1
+
+    def reserve(self, cost: float) -> None:
+        with self._lock:
+            if self.committed + self.reserved + cost > self.max_cost_usd:
+                raise PilotStop("shared_cost_cap")
+            self.reserved += cost
+
+    def settle(self, reserved: float, charged: float) -> None:
+        with self._lock:
+            self.reserved -= reserved
+            self.committed += charged
+
+    def report(self) -> dict:
+        with self._lock:
+            return {"committed_usd": round(self.committed, 4), "reserved_usd": round(self.reserved, 4),
+                    "active_runs": self.active, "max_cost_usd": self.max_cost_usd,
+                    "max_concurrent_runs": self.max_concurrent_runs}
+
+
 _COUNTERS = ("calls", "retries", "input_tokens", "output_tokens", "cache_write_tokens", "cache_read_tokens",
              "est_input_tokens", "est_output_tokens", "usage_missing", "possibly_billed_failures")
 
@@ -220,8 +263,8 @@ class PilotMeter:
     최악값 그대로)을 따로 기록하고, 상한은 둘의 합 + 진행 중 예약으로 확인함. 출력 토큰에는 사고(thinking) 토큰이 포함됨."""
 
     def __init__(self, limits: PilotLimits, price: PriceTable, cancel: Callable[[], bool] | None = None,
-                 clock: Callable[[], float] = time.monotonic):
-        self.limits, self.price, self.cancel, self.clock = limits, price, cancel, clock
+                 clock: Callable[[], float] = time.monotonic, shared: SharedBudget | None = None):
+        self.limits, self.price, self.cancel, self.clock, self.shared = limits, price, cancel, clock, shared
         self.start = clock()
         self._lock = threading.Lock()
         for k in _COUNTERS:
@@ -272,15 +315,23 @@ class PilotMeter:
             if self.stopped:
                 raise PilotStop(self.stopped)
             tok = {"input": est_input, "output": max_output, "cost": self.price.cost(est_input, max_output)}
+            if self.shared is not None:
+                try:
+                    self.shared.reserve(tok["cost"])
+                except PilotStop as e:
+                    self.stopped = e.args[0]
+                    raise
             for k, v in tok.items():
                 r[k] += v
             self.calls += 1
             self.retries += int(retry)
             return tok
 
-    def _release(self, tok: dict) -> None:
+    def _release(self, tok: dict, charged: float = 0.0) -> None:
         for k, v in tok.items():
             self._reserved[k] -= v
+        if self.shared is not None:
+            self.shared.settle(tok["cost"], charged)
 
     def _charge_estimate(self, tok: dict) -> None:
         self.est_input_tokens += tok["input"]
@@ -300,7 +351,7 @@ class PilotMeter:
         usage = getattr(resp, "usage", None)
         g = lambda k: int(getattr(usage, k, 0) or 0)  # noqa: E731
         with self._lock:
-            self._release(tok)
+            before = self.cost + self.est_cost
             s = self.by_stage.setdefault(stage, Counter())
             s.update(calls=1)
             if usage is None or getattr(usage, "input_tokens", None) is None \
@@ -329,12 +380,13 @@ class PilotMeter:
                 self.stopped = "model_mismatch"
             self.consecutive_failures = 0
             self.latency.setdefault(stage, []).append(round(latency, 3))
+            self._release(tok, charged=self.cost + self.est_cost - before)
             # 실제 사용량이 상한을 넘었으면(입력 추정이 낮았던 경우) 다음 호출부터 중단
             self._check_caps_locked()
 
     def fail(self, tok: dict, stage: str, error: Exception, latency: float) -> None:
         with self._lock:
-            self._release(tok)
+            before = self.est_cost
             s = self.by_stage.setdefault(stage, Counter())
             if possibly_billed(error):  # 응답은 없지만 처리됐을 수 있음 -> 예약한 최악값으로 보수적 과금
                 self._charge_estimate(tok)
@@ -343,6 +395,7 @@ class PilotMeter:
             self.failures[type(error).__name__] += 1  # 종류만 (메시지에 요청 내용이 있을 수 있음)
             self.consecutive_failures += 1
             s.update(failed=1)
+            self._release(tok, charged=self.est_cost - before)
             self.latency.setdefault(stage, []).append(round(latency, 3))
             if self.consecutive_failures >= self.limits.max_consecutive_failures:
                 self.stopped = self.stopped or "consecutive_failures"
@@ -457,14 +510,12 @@ class MeteredClient:
 
 @contextlib.contextmanager
 def metered(meter: PilotMeter, inner, sleep: Callable[[float], None] = time.sleep):
-    """평가 동안만 llm.client를 계측 대리 객체로 바꿈. 끝나면 원래 함수로 복구."""
+    """이 실행의 컨텍스트에서만 계측 대리 객체로 호출 (llm.use_client). 전역 llm.client는 바꾸지 않음.
+
+    같은 실행의 하위 스레드는 copy_context로 넘겨야 함 (Session._parallel·run_method가 그렇게 함)."""
     proxy = MeteredClient(inner, meter, sleep)
-    saved = llm.client
-    llm.client = lambda: proxy
-    try:
+    with llm.use_client(proxy):
         yield proxy
-    finally:
-        llm.client = saved
 
 
 # ---------------------------------------------------------------------------

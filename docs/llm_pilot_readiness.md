@@ -106,3 +106,22 @@ run_pilot -> authorize (12개 조건 + 코드 스위치) -> ExecutionTicket
   - 지표: 사실 출처·검증 상태 승격, 결정적 추출 대비 핵심 항목 일치, Matcher 누락·미평가, eGFR/EGFR, 정답 판정 일치 수
 - **B:** 프로파일러 → Matcher → 상태 지문 → Decision Loop 계획 + 기존 LLM 질문 생성기
   - 두 생성기 입력 지문까지 같아야 비교에 포함 (`comparison_valid`). 다르면 무효로 셈
+
+## 6. Phase 5-2: 실행별 LLM 격리
+
+파일럿은 더 이상 전역 `llm.client`나 `config` 값을 바꾸지 않습니다. 실행마다 아래를 **그 실행의 컨텍스트에만** 적용합니다(contextvars).
+
+| 장치 | 위치 | 대상 |
+|---|---|---|
+| `llm.use_client(c)` | `llm.py` | `llm.create`가 쓰는 클라이언트 (없으면 기존 기본 클라이언트) |
+| `config.overrides(...)` | `config.py` | `MODEL`, `USE_FALLBACKS`, `WRITE_REPORT`, `QUESTION_POLICY`, `MAX_QUESTIONS_PER_ROUND`, `LAZY_COMPILE` |
+| `question_generator.use_generator(fn)` | `agents/question_generator.py` | `run_method`의 질문 생성기 교체 (전역 함수 교체 제거) |
+
+- 실행마다 새 `PilotMeter`·`MeteredClient`·실행 ID·모델·단가·상한·취소 상태를 씁니다.
+- 공용 상한(`SharedBudget`: 공용 비용·동시 실행 수)은 실행별 상한과 별도 계층입니다.
+- contextvars는 스레드에 자동으로 넘어가지 않습니다.
+  - 하위 스레드는 `copy_context()`로 시작해야 합니다. `Session._parallel`, `run_method`, 웹 실행 스레드는 이미 그렇게 합니다.
+  - `run_in_executor`·맨 `ThreadPoolExecutor.submit`은 컨텍스트를 넘기지 않아 기본 클라이언트로 갑니다(테스트로 확인).
+  - `src` 안의 스레드 생성 지점은 정적 테스트로 검사합니다.
+- 오프라인 전용 전역 교체는 남아 있습니다: `OfflineEnvironment`, 비용 측정용 `_recording`, `tie_order`. 파일럿 실제 경로에서는 쓰지 않습니다.
+- 웹 비용 통제 설계: `docs/web_cost_control_design.md`

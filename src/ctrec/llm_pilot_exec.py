@@ -42,19 +42,11 @@ def client_kind(inner, ticket, plan: dict, approval) -> str:
     raise lp.PaidRunNotApproved("승인 표 없이는 오프라인 Fake SDK로만 실행할 수 있음 (실제 클라이언트 거부)")
 
 
-@contextlib.contextmanager
-def live_environment(budget: int):
-    """실험 설정: 보고서 없음, 질문 정책·라운드당 질문 수는 오프라인 평가와 같게, 대체 모델·즉석 파싱 끔. 끝나면 복구."""
-    values = {"WRITE_REPORT": False, "QUESTION_POLICY": "batch", "MAX_QUESTIONS_PER_ROUND": budget,
-              "USE_FALLBACKS": False, "LAZY_COMPILE": False}
-    saved = {k: getattr(config, k) for k in values}
-    for k, v in values.items():
-        setattr(config, k, v)
-    try:
-        yield
-    finally:
-        for k, v in saved.items():
-            setattr(config, k, v)
+def live_environment(budget: int, model: str):
+    """실험 설정 (이 실행의 컨텍스트에서만, 전역 config는 그대로): 모델, 보고서 없음, 질문 정책·라운드당 질문 수는
+    오프라인 평가와 같게, 대체 모델·즉석 파싱 끔. 끝나면(예외 포함) 복구."""
+    return config.overrides(MODEL=model, WRITE_REPORT=False, QUESTION_POLICY="batch", MAX_QUESTIONS_PER_ROUND=budget,
+                            USE_FALLBACKS=False, LAZY_COMPILE=False)
 
 
 def _outcome(exp: str, metrics: dict, stopped_now: str | None) -> str:
@@ -91,22 +83,28 @@ def summarize_a(rows: list[dict]) -> dict:
 def execute(plan: dict, price: lp.PriceTable, limits: lp.PilotLimits, inner, pairs, trials: dict, *,
             ticket=None, approval=None, cancel: Callable[[], bool] | None = None,
             clock: Callable[[], float] = time.monotonic, sleep: Callable[[float], None] = time.sleep,
-            save_to: Path | None = None) -> dict:
-    """계획대로 실험 하나를 사례 순서대로 실행. 상한·중단에 걸리면 남은 사례는 건너뜀(skipped)."""
+            save_to: Path | None = None, shared: lp.SharedBudget | None = None) -> dict:
+    """계획대로 실험 하나를 사례 순서대로 실행. 상한·중단에 걸리면 남은 사례는 건너뜀(skipped).
+
+    실행마다 새 PilotMeter·MeteredClient·실행 ID를 만들고, 클라이언트·설정은 이 실행의 컨텍스트에만 적용하므로
+    동시에 도는 다른 실행·일반 요청에 영향이 없음. shared(공용 상한)는 여러 실행이 함께 쓰는 별도 계층."""
     kind = client_kind(inner, ticket, plan, approval)
     exp = plan.get("experiment")
     if exp not in lp.EXPERIMENTS:
         raise ValueError("실험은 A_pipeline 또는 B_question_plan")
     if [gt.case_id for _, gt in pairs] != list(plan.get("case_ids") or []):
         raise ValueError("계획의 사례 목록과 입력 사례가 다름")
-    if price.model != plan.get("model") or plan.get("model") != config.MODEL:
-        raise ValueError("계획 모델·단가 모델·설정 모델이 다름")
+    if not plan.get("model") or price.model != plan.get("model"):
+        raise ValueError("계획 모델과 단가 모델이 다름")
+    if kind == "sdk" and plan["model"] != config.MODEL:  # pragma: no cover - 실제 실행은 승인 게이트가 이미 확인
+        raise ValueError("실제 실행 모델이 설정 모델과 다름")
     budget, rounds = plan["question_budget"], plan["rounds"]
     frozen_before = store_patch.verify_frozen()
-    meter = lp.PilotMeter(limits, price, cancel=cancel, clock=clock)
+    meter = lp.PilotMeter(limits, price, cancel=cancel, clock=clock, shared=shared)
     run_id = uuid.uuid4().hex[:12]
     rows = []
-    with live_environment(budget), lp.metered(meter, inner, sleep):
+    with shared.run_slot() if shared is not None else contextlib.nullcontext(), \
+            live_environment(budget, plan["model"]), lp.metered(meter, inner, sleep):
         for case, gt in pairs:
             row: dict = {"case_id": gt.case_id, "case_type": gt.case_type}
             with contextlib.suppress(lp.PilotStop):
@@ -143,6 +141,7 @@ def execute(plan: dict, price: lp.PriceTable, limits: lp.PilotLimits, inner, pai
         "elapsed_s": totals["elapsed_s"],
         "frozen_store_intact": frozen_before == [] and store_patch.verify_frozen() == [],
         "patient_data_saved": False, "redacted": True, "limits": asdict(limits),
+        "shared_budget": shared.report() if shared is not None else None,
     }
     lp.assert_redacted(result, lp.forbidden_texts(pairs))
     if save_to is not None:  # 기본 꺼짐. 비식별 검사를 지난 결과만
@@ -156,5 +155,6 @@ def simulate(plan: dict, pairs, trials: dict, scenario: str = "base", **fake_kw)
                          **fake_kw)
     limits = lp.PilotLimits(max_cost_usd=1e6, max_calls=10 ** 6, max_input_tokens=10 ** 12,
                             max_output_tokens=10 ** 12, max_total_retries=10 ** 6, max_consecutive_failures=10 ** 6)
-    price = lp.PriceTable(**{**asdict(lp.ASSUMED_PRICE), "model": config.MODEL})
-    return execute({**plan, "model": config.MODEL}, price, limits, fake, pairs, trials, sleep=lambda s: None)
+    model = plan.get("model") or config.MODEL
+    price = lp.PriceTable(**{**asdict(lp.ASSUMED_PRICE), "model": model})
+    return execute({**plan, "model": model}, price, limits, fake, pairs, trials, sleep=lambda s: None)

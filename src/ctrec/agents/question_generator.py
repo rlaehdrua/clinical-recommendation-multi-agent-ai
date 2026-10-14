@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import contextlib
+import contextvars
 import json
 
 from .. import config, llm
@@ -52,6 +54,20 @@ BATCHING = {
 }
 
 
+# 실행별 질문 생성기 교체 (평가 실행이 Decision Loop 계획 등을 넣을 때). 설정한 컨텍스트(와 그 사본)에서만 쓰이고
+# 다른 실행은 아래 기본 생성기를 그대로 씀. 모듈 속성을 전역으로 바꾸지 않기 위한 장치
+_override_var: contextvars.ContextVar = contextvars.ContextVar("ctrec_question_generator", default=None)
+
+
+@contextlib.contextmanager
+def use_generator(fn):
+    token = _override_var.set(fn)
+    try:
+        yield fn
+    finally:
+        _override_var.reset(token)
+
+
 def generate_questions(
     profile: PatientProfile,
     matches: list[TrialMatch],
@@ -59,6 +75,9 @@ def generate_questions(
     max_questions: int,
     acquisition_plan: dict[str, dict] | None = None,
 ) -> QuestionSet:
+    override = _override_var.get()
+    if override is not None:
+        return override(profile, matches, qa_log, max_questions, acquisition_plan)
     previous = "\n".join(f"- Q: {qa.question} / A: {qa.answer}" for qa in qa_log) or "(없음)"
     user = f"""<patient>
 {profile.model_dump_json(indent=1)}

@@ -1,6 +1,10 @@
 """전역 설정. 환경변수(.env)로 덮어쓸 수 있습니다."""
 
+import contextlib
+import contextvars
 import os
+import sys
+import types
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -74,3 +78,42 @@ REFERENCE_DATE = os.getenv("CTREC_REFERENCE_DATE") or None
 def reference_date() -> str:
     from datetime import date
     return date.fromisoformat(REFERENCE_DATE).isoformat() if REFERENCE_DATE else date.today().isoformat()
+
+
+# ---------------------------------------------------------------------------
+# 실행별 설정 덮어쓰기 (평가 실행 등). 모듈 속성을 전역으로 바꾸지 않고, 설정한 컨텍스트(와 copy_context로 넘긴
+# 하위 스레드)에서만 config.<이름>이 덮어쓴 값을 돌려줌. 다른 실행·일반 웹 요청은 기본값 그대로
+# ---------------------------------------------------------------------------
+
+OVERRIDABLE = frozenset({"MODEL", "USE_FALLBACKS", "WRITE_REPORT", "QUESTION_POLICY", "MAX_QUESTIONS_PER_ROUND",
+                         "LAZY_COMPILE"})
+_overrides_var: contextvars.ContextVar[dict | None] = contextvars.ContextVar("ctrec_config_overrides", default=None)
+
+
+@contextlib.contextmanager
+def overrides(**values):
+    """with config.overrides(MODEL=...): 이 컨텍스트에서만 적용. 끝나면(예외 포함) 복구, 중첩 시 안쪽이 우선."""
+    unknown = set(values) - OVERRIDABLE
+    if unknown:
+        raise KeyError(f"실행별로 바꿀 수 없는 설정: {sorted(unknown)}")
+    token = _overrides_var.set({**(_overrides_var.get() or {}), **values})
+    try:
+        yield
+    finally:
+        _overrides_var.reset(token)
+
+
+def active_overrides() -> dict:
+    return dict(_overrides_var.get() or {})
+
+
+class _ConfigModule(types.ModuleType):
+    def __getattribute__(self, name):
+        if name in OVERRIDABLE:
+            ov = _overrides_var.get()
+            if ov and name in ov:
+                return ov[name]
+        return super().__getattribute__(name)
+
+
+sys.modules[__name__].__class__ = _ConfigModule

@@ -187,9 +187,9 @@ def test_env_vars_and_flags_alone_never_reach_the_api(monkeypatch, no_sdk_client
 def test_call_cap_blocks_before_request():
     inner, m = FakeInner(), _meter(max_calls=2)
     with lp.metered(m, inner):
-        _call(llm.client(), n=2)
+        _call(llm.current_client(), n=2)
         with pytest.raises(lp.PilotStop, match="call_cap"):
-            _call(llm.client())
+            _call(llm.current_client())
     assert inner.calls == 2 and m.report()["stopped"] == "call_cap"
 
 
@@ -198,7 +198,7 @@ def test_cost_cap_reserves_worst_case_before_request():
     price = lp.PriceTable(model=config.MODEL, input=3, output=15, cache_write=3.75, cache_read=0.3)
     m = lp.PilotMeter(_limits(max_cost_usd=0.01, max_tokens_per_call=1000), price)  # 1회 최악값(출력 1000토큰 $0.015) > 상한
     with lp.metered(m, inner), pytest.raises(lp.PilotStop, match="cost_cap"):
-        _call(llm.client())
+        _call(llm.current_client())
     assert inner.calls == 0
 
 
@@ -207,7 +207,7 @@ def test_cost_cap_reserves_worst_case_before_request():
 def test_token_budget_caps(kw, code):
     inner, m = FakeInner(), _meter(**kw)
     with lp.metered(m, inner), pytest.raises(lp.PilotStop, match=code):
-        _call(llm.client())
+        _call(llm.current_client())
     assert inner.calls == 0
 
 
@@ -215,10 +215,10 @@ def test_actual_usage_over_cap_stops_next_call():
     inner = FakeInner(usage=_usage(i=5000, o=10))  # 추정보다 큰 실제 입력
     m = _meter(max_input_tokens=6000, chars_per_token=50.0)
     with lp.metered(m, inner):
-        _call(llm.client())
-        _call(llm.client())
+        _call(llm.current_client())
+        _call(llm.current_client())
         with pytest.raises(lp.PilotStop, match="input_token_cap"):
-            _call(llm.client())
+            _call(llm.current_client())
     assert inner.calls == 2
 
 
@@ -228,11 +228,11 @@ def test_retry_cap_on_transient_errors_and_no_retry_on_bad_request():
     with lp.metered(m, inner) as proxy:
         proxy._sleep = sleeps.append
         with pytest.raises(RateLimitError):
-            _call(llm.client())
+            _call(llm.current_client())
     assert inner.calls == 3 and m.retries == 2 and m.failures["RateLimitError"] == 3 and len(sleeps) == 2
     inner2, m2 = FakeInner(fail=BadRequest), _meter()
     with lp.metered(m2, inner2), pytest.raises(BadRequest):
-        _call(llm.client())
+        _call(llm.current_client())
     assert inner2.calls == 1 and m2.retries == 0
 
 
@@ -241,15 +241,15 @@ def test_total_retry_cap_and_consecutive_failures_stop_run():
     with lp.metered(m, inner) as proxy:
         proxy._sleep = lambda s: None
         with pytest.raises(lp.PilotStop, match="retry_cap"):
-            _call(llm.client())
+            _call(llm.current_client())
     assert inner.calls == 2
     inner2, m2 = FakeInner(fail=BadRequest), _meter(max_consecutive_failures=2)
     with lp.metered(m2, inner2):
         for _ in range(2):
             with pytest.raises(BadRequest):
-                _call(llm.client())
+                _call(llm.current_client())
         with pytest.raises(lp.PilotStop, match="consecutive_failures"):
-            _call(llm.client())
+            _call(llm.current_client())
     assert inner2.calls == 2
 
 
@@ -257,14 +257,14 @@ def test_cancel_and_deadline_stop_before_request():
     inner = FakeInner()
     m = lp.PilotMeter(_limits(), lp.ASSUMED_PRICE, cancel=lambda: True)
     with lp.metered(m, inner), pytest.raises(lp.PilotStop, match="cancelled"):
-        _call(llm.client())
+        _call(llm.current_client())
     t = [0.0]
     m2 = lp.PilotMeter(_limits(run_deadline_s=10), lp.ASSUMED_PRICE, clock=lambda: t[0])
     with lp.metered(m2, inner):
-        _call(llm.client())
+        _call(llm.current_client())
         t[0] = 11.0
         with pytest.raises(lp.PilotStop, match="timeout"):
-            _call(llm.client())
+            _call(llm.current_client())
     assert inner.calls == 1
     assert issubclass(lp.PilotStop, llm.RunCancelled)  # 기존 취소 처리(run_method 상태 기록)를 그대로 탐
 
@@ -272,7 +272,7 @@ def test_cancel_and_deadline_stop_before_request():
 def test_per_request_timeout_and_max_tokens_passed():
     inner, m = FakeInner(), _meter(call_timeout_s=42.0, max_tokens_per_call=800)
     with lp.metered(m, inner):
-        _call(llm.client())
+        _call(llm.current_client())
     assert inner.kwargs[0]["timeout"] == 42.0 and inner.kwargs[0]["max_tokens"] == 800
 
 
@@ -303,17 +303,17 @@ def test_structured_call_through_meter_counts_stage(monkeypatch):
     assert out.assessments == [] and m.report()["by_stage"]["matcher"]["calls"] == 1
 
 
-def test_metered_restores_client_and_import_has_no_side_effects():
+def test_metered_is_context_scoped_and_global_client_untouched():
     real = llm.client
-    with lp.metered(_meter(), FakeInner()):
-        assert llm.client is not real
-    assert llm.client is real
+    with lp.metered(_meter(), FakeInner()) as proxy:
+        assert llm.client is real and llm.current_client() is proxy  # 전역은 그대로, 이 컨텍스트에서만 대리 객체
+    assert llm.client is real and llm._client_var.get() is None
 
 
 def test_report_has_counts_only():
     inner, m = FakeInner(fail=BadRequest), _meter()
     with lp.metered(m, inner), pytest.raises(BadRequest):
-        _call(llm.client(), system="환자 원문이 들어간 시스템")
+        _call(llm.current_client(), system="환자 원문이 들어간 시스템")
     blob = json.dumps(m.report(), ensure_ascii=False)
     assert "환자 원문" not in blob and m.report()["failures"] == {"BadRequest": 1}
 

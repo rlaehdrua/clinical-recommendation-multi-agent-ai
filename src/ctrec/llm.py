@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import contextvars
 import logging
 import threading
@@ -91,6 +92,27 @@ def client() -> anthropic.Anthropic:
     return _client
 
 
+# 실행별 클라이언트 (예: 평가 실행의 계측 클라이언트). contextvars라 설정한 컨텍스트와 그 사본(copy_context로 넘긴
+# 하위 스레드)에만 보이고, 다른 실행·일반 웹 요청은 기존 기본 클라이언트(client())를 그대로 씀.
+# 주의: copy_context 없이 만든 스레드·run_in_executor는 컨텍스트를 물려받지 않아 기본 클라이언트로 감
+_client_var: contextvars.ContextVar[Any] = contextvars.ContextVar("ctrec_client", default=None)
+
+
+@contextlib.contextmanager
+def use_client(c):
+    """이 컨텍스트에서만 c로 호출. 끝나면(예외 포함) 이전 값으로 복구, 중첩 가능."""
+    token = _client_var.set(c)
+    try:
+        yield c
+    finally:
+        _client_var.reset(token)
+
+
+def current_client():
+    c = _client_var.get()
+    return c if c is not None else client()
+
+
 # ---------------------------------------------------------------------------
 # JSON schema 변환
 # ---------------------------------------------------------------------------
@@ -159,11 +181,11 @@ def create(
 
     if config.USE_FALLBACKS:
         # 거절 카테고리에 따라 서버가 대체 모델로 재실행 (Claude API 전용 beta)
-        response = client().beta.messages.create(
+        response = current_client().beta.messages.create(
             betas=[FALLBACK_BETA], fallbacks="default", **kwargs
         )
     else:
-        response = client().messages.create(**kwargs)
+        response = current_client().messages.create(**kwargs)
     _record_usage(response)
 
     if response.stop_reason == "refusal":

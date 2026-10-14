@@ -471,16 +471,15 @@ def run_method(method: str, case: PatientCase, gt: CaseGroundTruth, trials: dict
                                                   by="question_eval", document_reference="SYNTHETIC")
             return out
         s.profile_patient = profile_and_verify
-    original = pipeline.question_generator.generate_questions
-    pipeline.question_generator.generate_questions = generate
     from contextlib import nullcontext
     from .question_priority import tie_order
     recorder = [] if record_candidates else None
     try:
-        def go():
+        def go():  # 질문 생성기 교체·취소 확인은 이 실행의 컨텍스트에서만 (다른 실행에 보이지 않음)
             llm.set_guard(guard)
-            with tie_order(tie_policy, ref, recorder) if (tie_policy is not None or recorder is not None) \
-                    else nullcontext():
+            with pipeline.question_generator.use_generator(generate), \
+                    (tie_order(tie_policy, ref, recorder) if (tie_policy is not None or recorder is not None)
+                     else nullcontext()):
                 s.run_fixed()
         contextvars.copy_context().run(go)
         if guard():
@@ -489,8 +488,6 @@ def run_method(method: str, case: PatientCase, gt: CaseGroundTruth, trials: dict
         run.status, run.error_type = e.args[0] if e.args else "cancelled", "RunCancelled"
     except Exception as e:  # noqa: BLE001 - 실패는 결과에서 빼지 않고 상태로 남김 (메시지에는 원문이 있을 수 있어 종류만)
         run.status, run.error_type = "error", type(e).__name__
-    finally:
-        pipeline.question_generator.generate_questions = original
     if not run.round0_matches:
         run.round0_matches = {t: m.model_dump() for t, m in s.matches.items()}
     run.final_eligibility = {t: m.eligibility for t, m in s.matches.items()}

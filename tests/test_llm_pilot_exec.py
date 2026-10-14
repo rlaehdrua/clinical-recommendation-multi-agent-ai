@@ -6,6 +6,7 @@ Fake SDK(llm_pilot_fake.FakeSDKClient)는 실제 SDK와 같은 messages.create �
 
 from __future__ import annotations
 
+import contextvars
 import json
 import subprocess
 import sys
@@ -396,8 +397,8 @@ def test_concurrent_reservations_respect_cost_cap():
             llm.structured(MatcherOutput, system="s", user="<rules_to_assess>[]</rules_to_assess>")
         except lp.PilotStop:
             errors.append(1)
-    with lp.metered(m, fake):
-        ts = [threading.Thread(target=work) for _ in range(10)]
+    with lp.metered(m, fake):  # 실행 컨텍스트는 스레드에 자동으로 넘어가지 않으므로 copy_context로 전달
+        ts = [threading.Thread(target=contextvars.copy_context().run, args=(work,)) for _ in range(10)]
         [t.start() for t in ts]
         [t.join() for t in ts]
     assert len(fake.calls) <= 3 and m.report()["cost_conservative_usd"] <= per * 3.5
@@ -439,8 +440,12 @@ def test_result_format_fields_and_no_saving_by_default():
 
 def test_frozen_store_and_policy_files_unchanged():
     assert store_patch.verify_frozen() == []
-    diff = subprocess.run(["git", "diff", "--name-only", "HEAD", "--", "src/ctrec/pipeline.py", "src/ctrec/agents",
-                           "src/ctrec/decision_loop.py", "src/ctrec/decision_policy.py", "src/ctrec/decision_state.py",
-                           "src/ctrec/question_priority.py", "src/ctrec/llm.py", "src/ctrec/web", "data"],
+    # 판정·추천·Decision Loop·웹·프로파일러는 바뀌지 않음 (llm.py·question_generator.py·config.py의 실행별 격리
+    # 장치는 기본 동작이 같다는 것을 동작 테스트로 확인 - test_llm_isolation.py)
+    diff = subprocess.run(["git", "diff", "--name-only", "HEAD", "--", "src/ctrec/pipeline.py",
+                           "src/ctrec/agents/matcher.py", "src/ctrec/agents/patient_profiler.py",
+                           "src/ctrec/agents/recommender.py", "src/ctrec/decision_loop.py",
+                           "src/ctrec/decision_policy.py", "src/ctrec/decision_state.py",
+                           "src/ctrec/question_priority.py", "src/ctrec/web", "data"],
                           cwd=ROOT, capture_output=True, text=True)
     assert diff.returncode == 0 and diff.stdout.strip() == ""
