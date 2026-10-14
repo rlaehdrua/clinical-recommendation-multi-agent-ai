@@ -19,7 +19,7 @@ from ctrec import status  # noqa: E402
 from ctrec.web import app as web  # noqa: E402
 
 INDEX = (Path(web.__file__).parent / "static" / "index.html").read_text(encoding="utf-8")
-SCRIPT = INDEX.split("<script>", 1)[1]
+SCRIPT = (Path(web.__file__).parent / "static" / "app.js").read_text(encoding="utf-8")  # 화면 스크립트 (CSP로 분리)
 
 
 @pytest.fixture()

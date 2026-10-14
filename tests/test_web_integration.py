@@ -62,8 +62,10 @@ def _of(events, kind):
 def test_index_and_static(client):
     r = client.get("/")
     assert r.status_code == 200 and r.headers["content-type"].startswith("text/html")
+    js = client.get("/static/app.js")  # 화면 스크립트는 같은 서버의 파일 (CSP script-src 'self')
+    assert js.status_code == 200 and js.headers["content-type"].startswith("text/javascript")
     for path in ("/api/config", "/api/patients", "/api/trials", "/api/runs", "/answers", "/events"):
-        assert path in r.text  # 화면 스크립트가 쓰는 API 경로가 실제 서버 경로와 같음
+        assert path in js.text  # 화면 스크립트가 쓰는 API 경로가 실제 서버 경로와 같음
     assert client.get("/healthz").json() == {"ok": True}
 
 

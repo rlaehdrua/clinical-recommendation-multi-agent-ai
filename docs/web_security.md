@@ -127,3 +127,46 @@ running ──결과 전송──▶ completed      running ──예외──�
 2. **SDK 내부 재시도:** 호출 하나 안의 재시도(`max_retries=4`)는 SDK 안에서 일어나므로 그 사이에는 확인하지 않습니다.
 3. **멈춘 호출:** 응답이 오지 않는 호출은 SDK 시간 제한까지 스레드와 슬롯을 점유합니다. 시간 제한도 협력적이라 그 호출을 끊지 못합니다.
 4. **ClinicalTrials.gov 검색:** 이 HTTP 요청(유료 아님)은 확인 지점이 없어, 진행 중이던 요청은 끝까지 갑니다.
+
+## 4. 화면 보안 헤더·정적 자원 (Phase 6-2)
+
+### 보안 헤더
+
+모든 응답에 붙습니다. 거절 응답(403·401·413)도 포함되도록 가장 바깥 미들웨어에서 처리합니다.
+
+| 헤더 | 값 | 이유 |
+|---|---|---|
+| Content-Security-Policy | `default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'; manifest-src 'self'` | 같은 서버의 파일만 실행·적용합니다. 인라인 스크립트, 인라인 스타일, `eval`, 외부 출처는 허용하지 않습니다 |
+| X-Content-Type-Options | `nosniff` | MIME 추측 방지 |
+| Referrer-Policy | `no-referrer` | 외부 링크로 실행 주소가 새지 않음 |
+| X-Frame-Options | `DENY` | 다른 사이트에 끼워 넣기 금지 (CSP `frame-ancestors`의 구형 브라우저 대응) |
+| Cross-Origin-Opener-Policy | `same-origin` | 새 창과의 창 참조 분리 |
+
+### 화면 구조
+
+화면 코드는 세 파일로 나뉩니다: `index.html`(마크업), `app.css`, `app.js`.
+- 인라인 `<script>`, `<style>`, `style=` 속성, `on*=` 이벤트 속성이 없습니다(테스트로 확인).
+- 정적 파일은 `GET /static/<이름>`으로 제공합니다. 정해 둔 4개 파일만 열리며 경로 조작은 불가합니다.
+
+### 외부 라이브러리
+
+- CDN을 쓰지 않습니다. marked 12.0.2와 DOMPurify 3.4.16을 로컬에서 제공합니다.
+- 버전, 라이선스, 원본 tarball sha512, 파일 sha256은 `src/ctrec/web/static/VENDOR.md`에 있고, 테스트가 sha256을 대조합니다.
+- 웹폰트는 쓰지 않습니다.
+
+### 외부 글 표시
+
+- 질문, 근거, 시험 제목 등은 이스케이프한 뒤 글자로만 표시합니다.
+- AI 보고서 마크다운은 두 겹으로 처리합니다.
+  1. 안에 섞인 HTML을 해석하지 않고 글자로 출력합니다(marked 렌더러).
+  2. 그 결과를 다시 DOMPurify로 정화합니다(`style` 제거).
+- 외부 링크는 `https://*.clinicaltrials.gov`만 링크로 만들고 `rel="noopener noreferrer"`를 붙입니다.
+
+### 오류 원문
+
+화면으로 보내는 결과 사본에서 평가 오류(`evaluation_error`, 단계 실패 `errors`)는 **예외 이름만** 남깁니다. 예외 메시지에는 요청 내용이 섞일 수 있기 때문입니다. 판정 값과 서버 Session은 바꾸지 않습니다(`web/display.py`의 `redact_errors`).
+
+### 한계
+
+- Trusted Types(`require-trusted-types-for`)는 아직 적용하지 않았습니다. 화면이 `innerHTML`로 이스케이프된 템플릿을 넣기 때문입니다.
+- 결과 사본에는 여전히 환자 원문 일부가 들어 있습니다(추출된 프로필, 근거 인용). 이는 실행 소유자에게만 전달됩니다.

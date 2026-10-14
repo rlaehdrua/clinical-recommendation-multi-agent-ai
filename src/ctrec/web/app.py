@@ -39,7 +39,7 @@ from ..schemas import ClarifyingQuestion
 from ..status import MATCH_NOTE
 from ..tools import ctgov
 from ..trace import Tracer
-from . import access, retention
+from . import access, display, retention
 
 STATIC = Path(__file__).parent / "static"
 log = logging.getLogger("ctrec.web")
@@ -100,6 +100,15 @@ async def validation_error(request: Request, exc: RequestValidationError):
     return JSONResponse(status_code=422, content={"detail": f"요청 형식이 올바르지 않습니다: {', '.join(fields)}"})
 
 
+# 화면 보안 헤더 (Phase 6-2). 화면 스크립트·스타일은 모두 같은 서버의 파일(/static)이라 인라인·외부 출처를 허용하지 않음.
+# connect-src 'self': API·SSE(EventSource)만. img-src 'self' data:: 마크다운 보고서의 data: 이미지는 DOMPurify가 정화한 뒤에만.
+CSP = ("default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; "
+       "connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'; "
+       "manifest-src 'self'")
+SECURITY_HEADERS = {"Content-Security-Policy": CSP, "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer",
+                    "X-Frame-Options": "DENY", "Cross-Origin-Opener-Policy": "same-origin"}
+
+
 @app.middleware("http")
 async def require_https(request: Request, call_next):
     """루프백이 아닌 평문 HTTP 요청 거절 (상태 확인 /healthz 제외). HTTPS 응답에는 HSTS."""
@@ -108,6 +117,15 @@ async def require_https(request: Request, call_next):
     response = await call_next(request)
     if access.is_https(request):
         response.headers["Strict-Transport-Security"] = "max-age=31536000"
+    return response
+
+
+# 가장 바깥 미들웨어 (마지막에 선언): 거절 응답(403·401·413)을 포함한 모든 응답에 보안 헤더
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    for k, v in SECURITY_HEADERS.items():
+        response.headers.setdefault(k, v)
     return response
 
 
@@ -272,6 +290,15 @@ def _client_record(rec: dict) -> dict:
 _END_MESSAGE = {"cancelled": "실행이 취소되었습니다.", "timed_out": "실행 시간 제한을 넘어 중단했습니다."}
 
 
+def _display(session) -> dict | None:
+    """결과 화면용 표시 정보 (판정은 그대로, 분류·종류만). 만들지 못해도 결과 전송은 막지 않음 (화면은 중립 안내)."""
+    try:
+        return display.build(session)
+    except Exception as e:  # noqa: BLE001
+        log.warning("web display build failed: %s", type(e).__name__)
+        return None
+
+
 def _execute(run: Run, req: RunRequest, case: PatientCase, trials: dict[str, dict]) -> None:
     """실행 스레드 입구. 이 실행의 LLM 호출을 기록 (기록 전용: 호출을 막거나 바꾸지 않음, 비용 상한 없음)."""
     run.meter = web_metering.WebRunMeter(run.run_id)
@@ -303,7 +330,8 @@ def _execute_run(run: Run, req: RunRequest, case: PatientCase, trials: dict[str,
         with run.lock:  # 취소 요청과 경합: 아직 running일 때만 결과를 보내고, 같은 잠금 안에서 completed로 확정
             if run.state == "running":
                 run.state = "completed"
-                run.emit("result", result=session.result(), report=session.report, match_note=MATCH_NOTE,
+                run.emit("result", result=display.redact_errors(session.result()), report=session.report, match_note=MATCH_NOTE,
+                         display=_display(session),
                          trials={tid: {"title": t.get("title"), "overall_status": t.get("overall_status"),
                                        "url": (t.get("source") or {}).get("url")} for tid, t in session.trials.items()})
     except llm.RunCancelled as e:
@@ -347,6 +375,18 @@ def _execute_run(run: Run, req: RunRequest, case: PatientCase, trials: dict[str,
 def index() -> FileResponse:
     # 화면 수정이 바로 반영되도록 캐시하지 않음
     return FileResponse(STATIC / "index.html", headers={"Cache-Control": "no-cache"})
+
+
+# 화면 정적 파일: 이름을 정해 둔 파일만 (경로 조작 불가). 외부 라이브러리는 VENDOR.md 참고
+STATIC_FILES = {"app.js": "text/javascript", "app.css": "text/css", "marked.min.js": "text/javascript",
+                "purify.min.js": "text/javascript"}
+
+
+@app.get("/static/{name}")
+def static_file(name: str) -> FileResponse:
+    if name not in STATIC_FILES:
+        raise HTTPException(404, "찾을 수 없습니다.")
+    return FileResponse(STATIC / name, media_type=STATIC_FILES[name], headers={"Cache-Control": "no-cache"})
 
 
 @app.get("/healthz")

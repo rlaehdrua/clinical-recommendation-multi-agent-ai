@@ -94,11 +94,26 @@ def _browser(p):
 
 
 def _page(browser, base, errors=None, **ctx):
+    """CDN 등 외부 출처 요청은 모두 막고 기록 (page.external). CSP 위반 콘솔 메시지도 기록 (page.csp)."""
     page = browser.new_context(**ctx).new_page()
-    page.route("**/*", lambda route: route.continue_() if route.request.url.startswith(base) else route.abort())
+    page.external, page.csp = [], []
+
+    def route(r):
+        if r.request.url.startswith(base):
+            return r.continue_()
+        page.external.append(r.request.url)
+        return r.abort()
+    page.route("**/*", route)
+    page.on("console", lambda m: page.csp.append(m.text) if "Content Security Policy" in m.text else None)
     if errors is not None:
         page.on("pageerror", lambda e: errors.append(str(e)))
     return page
+
+
+def _assert_clean(page):
+    """외부 자원 요청 없음(로컬 자원만으로 동작), CSP 위반 없음."""
+    assert page.external == [], page.external
+    assert page.csp == [], page.csp
 
 
 def _fill_and_start(page, base, path="", text=h.SYN_TEXT, trials=h.TRIAL_IDS):
@@ -128,9 +143,21 @@ def _stage(page, key):
     return page.get_attribute(f"#stage-{key}", "data-state")
 
 
+def _wait_js(page, expr, arg=None, timeout=20000):
+    """페이지 조건을 기다림. CSP(script-src 'self')가 페이지 안 eval을 막으므로 Playwright wait_for_function(문자열 술어를
+    페이지에서 eval) 대신, 개발자 도구 프로토콜로 평가하는 page.evaluate를 짧게 반복."""
+    end = time.time() + timeout / 1000
+    while True:
+        if page.evaluate(expr, arg):
+            return
+        if time.time() > end:
+            raise AssertionError(f"조건이 충족되지 않음: {expr}")
+        time.sleep(0.05)
+
+
 def _wait_end(page, label="완료"):
     """결과(result) 이벤트 뒤에 오는 종료(end) 이벤트까지 기다림 (결과 표시와 종료 표시는 서로 다른 이벤트)."""
-    page.wait_for_function("t => document.querySelector('#run-state').textContent === t", arg=label, timeout=15000)
+    _wait_js(page, "t => document.querySelector('#run-state').textContent === t", label, 15000)
 
 
 def _no_hscroll(page):
@@ -261,7 +288,7 @@ def test_unknown_answer_and_retry_after_failed_submit(server):
         page.wait_for_selector("#confirm-send", state="visible")
         assert "모름 · 확인 불가" in page.inner_text("#qreview")
         page.click("#confirm-send")
-        page.wait_for_function("document.querySelector('#qerror').textContent.includes('보내지 못했습니다')")
+        _wait_js(page, "() => document.querySelector('#qerror').textContent.includes('보내지 못했습니다')")
         assert page.inner_text("#confirm-send") == "다시 보내기" and not page.is_disabled("#confirm-send")
         rid = page.evaluate("sessionStorage.getItem('ctrec-run-id')")
         page.click("#confirm-send")  # 재시도
@@ -283,11 +310,11 @@ def test_cancel_during_analysis(make_server):
         page = _page(browser, base, errors)
         _fill_and_start(page, base)
         assert fake.entered.wait(20)  # 조건 비교 단계에서 멈춰 있음
-        page.wait_for_function("document.querySelector('#stage-criteria').dataset.state === 'active'")
+        _wait_js(page, "() => document.querySelector('#stage-criteria').dataset.state === 'active'")
         page.click("#cancel")
-        page.wait_for_function("document.querySelector('#run-state').textContent === '취소 중'")
+        _wait_js(page, "() => document.querySelector('#run-state').textContent === '취소 중'")
         fake.release.set()
-        page.wait_for_function("document.querySelector('#run-state').textContent === '취소됨'", timeout=15000)
+        _wait_js(page, "() => document.querySelector('#run-state').textContent === '취소됨'", None, 15000)
         assert _stage(page, "criteria") == "failed" and page.is_disabled('#pages [data-page="result"]')
         assert "취소" in page.inner_text("#end-note") and not page.is_disabled("#custom")
         browser.close()
@@ -314,7 +341,7 @@ def test_sse_drop_and_recovery_without_duplicates(server):
         page.wait_for_selector("#qslot .q", timeout=20000)
         # 진행 중 연결 끊김 흉내: 열린 연결을 닫고 오류 처리 실행 -> ?after=<마지막 id>로 이어 받음
         page.evaluate("() => { const es = state.es; es.close(); es.onerror(new Event('error')); }")
-        page.wait_for_function("state.es && state.es.readyState === EventSource.OPEN", timeout=15000)
+        _wait_js(page, "() => state.es && state.es.readyState === EventSource.OPEN", None, 15000)
         assert page.locator("#qslot .q").count() == 1 and page.locator("#cards .card").count() == 2  # 중복 없음
         _answer(page)
         page.wait_for_selector("#final .rec", timeout=30000)
@@ -368,7 +395,7 @@ def test_cancel_while_waiting_for_answers(server):
         _fill_and_start(page, base)
         page.wait_for_selector("#qslot input[data-q='Q1']", timeout=20000)
         page.click("#cancel")
-        page.wait_for_function("document.querySelector('#run-state').textContent === '취소됨'", timeout=10000)
+        _wait_js(page, "() => document.querySelector('#run-state').textContent === '취소됨'", None, 10000)
         assert page.is_hidden("#cancel") and page.inner_html("#qslot") == ""
         assert page.evaluate("sessionStorage.getItem('ctrec-run-id')") is None
         browser.close()
@@ -386,7 +413,7 @@ def test_run_timeout(make_server, monkeypatch):
         browser = _browser(p)
         page = _page(browser, base, errors)
         _fill_and_start(page, base)
-        page.wait_for_function("document.querySelector('#run-state').textContent === '시간 초과'", timeout=20000)
+        _wait_js(page, "() => document.querySelector('#run-state').textContent === '시간 초과'", None, 20000)
         assert "시간 제한" in page.inner_text("#end-note") and page.is_disabled('#pages [data-page="result"]')
         browser.close()
     assert errors == [], errors
@@ -518,7 +545,7 @@ def test_input_errors_and_duplicate_submit(server):
         page.fill("#custom", h.SYN_TEXT)
         page.click("#review")
         page.click("#start")
-        page.wait_for_function("document.querySelector('#start-hint').textContent.includes('진행 중인 실행')")
+        _wait_js(page, "() => document.querySelector('#start-hint').textContent.includes('진행 중인 실행')")
         assert not page.is_disabled("#custom")
         page.unroute("**/api/runs")
         # 중복 제출: 빠르게 두 번 눌러도 실행 요청은 한 번
@@ -547,5 +574,329 @@ def test_decision_diagnostic_panel_only_with_flag(server):
         _answer(page)
         page.wait_for_selector("#final .rec", timeout=30000)
         assert page.locator("#decision-body .card").count() == 2 and "NCT04063540" in page.inner_text("#final")
+        browser.close()
+    assert errors == [], errors
+
+
+# =============================================================== Phase 6-2: 결과 문구·CSP·입력 검증·접근성
+
+CODES = ("ELIGIBLE|INELIGIBLE|UNCERTAIN|NOT_EVALUATED|UNVERIFIED|CRITERIA_MATCH|POTENTIAL_MATCH|CRITERIA_MISMATCH|"
+         "INSUFFICIENT_INFORMATION|NEEDS_REVIEW|ACTIVE_NOT_RECRUITING")
+# 결과 화면에서 사용자에게 보이는 글(접힌 '시스템 원문'과 AI 보고서 제외)에 내부 표기가 있는지
+VISIBLE_CODE_JS = """codes => { const re = new RegExp('\\\\b(' + codes + ')\\\\b');
+  const root = document.querySelector('#final').cloneNode(true);
+  root.querySelectorAll('details.raw, details.report').forEach(d => d.remove());
+  const t = root.textContent; const m = t.match(re);
+  return m ? m[0] + ' @ ' + t.slice(Math.max(0, m.index - 40), m.index + 40) : null; }"""
+CONTRAST_JS = r"""() => {
+  const parse = c => { const m = /rgba?\(([^)]+)\)/.exec(c); if (!m) return null; const p = m[1].split(',').map(parseFloat);
+    return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 }; };
+  const lum = ({ r, g, b }) => { const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+    return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };
+  const mix = (top, base) => ({ r: top.r * top.a + base.r * (1 - top.a), g: top.g * top.a + base.g * (1 - top.a), b: top.b * top.a + base.b * (1 - top.a) });
+  const bgOf = el => { const layers = []; for (let cur = el; cur && cur.nodeType === 1; cur = cur.parentElement) {
+      const c = parse(getComputedStyle(cur).backgroundColor); if (c && c.a > 0) { layers.push(c); if (c.a >= 1) break; } }
+    let base = { r: 255, g: 255, b: 255 }; for (let i = layers.length - 1; i >= 0; i--) base = mix(layers[i], base); return base; };
+  const bad = [], seen = new Set(); const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  while (w.nextNode()) { const t = w.currentNode; if (!t.textContent.trim()) continue; const el = t.parentElement;
+    if (!el || seen.has(el)) continue; seen.add(el);
+    if (!el.getClientRects().length || el.closest('[disabled], .off, svg, option, .sr-only, [hidden]')) continue;
+    const cs = getComputedStyle(el); if (cs.visibility === 'hidden') continue;
+    const fg = parse(cs.color); if (!fg) continue; const bg = bgOf(el); const f = mix(fg, bg);
+    const L1 = lum(f), L2 = lum(bg); const ratio = (Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05);
+    const size = parseFloat(cs.fontSize), wt = parseInt(cs.fontWeight, 10); const large = size >= 24 || (size >= 18.66 && wt >= 700);
+    if (ratio < (large ? 3 : 4.5)) bad.push(el.tagName + '.' + el.className + ' ' + ratio.toFixed(2) + ' "' + t.textContent.trim().slice(0, 24) + '"'); }
+  return bad; }"""
+NAMES_JS = r"""() => [...document.querySelectorAll('input, select, textarea, button, a[href], summary')].filter(el => el.getClientRects().length)
+  .filter(el => { if (el.type === 'hidden') return false;
+    const lab = el.id && document.querySelector('label[for="' + CSS.escape(el.id) + '"]');
+    const by = (el.getAttribute('aria-labelledby') || '').split(' ').map(i => document.getElementById(i)).filter(Boolean).map(e => e.textContent).join('');
+    const name = (el.getAttribute('aria-label') || by || (lab && lab.textContent) || (el.closest('label') && el.closest('label').textContent) || el.title || el.textContent || '').trim();
+    return !name; }).map(el => el.outerHTML.slice(0, 80))"""
+
+
+def _check_screen(page, label):
+    """한 화면 점검: 가로 스크롤 없음, 글자 대비(WCAG AA), 조작 요소의 접근 가능한 이름."""
+    assert _no_hscroll(page), f"{label}: 가로 스크롤"
+    bad = page.evaluate(CONTRAST_JS)
+    assert bad == [], (label, bad)
+    unnamed = page.evaluate(NAMES_JS)
+    assert unnamed == [], (label, unnamed)
+
+
+def _open_details(page, root="#final"):
+    page.evaluate("r => document.querySelectorAll(r + ' details').forEach(d => { d.open = true; })", root)
+
+
+def _visible_code(page):
+    return page.evaluate(VISIBLE_CODE_JS, CODES)
+
+
+def test_csp_headers_local_assets_and_no_violations(server):
+    base, _ = server
+    errors = []
+    with sync_api.sync_playwright() as p:
+        browser = _browser(p)
+        page = _page(browser, base, errors)
+        resp = page.goto(base)
+        csp = resp.headers.get("content-security-policy", "")
+        for d in ("script-src 'self'", "style-src 'self'", "connect-src 'self'", "object-src 'none'", "base-uri 'none'",
+                  "frame-ancestors 'none'", "default-src 'none'"):
+            assert d in csp, d
+        assert "unsafe-inline" not in csp and "unsafe-eval" not in csp
+        assert resp.headers.get("x-content-type-options") == "nosniff"
+        page.wait_for_selector("#patient option", state="attached")
+        assert page.evaluate("() => typeof marked === 'object' && typeof DOMPurify === 'function'")  # 로컬 라이브러리
+        _fill_and_start(page, base)
+        _answer(page)
+        page.wait_for_selector("#final .rec", timeout=30000)
+        page.evaluate("() => { document.querySelector('#final details.report').open = true; }")
+        assert page.locator("#final .md h1").count() >= 1  # 보고서 마크다운이 CDN 없이 렌더링
+        _assert_clean(page)
+        browser.close()
+    assert errors == [], errors
+
+
+class ReportXSSLLM(h.FakeLLM):
+    def plain(self, *, system, user, **k):
+        text = super().plain(system=system, user=user, **k)  # 호출 기록 유지
+        return (text + "\n\n<script>window.__xss=3</script><img src=x onerror=\"window.__xss=4\">\n\n"
+                "[링크](javascript:window.__xss=5) <style>body{display:none}</style> <div style=\"color:red\">빨강</div>"
+                "\n\n<iframe src=\"https://example.com\"></iframe>")
+
+
+def test_report_xss_sanitized_under_csp(make_server):
+    base, _ = make_server(ReportXSSLLM())
+    errors = []
+    with sync_api.sync_playwright() as p:
+        browser = _browser(p)
+        page = _page(browser, base, errors)
+        _fill_and_start(page, base)
+        _answer(page)
+        page.wait_for_selector("#final .rec", timeout=30000)
+        page.evaluate("() => { document.querySelector('#final details.report').open = true; }")
+        md = page.locator("#final .md")
+        assert md.locator("script, style, iframe, img, [style], a[href^='javascript']").count() == 0
+        assert "window.__xss=3" in md.inner_text()  # 보고서 속 HTML은 글자로만 표시
+        assert page.evaluate("() => window.__xss") is None and page.is_visible("body")
+        _assert_clean(page)
+        browser.close()
+    assert errors == [], errors
+
+
+def test_result_text_without_internal_codes_and_originals_kept(make_server):
+    base, _ = make_server(MismatchLLM())
+    errors = []
+    with sync_api.sync_playwright() as p:
+        browser = _browser(p)
+        page = _page(browser, base, errors)
+        _fill_and_start(page, base)
+        page.wait_for_selector("#page-result:not([hidden])", timeout=30000)
+        _open_details(page)
+        assert _visible_code(page) is None  # 사용자용 글에 내부 표기 없음
+        final = page.inner_text("#final")
+        assert "현재 추천할 수 있는 임상시험이 없습니다" in final and "맞지 않는 조건이 있어 추천에서 제외" in final
+        assert "가상 데모 시험이라 추천에서 제외" in final and "충족하지 않은 조건" in final
+        raws = page.evaluate("() => [...document.querySelectorAll('#final details.raw')].map(d => d.textContent)")
+        assert any("INELIGIBLE" in r for r in raws)  # 원문은 지우지 않고 접어서 보존
+        rid = page.evaluate("() => sessionStorage.getItem('ctrec-run-id')")
+        ev = next(e for e in web.RUNS[rid].events if e["type"] == "result")
+        for tid, m in ev["result"]["matches"].items():  # 판정 상태는 서버 값 그대로 표시
+            assert m["match_status"] == "CRITERIA_MISMATCH"
+            card = page.locator("#final .card").filter(has=page.locator(".tid", has_text=tid)).first
+            assert "공개 기준 불충족" in card.inner_text()
+        _assert_clean(page)
+        browser.close()
+    assert errors == [], errors
+
+
+def test_insufficient_information_distinct_from_mismatch(server):
+    base, _ = server
+    errors = []
+    with sync_api.sync_playwright() as p:
+        browser = _browser(p)
+        page = _page(browser, base, errors)
+        _fill_and_start(page, base)
+        _answer(page)
+        page.wait_for_selector("#final .rec", timeout=30000)
+        _open_details(page)
+        rec = page.inner_text("#final .rec >> nth=0")
+        assert "추가 정보 필요" in rec and "불충족이라는 뜻이 아닙니다" in rec
+        assert "정보가 부족한 조건" in rec and "충족하지 않은 조건" not in rec and "공개 기준 불충족" not in rec
+        assert "AI 판정 · 검증된 사실 아님" in rec and "의사 확인 필요" in rec
+        assert _visible_code(page) is None
+        # AI 글에 내부 표기가 섞이면 중립 안내 + 원문 접기 (글자를 바꾸지 않음)
+        html = page.evaluate("() => aiText('AI 요약', '이 시험은 UNCERTAIN 상태입니다')")
+        assert "접어 두었습니다" in html and "details" in html and "UNCERTAIN" in html
+        assert "접어 두었습니다" not in page.evaluate("() => aiText('AI 요약', '확인이 필요합니다')")
+        browser.close()
+    assert errors == [], errors
+
+
+SECRET = "비밀-환자-문장-요청내용"
+
+
+def test_evaluation_failure_hides_error_detail(make_server):
+    base, _ = make_server(h.FakeLLM(fail_on="MatcherOutput", fail_message=SECRET))
+    errors = []
+    with sync_api.sync_playwright() as p:
+        browser = _browser(p)
+        page = _page(browser, base, errors)
+        _fill_and_start(page, base)
+        page.wait_for_selector("#page-result:not([hidden])", timeout=30000)
+        _open_details(page)
+        final = page.inner_text("#final")
+        assert "평가 실패" in final and "부적격이라는 뜻이 아니" in final
+        assert SECRET not in page.content()
+        rid = page.evaluate("() => sessionStorage.getItem('ctrec-run-id')")
+        sent = json.dumps([e for e in web.RUNS[rid].events if e["type"] == "result"], ensure_ascii=False)
+        assert SECRET not in sent and "RuntimeError" in sent  # 화면으로 보낸 결과에는 오류 종류만
+        browser.close()
+    assert errors == [], errors
+
+
+class FormatLLM(h.FakeLLM):
+    def structured(self, model_cls, *, system, user, **k):
+        if model_cls is QuestionSet:
+            self.calls.append("QuestionSet")
+
+            def mk(i, t, q):
+                return ClarifyingQuestion(question_id=i, question=q, answer_type=t, target=[], purpose="eligibility", why="합성")
+            return QuestionSet(questions=[mk("Q1", "yes_no", "뇌 전이가 있나요?"), mk("Q2", "number", "최근 크레아티닌 수치는?"),
+                                          mk("Q3", "date", "마지막 항암 날짜는?"), mk("Q4", "free_text", "기타 참고 사항")])
+        return super().structured(model_cls, system=system, user=user, **k)
+
+
+def test_question_format_validation_and_unknown(make_server):
+    base, _ = make_server(FormatLLM())
+    errors = []
+    with sync_api.sync_playwright() as p:
+        browser = _browser(p)
+        page = _page(browser, base, errors)
+        _fill_and_start(page, base)
+        page.wait_for_selector("#qslot input[data-q='Q2']", timeout=20000)
+        assert page.get_attribute("#qslot input[data-q='Q2']", "inputmode") == "decimal"
+        assert page.get_attribute("#qslot input[data-q='Q3']", "inputmode") == "numeric"
+        page.fill("#qslot input[data-q='Q2']", "높음")
+        page.fill("#qslot input[data-q='Q3']", "2026-02-30")  # 달력에 없는 날짜
+        page.click("#send")
+        assert page.is_hidden("#qreview") and "형식이 맞지 않는" in page.inner_text("#qerror")
+        assert page.get_attribute("#qslot input[data-q='Q2']", "aria-invalid") == "true"
+        assert page.get_attribute("#qslot input[data-q='Q3']", "aria-invalid") == "true"
+        assert page.evaluate("() => document.activeElement.dataset.q") == "Q2"  # 첫 오류로 포커스
+        assert page.inner_text("#qerr-Q2") and page.inner_text("#qerr-Q3")
+        page.fill("#qslot input[data-q='Q2']", "1.2 mg/dL")
+        page.fill("#qslot input[data-q='Q3']", "2026-02")
+        page.fill("#qslot input[data-q='Q4']", "모름")  # 직접 쓴 '모름'도 표준 미응답으로
+        page.click("#send")
+        page.wait_for_selector("#confirm-send", state="visible")
+        review = page.inner_text("#qreview")
+        assert "1.2 mg/dL" in review and "2026-02" in review and review.count("모름 · 확인 불가") == 2  # Q1 빈칸, Q4
+        rid = page.evaluate("() => sessionStorage.getItem('ctrec-run-id')")
+        page.click("#confirm-send")
+        page.wait_for_selector("#page-result:not([hidden])", timeout=30000)
+        assert web.RUNS[rid].answers == {"Q1": "모름", "Q2": "1.2 mg/dL", "Q3": "2026-02", "Q4": "모름"}
+        browser.close()
+    assert errors == [], errors
+
+
+def _tab_to(page, css, limit=150):
+    for _ in range(limit):
+        page.keyboard.press("Tab")
+        if page.evaluate("s => !!document.activeElement && document.activeElement.matches(s)", css):
+            return
+    raise AssertionError(f"키보드로 도달하지 못함: {css}")
+
+
+def test_keyboard_only_journey(server):
+    """마우스 없이 Tab·Enter·입력만으로 입력 -> 분석 -> 질문·답변 -> 결과 -> 근거 -> 새 분석."""
+    base, _ = server
+    errors = []
+    with sync_api.sync_playwright() as p:
+        browser = _browser(p)
+        page = _page(browser, base, errors)
+        page.goto(base)
+        page.wait_for_selector("#patient option", state="attached")
+        page.keyboard.press("Tab")
+        assert page.evaluate("() => document.activeElement.className") == "skip"  # 본문 건너뛰기 링크가 처음
+        _tab_to(page, "#custom")
+        page.keyboard.type(h.SYN_TEXT)
+        _tab_to(page, "#review")
+        page.keyboard.press("Enter")
+        assert page.evaluate("() => document.activeElement.id") == "start"  # 확인 단계로 포커스 이동
+        page.keyboard.press("Enter")
+        page.wait_for_selector("#qslot input[data-q='Q1']", timeout=30000)
+        assert page.evaluate("() => document.activeElement.id") == "q-h"  # 질문 제목으로 포커스
+        _tab_to(page, "#qslot input[data-q='Q1']")
+        page.keyboard.type(h.SYN_ANSWER)
+        _tab_to(page, "#send")
+        page.keyboard.press("Enter")
+        assert page.evaluate("() => document.activeElement.id") == "confirm-send"
+        page.keyboard.press("Enter")
+        page.wait_for_selector("#final .rec", timeout=30000)
+        assert page.evaluate("() => document.activeElement.id") == "result-h"  # 결과 제목으로 포커스
+        _tab_to(page, "#final .rec details.more > summary")
+        page.keyboard.press("Enter")
+        assert page.evaluate("() => document.querySelector('#final .rec details.more').open")
+        _tab_to(page, "#new-run")
+        page.keyboard.press("Enter")
+        assert page.evaluate("() => document.activeElement.id") == "custom" and page.is_visible("#input-panel")
+        browser.close()
+    assert errors == [], errors
+
+
+@pytest.mark.parametrize("ctx", [
+    {"viewport": {"width": 320, "height": 720}},
+    {"viewport": {"width": 390, "height": 844}, "color_scheme": "dark"},
+    {"viewport": {"width": 640, "height": 480}},  # 1280px 화면 200% 확대와 같은 CSS 폭
+    {"viewport": {"width": 1280, "height": 900}, "color_scheme": "dark"},
+], ids=["320", "390-dark", "zoom200", "desktop-dark"])
+def test_responsive_contrast_and_names_each_screen(make_server, ctx):
+    base, _ = make_server(FormatLLM())
+    errors = []
+    with sync_api.sync_playwright() as p:
+        browser = _browser(p)
+        page = _page(browser, base, errors, **ctx)
+        page.goto(base)
+        page.wait_for_selector("#patient option", state="attached")
+        _check_screen(page, "초기 입력")
+        page.click("#review")
+        _check_screen(page, "입력 오류")
+        page.fill("#custom", h.SYN_TEXT)
+        page.click("#review")
+        _check_screen(page, "입력 확인")
+        page.click("#start")
+        page.wait_for_selector("#qslot input[data-q='Q2']", timeout=30000)
+        _check_screen(page, "분석 진행·질문")
+        page.fill("#qslot input[data-q='Q2']", "높음")
+        page.click("#send")
+        _check_screen(page, "질문 형식 오류")
+        page.fill("#qslot input[data-q='Q2']", "1.2")
+        page.click("#send")
+        _check_screen(page, "답변 확인")
+        page.click("#confirm-send")
+        page.wait_for_selector("#page-result:not([hidden])", timeout=30000)
+        _open_details(page)
+        _check_screen(page, "결과·조건별 근거")
+        page.click("#new-run")
+        _check_screen(page, "새 분석")
+        _assert_clean(page)
+        browser.close()
+    assert errors == [], errors
+
+
+def test_end_state_screen_accessible(make_server, monkeypatch):
+    monkeypatch.setattr(web, "RUN_TIMEOUT_S", 3)
+    base, _ = make_server()
+    errors = []
+    with sync_api.sync_playwright() as p:
+        browser = _browser(p)
+        for scheme in ("light", "dark"):
+            page = _page(browser, base, errors, color_scheme=scheme, viewport={"width": 390, "height": 844})
+            _fill_and_start(page, base)
+            _wait_js(page, "() => document.querySelector('#run-state').textContent === '시간 초과'", None, 20000)
+            assert page.evaluate("() => document.activeElement.id") == "end-note"  # 종료 사유로 포커스
+            _check_screen(page, f"시간 초과 ({scheme})")
+            page.context.close()
         browser.close()
     assert errors == [], errors
