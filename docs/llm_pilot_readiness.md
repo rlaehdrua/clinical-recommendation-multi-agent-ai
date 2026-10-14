@@ -68,3 +68,41 @@
   - `CTREC_ALLOW_PAID_EVAL=1`
 - 이번 단계에서는 위 조건을 모두 갖춰도 `run_pilot`이 거절합니다.
 - 출력에는 ID, 코드, 건수만 넣습니다. `assert_redacted`가 원문 줄, 숨긴 정답, API 키 문자열이 없는지 검사합니다.
+
+## 5. Phase 5-1: 실행 경로 연결 (유료 호출 없음)
+
+실행 경로는 연결했지만 기본은 OFF입니다. `PAID_EXECUTION_ENABLED = False`인 동안 `authorize`가 실행 표를 만들지 않으므로 실제 SDK 클라이언트도 만들어지지 않습니다.
+
+- 실행 입구: `scripts/run_llm_pilot.py` (기본은 계획·해시·게이트 상태만 출력, `--execute`도 거절됨)
+- 실행기: `src/ctrec/llm_pilot_exec.py` (`execute`, dry-run용 `simulate`)
+- Fake SDK: `src/ctrec/llm_pilot_fake.py` (실제 SDK와 같은 `messages.create`, 장애 주입)
+- 테스트: `tests/test_llm_pilot_exec.py`
+
+### 호출 흐름
+
+```
+run_pilot -> authorize (12개 조건 + 코드 스위치) -> ExecutionTicket
+          -> sdk_client(ticket): anthropic.Anthropic(max_retries=0, timeout=call_timeout_s)  ※ 사용 시점에 조건 재확인
+          -> execute: MeteredClient가 llm.client 자리를 대신함 -> 실험 A 또는 B -> 비식별 검사 -> (선택) 저장
+```
+
+`execute`는 유효한 실행 표가 없으면 `FakeSDKClient`만 받습니다.
+
+### 과금 기록
+
+| 항목 | 처리 |
+|---|---|
+| 사고 토큰 | `output_tokens`에 포함 (따로 보고되지 않음). 사고 블록 수만 셈 |
+| 캐시 | 쓰기·읽기 토큰을 따로 기록하고 각 단가로 계산 |
+| 재시도 | 각 시도마다 예약·정산. 429·4xx는 과금 없음, 응답 없이 끝난 요청(시간 초과·연결·5xx)은 예약한 최악값으로 보수적 과금 |
+| 사용량 누락 | 최악값으로 과금하고 다음 요청부터 중단 |
+| 대체 모델 | `fallbacks`·`betas`가 있는 요청은 보내지 않음. 응답 모델이 다르거나 `usage.iterations`에 대체 실행이 보이면 그 응답을 쓰지 않고 중단 |
+
+결과에는 실제 사용량 비용(`cost_usd`)과 보수적 추정(`cost_estimated_usd`)이 따로 나옵니다. 단가가 확인되지 않았으면 `cost_kind`가 추정으로 표시됩니다.
+
+### 실험별 흐름
+
+- **A:** 프로파일러 → Matcher → Decision Loop 질문(결정적 정답 시뮬레이터) → 재추출·재판정 → 추천
+  - 지표: 사실 출처·검증 상태 승격, 결정적 추출 대비 핵심 항목 일치, Matcher 누락·미평가, eGFR/EGFR, 정답 판정 일치 수
+- **B:** 프로파일러 → Matcher → 상태 지문 → Decision Loop 계획 + 기존 LLM 질문 생성기
+  - 두 생성기 입력 지문까지 같아야 비교에 포함 (`comparison_valid`). 다르면 무효로 셈

@@ -10,6 +10,10 @@
 안전장치: 호출 수·입력/출력 토큰·비용 상한(호출 전 최악값 예약), 재시도 상한, 연속 실패·취소·시간 제한 중단,
 환자 데이터 비저장, 출력 비식별화 검사, 명시 승인 + 계획 해시 확인 문구. 이번 단계에서는 모든 조건을 갖춰도
 run_pilot이 실행하지 않으며, 환경 변수·플래그만으로 켜는 경로가 없습니다 (켜려면 승인 후 코드 변경이 필요).
+
+Phase 5-1: run_pilot -> authorize(실행 표) -> sdk_client(SDK 재시도 0) -> llm_pilot_exec.execute(MeteredClient + 실험 A/B)
+연결. 사용량 누락·응답 없는 실패는 예약한 최악값으로 보수적 과금, 다른 모델·대체 모델 응답은 쓰지 않고 중단.
+승인 표 없이는 오프라인 Fake SDK(llm_pilot_fake)로만 실행됩니다.
 """
 
 from __future__ import annotations
@@ -20,6 +24,7 @@ import hashlib
 import json
 import math
 import os
+import re
 import threading
 import time
 from collections import Counter
@@ -182,6 +187,11 @@ class PilotStop(llm.RunCancelled):
 
 _RETRYABLE_NAMES = {"RateLimitError", "APIConnectionError", "APITimeoutError", "InternalServerError",
                     "OverloadedError", "ServiceUnavailableError"}
+# 응답을 받지 못했지만 서버가 요청을 처리(과금)했을 수 있는 실패. 429·4xx는 처리 전 거절로 봄
+_POSSIBLY_BILLED_NAMES = {"APIConnectionError", "APITimeoutError", "InternalServerError", "OverloadedError",
+                          "ServiceUnavailableError"}
+# 응답을 쓰지 않고 즉시 멈추는 이유 (대체 모델 응답·다른 모델 응답)
+_FATAL_RESPONSE = ("model_mismatch", "fallback_detected")
 
 
 def is_retryable(e: Exception) -> bool:
@@ -189,17 +199,36 @@ def is_retryable(e: Exception) -> bool:
     return type(e).__name__ in _RETRYABLE_NAMES or (isinstance(status, int) and (status == 429 or status >= 500))
 
 
+def possibly_billed(e: Exception) -> bool:
+    status = getattr(e, "status_code", None)
+    return type(e).__name__ in _POSSIBLY_BILLED_NAMES or (isinstance(status, int) and status >= 500)
+
+
+def same_model(requested: str, served: str | None) -> bool:
+    """응답 모델이 요청 모델과 같음 (별칭이 날짜 붙은 스냅샷으로 풀리는 경우만 허용, 다른 모델명 접두어는 불허)."""
+    return bool(served) and re.fullmatch(re.escape(requested) + r"(-\d{8})?", served) is not None
+
+
+_COUNTERS = ("calls", "retries", "input_tokens", "output_tokens", "cache_write_tokens", "cache_read_tokens",
+             "est_input_tokens", "est_output_tokens", "usage_missing", "possibly_billed_failures")
+
+
 class PilotMeter:
-    """호출 전 최악값(입력 추정 + 출력 max_tokens)을 예약해 동시 실행에서도 상한을 넘지 않게 하고, 호출 뒤 실제 사용량으로 정산."""
+    """호출 전 최악값(입력 추정 + 출력 max_tokens)을 예약해 동시 실행에서도 상한을 넘지 않게 하고, 호출 뒤 실제 사용량으로 정산.
+
+    실제 사용량(응답 usage)과 보수적 추정 과금(사용량을 못 받은 응답, 응답 없이 끝났지만 처리됐을 수 있는 요청 - 예약한
+    최악값 그대로)을 따로 기록하고, 상한은 둘의 합 + 진행 중 예약으로 확인함. 출력 토큰에는 사고(thinking) 토큰이 포함됨."""
 
     def __init__(self, limits: PilotLimits, price: PriceTable, cancel: Callable[[], bool] | None = None,
                  clock: Callable[[], float] = time.monotonic):
         self.limits, self.price, self.cancel, self.clock = limits, price, cancel, clock
         self.start = clock()
         self._lock = threading.Lock()
-        self.calls = self.retries = self.consecutive_failures = 0
-        self.input_tokens = self.output_tokens = self.cache_write_tokens = self.cache_read_tokens = 0
-        self.cost = 0.0
+        for k in _COUNTERS:
+            setattr(self, k, 0)
+        self.consecutive_failures = 0
+        self.cost = 0.0  # 실제 사용량 x 단가
+        self.est_cost = 0.0  # 보수적 추정 과금 (사용량 미확인)
         self._reserved = {"cost": 0.0, "input": 0, "output": 0}
         self.stopped: str | None = None
         self.failures: Counter = Counter()
@@ -216,20 +245,29 @@ class PilotMeter:
         if self.stopped:
             raise PilotStop(self.stopped)
 
+    def check(self) -> None:
+        with self._lock:
+            self._check_locked()
+
+    def _spent(self) -> tuple[int, int, float]:
+        return (self.input_tokens + self.est_input_tokens, self.output_tokens + self.est_output_tokens,
+                self.cost + self.est_cost)
+
     def reserve(self, est_input: int, max_output: int, retry: bool = False) -> dict:
         lim = self.limits
         with self._lock:
             self._check_locked()
             r = self._reserved
+            inp, out, cost = self._spent()
             if retry and self.retries >= lim.max_total_retries:
                 self.stopped = "retry_cap"
             elif self.calls + 1 > lim.max_calls:
                 self.stopped = "call_cap"
-            elif self.input_tokens + r["input"] + est_input > lim.max_input_tokens:
+            elif inp + r["input"] + est_input > lim.max_input_tokens:
                 self.stopped = "input_token_cap"
-            elif self.output_tokens + r["output"] + max_output > lim.max_output_tokens:
+            elif out + r["output"] + max_output > lim.max_output_tokens:
                 self.stopped = "output_token_cap"
-            elif self.cost + r["cost"] + self.price.cost(est_input, max_output) > lim.max_cost_usd:
+            elif cost + r["cost"] + self.price.cost(est_input, max_output) > lim.max_cost_usd:
                 self.stopped = "cost_cap"
             if self.stopped:
                 raise PilotStop(self.stopped)
@@ -244,46 +282,122 @@ class PilotMeter:
         for k, v in tok.items():
             self._reserved[k] -= v
 
-    def settle(self, tok: dict, usage, stage: str, latency: float) -> None:
+    def _charge_estimate(self, tok: dict) -> None:
+        self.est_input_tokens += tok["input"]
+        self.est_output_tokens += tok["output"]
+        self.est_cost += tok["cost"]
+
+    def _check_caps_locked(self) -> None:
+        inp, out, cost = self._spent()
+        if cost > self.limits.max_cost_usd:
+            self.stopped = self.stopped or "cost_cap"
+        elif inp > self.limits.max_input_tokens:
+            self.stopped = self.stopped or "input_token_cap"
+        elif out > self.limits.max_output_tokens:
+            self.stopped = self.stopped or "output_token_cap"
+
+    def settle(self, tok: dict, resp, stage: str, latency: float, requested_model: str | None = None) -> None:
+        usage = getattr(resp, "usage", None)
         g = lambda k: int(getattr(usage, k, 0) or 0)  # noqa: E731
         with self._lock:
             self._release(tok)
-            inp, out, cw, cr = g("input_tokens"), g("output_tokens"), g("cache_creation_input_tokens"), g("cache_read_input_tokens")
-            self.input_tokens += inp + cw + cr
-            self.output_tokens += out
-            self.cache_write_tokens += cw
-            self.cache_read_tokens += cr
-            self.cost += self.price.cost(inp, out, cw, cr)
-            self.consecutive_failures = 0
             s = self.by_stage.setdefault(stage, Counter())
-            s.update(calls=1, input_tokens=inp, output_tokens=out, cache_write=cw, cache_read=cr)
+            s.update(calls=1)
+            if usage is None or getattr(usage, "input_tokens", None) is None \
+                    or getattr(usage, "output_tokens", None) is None:
+                # 사용량을 확인할 수 없음: 예약한 최악값으로 과금했다고 보고 다음 요청부터 중단
+                self._charge_estimate(tok)
+                self.usage_missing += 1
+                s.update(usage_missing=1, est_input_tokens=tok["input"], est_output_tokens=tok["output"])
+                self.stopped = self.stopped or "usage_missing"
+            else:
+                inp, out, cw, cr = (g("input_tokens"), g("output_tokens"), g("cache_creation_input_tokens"),
+                                    g("cache_read_input_tokens"))
+                self.input_tokens += inp + cw + cr
+                self.output_tokens += out
+                self.cache_write_tokens += cw
+                self.cache_read_tokens += cr
+                self.cost += self.price.cost(inp, out, cw, cr)
+                s.update(input_tokens=inp, output_tokens=out, cache_write=cw, cache_read=cr)
+                # 서버측 대체 모델이 돌았으면 usage.iterations에 message 외 항목이 생김
+                if any(getattr(it, "type", "message") != "message" for it in (getattr(usage, "iterations", None) or [])):
+                    self.stopped = "fallback_detected"
+            s[f"stop_{getattr(resp, 'stop_reason', None)}"] += 1
+            s.update(thinking_blocks=sum(getattr(b, "type", "") in ("thinking", "redacted_thinking")
+                                         for b in (getattr(resp, "content", None) or [])))
+            if requested_model is not None and not same_model(requested_model, getattr(resp, "model", None)):
+                self.stopped = "model_mismatch"
+            self.consecutive_failures = 0
             self.latency.setdefault(stage, []).append(round(latency, 3))
             # 실제 사용량이 상한을 넘었으면(입력 추정이 낮았던 경우) 다음 호출부터 중단
-            if self.cost > self.limits.max_cost_usd:
-                self.stopped = "cost_cap"
-            elif self.input_tokens > self.limits.max_input_tokens:
-                self.stopped = "input_token_cap"
+            self._check_caps_locked()
 
     def fail(self, tok: dict, stage: str, error: Exception, latency: float) -> None:
         with self._lock:
             self._release(tok)
+            s = self.by_stage.setdefault(stage, Counter())
+            if possibly_billed(error):  # 응답은 없지만 처리됐을 수 있음 -> 예약한 최악값으로 보수적 과금
+                self._charge_estimate(tok)
+                self.possibly_billed_failures += 1
+                s.update(est_input_tokens=tok["input"], est_output_tokens=tok["output"])
             self.failures[type(error).__name__] += 1  # 종류만 (메시지에 요청 내용이 있을 수 있음)
             self.consecutive_failures += 1
-            self.by_stage.setdefault(stage, Counter()).update(failed=1)
+            s.update(failed=1)
             self.latency.setdefault(stage, []).append(round(latency, 3))
             if self.consecutive_failures >= self.limits.max_consecutive_failures:
-                self.stopped = "consecutive_failures"
+                self.stopped = self.stopped or "consecutive_failures"
+            self._check_caps_locked()
+
+    def refuse(self, code: str) -> None:
+        with self._lock:
+            self.stopped = self.stopped or code
+        raise PilotStop(code)
+
+    def snapshot(self) -> dict:
+        """사례별 사용량 계산용 (스냅샷 차이)."""
+        with self._lock:
+            return {"counters": {k: getattr(self, k) for k in _COUNTERS}, "cost": self.cost, "est_cost": self.est_cost,
+                    "failures": Counter(self.failures), "by_stage": {k: Counter(v) for k, v in self.by_stage.items()},
+                    "latency_n": {k: len(v) for k, v in self.latency.items()}}
+
+    def usage_since(self, before: dict) -> dict:
+        now = self.snapshot()
+        stages = {}
+        for k, v in now["by_stage"].items():
+            d = v - before["by_stage"].get(k, Counter())
+            if d:
+                stages[k] = dict(d)
+        out = {k: now["counters"][k] - before["counters"][k] for k in _COUNTERS}
+        out.update(cost_actual_usd=round(now["cost"] - before["cost"], 4),
+                   cost_estimated_usd=round(now["est_cost"] - before["est_cost"], 4),
+                   failures=dict(now["failures"] - before["failures"]), by_stage=stages)
+        return out
 
     def report(self) -> dict:
         with self._lock:
-            return {"calls": self.calls, "retries": self.retries, "input_tokens": self.input_tokens,
-                    "output_tokens": self.output_tokens, "cache_write_tokens": self.cache_write_tokens,
-                    "cache_read_tokens": self.cache_read_tokens, "cost_usd": round(self.cost, 4),
+            return {**{k: getattr(self, k) for k in _COUNTERS},
+                    "cost_usd": round(self.cost, 4),  # 실제 사용량 x 단가 (단가 확인 여부는 price_confirmed)
+                    "cost_estimated_usd": round(self.est_cost, 4),  # 사용량 미확인분의 보수적 추정
+                    "cost_conservative_usd": round(self.cost + self.est_cost, 4),
                     "price_confirmed": self.price.confirmed, "stopped": self.stopped, "failures": dict(self.failures),
                     "by_stage": {k: dict(v) for k, v in self.by_stage.items()},
                     "latency_s": {k: {"n": len(v), "max": max(v), "mean": round(sum(v) / len(v), 3)}
                                   for k, v in self.latency.items() if v},
-                    "limits": asdict(self.limits)}
+                    "elapsed_s": round(self.clock() - self.start, 3),
+                    "billing_notes": BILLING_NOTES, "limits": asdict(self.limits)}
+
+
+BILLING_NOTES = {
+    "thinking": "사고(thinking) 토큰은 usage.output_tokens에 포함되어 출력 단가로 과금됨 (따로 보고되지 않음, 블록 수만 셈). "
+                "max_tokens가 사고+응답 전체의 상한이므로 예약(max_tokens)이 사고 토큰을 포함함",
+    "cache": "usage.cache_creation_input_tokens(쓰기)·cache_read_input_tokens(읽기)를 따로 기록하고 각 단가로 계산. "
+             "input_tokens는 캐시 밖 입력만",
+    "retry": "재시도도 각각 예약·정산. 429·4xx 오류는 과금 없음으로 봄, 응답 없이 끝난 요청(시간 초과·연결 오류·5xx)은 "
+             "처리됐을 수 있어 예약한 최악값으로 보수적 과금(cost_estimated_usd)",
+    "usage_missing": "응답에 사용량이 없으면 예약한 최악값으로 과금했다고 보고 다음 요청부터 중단",
+    "fallback": "CTREC_FALLBACKS=0 필수. 요청에 fallbacks·betas가 있으면 보내지 않음. 응답 usage.iterations에 대체 모델 "
+                "실행이 보이거나 응답 모델이 다르면 그 응답을 쓰지 않고 중단",
+}
 
 
 def _request_chars(kw: dict) -> int:
@@ -305,6 +419,8 @@ class MeteredClient:
     inner는 SDK 자동 재시도를 끈 클라이언트(max_retries=0)여야 함 - 그래야 모든 요청이 여기서 세어짐."""
 
     def __init__(self, inner, meter: PilotMeter, sleep: Callable[[float], None] = time.sleep):
+        if getattr(inner, "max_retries", 0) != 0:  # SDK 자동 재시도는 호출 수·과금에 보이지 않음
+            raise PilotStop("sdk_retries_enabled")
         self._inner, self._meter, self._sleep = inner, meter, sleep
         self.messages = _Endpoint(self, inner.messages.create)
         beta = getattr(inner, "beta", None)
@@ -312,6 +428,11 @@ class MeteredClient:
 
     def _call(self, inner_create, kw):
         m, lim = self._meter, self._meter.limits
+        if "fallbacks" in kw or "betas" in kw:  # 대체 모델 자동 호출 금지 (모델·단가 미확인)
+            m.refuse("fallback_requested")
+        model = kw.get("model")
+        if model != m.price.model:  # 단가를 확인한 모델만
+            m.refuse("model_price_mismatch")
         stage = stage_of(kw.get("system"))
         est_in = math.ceil(_request_chars(kw) / lim.chars_per_token)
         max_out = min(int(kw.get("max_tokens") or lim.max_tokens_per_call), lim.max_tokens_per_call)
@@ -327,15 +448,17 @@ class MeteredClient:
                     raise
                 self._sleep(min(2 ** attempt, 8))
                 continue
-            m.settle(tok, getattr(resp, "usage", None), stage, time.monotonic() - t0)
+            m.settle(tok, resp, stage, time.monotonic() - t0, requested_model=model)
+            if m.stopped in _FATAL_RESPONSE:  # 다른 모델이 만든 응답은 쓰지 않음
+                raise PilotStop(m.stopped)
             return resp
         raise PilotStop("retry_exhausted")  # 도달하지 않음 (마지막 시도는 위에서 raise)
 
 
 @contextlib.contextmanager
-def metered(meter: PilotMeter, inner):
+def metered(meter: PilotMeter, inner, sleep: Callable[[float], None] = time.sleep):
     """평가 동안만 llm.client를 계측 대리 객체로 바꿈. 끝나면 원래 함수로 복구."""
-    proxy = MeteredClient(inner, meter)
+    proxy = MeteredClient(inner, meter, sleep)
     saved = llm.client
     llm.client = lambda: proxy
     try:
@@ -345,12 +468,24 @@ def metered(meter: PilotMeter, inner):
 
 
 # ---------------------------------------------------------------------------
-# 승인 게이트 (이번 단계: 항상 거절)
+# 승인 게이트 (기본 OFF: PAID_EXECUTION_ENABLED = False인 동안 항상 거절)
 # ---------------------------------------------------------------------------
 
 
 class PaidRunNotApproved(qe.PaidRunNotApproved):
     pass
+
+
+# 승인 대상이 될 수 있는 합성 사례 (대표 5개 + eGFR 확인 후보). 첫 배치는 이 중 3개 이하 권장 (확정은 사용자 결정)
+PILOT_CASE_POOL = (
+    "M-SYN-DEMO-A-DEMO-LUNG-001-rescue-1",
+    "V-DEMO-LUNG-001-NCT06908096-lab_platelets-shared",
+    "S-NCT07369063-I9-biomarker",
+    "S-NCT05127980-E1-cohort",
+    "S-NCT06125405-E5-confirmed-NCT04063540",
+    "F-SYN-S005-02",
+)
+FIRST_BATCH_RECOMMENDED_MAX = 3
 
 
 @dataclass(frozen=True)
@@ -363,9 +498,13 @@ class PilotApproval:
     confirmation: str  # 실행 직전 최종 확인 문구: f"RUN {experiment} {plan_hash[:12]}"
 
 
+_PLAN_KEYS = ("experiment", "case_ids", "model", "price", "rounds", "question_budget", "limits", "save_patient_data",
+              "redact_outputs")
+
+
 def plan_hash(plan: dict) -> str:
-    keys = ("experiment", "case_ids", "model", "rounds", "question_budget", "limits", "save_patient_data")
-    return hashlib.sha256(json.dumps({k: plan.get(k) for k in keys}, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+    return hashlib.sha256(json.dumps({k: plan.get(k) for k in _PLAN_KEYS}, sort_keys=True,
+                                     ensure_ascii=False).encode()).hexdigest()
 
 
 def approval_problems(plan: dict, approval: PilotApproval | None) -> list[str]:
@@ -374,43 +513,87 @@ def approval_problems(plan: dict, approval: PilotApproval | None) -> list[str]:
         return ["명시적 사용자 승인 없음"]
     if not approval.approved_by.strip():
         p.append("승인자 기록 없음")
+    if plan.get("experiment") not in EXPERIMENTS:
+        p.append("실험 A_pipeline 또는 B_question_plan 지정 필요")
     if approval.experiment != plan.get("experiment"):
         p.append("승인한 실험과 계획이 다름")
+    cases = plan.get("case_ids") or []
+    if not cases or len(set(cases)) != len(cases) or not set(cases) <= set(PILOT_CASE_POOL):
+        p.append("승인된 합성 사례 목록이 아님 (PILOT_CASE_POOL 안, 중복 없이)")
     if approval.plan_hash != plan_hash(plan):
         p.append("계획이 승인 뒤 바뀜 (계획 해시 불일치)")
     if approval.confirmation != f"RUN {plan.get('experiment')} {plan_hash(plan)[:12]}":
         p.append("실행 직전 최종 확인 문구 불일치")
-    if not approval.price.confirmed:
+    price = approval.price
+    if not price.confirmed or price.source in ("", "assumed"):
         p.append("모델 단가 미확인")
-    if approval.price.model != config.MODEL or plan.get("model") != config.MODEL:
+    if min(price.input, price.output, price.cache_write, price.cache_read) <= 0:
+        p.append("단가 항목(입력·출력·캐시 쓰기·캐시 읽기) 중 0 이하가 있음")
+    if asdict(price) != plan.get("price"):
+        p.append("승인 단가와 계획 단가가 다름")
+    if price.model != config.MODEL or plan.get("model") != config.MODEL:
         p.append("실제 사용 모델과 승인 모델이 다름")
     lim, planned = approval.limits, plan.get("limits") or {}
-    for k in ("max_cost_usd", "max_calls", "max_input_tokens", "max_output_tokens", "max_retries_per_call"):
+    for k in ("max_cost_usd", "max_calls", "max_input_tokens", "max_output_tokens", "max_retries_per_call",
+              "max_total_retries"):
         if k not in planned or getattr(lim, k) > planned[k]:
             p.append(f"상한 {k}가 계획보다 크거나 없음")
-    if config.USE_FALLBACKS:
-        p.append("CTREC_FALLBACKS=1: 대체 모델 재실행의 모델·단가를 알 수 없음 (0 필요)")
-    if plan.get("save_patient_data"):
-        p.append("환자 데이터 저장이 켜져 있음")
-    if not plan.get("redact_outputs", False):
+    if config.USE_FALLBACKS or os.getenv("CTREC_FALLBACKS") != "0":
+        p.append("CTREC_FALLBACKS=0 필요: 대체 모델 재실행의 모델·단가를 알 수 없음")
+    if plan.get("save_patient_data") is not False:
+        p.append("환자 데이터 저장이 꺼져 있지 않음")
+    if plan.get("redact_outputs") is not True:
         p.append("출력 비식별화가 꺼져 있음")
     if os.getenv("CTREC_ALLOW_PAID_EVAL") != "1":
         p.append("CTREC_ALLOW_PAID_EVAL=1 없음")
     return p
 
 
-def authorize(plan: dict, approval: PilotApproval | None) -> None:
+_TICKET_KEY = object()
+
+
+@dataclass(frozen=True)
+class ExecutionTicket:
+    """authorize만 만드는 실행 표. 실제 SDK 클라이언트 생성(sdk_client)과 실행(execute)에 필요."""
+    plan_hash: str
+    experiment: str
+    _key: object = field(repr=False, compare=False, default=None)
+
+
+def authorize(plan: dict, approval: PilotApproval | None) -> ExecutionTicket:
     problems = approval_problems(plan, approval)
     if problems:
         raise PaidRunNotApproved("; ".join(problems))
     if not PAID_EXECUTION_ENABLED:
-        raise PaidRunNotApproved("Phase 5-0: 유료 실행 경로가 꺼져 있음 (승인 후 코드 변경 필요)")
+        raise PaidRunNotApproved("유료 실행 경로가 꺼져 있음 (PAID_EXECUTION_ENABLED = False, 승인 후 코드 변경 필요)")
+    return ExecutionTicket(plan_hash(plan), plan["experiment"], _TICKET_KEY)  # pragma: no cover - 스위치가 꺼져 있음
 
 
-def run_pilot(plan: dict, approval: PilotApproval | None, make_client: Callable | None = None) -> dict:
-    """실제 유료 실행 입구. 이번 단계에서는 authorize가 항상 거절하므로 클라이언트를 만들지 않음."""
-    authorize(plan, approval)
-    raise PaidRunNotApproved("Phase 5-0: 실행 경로 없음")  # pragma: no cover - PAID_EXECUTION_ENABLED가 False
+def ticket_valid(ticket, plan: dict, approval: PilotApproval | None) -> bool:
+    """표가 authorize에서 나왔고 계획이 그대로이며, 지금도 모든 조건이 맞는지 (사용 시점에 다시 확인)."""
+    return (isinstance(ticket, ExecutionTicket) and ticket._key is _TICKET_KEY and PAID_EXECUTION_ENABLED
+            and ticket.plan_hash == plan_hash(plan) and not approval_problems(plan, approval))
+
+
+def sdk_client(ticket: ExecutionTicket, plan: dict, approval: PilotApproval):
+    """실제 SDK 클라이언트. SDK 자동 재시도 0 (재시도는 MeteredClient만), 요청별 시간 제한."""
+    if not ticket_valid(ticket, plan, approval):
+        raise PaidRunNotApproved("유효한 실행 표 없음: 실제 API 클라이언트를 만들지 않음")
+    import anthropic  # pragma: no cover - 표가 유효할 수 없음 (스위치가 꺼져 있음)
+    return anthropic.Anthropic(max_retries=0, timeout=approval.limits.call_timeout_s)  # pragma: no cover
+
+
+def run_pilot(plan: dict, approval: PilotApproval | None, make_client: Callable | None = None, *,
+              pairs=None, trials: dict | None = None, cancel: Callable[[], bool] | None = None,
+              save_to=None) -> dict:
+    """실제 유료 실행 입구: 승인 게이트 -> 실제 SDK(재시도 0) -> MeteredClient -> 실험 A 또는 B.
+
+    PAID_EXECUTION_ENABLED가 False인 동안 authorize가 거절하므로 클라이언트를 만들지 않음."""
+    ticket = authorize(plan, approval)
+    from .llm_pilot_exec import execute  # pragma: no cover - 아래는 승인 뒤에만 도달
+    inner = (make_client or sdk_client)(ticket, plan, approval)  # pragma: no cover
+    return execute(plan, approval.price, approval.limits, inner, pairs, trials, ticket=ticket,  # pragma: no cover
+                   approval=approval, cancel=cancel, save_to=save_to)
 
 
 # ---------------------------------------------------------------------------
@@ -429,6 +612,13 @@ def state_fingerprint(s) -> str:
     blob = json.dumps({"profile": s.profile.model_dump(mode="json") if s.profile else None,
                        "matches": {t: m.model_dump(mode="json") for t, m in sorted(s.matches.items())},
                        "fact_version": view.snapshot.version}, sort_keys=True, ensure_ascii=False, default=str)
+    return hashlib.sha256(blob.encode()).hexdigest()
+
+
+def generator_input_fingerprint(profile, matches, acq) -> str:
+    """질문 생성기에 들어가는 입력(프로필·후보 판정·확보 계획) 지문. 두 방식이 같은 입력을 받았는지 확인."""
+    blob = json.dumps({"profile": profile.model_dump(mode="json"), "matches": [m.model_dump(mode="json") for m in matches],
+                       "acq": acq}, sort_keys=True, ensure_ascii=False, default=str)
     return hashlib.sha256(blob.encode()).hexdigest()
 
 
@@ -472,18 +662,23 @@ def compare_plans(case, gt, trials: dict, budget: int = 3, llm_generate: Callabl
         targets = s.open_candidates()
         acq = {k: v for k, v in acquisition.plan(s.missing_facts).items()
                if k.split(":")[0] in {m.trial_id for m in targets}}
+        in0 = generator_input_fingerprint(s.profile, targets, acq)
         loop_qs = qe.candidate_generator({"session": s})(s.profile, targets, [], budget, acq)
         fp1 = state_fingerprint(s)
         args = (s.profile.model_copy(deep=True), [m.model_copy(deep=True) for m in targets], [], budget,
                 copy.deepcopy(acq))
+        same_inputs = in0 == generator_input_fingerprint(s.profile, targets, acq)             == generator_input_fingerprint(args[0], args[1], args[4])
         if spy:
             spy(*args)
         llm_qs = (llm_generate or question_generator.generate_questions)(*args[:4], acquisition_plan=args[4])
         llm_qs.questions = llm_qs.questions[:budget]
         fp2 = state_fingerprint(s)
         out["same_state"] = fp0 == fp1 == fp2
-        if not out["same_state"]:
-            out["status"] = "state_diverged"
+        out["same_generator_inputs"] = same_inputs
+        if not (out["same_state"] and same_inputs):
+            out["status"] = "state_diverged"  # 두 방식의 초기 상태가 다름 -> 비교 무효
+        out["matcher_not_evaluated"] = sum(m.eligibility == "NOT_EVALUATED" for m in s.matches.values())
+        out["errors"] = sorted({e["error"].split("(")[0] for e in s.errors})
         out["would_clarify"] = s.needs_clarification()
         # 여기서부터 평가기 (정답 사용)
         plans = {"decision_loop": loop_qs.questions, "llm_generator": llm_qs.questions}
@@ -499,6 +694,27 @@ def compare_plans(case, gt, trials: dict, budget: int = 3, llm_generate: Callabl
         out.update(status=e.args[0] if e.args else "cancelled", error_type=type(e).__name__)
     except Exception as e:  # noqa: BLE001 - 종류만 (메시지에 원문이 있을 수 있음)
         out.update(status="error", error_type=type(e).__name__)
+    out["comparison_valid"] = out["status"] == "ok" and out.get("same_state") is True         and out.get("same_generator_inputs") is True
+    return out
+
+
+def summarize_b(rows: list[dict], budget: int = 3) -> dict:
+    """유효한 비교(같은 상태·같은 입력)만 모아 두 계획 비교. 무효 사례는 건수만."""
+    valid = [r for r in rows if r.get("comparison_valid")]
+    out = {"cases": len(rows), "valid": len(valid), "invalid": len(rows) - len(valid),
+           "invalid_status": dict(Counter(r["status"] for r in rows if not r.get("comparison_valid")))}
+    for name in ("decision_loop", "llm_generator"):
+        ms = [r["plans"][name]["metrics"] for r in valid]
+        out[name] = {"questions": sum(m["n_questions"] for m in ms),
+                     "hit_within_budget": sum(m["hit_within_budget"] for m in ms),
+                     "duplicate_criteria": sum(m["duplicate_criteria"] for m in ms),
+                     "duplicate_info_keys": sum(m["duplicate_info_keys"] for m in ms),
+                     "unnecessary_targets": sum(m["unnecessary_targets"] for m in ms),
+                     "unmapped_questions": sum(m["unmapped_questions"] for m in ms),
+                     "relevant_targets": sum(m["relevance"].get("relevant", 0) for m in ms),
+                     "first_hit_rank": [m["first_hit_rank"] for m in ms]}
+    out["overlap_info_keys"] = sum(r.get("overlap_info_keys", 0) for r in valid)
+    out["budget"] = budget
     return out
 
 
@@ -526,6 +742,7 @@ def pipeline_metrics(run: qe.MethodRun, s, gt) -> dict:
             egfr["egfr_gene_facts"] += 1
     answer_facts = [f for f in facts if f.source_reference.kind == "answer"]
     matches = s.matches.values()
+    labels = dict(gt.labels)
     return {
         "case_id": gt.case_id, "status": run.status, "error_type": run.error_type,
         "facts": {"total": len(facts), "source_type": dict(by_src), "verification": dict(by_ver),
@@ -537,25 +754,52 @@ def pipeline_metrics(run: qe.MethodRun, s, gt) -> dict:
                   "answer_facts_not_self_report": sum(f.source_type != "self_report" for f in answer_facts),
                   "promoted_to_document_verified": sum(f.verification_status == "document_verified"
                                                        and f.field not in gt.setup_verified_fields for f in facts)},
+        "extraction": core_field_agreement(s.profile, s.case.patient_id, s.case.raw_text),
         "egfr": dict(egfr),
         "matcher": {"eligibility": dict(Counter(m.eligibility for m in matches)),
                     "methods": dict(Counter(a.method for m in matches for a in m.assessments)),
                     "retried_rules": sum(len(m.retried_rule_ids) for m in matches),
                     "missing_after_retry": sum("평가 누락" in a.reasoning for m in matches for a in m.assessments),
-                    "not_evaluated": sum(m.eligibility == "NOT_EVALUATED" for m in matches)},
+                    "not_evaluated": sum(m.eligibility == "NOT_EVALUATED" for m in matches),
+                    # 숨긴 기준 규칙의 최종 상태, 정보가 모두 있을 때의 정답 판정과 일치 수 (1라운드라 미일치 가능)
+                    "hidden_rule_states": dict(Counter(run.final_gt_states.values())),
+                    "label_agreement": sum(labels.get(t) == e for t, e in run.final_eligibility.items() if t in labels),
+                    "labelled_trials": sum(t in labels for t in run.final_eligibility)},
+        "answers_revealed": getattr(run, "revealed", 0),
         "errors": sorted({e["error"].split("(")[0] for e in s.errors}),
         "questions": len(run.questions), "safety": dict(run.safety),
     }
 
 
-def run_experiment_a(case, gt, trials: dict, rounds: int = 1, budget: int = 3) -> dict:
+def core_field_agreement(profile, patient_id: str, raw_text: str) -> dict:
+    """사실 추출 정확성 대리 지표: 원문에서 정규식으로 확실히 읽히는 항목(나이·성별·ECOG·주요 검사 이름)과 비교. 건수만."""
+    if profile is None:
+        return {"checked": 0, "agreed": 0, "mismatched_fields": []}
+    ref = qe.stub_profiler(patient_id, raw_text)
+    checks = {}
+    if ref.age is not None:
+        checks["age"] = profile.age == ref.age
+    if ref.sex != "unknown":
+        checks["sex"] = profile.sex == ref.sex
+    if ref.ecog is not None:
+        checks["ecog"] = profile.ecog == ref.ecog
+    names = [lab.name.casefold() for lab in profile.labs]
+    for lab in ref.labs:
+        key = lab.name.casefold()[:6]
+        checks[f"lab:{lab.name}"] = any(key in n for n in names)
+    return {"checked": len(checks), "agreed": sum(checks.values()),
+            "mismatched_fields": sorted(k for k, ok in checks.items() if not ok)}
+
+
+def run_experiment_a(case, gt, trials: dict, rounds: int = 1, budget: int = 3,
+                     cancel: Callable[[], bool] | None = None) -> dict:
     """실험 A 한 사례: 실제 Session 경로(run_method, Decision Loop 계획, 결정적 정답 시뮬레이터) + 비식별 지표."""
     holder: dict = {}
 
     def factory(ref):  # 기본 candidate 경로와 같은 생성기, Session만 잡아 둠
         holder["ref"] = ref
         return qe.candidate_generator(ref)
-    run = qe.run_method("candidate", case, gt, trials, rounds, budget, factories={"candidate": factory})
+    run = qe.run_method("candidate", case, gt, trials, rounds, budget, cancel=cancel, factories={"candidate": factory})
     return pipeline_metrics(run, holder["ref"]["session"], gt)
 
 
@@ -581,9 +825,14 @@ def forbidden_texts(pairs) -> list[str]:
     return out
 
 
+# 원문 대조와 별개로 개인정보·자격 증명 형태 검사 (이메일, 휴대전화, 주민등록번호, API 키)
+PII_PATTERNS = (r"[\w.+-]+@[\w-]+\.[\w.-]+", r"\b01[016789]-\d{3,4}-\d{4}\b", r"\b\d{6}-[1-4]\d{6}\b",
+                r"sk-ant-[\w-]{8,}")
+
+
 def assert_redacted(obj, forbidden: list[str]) -> None:
     blob = json.dumps(obj, ensure_ascii=False, default=str)
-    leaked = sum(1 for t in forbidden if t and t in blob)
+    leaked = sum(1 for t in forbidden if t and t in blob) + sum(1 for pat in PII_PATTERNS if re.search(pat, blob))
     if leaked:
         raise ValueError(f"출력에 원문·정답·키로 보이는 문자열 {leaked}건 (내용은 표시하지 않음)")
 

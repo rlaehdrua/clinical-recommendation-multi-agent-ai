@@ -1,8 +1,9 @@
-"""실제 LLM 소규모 평가 준비 - dry-run 전용 (Phase 5-0). 실제 API 호출 경로는 없습니다.
+"""실제 LLM 소규모 평가 준비 - dry-run 전용 (Phase 5-0, 사례별 추정·실행 경로 확인은 Phase 5-1). 실제 API 호출 없음.
 
 기존 16개 합성 사례(prepare_paid_pilot.select)와 그중 먼저 실행할 대표 사례 5개에 대해
 실험 A(파이프라인 안정성)·실험 B(질문 계획 비교)를 LLM 대역으로 실제 순서대로 돌려 단계별 호출 수와 요청 크기를 재고,
 시나리오(low/base/worst)별 비용과 실험별 상한 제안, 승인 게이트 상태를 출력합니다. 단가·토큰은 확인 전 가정값입니다.
+사례별 예상 호출 수·비용(per_case)과, 실제 실행 경로(MeteredClient + 실험 코드)를 Fake SDK로 돌린 호출 수(execution_path)도 냅니다.
 
     PYTHONPATH=src python scripts/prepare_llm_pilot.py [--subset representative|all16]
 """
@@ -22,7 +23,7 @@ from decision_scenarios import load_trials  # noqa: E402
 from eval_question_priority import VALIDATION  # noqa: E402
 from prepare_paid_pilot import select  # noqa: E402
 
-from ctrec import config, llm, llm_pilot as lp, question_eval as qe  # noqa: E402
+from ctrec import config, llm, llm_pilot as lp, llm_pilot_exec as lpx, question_eval as qe  # noqa: E402
 
 PATHS = {"dev_101": qe.DEFAULT_CASES, "validation": VALIDATION, "supplement": SUPPLEMENT}
 
@@ -59,6 +60,41 @@ def load_pairs(parsed, subset: str):
     return picked, pairs
 
 
+def per_case_estimates(pairs, trials) -> dict:
+    """사례 하나씩 측정해 실험별·시나리오별 호출 수와 비용 (첫 배치 선정 참고용, 확정 아님)."""
+    out = {}
+    for case, gt in pairs:
+        est = {sc: lp.estimate(lp.measure_offline([(case, gt)], trials), sc) for sc in ("low", "base", "worst")}
+        out[gt.case_id] = {exp: {sc: {"calls": est[sc]["experiments"][exp]["calls"],
+                                      "usd": est[sc]["experiments"][exp]["usd"]} for sc in est}
+                           for exp in lp.EXPERIMENTS}
+    return out
+
+
+def execution_path_check(pairs, trials) -> dict:
+    """실제 실행 경로를 Fake SDK로 돌린 단계별 호출 수와 상태 (유료 호출 없음, 추정 비용은 대역 프로필 크기 기준)."""
+    out = {}
+    for exp in lp.EXPERIMENTS:
+        plan = {"experiment": exp, "case_ids": [gt.case_id for _, gt in pairs], "rounds": lp.EXPERIMENTS[exp]["rounds"],
+                "question_budget": lp.EXPERIMENTS[exp]["question_budget"]}
+        r = lpx.simulate(plan, pairs, trials)
+        out[exp] = {"status": r["status"], "client": r["client"], "paid": r["paid"],
+                    "frozen_store_intact": r["frozen_store_intact"],
+                    "cases": {c["case_id"]: {"status": c["status"], "calls": c["usage"]["calls"],
+                                             "by_stage": {k: v.get("calls", 0) for k, v in c["usage"]["by_stage"].items()}}
+                              for c in r["cases"]}}
+    return out
+
+
+def make_plan(exp: str, case_ids: list[str], limits: lp.PilotLimits, price: lp.PriceTable = lp.ASSUMED_PRICE) -> dict:
+    plan = {"experiment": exp, "case_ids": list(case_ids), "model": config.MODEL, "price": lp.asdict(price),
+            "rounds": lp.EXPERIMENTS[exp]["rounds"], "question_budget": lp.EXPERIMENTS[exp]["question_budget"],
+            "limits": lp.asdict(limits), "save_patient_data": False, "redact_outputs": True}
+    plan["plan_hash"] = lp.plan_hash(plan)
+    plan["confirmation_phrase"] = f"RUN {exp} {plan['plan_hash'][:12]}"
+    return plan
+
+
 def build(subset: str = "representative") -> dict:
     parsed = load_frozen()
     all_trials = load_trials()
@@ -69,10 +105,7 @@ def build(subset: str = "representative") -> dict:
     plans = {}
     for exp in lp.EXPERIMENTS:
         lim = lp.suggest_limits(est["worst"]["experiments"][exp], est["base"]["experiments"][exp])
-        plans[exp] = {"experiment": exp, "case_ids": [c["case_id"] for c in picked], "model": config.MODEL,
-                      "rounds": lp.EXPERIMENTS[exp]["rounds"], "question_budget": lp.EXPERIMENTS[exp]["question_budget"],
-                      "limits": lp.asdict(lim), "save_patient_data": False, "redact_outputs": True}
-        plans[exp]["plan_hash"] = lp.plan_hash(plans[exp])
+        plans[exp] = make_plan(exp, [c["case_id"] for c in picked], lim)
         try:
             lp.authorize(plans[exp], None)
             plans[exp]["gate"] = "open"
@@ -98,6 +131,9 @@ def build(subset: str = "representative") -> dict:
                     "retry_billing": lp.UNKNOWN, "fallback_model": lp.UNKNOWN, "latency": lp.UNKNOWN},
         "measured_offline": measured["per_experiment"],
         "offline_results": measured["results"],
+        "per_case": per_case_estimates(pairs, trials),
+        "execution_path": execution_path_check(pairs, trials),
+        "first_batch_note": f"첫 실제 배치는 {lp.FIRST_BATCH_RECOMMENDED_MAX}개 이하 권장 (사례 확정은 사용자 결정)",
         "estimates": {sc: {exp: {k: v for k, v in e.items() if k != "stages"} for exp, e in est[sc]["experiments"].items()}
                       for sc in est},
         "stages_base": {exp: e["stages"] for exp, e in est["base"]["experiments"].items()},

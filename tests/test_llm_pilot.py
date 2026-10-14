@@ -59,7 +59,7 @@ class FakeInner:
         if self._fail:
             raise self._fail()
         return SimpleNamespace(content=[SimpleNamespace(type="text", text=self._text)], stop_reason="end_turn",
-                               usage=self._usage)
+                               usage=self._usage, model=kw.get("model"))
 
 
 def _limits(**kw):
@@ -71,7 +71,7 @@ def _limits(**kw):
 
 def _call(proxy, system="sys", n=1):
     for _ in range(n):
-        proxy.messages.create(model="m", max_tokens=1000, system=[{"type": "text", "text": system}],
+        proxy.messages.create(model=config.MODEL, max_tokens=1000, system=[{"type": "text", "text": system}],
                               messages=[{"role": "user", "content": "x"}])
 
 
@@ -91,8 +91,13 @@ def no_sdk_client(monkeypatch):
     return made
 
 
+CONFIRMED = lp.PriceTable(model=config.MODEL, input=3, output=15, cache_write=3.75, cache_read=0.3, confirmed=True,
+                          source="test")
+
+
 def _plan(**kw):
-    p = {"experiment": "A_pipeline", "case_ids": ["X"], "model": config.MODEL, "rounds": 1, "question_budget": 3,
+    p = {"experiment": "A_pipeline", "case_ids": [lp.PILOT_CASE_POOL[0]], "model": config.MODEL,
+         "price": lp.asdict(CONFIRMED), "rounds": 1, "question_budget": 3,
          "limits": lp.asdict(_limits(max_cost_usd=5.0, max_calls=40)), "save_patient_data": False,
          "redact_outputs": True}
     p.update(kw)
@@ -101,9 +106,7 @@ def _plan(**kw):
 
 def _approval(plan, **kw):
     h = lp.plan_hash(plan)
-    a = dict(approved_by="user 2026-10-13", experiment=plan["experiment"], plan_hash=h,
-             price=lp.PriceTable(model=config.MODEL, input=3, output=15, cache_write=3.75, cache_read=0.3,
-                                 confirmed=True, source="test"),
+    a = dict(approved_by="user 2026-10-13", experiment=plan["experiment"], plan_hash=h, price=CONFIRMED,
              limits=_limits(max_cost_usd=5.0, max_calls=40), confirmation=f"RUN {plan['experiment']} {h[:12]}")
     a.update(kw)
     return lp.PilotApproval(**a)
@@ -118,13 +121,14 @@ def test_paid_execution_switch_is_off_and_not_env_controlled():
 
 def test_fully_approved_plan_still_refused_and_no_client(monkeypatch, no_sdk_client):
     monkeypatch.setenv("CTREC_ALLOW_PAID_EVAL", "1")
+    monkeypatch.setenv("CTREC_FALLBACKS", "0")
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test-not-a-real-key")
     monkeypatch.setattr(config, "USE_FALLBACKS", False)
     plan = _plan()
     approval = _approval(plan)
     assert lp.approval_problems(plan, approval) == []  # 모든 조건을 갖춰도
     real_client = llm.client
-    with pytest.raises(lp.PaidRunNotApproved, match="Phase 5-0"):
+    with pytest.raises(lp.PaidRunNotApproved, match="PAID_EXECUTION_ENABLED"):
         lp.run_pilot(plan, approval, make_client=lambda: pytest.fail("클라이언트 생성 시도"))
     assert no_sdk_client == [] and llm.client is real_client
 
@@ -144,6 +148,7 @@ def test_fully_approved_plan_still_refused_and_no_client(monkeypatch, no_sdk_cli
 ])
 def test_each_missing_condition_blocks(monkeypatch, change, expect):
     monkeypatch.setenv("CTREC_ALLOW_PAID_EVAL", "1")
+    monkeypatch.setenv("CTREC_FALLBACKS", "0")
     monkeypatch.setattr(config, "USE_FALLBACKS", False)
     plan = _plan()
     p, a = change(plan, _approval(plan))
@@ -190,7 +195,7 @@ def test_call_cap_blocks_before_request():
 
 def test_cost_cap_reserves_worst_case_before_request():
     inner = FakeInner()
-    price = lp.PriceTable(model="m", input=3, output=15, cache_write=3.75, cache_read=0.3)
+    price = lp.PriceTable(model=config.MODEL, input=3, output=15, cache_write=3.75, cache_read=0.3)
     m = lp.PilotMeter(_limits(max_cost_usd=0.01, max_tokens_per_call=1000), price)  # 1회 최악값(출력 1000토큰 $0.015) > 상한
     with lp.metered(m, inner), pytest.raises(lp.PilotStop, match="cost_cap"):
         _call(llm.client())
