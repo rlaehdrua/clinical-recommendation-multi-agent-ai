@@ -566,6 +566,9 @@ PILOT_CASE_POOL = (
 )
 FIRST_BATCH_RECOMMENDED_MAX = 3
 
+# 파일럿 모델 고정 (사용자 결정). CTREC_MODEL 환경 변수가 달라도 파일럿 계획·승인은 이 모델만 허용
+PILOT_MODEL = "claude-sonnet-5"
+
 
 @dataclass(frozen=True)
 class PilotApproval:
@@ -612,11 +615,14 @@ def approval_problems(plan: dict, approval: PilotApproval | None) -> list[str]:
         p.append("승인 단가와 계획 단가가 다름")
     if price.model != config.MODEL or plan.get("model") != config.MODEL:
         p.append("실제 사용 모델과 승인 모델이 다름")
-    lim, planned = approval.limits, plan.get("limits") or {}
-    for k in ("max_cost_usd", "max_calls", "max_input_tokens", "max_output_tokens", "max_retries_per_call",
-              "max_total_retries"):
-        if k not in planned or getattr(lim, k) > planned[k]:
-            p.append(f"상한 {k}가 계획보다 크거나 없음")
+    if plan.get("model") != PILOT_MODEL or config.MODEL != PILOT_MODEL:
+        p.append(f"파일럿 고정 모델({PILOT_MODEL})이 아님")
+    # 실행은 승인의 상한으로 돌므로, 승인 상한은 계획(해시에 들어간) 상한과 모든 항목이 같아야 함
+    # (비용·호출·토큰·재시도·연속 실패·요청/전체 시간 제한·호출당 max_tokens·입력 환산)
+    planned = plan.get("limits") or {}
+    for k, v in asdict(approval.limits).items():
+        if planned.get(k) != v:
+            p.append(f"상한 {k}가 계획과 다름")
     if config.USE_FALLBACKS or os.getenv("CTREC_FALLBACKS") != "0":
         p.append("CTREC_FALLBACKS=0 필요: 대체 모델 재실행의 모델·단가를 알 수 없음")
     if plan.get("save_patient_data") is not False:

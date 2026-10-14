@@ -89,6 +89,8 @@ def readiness(plan: dict, price: lp.PriceTable, problems: list[str]) -> dict:
         reasons.append("단가 사용자 확인 전 (공식 문서 값이어도 확정 단가로 취급하지 않음)")
     if plan.get("model") != config.MODEL:
         reasons.append("계획 모델이 설정 모델과 다름")
+    if plan.get("model") != lp.PILOT_MODEL:
+        reasons.append(f"파일럿 고정 모델({lp.PILOT_MODEL})이 아님")
     if not lp.PAID_EXECUTION_ENABLED:
         reasons.append("PAID_EXECUTION_ENABLED = False")
     return {"ready_to_execute": not reasons, "reasons": reasons, "unknown_items": UNKNOWN_ITEMS}
