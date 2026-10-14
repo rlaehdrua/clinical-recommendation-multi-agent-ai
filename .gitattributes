@@ -1,2 +1,5 @@
 # 잠긴 기준표(data/parsed/FROZEN.json)의 파일 해시가 OS별 줄바꿈 변환으로 달라지지 않도록
 data/parsed/*.json -text
+# 외부 라이브러리 원본 바이트 보존 (VENDOR.md의 sha256과 같아야 함): 줄바꿈 변환 금지
+src/ctrec/web/static/marked.min.js -text
+src/ctrec/web/static/purify.min.js -text
