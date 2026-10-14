@@ -26,6 +26,15 @@ SYSTEM = """당신은 임상시험 적격성 판정에 부족한 정보를 확�
 - 기준에 적힌 항목을 직접 묻습니다(돌려 묻지 않음). 의학 용어는 쉬운 한국어로 풀고 괄호 안에 원어를 병기합니다.
   예: "EGFR을 표적으로 하는 항체-약물 결합체(ADC, antibody-drug conjugate) 치료를 받은 적이 있나요?"
 - 한 질문에는 하나의 사실만 묻습니다.
+- 답을 통일된 형식으로 받기 위해 가능하면 객관식으로 묻습니다(answer_type).
+  - 있다/없다, 해당/비해당으로 답할 수 있으면 yes_no. 예: "현재 임신 중이거나 수유 중인가요?"
+  - 답이 몇 가지 경우 중 하나면 single_choice, 여러 개를 고를 수 있으면 multi_choice로 하고 options에 선택지를 적습니다.
+    선택지는 서로 겹치지 않고 가능한 답을 빠짐없이 덮도록 2~6개로 만들고, 필요하면 "해당 없음"이나 "기타(직접 입력)"를 넣습니다.
+    예: "마지막 항암치료를 받은 시기는 언제인가요?" -> ["4주 이내", "4주~3개월 전", "3개월 이상 전", "항암치료를 받은 적 없음"]
+    기준의 경계값(예: 4주, 28일, 3개월)이 선택지 경계와 일치하도록 나눕니다.
+  - "모름" 선택지는 화면이 자동으로 붙이므로 options에 넣지 않습니다.
+  - 검사 수치는 number(unit에 단위), 날짜는 date로 묻습니다.
+  - free_text는 복용 약물 전체 목록처럼 선택지로 만들 수 없는 경우에만 씁니다.
 - 검사 수치처럼 환자가 모를 수 있는 항목은 "최근 검사 결과지에 ~ 수치가 있다면 알려주세요"처럼 묻습니다.
 - logistics_to_confirm(동의 의사, 방문 가능 여부 등 절차 기준)은 연구진이 등록 시 확인할 사항이므로 질문하지 않습니다.
 - unverified_document_needed 항목은 이미 답을 받았고 진료 기록(문서)으로 확인할 항목이므로 다시 질문하지 않습니다.
@@ -83,5 +92,22 @@ def generate_questions(
         user=user,
         effort=config.EFFORT["question_generator"],
     )
-    qs.questions = qs.questions[:max_questions]
+    qs.questions = [_normalize(q) for q in qs.questions[:max_questions]]
     return qs
+
+
+UNKNOWN_OPTIONS = {"모름", "잘 모름", "모르겠음", "기억 안 남"}
+
+
+def _normalize(q):
+    """선택지 정리: '모름'은 화면이 붙이므로 빼고, 선택지가 2개 미만인 객관식은 주관식으로 되돌림."""
+    if q.answer_type in ("single_choice", "multi_choice"):
+        opts = list(dict.fromkeys(o.strip() for o in q.options if o.strip() and o.strip() not in UNKNOWN_OPTIONS))
+        q.options = opts[:8]
+        if len(q.options) < 2:
+            q.answer_type, q.options = "free_text", []
+    else:
+        q.options = []
+    if q.answer_type != "number":
+        q.unit = None
+    return q

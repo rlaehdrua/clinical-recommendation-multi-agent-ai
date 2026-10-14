@@ -7,6 +7,8 @@
 실행:
     python -m ctrec.web            # http://127.0.0.1:8000
     python -m ctrec.web --port 8080
+
+저장된 실행(outputs/web/<run_id>)은 API 호출 없이 '다시 보기'로 재생할 수 있습니다(시연용).
 """
 
 from __future__ import annotations
@@ -32,8 +34,8 @@ from pydantic import BaseModel
 from .. import DISCLAIMER, config, llm
 from ..agents.recommender import is_open
 from ..orchestrator import Orchestrator
-from ..pipeline import PatientCase, Session, load_patients
-from ..schemas import ClarifyingQuestion
+from ..pipeline import PatientCase, Session, load_patients, trace_match
+from ..schemas import ClarifyingQuestion, TrialMatch
 from ..status import MATCH_NOTE
 from ..tools import ctgov
 from ..trace import Tracer
@@ -43,6 +45,8 @@ ANSWER_TIMEOUT_S = 30 * 60
 # 실행 기록(RUNS) 보관 한도 (아키텍처 §67 web RUNS lifecycle): 메모리에 무한히 쌓이지 않도록
 MAX_RUNS = int(os.getenv("CTREC_WEB_MAX_RUNS", "20"))          # 동시에 보관하는 실행 수
 RUN_TTL_S = int(os.getenv("CTREC_WEB_RUN_TTL_S", str(2 * 60 * 60)))  # 끝난 실행을 보관하는 시간
+REPLAY_DIR = config.OUTPUT_DIR / "web"
+REPLAY_MAX_GAP_S = 1.2  # 다시 보기: 이벤트 사이 대기 상한 (LLM 대기 시간을 줄여 보여 줌)
 
 app = FastAPI(title="ctrec - Interactive Clinical Trial Recommendation")
 
@@ -176,14 +180,60 @@ def _execute(run: Run, req: RunRequest, case: PatientCase, trials: dict[str, dic
         session.save(out_dir)
         tracer.log("pipeline", "saved", message=str(out_dir))
         run.emit("result", result=session.result(), report=session.report, match_note=MATCH_NOTE,
-                 trials={tid: {"title": t.get("title"), "overall_status": t.get("overall_status"),
-                               "url": (t.get("source") or {}).get("url")} for tid, t in session.trials.items()})
+                 trials=_trial_brief(session.trials),
+                 match_views={tid: trace_match(m) for tid, m in session.matches.items()})
     except Exception as e:  # 오류도 화면에 표시
         run.emit("error", message=f"{type(e).__name__}: {e}")
     finally:
         run.done = True
         run.finished_at = time.time()
         run.emit("end")
+
+
+def _trial_brief(trials: dict[str, dict]) -> dict[str, dict]:
+    return {tid: {"title": t.get("title"), "overall_status": t.get("overall_status"),
+                  "url": (t.get("source") or {}).get("url")} for tid, t in trials.items()}
+
+
+def _replay(run: Run, src: Path, speed: float) -> None:
+    """저장된 trace.jsonl을 원래 순서대로 다시 보냄. 단계 화면에 필요한 데이터가 없는 예전 기록은 result.json으로 채움."""
+    try:
+        result = json.loads((src / "result.json").read_text(encoding="utf-8"))
+        records = [json.loads(line) for line in (src / "trace.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
+        report_path = src / "report.md"
+        final = {tid: TrialMatch(**m) for tid, m in (result.get("matches") or {}).items()}
+        prev_t = 0.0
+        for rec in records:
+            time.sleep(min(max(rec.get("t", prev_t) - prev_t, 0), REPLAY_MAX_GAP_S) / speed)
+            prev_t = rec.get("t", prev_t)
+            a, e = rec.get("agent"), rec.get("event")
+            if a == "patient_profiler" and e == "done" and "profile" not in rec:
+                rec["profile"] = result.get("profile")
+            elif a == "screener" and e == "done" and "screening" not in rec:
+                rec["screening"] = result.get("screening")
+            elif a == "matcher" and e == "done" and "assessments" not in rec:
+                m = final.get(rec.get("trial_id"))
+                # 마지막 판정과 같은 결과일 때만 기준별 판정을 채움 (중간 라운드 기록은 저장되어 있지 않음)
+                if m and (rec.get("message") or "").startswith(m.eligibility):
+                    rec.update(trace_match(m))
+            run.emit("trace", record=rec)
+        all_trials = _load_trials()
+        run.emit("result", result=result, report=report_path.read_text(encoding="utf-8") if report_path.exists() else None,
+                 match_note=MATCH_NOTE, trials=_trial_brief({t: all_trials[t] for t in result.get("matches", {}) if t in all_trials}),
+                 match_views={tid: trace_match(m) for tid, m in final.items()})
+    except Exception as e:
+        run.emit("error", message=f"다시 보기 실패: {type(e).__name__}: {e}")
+    finally:
+        run.done = True
+        run.finished_at = time.time()
+        run.emit("end")
+
+
+def _saved_runs() -> dict[str, Path]:
+    if not REPLAY_DIR.exists():
+        return {}
+    return {d.name: d for d in sorted(REPLAY_DIR.iterdir(), reverse=True)
+            if d.is_dir() and (d / "trace.jsonl").exists() and (d / "result.json").exists()}
 
 
 # ---------------------------------------------------------------------------
@@ -224,6 +274,13 @@ def list_trials() -> list[dict]:
     ]
 
 
+@app.get("/api/ko")
+def trials_ko() -> dict:
+    """화면 표시용 한국어 번역(시험 제목·질환·기준). 판정에는 쓰지 않고, 원문(en)과 같을 때만 화면이 바꿔 보여 줌."""
+    f = config.DATA_DIR / "i18n" / "trials_ko.json"
+    return json.loads(f.read_text(encoding="utf-8")) if f.exists() else {}
+
+
 @app.post("/api/runs")
 def start_run(req: RunRequest) -> dict:
     all_trials = _load_trials()
@@ -240,16 +297,54 @@ def start_run(req: RunRequest) -> dict:
         # 확인 질문 답변이 raw_text에 누적되므로 원본을 복사해 사용
         case = PatientCase(patient_id=src.patient_id, raw_text=src.raw_text, hidden_details=src.hidden_details)
 
-    _prune_runs()
-    if len(RUNS) >= MAX_RUNS:
-        raise HTTPException(429, f"진행 중인 실행이 {MAX_RUNS}개라 새 실행을 시작할 수 없습니다. 잠시 후 다시 시도하세요.")
     run = Run(run_id=time.strftime("%Y%m%d-%H%M%S-") + uuid.uuid4().hex[:4])
-    with RUNS_LOCK:
-        RUNS[run.run_id] = run
+    _register(run)
     run.emit("status", message="파이프라인 시작", patient_id=case.patient_id, patient_text=case.raw_text,
              trial_ids=list(trials))
     ctx = contextvars.copy_context()  # 실행별 토큰 사용량 집계
     threading.Thread(target=ctx.run, args=(_execute, run, req, case, trials), daemon=True).start()
+    return {"run_id": run.run_id}
+
+
+def _register(run: Run) -> None:
+    _prune_runs()
+    if len(RUNS) >= MAX_RUNS:
+        raise HTTPException(429, f"진행 중인 실행이 {MAX_RUNS}개라 새 실행을 시작할 수 없습니다. 잠시 후 다시 시도하세요.")
+    with RUNS_LOCK:
+        RUNS[run.run_id] = run
+
+
+@app.get("/api/replays")
+def list_replays() -> list[dict]:
+    out = []
+    for rid, d in _saved_runs().items():
+        try:
+            r = json.loads((d / "result.json").read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        out.append({"run_id": rid, "patient_id": r.get("patient_id"), "model": r.get("model"),
+                    "n_trials": len(r.get("matches") or {}), "n_questions": len(r.get("qa_log") or []),
+                    "screened": bool(r.get("screening"))})
+    return out
+
+
+@app.post("/api/replays/{saved_id}")
+def start_replay(saved_id: str, speed: float = 1.0) -> dict:
+    src = _saved_runs().get(saved_id)  # 목록에 있는 이름만 허용 (경로 조작 방지)
+    if src is None:
+        raise HTTPException(404, "저장된 실행을 찾을 수 없습니다.")
+    try:
+        result = json.loads((src / "result.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        raise HTTPException(400, "저장된 결과 파일을 읽을 수 없습니다.")
+    run = Run(run_id="replay-" + uuid.uuid4().hex[:8])
+    _register(run)
+    cases = _load_cases()
+    pid = result.get("patient_id")
+    text = cases[pid][0].raw_text if pid in cases else ""
+    run.emit("status", message="다시 보기 시작", patient_id=pid, patient_text=text,
+             trial_ids=list(result.get("matches") or {}), replay=saved_id)
+    threading.Thread(target=_replay, args=(run, src, max(0.25, min(speed, 8.0))), daemon=True).start()
     return {"run_id": run.run_id}
 
 

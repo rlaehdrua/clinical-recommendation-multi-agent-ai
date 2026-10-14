@@ -70,8 +70,11 @@ def check(trial: dict, profile: PatientProfile) -> HardFiltered | None:
 
     sex = (trial.get("sex") or "ALL").upper()
     if sex in ("MALE", "FEMALE") and profile.sex in ("male", "female") and profile.sex.upper() != sex:
-        return HardFiltered(trial_id=tid, kind="sex", reason=f"{sex} 전용 시험 (환자 성별 {profile.sex})")
+        return HardFiltered(trial_id=tid, kind="sex", reason=f"{_SEX_KO[sex]} 전용 시험 (환자 성별 {_SEX_KO[profile.sex.upper()]})")
     return None
+
+
+_SEX_KO = {"MALE": "남성", "FEMALE": "여성"}
 
 
 def apply(pool: dict[str, dict], profile: PatientProfile) -> tuple[dict[str, dict], list[HardFiltered]]:

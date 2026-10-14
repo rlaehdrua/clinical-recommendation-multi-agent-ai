@@ -20,6 +20,30 @@ from .schemas import ParsedTrial, PatientProfile, QAPair, Recommendation, TrialM
 from .trace import Tracer
 
 
+def trace_match(m: TrialMatch) -> dict:
+    """웹 UI 단계 화면용: 시험 판정과 기준별 판정을 trace에 싣기 좋은 형태로 줄임.
+
+    gap: 판정 불가 항목의 해소 경로 (ask = 확인 질문 / verify = 문서 확인(UNVERIFIED) / physician = 의사 확인)
+    """
+    def gap(a) -> str | None:
+        if matcher.needs_physician_review(a):
+            return "physician"
+        if a.passes is None and a.needs_verification:
+            return "verify"
+        if matcher.is_askable_unknown(a):
+            return "ask"
+        return None
+
+    keys = ("rule_id", "kind", "criterion_text", "holds", "passes", "method", "evidence", "reasoning",
+            "missing_info", "category", "applicable", "cohort", "needs_verification", "self_reported_holds")
+    return {
+        "eligibility": m.eligibility, "match_status": m.match_status,
+        "n_pass": m.n_pass, "n_fail": m.n_fail, "n_unknown": m.n_unknown,
+        "matched_cohort": m.matched_cohort, "evaluation_error": m.evaluation_error,
+        "assessments": [{**{k: getattr(a, k) for k in keys}, "gap": gap(a)} for a in m.assessments],
+    }
+
+
 @dataclass
 class PatientCase:
     patient_id: str
@@ -129,7 +153,7 @@ class Session:
         r = screener.screen(self.profile, self.trials, self.max_candidates, self.case.raw_text)
         self.screening = r
         self.candidates = [s.trial_id for s in r.selected]
-        self.tracer.log("screener", "done", selected=self.candidates,
+        self.tracer.log("screener", "done", selected=self.candidates, screening=r.model_dump(),
                         message=f"전체 {r.pool_size}개 중 {len(r.selected)}개 선택 "
                                 f"(확정 제외 {len(r.hard_filtered)}, 제외 {len(r.excluded)}, 상한 초과 {len(r.over_limit)})")
         return r
@@ -144,6 +168,8 @@ class Session:
             self.tracer.log("criteria_parser", "start", trial_id=tid)
             p = trial_store.get(self.trials[tid])
             self.tracer.log("criteria_parser", "done", trial_id=tid, n_rules=len(p.rules),
+                            n_inclusion=sum(r.kind == "inclusion" for r in p.rules),
+                            n_exclusion=sum(r.kind == "exclusion" for r in p.rules),
                             integrity_issues=p.integrity_issues,
                             review=[rid for rid, m in p.rule_meta.items() if m.review])
             return tid, p
@@ -158,7 +184,8 @@ class Session:
         self.tracer.log("patient_profiler", "start", patient_id=self.case.patient_id)
         self.profile = patient_profiler.profile_patient(self.case.patient_id, self.case.raw_text,
                                                         reference_date=self.reference_date)
-        self.tracer.log("patient_profiler", "done", missing=self.profile.missing_or_ambiguous)
+        self.tracer.log("patient_profiler", "done", missing=self.profile.missing_or_ambiguous,
+                        profile=self.profile.model_dump())
         return self.profile
 
     # ----------------------------------------------------------- 단계 ③c, ④
@@ -171,7 +198,7 @@ class Session:
             self.tracer.log("matcher", "start", trial_id=tid)
             m = matcher.match_trial(self.profile, self.parsed[tid], self.trials[tid],
                                     reference_date=self.reference_date, source_text=self.case.raw_text)
-            self.tracer.log("matcher", "done", trial_id=tid, message=m.summary)
+            self.tracer.log("matcher", "done", trial_id=tid, message=m.summary, round=self.rounds, **trace_match(m))
             return tid, m
 
         results, match_failed = self._parallel(work, [t for t in ids if t in self.parsed])

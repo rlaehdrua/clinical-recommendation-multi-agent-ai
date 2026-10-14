@@ -30,9 +30,21 @@ class InteractiveAnswerer:
         print(f"\n=== [{patient_id}] 확인 질문 (모르면 Enter) ===")
         answers = {}
         for q in questions:
-            ans = input(f"{q.question_id}. {q.question}\n   > ").strip()
+            ans = input(f"{q.question_id}. {q.question}{_choices(q)}\n   > ").strip()
             answers[q.question_id] = ans or "모름"
         return answers
+
+
+def _choices(q) -> str:
+    """객관식 질문이면 선택지를 함께 보여 줌 (화면과 같은 형식의 답을 받기 위해)."""
+    if q.answer_type == "yes_no":
+        return " [선택: 예 / 아니요 / 모름]"
+    if q.options:
+        many = " (여러 개 선택 가능)" if q.answer_type == "multi_choice" else ""
+        return f" [선택{many}: {' / '.join(q.options)} / 모름]"
+    if q.answer_type == "number" and q.unit:
+        return f" [단위: {q.unit}]"
+    return ""
 
 
 class _SimAnswer(BaseModel):
@@ -48,7 +60,8 @@ SIM_SYSTEM = """당신은 임상시험 상담을 받는 가상 환자(또는 보
 <hidden_record>는 이 환자의 전체 병력 기록이며, <hidden_record>에 있는 정보만 사용해 질문에 짧게 답합니다.
 - 치료·약물·질환·시술 이력은 기록에 적힌 것이 전부입니다. 기록에 없는 치료나 질환에 대해 물으면 "없음"(받은 적 없음)으로 답합니다.
 - 검사 수치, 날짜처럼 기록에 구체적인 값이 없는 항목은 "모름"이라고 답합니다.
-- 추측하거나 기록에 없는 값을 지어내지 않습니다."""
+- 추측하거나 기록에 없는 값을 지어내지 않습니다.
+- 질문에 [선택: ...]이 있으면 그 선택지 중에서 골라 선택지 문구 그대로 답합니다(여러 개면 ", "로 구분). 해당하는 선택지가 없거나 모르면 "모름"."""
 
 
 class SimulatedPatientAnswerer:
@@ -59,7 +72,7 @@ class SimulatedPatientAnswerer:
         hidden = self.hidden.get(patient_id)
         if not hidden:
             return NoAnswerer().answer(questions, patient_id)
-        qs = "\n".join(f"{q.question_id}. {q.question}" for q in questions)
+        qs = "\n".join(f"{q.question_id}. {q.question}{_choices(q)}" for q in questions)
         out = llm.structured(
             _SimAnswers,
             system=SIM_SYSTEM,

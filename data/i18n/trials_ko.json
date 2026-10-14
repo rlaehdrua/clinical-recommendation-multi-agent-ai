@@ -1,0 +1,2156 @@
+{
+ "NCT06908096": {
+  "title_en": "Epstein-Barr Virus (EBV) gH/gL/gp42-Ferritin Nanoparticle Vaccine With or Without gp350-Ferritin in Healthy Adults With or Without EBV Infection",
+  "title": "EBV 감염 여부와 관계없는 건강한 성인을 대상으로 한 엡스타인-바 바이러스(EBV) gH/gL/gp42-페리틴 나노입자 백신 단독 또는 gp350-페리틴 병용 연구",
+  "conditions": {
+   "EBV": "EBV(엡스타인-바 바이러스)",
+   "Epstein-Barr Virus Infection": "엡스타인-바 바이러스 감염(Epstein-Barr virus infection)",
+   "Infectious Mononucleosis": "전염성 단핵구증(infectious mononucleosis)",
+   "Mono": "단핵구증(Mono)"
+  },
+  "rules": {
+   "I1": {
+    "en": "18 to 29 years old.",
+    "ko": "18~29세."
+   },
+   "I2": {
+    "en": "18 to 29 years old.",
+    "ko": "18~29세."
+   },
+   "I3": {
+    "en": "Sex: ALL (structured eligibility field)",
+    "ko": "성별 무관 (구조화 기준)"
+   },
+   "I4": {
+    "en": "Able to provide informed consent.",
+    "ko": "동의서를 제공할 수 있는 자."
+   },
+   "I5": {
+    "en": "Willingness to allow storage of blood and saliva for future research.",
+    "ko": "향후 연구를 위한 혈액 및 타액 보관에 동의하는 자."
+   },
+   "I6": {
+    "en": "In good general health as evidenced by medical history, physical examination, and laboratory screening results.",
+    "ko": "병력, 신체검사 및 스크리닝 검사 결과로 확인된 전반적인 건강 상태가 양호한 자."
+   },
+   "I7": {
+    "en": "Participant is willing to forgo receipt of a licensed, live vaccine in the 30 days preceding each dose of vaccine or in the 30 days following each dose of vaccine.",
+    "ko": "각 백신 투여 전 30일 이내 또는 각 백신 투여 후 30일 이내에 허가된 생백신 접종을 받지 않는 데 동의하는 자."
+   },
+   "I8": {
+    "en": "Participants of reproductive potential who are sexually active with a partner who can impregnate them: use of highly effective continuous contraception for at least 30 days prior to Day 0 and agreement to continue use until 60 days after the last dose of vaccine.",
+    "ko": "자신을 임신시킬 수 있는 파트너와 성생활을 하는 가임 참여자: Day 0 전 최소 30일 동안 매우 효과적인 피임법을 지속적으로 사용하고, 마지막 백신 투여 후 60일까지 계속 사용하는 데 동의해야 함."
+   },
+   "I9": {
+    "en": "Participants of childbearing potential must have a negative pregnancy test before receiving each dose of the EBV gH/gL/gp42-FNP vaccine.",
+    "ko": "가임 참여자는 EBV gH/gL/gp42-FNP 백신을 매회 투여받기 전에 임신 검사 음성이어야 함."
+   },
+   "I10": {
+    "en": "Hemoglobin within institutional normal limits or if not, then assessed and deemed not clinically significant by PI or designee.",
+    "ko": "헤모글로빈이 기관 정상 범위 이내이거나, 그렇지 않은 경우 책임연구자(PI) 또는 그 지정인이 평가하여 임상적으로 유의하지 않다고 판단한 경우."
+   },
+   "I11": {
+    "en": "White blood cell count and differential either within institutional normal reference range or if not then assessed and deemed not clinically significant by PI or designee.",
+    "ko": "백혈구 수 및 백혈구 감별 계수가 기관 정상 참고 범위 이내이거나, 그렇지 않은 경우 책임연구자(PI) 또는 그 지정인이 평가하여 임상적으로 유의하지 않다고 판단한 경우."
+   },
+   "I12": {
+    "en": "Total lymphocyte count (lymphocyte absolute) > 800 cells/microL.",
+    "ko": "총 림프구 수(림프구 절대수) > 800 cells/microL."
+   },
+   "I13": {
+    "en": "Platelet count equal to 125,000-500,000/microL.",
+    "ko": "혈소판 수 125,000-500,000/microL."
+   },
+   "I14": {
+    "en": "Platelet count equal to 125,000-500,000/microL.",
+    "ko": "혈소판 수 125,000-500,000/microL."
+   },
+   "I15": {
+    "en": "Alanine aminotransferase <1.25 x upper limit of normal (ULN).",
+    "ko": "알라닌 아미노전이효소(ALT) <1.25 x 정상 상한치(ULN)."
+   },
+   "I16": {
+    "en": "Serum IgG >600 mg/dL.",
+    "ko": "혈청 IgG >600 mg/dL."
+   },
+   "E1": {
+    "en": "Pregnant, breastfeeding, or planning to become pregnant while participating through 60 days after the last dose of vaccine.",
+    "ko": "임신 중, 수유 중이거나, 연구 참여 기간부터 마지막 백신 투여 후 60일까지 임신을 계획하는 자."
+   },
+   "E2": {
+    "en": "More than 10 days of systemic immunosuppressive medications (>=10 mg prednisone dose or its equivalent) or cytotoxic medication within the 30 days prior to first dose of vaccine.",
+    "ko": "첫 백신 투여 전 30일 이내에 전신 면역억제제(프레드니손 >=10 mg 용량 또는 이에 상응하는 용량)를 10일 넘게 투여받았거나 세포독성 약물을 투여받은 자."
+   },
+   "E3": {
+    "en": "Immunomodulating therapy within 180 days prior to first dose of vaccine.",
+    "ko": "첫 백신 투여 전 180일 이내에 면역조절 치료를 받은 자."
+   },
+   "E4": {
+    "en": "Blood products, including immunoglobulin products, within 120 days prior to first dose of vaccine.",
+    "ko": "첫 백신 투여 전 120일 이내에 면역글로불린 제제를 포함한 혈액제제를 투여받은 자."
+   },
+   "E5": {
+    "en": "Investigational research agents within 30 days prior to first dose or planning to receive investigational products while on study.",
+    "ko": "첫 투여 전 30일 이내에 임상시험용 연구 약물을 투여받았거나, 연구 기간 중 임상시험용 제품을 투여받을 계획인 자."
+   },
+   "E6": {
+    "en": "Allergy treatment with antigen injections, unless on a maintenance schedule of shots no more frequently than once per month.",
+    "ko": "항원 주사를 이용한 알레르기 치료를 받는 자(단, 월 1회 이하 빈도의 유지 요법 일정인 경우는 제외)."
+   },
+   "E7": {
+    "en": "Prior participant in an EBV vaccine clinical trial.",
+    "ko": "이전에 EBV 백신 임상시험에 참여한 자."
+   },
+   "E8": {
+    "en": "Febrile illness within 14 days of the first dose of vaccine.",
+    "ko": "첫 백신 투여 전 14일 이내 발열성 질환."
+   },
+   "E9": {
+    "en": "Body habitus such that it is difficult to confirm location of the deltoid muscle for safe intramuscular injection.",
+    "ko": "체형으로 인해 안전한 근육 주사를 위한 삼각근 위치 확인이 어려운 자."
+   },
+   "E10": {
+    "en": "History of serious reactions to vaccines.",
+    "ko": "백신에 대한 중대한 이상반응 병력."
+   },
+   "E11": {
+    "en": "Hereditary, acquired, or idiopathic forms of angioedema.",
+    "ko": "유전성, 후천성 또는 특발성 혈관부종."
+   },
+   "E12": {
+    "en": "Idiopathic urticaria within the past year.",
+    "ko": "최근 1년 이내 특발성 두드러기."
+   },
+   "E13": {
+    "en": "Asthma that is not well-controlled or required emergent care, urgent care, hospitalization, or intubation during the past 2 years or that requires the use of oral or intravenous steroids.",
+    "ko": "잘 조절되지 않거나, 최근 2년 이내에 응급 치료, 긴급 진료, 입원 또는 기관 삽관이 필요했거나, 경구 또는 정맥 스테로이드 사용이 필요한 천식."
+   },
+   "E14": {
+    "en": "Diabetes mellitus type 1 or type 2, excluding a history of gestational diabetes.",
+    "ko": "제1형 또는 제2형 당뇨병(임신성 당뇨병 병력은 제외)."
+   },
+   "E15": {
+    "en": "Clinically significant autoimmune disease or immunodeficiency.",
+    "ko": "임상적으로 유의한 자가면역질환 또는 면역결핍."
+   },
+   "E16": {
+    "en": "Hypertension that is not well-controlled.",
+    "ko": "잘 조절되지 않는 고혈압."
+   },
+   "E17": {
+    "en": "Thyroid disease that is not well-controlled.",
+    "ko": "잘 조절되지 않는 갑상선 질환."
+   },
+   "E18": {
+    "en": "Bleeding disorder diagnosed by doctor (eg, factor deficiency, coagulopathy, or platelet disorder requiring special precautions).",
+    "ko": "의사에게 진단받은 출혈 질환(예: 응고인자 결핍, 응고병증, 또는 특별한 주의가 필요한 혈소판 질환)."
+   },
+   "E19": {
+    "en": "Significant bruising or bleeding difficulties with intramuscular injections or blood draws.",
+    "ko": "근육 주사 또는 채혈 시 유의한 멍이나 출혈 문제가 있는 자."
+   },
+   "E20": {
+    "en": "Malignancy that is active or treated malignancy for which there is no reasonable assurance of sustained cure or malignancy that is likely to recur during the study period.",
+    "ko": "활동성 악성종양, 또는 지속적 완치에 대한 합리적 확신이 없는 치료받은 악성종양, 또는 연구 기간 중 재발 가능성이 높은 악성종양."
+   },
+   "E21": {
+    "en": "Seizure disorder other than a history of 1) febrile seizures, 2) seizures secondary to alcohol withdrawal more than 3 years ago, or 3) seizures that have not required treatment within the past 3 years.",
+    "ko": "다음을 제외한 발작 질환: 1) 열성 경련 병력, 2) 3년 이상 전 알코올 금단에 의한 발작, 또는 3) 최근 3년 이내 치료가 필요하지 않았던 발작."
+   },
+   "E22": {
+    "en": "Asplenia, functional asplenia, or any condition resulting in absence or removal of the spleen.",
+    "ko": "무비증, 기능적 무비증, 또는 비장이 없거나 제거된 상태를 초래하는 모든 질환."
+   },
+   "E23": {
+    "en": "History of Guillain-Barre Syndrome.",
+    "ko": "길랭-바레 증후군(Guillain-Barre syndrome) 병력."
+   },
+   "E24": {
+    "en": "Alcohol or drug abuse or addiction.",
+    "ko": "알코올 또는 약물 남용이나 중독."
+   },
+   "E25": {
+    "en": "HIV infection.",
+    "ko": "HIV 감염."
+   },
+   "E26": {
+    "en": "Any medical, psychiatric, or social condition that, in the judgement of the investigator, is a contraindication to protocol participation or impairs the participant's ability to give informed consent.",
+    "ko": "연구자의 판단상 임상시험계획서 참여에 금기가 되거나 참여자의 동의 능력을 저해하는 모든 의학적, 정신적 또는 사회적 상태."
+   },
+   "I17": {
+    "en": "Contraceptive requirements: Because the effects of EBV gH/gL/gp42-FNP and EBV gp350-ferritin vaccines on the developing human fetus are unknown, sexually active participants of childbearing potential must agree to use highly effective contraception as outlined below before study entry and until 60 days after the last dose of vaccine. Participants of childbearing potential must have a negative pregnancy test before receiving each dose of the EBV gH/gL/gp42-FNP vaccine. During the course of the study, if a participant becomes pregnant or suspects they are pregnant, then they should inform the study staff and their primary care physician immediately.",
+    "ko": "피임 요건: EBV gH/gL/gp42-FNP 및 EBV gp350-페리틴 백신이 발달 중인 인간 태아에 미치는 영향은 알려져 있지 않으므로, 성생활을 하는 가임 참여자는 연구 참여 전부터 마지막 백신 투여 후 60일까지 아래에 기술된 매우 효과적인 피임법을 사용하는 데 동의해야 함. 가임 참여자는 EBV gH/gL/gp42-FNP 백신을 매회 투여받기 전에 임신 검사 음성이어야 함. 연구 기간 중 참여자가 임신하거나 임신이 의심되는 경우, 즉시 연구 담당자와 주치의에게 알려야 함."
+   }
+  }
+ },
+ "NCT07087314": {
+  "title_en": "A Study of Anti-CD38 Monoclonal Antibody (SG301) Subcutaneous Injection in Children With Nephrotic Syndrome With Frequent Relapses or Steroid Dependence",
+  "title": "빈번 재발 또는 스테로이드 의존성 신증후군 소아를 대상으로 한 항CD38 단클론항체(SG301) 피하주사 연구",
+  "conditions": {
+   "Nephrotic Syndrome in Children": "소아 신증후군(nephrotic syndrome)"
+  },
+  "rules": {
+   "I1": {
+    "en": "Aged 6 - 18 years (minimum age).",
+    "ko": "6~18세 (최소 연령)."
+   },
+   "I2": {
+    "en": "Aged 6 - 18 years (maximum age).",
+    "ko": "6~18세 (최대 연령)."
+   },
+   "I3": {
+    "en": "Sex: All (structured eligibility field).",
+    "ko": "성별 무관 (구조화 기준)"
+   },
+   "I4": {
+    "en": "Steroid-sensitive nephrotic syndrome with frequent relapses (FRNS) or steroid dependence (SDNS).",
+    "ko": "빈번 재발(FRNS) 또는 스테로이드 의존성(SDNS)을 보이는 스테로이드 반응성 신증후군."
+   },
+   "I5": {
+    "en": "Normal renal function: eGFR≥90 ml/min/1.73m².",
+    "ko": "정상 신기능: eGFR≥90 ml/min/1.73m²."
+   },
+   "I6": {
+    "en": "After steroid treatment, morning urine protein<1+ or urine protein/creatinine<0.2 g/g (<20 mg/mmol) for ≥3 consecutive days.",
+    "ko": "스테로이드 치료 후 ≥3일 연속으로 아침 소변 단백<1+ 또는 소변 단백/크레아티닌<0.2 g/g (<20 mg/mmol)."
+   },
+   "I7": {
+    "en": "Within 7 days before enrollment, hemoglobin>80 g/L (without growth factors or transfusions).",
+    "ko": "등록 전 7일 이내 헤모글로빈>80 g/L (성장인자 또는 수혈 없이)."
+   },
+   "I8": {
+    "en": "Within 7 days before enrollment, platelets>75×10⁹/L (without growth factors or transfusions).",
+    "ko": "등록 전 7일 이내 혈소판>75×10⁹/L (성장인자 또는 수혈 없이)."
+   },
+   "I9": {
+    "en": "Within 7 days before enrollment, neutrophils>1.5×10⁹/L (without growth factors or transfusions).",
+    "ko": "등록 전 7일 이내 호중구>1.5×10⁹/L (성장인자 또는 수혈 없이)."
+   },
+   "I10": {
+    "en": "Prothrombin time/INR≤1.5×ULN, unless due to anticoagulation.",
+    "ko": "프로트롬빈 시간/INR≤1.5×ULN (항응고 치료로 인한 경우는 제외)."
+   },
+   "I11": {
+    "en": "No Tacrolimus, cyclosporine A, mycophenolate mofetil, belimumab, levamisole, azathioprine, or cyclophosphamide in prior 2 months.",
+    "ko": "최근 2개월 이내 타크로리무스(tacrolimus), 사이클로스포린 A(cyclosporine A), 마이코페놀레이트 모페틸(mycophenolate mofetil), 벨리무맙(belimumab), 레바미솔(levamisole), 아자티오프린(azathioprine) 또는 사이클로포스파미드(cyclophosphamide) 투여 이력 없음."
+   },
+   "I12": {
+    "en": "No rituximab or obinutuzumab in prior 6 months.",
+    "ko": "최근 6개월 이내 리툭시맙(rituximab) 또는 오비누투주맙(obinutuzumab) 투여 이력 없음."
+   },
+   "E1": {
+    "en": "Family history of nephrotic syndrome, chronic glomerulonephritis, or uremia.",
+    "ko": "신증후군, 만성 사구체신염 또는 요독증의 가족력."
+   },
+   "E2": {
+    "en": "Alanine aminotransferase>2×ULN or total bilirubin>2×ULN with a sustained increase for 2 weeks.",
+    "ko": "알라닌 아미노전이효소(ALT)>2×ULN 또는 총 빌리루빈>2×ULN이 2주간 지속적으로 상승."
+   },
+   "E3": {
+    "en": "HBsAg or HBcAb positive with Hepatitis B virus DNA above the lower limit of normal.",
+    "ko": "HBsAg 또는 HBcAb 양성이면서 B형 간염 바이러스 DNA가 정상 하한치 초과."
+   },
+   "E4": {
+    "en": "Hepatitis C virus antibody-positive with Hepatitis C virus RNA positive.",
+    "ko": "C형 간염 바이러스 항체 양성이면서 C형 간염 바이러스 RNA 양성."
+   },
+   "E5": {
+    "en": "HIV antibody-positive.",
+    "ko": "HIV 항체 양성."
+   },
+   "E6": {
+    "en": "Chronic active infections (e.g., Epstein-Barr Virus, Cytomegalovirus, tuberculosis) that may worsen with steroids/immunosuppressants.",
+    "ko": "스테로이드/면역억제제로 악화될 수 있는 만성 활동성 감염(예: 엡스타인-바 바이러스(Epstein-Barr virus), 거대세포바이러스(cytomegalovirus), 결핵)."
+   },
+   "E7": {
+    "en": "Acute active infection (excluding onychomycosis) requiring systemic antibiotics/antivirals.",
+    "ko": "전신 항생제/항바이러스제가 필요한 급성 활동성 감염(조갑진균증 제외)."
+   },
+   "E8": {
+    "en": "Secondary nephrotic syndrome (e.g., immunoglobulin A-associated, lupus nephritis).",
+    "ko": "이차성 신증후군(예: 면역글로불린 A 관련, 루푸스 신염)."
+   },
+   "E9": {
+    "en": "Steroid-resistant nephrotic syndrome (SRNS).",
+    "ko": "스테로이드 저항성 신증후군(SRNS)."
+   },
+   "E10": {
+    "en": "Other autoimmune diseases.",
+    "ko": "기타 자가면역질환."
+   },
+   "E11": {
+    "en": "Primary immunodeficiency.",
+    "ko": "원발성 면역결핍."
+   },
+   "E12": {
+    "en": "Malignancy.",
+    "ko": "악성종양."
+   },
+   "E13": {
+    "en": "Prior anti-cluster of differentiation 38 (CD38) treatment.",
+    "ko": "이전 항CD38(cluster of differentiation 38) 치료 이력."
+   },
+   "E14": {
+    "en": "Live/attenuated vaccine receipt within 4 weeks before first dose.",
+    "ko": "첫 투여 전 4주 이내 생백신/약독화 백신 접종."
+   },
+   "E15": {
+    "en": "Major surgery (non-diagnostic) within 4 weeks before first dose.",
+    "ko": "첫 투여 전 4주 이내 주요 수술(진단 목적 제외)."
+   }
+  }
+ },
+ "NCT06727604": {
+  "title_en": "A Study to Assess the Efficacy, Safety, and Tolerability of IMVT-1402 as Treatment for Adult Participants With Graves' Disease",
+  "title": "성인 그레이브스병 환자에서 IMVT-1402의 유효성, 안전성 및 내약성 평가 연구",
+  "conditions": {
+   "Graves' Disease": "그레이브스병(Graves' disease)"
+  },
+  "rules": {
+   "I1": {
+    "en": "Participants with the ability to understand the requirements of the trial, provide written informed consent, and comply with the trial protocol procedures.",
+    "ko": "임상시험의 요구사항을 이해하고, 서면 동의서를 제공하며, 임상시험계획서 절차를 준수할 수 있는 참여자."
+   },
+   "I2": {
+    "en": "Male or female participants aged ≥ 18 years.",
+    "ko": "≥ 18세 남성 또는 여성 참여자."
+   },
+   "I3": {
+    "en": "Structured eligibility: maximum age 75 years.",
+    "ko": "나이 75세 이하"
+   },
+   "I4": {
+    "en": "Structured eligibility: sex = ALL (Male or female participants).",
+    "ko": "성별 무관"
+   },
+   "I5": {
+    "en": "Participants with diagnosis of GD.",
+    "ko": "그레이브스병(GD)으로 진단된 참여자."
+   },
+   "I6": {
+    "en": "Participants who are hyperthyroid despite ATD treatment.",
+    "ko": "항갑상선제(ATD) 치료에도 불구하고 갑상선기능항진 상태인 참여자."
+   },
+   "I7": {
+    "en": "Other, more specific inclusion criteria are defined in the protocol.",
+    "ko": "기타 보다 구체적인 선정 기준은 임상시험계획서에 정의되어 있음."
+   },
+   "E1": {
+    "en": "Have previously been successfully treated with radioactive iodine (RAI) therapy or have undergone total thyroidectomy.",
+    "ko": "이전에 방사성 요오드(RAI) 치료로 성공적으로 치료받았거나 갑상선 전절제술을 받은 자."
+   },
+   "E2": {
+    "en": "Have an autoimmune disease other than GD requiring treatment that, in the Investigator's judgment, puts the participant at undue risk.",
+    "ko": "치료가 필요한 GD 외의 자가면역질환이 있으며, 연구자의 판단상 참여자에게 과도한 위험이 되는 경우."
+   },
+   "E3": {
+    "en": "Have moderate-to-severe active thyroid eye disease (TED).",
+    "ko": "중등도-중증 활동성 갑상선 눈병증(TED)이 있는 자."
+   },
+   "E4": {
+    "en": "Are expected to require immediate surgical intervention for TED and/or are planning corrective surgery/irradiation or medical therapy for TED during study participation.",
+    "ko": "TED로 인해 즉각적인 수술적 처치가 필요할 것으로 예상되거나, 연구 참여 기간 중 TED에 대한 교정 수술/방사선 치료 또는 약물 치료를 계획하는 자."
+   },
+   "E5": {
+    "en": "Additional exclusion criteria are defined in the protocol.",
+    "ko": "추가 제외 기준은 임상시험계획서에 정의되어 있음."
+   }
+  },
+  "legacy": {
+   "Male or female participants aged ≥ 18 years (sex).": "18세 이상 남성 또는 여성 참여자 (성별).",
+   "Male or female participants aged ≥ 18 years (age).": "18세 이상 남성 또는 여성 참여자 (나이).",
+   "Structured eligibility: maximum age 75 Years.": "구조화 기준: 최대 나이 75세.",
+   "Participants with diagnosis of GD (Graves' Disease).": "그레이브스병(GD, Graves' disease) 진단을 받은 참여자.",
+   "Participants are hyperthyroid despite ATD (antithyroid drug) treatment.": "항갑상선제(ATD) 치료에도 불구하고 갑상선기능항진 상태인 참여자.",
+   "Have moderate-to-severe active thyroid eye disease (TED) and are expected to require immediate surgical intervention and/or are planning corrective surgery/irradiation or medical therapy for TED during study participation.": "중등도~중증 활동성 갑상선 눈병증(TED)이 있어 즉각적인 수술적 처치가 필요할 것으로 예상되거나, 연구 참여 기간 중 TED에 대한 교정 수술·방사선 치료 또는 약물 치료를 계획하고 있음."
+  }
+ },
+ "DEMO-LUNG-001": {
+  "title_en": "[가상 예시] EGFR 변이 비소세포폐암 2차 치료 신약 임상 2상",
+  "title": "[가상 예시] EGFR 변이 비소세포폐암 2차 치료 신약 임상 2상",
+  "conditions": {
+   "Non-small Cell Lung Cancer": "비소세포폐암",
+   "EGFR Mutation": "EGFR 변이"
+  },
+  "rules": {
+   "I1": {
+    "en": "Age >= 19 years",
+    "ko": "나이 >= 19세"
+   },
+   "I2": {
+    "en": "sex=ALL (structured eligibility)",
+    "ko": "성별 무관 (구조화 기준)"
+   },
+   "I3": {
+    "en": "Histologically or cytologically confirmed stage IIIB-IV non-small cell lung cancer",
+    "ko": "조직학적 또는 세포학적으로 확진된 IIIB-IV기 비소세포폐암"
+   },
+   "I4": {
+    "en": "Documented EGFR exon 19 deletion or L858R mutation",
+    "ko": "EGFR 엑손 19 결실 또는 L858R 변이가 확인된 자"
+   },
+   "I5": {
+    "en": "Disease progression on or after osimertinib",
+    "ko": "오시머티닙(osimertinib) 치료 중 또는 치료 후 질병 진행"
+   },
+   "I6": {
+    "en": "ECOG performance status 0-1",
+    "ko": "ECOG 전신 수행 상태 0-1"
+   },
+   "I7": {
+    "en": "Adequate organ function within 28 days before enrollment: absolute neutrophil count >= 1.5 x 10^9/L",
+    "ko": "등록 전 28일 이내 적절한 장기 기능: 절대 호중구 수 >= 1.5 x 10^9/L"
+   },
+   "I8": {
+    "en": "Adequate organ function within 28 days before enrollment: platelets >= 100 x 10^9/L",
+    "ko": "등록 전 28일 이내 적절한 장기 기능: 혈소판 >= 100 x 10^9/L"
+   },
+   "I9": {
+    "en": "Adequate organ function within 28 days before enrollment: hemoglobin >= 9.0 g/dL",
+    "ko": "등록 전 28일 이내 적절한 장기 기능: 헤모글로빈 >= 9.0 g/dL"
+   },
+   "I10": {
+    "en": "Adequate organ function within 28 days before enrollment: total bilirubin <= 1.5 x ULN",
+    "ko": "등록 전 28일 이내 적절한 장기 기능: 총 빌리루빈 <= 1.5 x ULN"
+   },
+   "I11": {
+    "en": "At least one measurable lesion per RECIST 1.1",
+    "ko": "RECIST 1.1 기준 측정 가능 병변 1개 이상"
+   },
+   "E1": {
+    "en": "Symptomatic or untreated brain metastases",
+    "ko": "증상이 있거나 치료받지 않은 뇌 전이"
+   },
+   "E2": {
+    "en": "Prior treatment with any EGFR-targeted antibody-drug conjugate",
+    "ko": "EGFR 표적 항체-약물 접합체(ADC) 투여 이력"
+   },
+   "E3": {
+    "en": "History of interstitial lung disease requiring steroids",
+    "ko": "스테로이드가 필요했던 간질성 폐질환 병력"
+   },
+   "E4": {
+    "en": "Pregnant or breastfeeding",
+    "ko": "임신 중 또는 수유 중"
+   },
+   "E5": {
+    "en": "Active hepatitis B or C infection",
+    "ko": "활동성 B형 또는 C형 간염 감염"
+   }
+  },
+  "legacy": {
+   "Sex: All (structured eligibility field)": "성별 무관 (구조화 기준)"
+  }
+ },
+ "NCT06530004": {
+  "title_en": "Clinical Follow-up Study of Rituximab in the Treatment of Nephrotic Syndrome in Children",
+  "title": "소아 신증후군 치료에서 리툭시맙의 임상 추적 연구",
+  "conditions": {
+   "Nephrotic Syndrome": "신증후군(nephrotic syndrome)",
+   "Rituximab": "리툭시맙(rituximab)",
+   "Children": "소아",
+   "Efficacy": "유효성"
+  },
+  "rules": {
+   "I1": {
+    "en": "Children clinically diagnosed with FRNS/SDNS/SRNS",
+    "ko": "임상적으로 FRNS/SDNS/SRNS로 진단된 소아"
+   },
+   "I2": {
+    "en": "with complete clinical data",
+    "ko": "임상 자료가 완전한 자"
+   },
+   "I3": {
+    "en": "age < 18 years old",
+    "ko": "나이 < 18세"
+   },
+   "I4": {
+    "en": "Structured eligibility: minimum age 1 Year",
+    "ko": "나이 1세 이상"
+   },
+   "I5": {
+    "en": "Structured eligibility: sex = ALL",
+    "ko": "성별 무관"
+   },
+   "I6": {
+    "en": "For the first time using RTX treatment, and used in nephrotic syndrome disease",
+    "ko": "리툭시맙(RTX) 치료를 처음 받으며, 신증후군 질환에 사용된 경우"
+   },
+   "I7": {
+    "en": "The follow-up for 1 year or more",
+    "ko": "1년 이상 추적 관찰"
+   },
+   "E1": {
+    "en": "Congenital or infantile nephrotic syndrome",
+    "ko": "선천성 또는 영아 신증후군"
+   },
+   "E2": {
+    "en": "Secondary nephrotic syndrome (such as lupus nephritis, IgA nephropathy, purpura nephritis, hepatitis B nephritis, etc.)",
+    "ko": "이차성 신증후군(예: 루푸스 신염, IgA 신병증, 자반성 신염, B형 간염 관련 신염 등)"
+   },
+   "E3": {
+    "en": "Active stage of hepatitis",
+    "ko": "간염 활동기"
+   },
+   "E4": {
+    "en": "Complicated with severe infection",
+    "ko": "중증 감염 동반"
+   },
+   "E5": {
+    "en": "Severe deficiency of immune response",
+    "ko": "중증 면역반응 결핍"
+   },
+   "E6": {
+    "en": "Malignant diseases",
+    "ko": "악성 질환"
+   },
+   "E7": {
+    "en": "Estimated glomerular filtration rate (GFR) <60mL/min/1.73m2",
+    "ko": "추정 사구체여과율(GFR) <60mL/min/1.73m2"
+   }
+  }
+ },
+ "NCT07040306": {
+  "title_en": "A Clinical Follow-up Study on Drug Therapy for Graves' Disease Patients in China",
+  "title": "중국 그레이브스병 환자의 약물 치료에 관한 임상 추적 연구",
+  "conditions": {
+   "Graves´ Disease": "그레이브스병(Graves' disease)"
+  },
+  "rules": {
+   "I1": {
+    "en": "Age ≥18 years old.",
+    "ko": "나이 ≥18세."
+   },
+   "I2": {
+    "en": "Newly diagnosed GD and GD relapses.",
+    "ko": "새로 진단된 그레이브스병(GD) 및 GD 재발."
+   },
+   "I3": {
+    "en": "Sex=ALL (structured eligibility)",
+    "ko": "성별 무관 (구조화 기준)"
+   },
+   "E1": {
+    "en": "Patients with active infiltrative exophthalmos in GD were excluded.",
+    "ko": "GD에서 활동성 침윤성 안구돌출증이 있는 환자는 제외."
+   },
+   "E2": {
+    "en": "Patients with other autoimmune diseases affecting thyroid function were excluded.",
+    "ko": "갑상선 기능에 영향을 주는 기타 자가면역질환이 있는 환자는 제외."
+   },
+   "E3": {
+    "en": "Excluding patients with combined malignancies and other serious diseases.",
+    "ko": "악성종양 및 기타 중대한 질환을 동반한 환자는 제외."
+   }
+  },
+  "legacy": {
+   "Excluding patients with combined malignancies.": "악성 종양이 동반된 환자는 제외.",
+   "Excluding patients with other serious diseases.": "다른 중증 질환이 있는 환자는 제외.",
+   "Structured eligibility: sex=ALL": "구조화 기준: 성별 무관"
+  }
+ },
+ "NCT07679893": {
+  "title_en": "Phase 2 Clinical Trial of MNKD-201 (Nintedanib Dry Powder Inhalation) in Patients With Idiopathic Pulmonary Fibrosis",
+  "title": "특발성 폐섬유증 환자 대상 MNKD-201(닌테다닙 건조분말 흡입제) 제2상 임상시험",
+  "conditions": {
+   "Idiopathic Pulmonary Fibrosis": "특발성 폐섬유증(Idiopathic Pulmonary Fibrosis)",
+   "Idiopathic Pulmonary Fibrosis (IPF)": "특발성 폐섬유증(IPF)"
+  },
+  "rules": {
+   "I1": {
+    "en": "40-80 years old when signing consent and entering screening.",
+    "ko": "동의서 서명 및 스크리닝 진입 시점에 40-80세"
+   },
+   "I2": {
+    "en": "40-80 years old when signing consent and entering screening.",
+    "ko": "동의서 서명 및 스크리닝 진입 시점에 40-80세"
+   },
+   "I3": {
+    "en": "Sex: All (per CT.gov structured eligibility)",
+    "ko": "성별 무관 (구조화 기준)"
+   },
+   "I4": {
+    "en": "Diagnosed with IPF based on current ATS/ERS/JRS/ALAT guidelines.",
+    "ko": "현행 ATS/ERS/JRS/ALAT 지침에 따라 IPF로 진단됨"
+   },
+   "I5": {
+    "en": "Either new to treatment or on a stable dose of pirfenidone and/or nerandomilast for at least 3 months before screening.",
+    "ko": "치료 경험이 없거나, 스크리닝 전 최소 3개월 이상 피르페니돈(pirfenidone) 및/또는 네란도밀라스트(nerandomilast)를 안정 용량으로 투여 중인 자"
+   },
+   "I6": {
+    "en": "Weighs more than 40 kg (88 lb) at screening.",
+    "ko": "스크리닝 시 체중 40 kg(88 lb) 초과"
+   },
+   "I7": {
+    "en": "Women who can become pregnant must have a negative pregnancy test at screening.",
+    "ko": "가임 여성은 스크리닝 시 임신 검사 음성이어야 함"
+   },
+   "I8": {
+    "en": "Women who can become pregnant must use an approved birth control method from screening until at least 1 month after the last study dose.",
+    "ko": "가임 여성은 스크리닝부터 마지막 시험약 투여 후 최소 1개월까지 승인된 피임법을 사용해야 함"
+   },
+   "I9": {
+    "en": "Men who can father a child and are sexually active with women who can become pregnant must use an approved birth control method during treatment and for at least 3 months after the last study dose.",
+    "ko": "가임 여성과 성관계를 하는 생식 능력이 있는 남성은 치료 기간 및 마지막 시험약 투여 후 최소 3개월까지 승인된 피임법을 사용해야 함"
+   },
+   "I10": {
+    "en": "Men who can father a child must not donate sperm during treatment and for at least 3 months after the last study dose.",
+    "ko": "생식 능력이 있는 남성은 치료 기간 및 마지막 시험약 투여 후 최소 3개월까지 정자를 기증해서는 안 됨"
+   },
+   "I11": {
+    "en": "Willing to follow all study rules and restrictions.",
+    "ko": "모든 시험 규칙과 제한 사항을 준수할 의향이 있음"
+   },
+   "I12": {
+    "en": "Willing and able to attend study visits and complete study procedures.",
+    "ko": "시험 방문에 참석하고 시험 절차를 완료할 의향과 능력이 있음"
+   },
+   "I13": {
+    "en": "Able to perform spirometry (lung function testing) as required by the study.",
+    "ko": "시험에서 요구하는 폐활량 측정(폐기능 검사)을 수행할 수 있음"
+   },
+   "E1": {
+    "en": "Has a lung disease caused by something other than IPF.",
+    "ko": "IPF 이외의 원인으로 인한 폐질환이 있음"
+   },
+   "E2": {
+    "en": "Has a connective tissue or autoimmune disease (such as lupus, scleroderma, or rheumatoid arthritis).",
+    "ko": "결합조직 질환 또는 자가면역 질환(예: 루푸스, 경피증, 류마티스관절염)이 있음"
+   },
+   "E3": {
+    "en": "Has another condition that significantly affects breathing.",
+    "ko": "호흡에 유의하게 영향을 미치는 다른 질환이 있음"
+   },
+   "E4": {
+    "en": "Has serious heart or blood vessel disease.",
+    "ko": "중증 심장 또는 혈관 질환이 있음"
+   },
+   "E5": {
+    "en": "Has a recent or current infection.",
+    "ko": "최근 또는 현재 감염이 있음"
+   },
+   "E6": {
+    "en": "Was recently hospitalized for COVID-19, an IPF flare-up, or a lung infection.",
+    "ko": "최근 COVID-19, IPF 급성 악화 또는 폐 감염으로 입원한 적이 있음"
+   },
+   "E7": {
+    "en": "Has a history of asthma (except childhood asthma that has resolved).",
+    "ko": "천식 병력이 있음(소실된 소아 천식은 제외)"
+   },
+   "E8": {
+    "en": "Has another medical condition or abnormal test result that may affect study participation or safety.",
+    "ko": "시험 참여 또는 안전성에 영향을 줄 수 있는 다른 의학적 상태 또는 비정상 검사 결과가 있음"
+   },
+   "E9": {
+    "en": "Cannot perform high-quality spirometry testing.",
+    "ko": "양질의 폐활량 측정 검사를 수행할 수 없음"
+   },
+   "E10": {
+    "en": "Has obstructive lung disease.",
+    "ko": "폐쇄성 폐질환이 있음"
+   },
+   "E11": {
+    "en": "Has abnormal liver function tests.",
+    "ko": "간기능 검사 결과가 비정상임"
+   },
+   "E12": {
+    "en": "Has moderate to severe liver disease.",
+    "ko": "중등도 내지 중증 간질환이 있음"
+   },
+   "E13": {
+    "en": "Has severe kidney disease.",
+    "ko": "중증 신장질환이 있음"
+   },
+   "E14": {
+    "en": "Has recently used high-dose steroids or other immune-suppressing medications.",
+    "ko": "최근 고용량 스테로이드 또는 기타 면역억제제를 사용한 적이 있음"
+   },
+   "E15": {
+    "en": "Has active cancer or recent cancer treatment.",
+    "ko": "활동성 암이 있거나 최근 암 치료를 받음"
+   },
+   "E16": {
+    "en": "Is on, or expected to be added to, a transplant list.",
+    "ko": "이식 대기자 명단에 올라 있거나 등재될 예정임"
+   },
+   "E17": {
+    "en": "Had major surgery recently or has planned procedures that could interfere with the study.",
+    "ko": "최근 대수술을 받았거나 시험에 지장을 줄 수 있는 시술이 예정되어 있음"
+   },
+   "E18": {
+    "en": "Has had a severe reaction to nintedanib or cannot take nintedanib safely.",
+    "ko": "닌테다닙(nintedanib)에 중증 반응을 보인 적이 있거나 닌테다닙을 안전하게 복용할 수 없음"
+   },
+   "E19": {
+    "en": "Has recently used certain medications that may interact with the study drug.",
+    "ko": "시험약과 상호작용할 수 있는 특정 약물을 최근 사용함"
+   },
+   "E20": {
+    "en": "Is currently using, or plans to use, prohibited medications during the study.",
+    "ko": "시험 기간 중 금지 약물을 현재 사용 중이거나 사용할 계획이 있음"
+   },
+   "E21": {
+    "en": "Has recently participated in another clinical trial.",
+    "ko": "최근 다른 임상시험에 참여함"
+   },
+   "E22": {
+    "en": "Has current alcohol or drug abuse issues.",
+    "ko": "현재 알코올 또는 약물 남용 문제가 있음"
+   },
+   "E23": {
+    "en": "Donated a significant amount of blood recently.",
+    "ko": "최근 상당량의 혈액을 헌혈함"
+   },
+   "E24": {
+    "en": "Received a live vaccine recently.",
+    "ko": "최근 생백신을 접종받음"
+   },
+   "E25": {
+    "en": "Currently smokes, recently smoked, or quit smoking less than 1 year ago.",
+    "ko": "현재 흡연 중이거나, 최근 흡연했거나, 금연한 지 1년 미만임"
+   },
+   "E26": {
+    "en": "Requires more than 6 L/min of oxygen while at rest.",
+    "ko": "안정 시 6 L/min 초과의 산소가 필요함"
+   }
+  }
+ },
+ "NCT06125405": {
+  "title_en": "Study of the Telitacicept in Pediatric Patients With Frequently Relapsing or Steroid Dependent Nephrotic Syndrome",
+  "title": "빈번 재발성 또는 스테로이드 의존성 신증후군 소아 환자 대상 텔리타시셉트 연구",
+  "conditions": {
+   "Nephrotic Syndrome in Children": "소아 신증후군",
+   "Telitacicept": "텔리타시셉트(Telitacicept)"
+  },
+  "rules": {
+   "I1": {
+    "en": "Sensitive but frequent relapses or steroids dependence nephrotic syndrome",
+    "ko": "스테로이드 반응성이나 빈번 재발성이거나 스테로이드 의존성인 신증후군"
+   },
+   "I2": {
+    "en": "sex=ALL (구조화 항목)",
+    "ko": "성별 무관 (구조화 기준)"
+   },
+   "I3": {
+    "en": "Age: 2 to 18 years old (minimum 2 years)",
+    "ko": "나이 2세 이상 (2-18세)"
+   },
+   "I4": {
+    "en": "Age: 2 to 18 years old (maximum 18 years)",
+    "ko": "나이 18세 이하 (2-18세)"
+   },
+   "I5": {
+    "en": "Normal renal function: estimated glomerular filtration rate ≥90ml/min/1.73m2",
+    "ko": "정상 신기능: 추정 사구체여과율 ≥90ml/min/1.73m2"
+   },
+   "I6": {
+    "en": "Morning urine protein <1+ or urine protein-creatinine ratio <0.2g/g (<20 mg/mmol) for 3 consecutive days and above when in enroll",
+    "ko": "등록 시 3일 이상 연속으로 아침 소변 단백 <1+ 또는 소변 단백/크레아티닌 비 <0.2g/g (<20 mg/mmol)"
+   },
+   "I7": {
+    "en": "No rituximab was used within 6 months prior to the enrollment",
+    "ko": "등록 전 6개월 이내 리툭시맙(rituximab) 사용 이력 없음"
+   },
+   "I8": {
+    "en": "No tacrolimus was used within 3 months prior to the enrollment",
+    "ko": "등록 전 3개월 이내 타크로리무스(tacrolimus) 사용 이력 없음"
+   },
+   "I9": {
+    "en": "No mycophenolate mofetil was used within 3 months prior to the enrollment",
+    "ko": "등록 전 3개월 이내 마이코페놀레이트 모페틸(mycophenolate mofetil) 사용 이력 없음"
+   },
+   "I10": {
+    "en": "No cyclosporine A was used within 3 months prior to the enrollment",
+    "ko": "등록 전 3개월 이내 사이클로스포린 A(cyclosporine A) 사용 이력 없음"
+   },
+   "I11": {
+    "en": "No cyclophosphamide was used within 3 months prior to the enrollment",
+    "ko": "등록 전 3개월 이내 사이클로포스파마이드(cyclophosphamide) 사용 이력 없음"
+   },
+   "I12": {
+    "en": "No ACTH was used within 3 months prior to the enrollment",
+    "ko": "등록 전 3개월 이내 ACTH 사용 이력 없음"
+   },
+   "E1": {
+    "en": "Family history of nephrotic syndrome, chronic glomerulonephritis or uremia",
+    "ko": "신증후군, 만성 사구체신염 또는 요독증의 가족력"
+   },
+   "E2": {
+    "en": "Leukopenia (White Blood Cells ≤ 3.0 * 10^9 / L)",
+    "ko": "백혈구감소증(백혈구 ≤ 3.0 * 10^9 / L)"
+   },
+   "E3": {
+    "en": "Moderate to severe anemia (hemoglobin <9.0 g/dL)",
+    "ko": "중등도 내지 중증 빈혈(혈색소 <9.0 g/dL)"
+   },
+   "E4": {
+    "en": "Thrombocytopenia (platelet count <100*10^12/L)",
+    "ko": "혈소판감소증(혈소판 수 <100*10^12/L)"
+   },
+   "E5": {
+    "en": "Positive Hepatitis B virus serological indicators (Hepatitis B surface antigen or/and Hepatitis B virus e antigen or/and Hepatitis B core antibody)",
+    "ko": "B형 간염 바이러스 혈청학적 지표 양성(B형 간염 표면항원 및/또는 B형 간염 바이러스 e항원 및/또는 B형 간염 핵심항체)"
+   },
+   "E6": {
+    "en": "Hepatitis C virus-positive",
+    "ko": "C형 간염 바이러스 양성"
+   },
+   "E7": {
+    "en": "Patients with abnormal liver function (2 or more times of alamine aminotransferase or total bilirubin exceeded the normal value, and continued to rise for 2 weeks)",
+    "ko": "간기능 이상 환자(알라닌 아미노전이효소 또는 총빌리루빈이 정상치의 2배 이상을 초과하고 2주간 계속 상승)"
+   },
+   "E8": {
+    "en": "Chronic active infections such as Epstein-Barr virus, cytomegalovirus or Mycobacterium tuberculosis, where usage of steroids and immunosuppressive agents may aggravate the state of an illness",
+    "ko": "엡스타인-바 바이러스(Epstein-Barr virus), 거대세포바이러스 또는 결핵균(Mycobacterium tuberculosis) 등 스테로이드 및 면역억제제 사용 시 병세가 악화될 수 있는 만성 활동성 감염"
+   },
+   "E9": {
+    "en": "Secondary nephrotic syndrome (such as purpuric nephritis, lupus nephritis, etc.)",
+    "ko": "이차성 신증후군(예: 자반성 신염, 루푸스 신염 등)"
+   },
+   "E10": {
+    "en": "Those who with hematological or endocrine system diseases",
+    "ko": "혈액계 또는 내분비계 질환이 있는 자"
+   },
+   "E11": {
+    "en": "Serious organs illness such as heart, liver or kidney",
+    "ko": "심장, 간 또는 신장 등의 중대한 장기 질환"
+   },
+   "E12": {
+    "en": "Those who with other autoimmune diseases or primary immunodeficiencies or tumors",
+    "ko": "기타 자가면역 질환, 원발성 면역결핍증 또는 종양이 있는 자"
+   },
+   "E13": {
+    "en": "Those who have participated in other clinical trials within three months prior to the enrollment",
+    "ko": "등록 전 3개월 이내 다른 임상시험에 참여한 자"
+   },
+   "E14": {
+    "en": "Those who was not suitable for participating this study judged by investigator",
+    "ko": "연구자가 본 연구 참여에 적합하지 않다고 판단한 자"
+   }
+  }
+ },
+ "NCT07369063": {
+  "title_en": "Impact of Vitamin D Therapy on Thyroid Function and Antibody Levels in Pediatric Graves' Disease",
+  "title": "소아 그레이브스병에서 비타민 D 치료가 갑상선 기능 및 항체 수치에 미치는 영향",
+  "conditions": {
+   "Graves Disease": "그레이브스병(Graves disease)",
+   "Graves' Disease": "그레이브스병(Graves' disease)",
+   "Hyperthyroidism": "갑상선기능항진증"
+  },
+  "rules": {
+   "I1": {
+    "en": "minimum_age=9 Years (structured eligibility)",
+    "ko": "나이 9세 이상 (구조화 기준)"
+   },
+   "I2": {
+    "en": "maximum_age=17 Years (structured eligibility)",
+    "ko": "나이 17세 이하 (구조화 기준)"
+   },
+   "I3": {
+    "en": "sex=ALL (structured eligibility)",
+    "ko": "성별 무관 (구조화 기준)"
+   },
+   "I4": {
+    "en": "All new pediatric participants aged 9-17 years with a new diagnosis of GD who will be started on methimazole, will be offered to participate at the time of diagnosis.",
+    "ko": "GD로 새로 진단되어 메티마졸(methimazole) 투여를 시작할 9-17세의 모든 신규 소아 참여자에게 진단 시점에 참여를 제안함"
+   },
+   "I5": {
+    "en": "Suppressed TSH <0.1",
+    "ko": "TSH 억제 <0.1"
+   },
+   "I6": {
+    "en": "Elevated T3",
+    "ko": "T3 상승"
+   },
+   "I7": {
+    "en": "Elevated Free T4",
+    "ko": "유리 T4 상승"
+   },
+   "I8": {
+    "en": "Elevated T4",
+    "ko": "T4 상승"
+   },
+   "I9": {
+    "en": "Positive TSI or TRAb. The presence of antibodies is diagnostic.",
+    "ko": "TSI 또는 TRAb 양성. 항체의 존재는 진단적임."
+   },
+   "I10": {
+    "en": "Our study will offer enrollment to non-English speaking participants",
+    "ko": "본 연구는 영어를 사용하지 않는 참여자에게도 등록을 제안함"
+   },
+   "E1": {
+    "en": "Initial hydroxy vitamin D levels >80 ng/mL",
+    "ko": "초기 하이드록시 비타민 D 수치 >80 ng/mL"
+   },
+   "E2": {
+    "en": "Hypocalcemia, corrected calcium based on albumin <8.4 mg/dL",
+    "ko": "저칼슘혈증, 알부민 보정 칼슘 <8.4 mg/dL"
+   },
+   "E3": {
+    "en": "Hypercalcemia, corrected calcium based on albumin >10.5 mg/dL",
+    "ko": "고칼슘혈증, 알부민 보정 칼슘 >10.5 mg/dL"
+   },
+   "E4": {
+    "en": "Conditions that affect vitamin D metabolism such as: malabsorption, chronic kidney or liver disease, nephrocalcinosis, hyperparathyroidism",
+    "ko": "비타민 D 대사에 영향을 미치는 질환(예: 흡수장애, 만성 신장 또는 간질환, 신석회증, 부갑상선기능항진증)"
+   },
+   "E5": {
+    "en": "Current use of medications which are known to affect thyroid function or vitamin D metabolism such as thyroid hormone replacement, corticosteroids, anticonvulsants",
+    "ko": "갑상선 기능 또는 비타민 D 대사에 영향을 미치는 것으로 알려진 약물(예: 갑상선호르몬 대체요법, 코르티코스테로이드, 항경련제)의 현재 사용"
+   },
+   "E6": {
+    "en": "Allergy to vitamin D or methimazole",
+    "ko": "비타민 D 또는 메티마졸(methimazole)에 대한 알레르기"
+   },
+   "E7": {
+    "en": "Diagnosis of Hashitoxicosis or thyrotoxicosis (both TSH receptor antibody (TRAb) and thyroid-stimulating immunoglobulin (TSI) levels are negative)",
+    "ko": "하시톡시코시스(Hashitoxicosis) 또는 갑상선중독증 진단(TSH 수용체 항체(TRAb) 및 갑상선자극면역글로불린(TSI) 수치 모두 음성)"
+   },
+   "E8": {
+    "en": "Participants under the age of 9 years at the time of diagnosis",
+    "ko": "진단 시점에 9세 미만인 참여자"
+   },
+   "E9": {
+    "en": "Pregnant participants",
+    "ko": "임신한 참여자"
+   },
+   "E10": {
+    "en": "Active or uncontrolled infections",
+    "ko": "활동성 또는 조절되지 않는 감염"
+   },
+   "E11": {
+    "en": "Other significant medical conditions deemed by the investigator to interfere with study participation or pose undue risk to the participant.",
+    "ko": "연구자가 시험 참여를 방해하거나 참여자에게 과도한 위험을 초래한다고 판단하는 기타 중대한 의학적 상태"
+   }
+  },
+  "legacy": {
+   "Participants aged 9-17 years": "9-17세 참여자",
+   "All sexes eligible (sex=ALL)": "성별 무관 (sex=ALL)",
+   "New diagnosis of Graves' disease (GD)": "그레이브스병(GD, Graves' disease) 신규 진단",
+   "Will be started on methimazole": "메티마졸(methimazole) 치료를 시작할 예정",
+   "Active or uncontrolled infections, other significant medical conditions deemed by the investigator to interfere with study participation or pose undue risk to the participant.": "활동성 또는 조절되지 않는 감염, 또는 연구자가 판단하기에 연구 참여를 방해하거나 참여자에게 과도한 위험을 줄 수 있는 기타 중대한 의학적 상태."
+  }
+ },
+ "NCT06756191": {
+  "title_en": "Antifungal Drugs in Pulmonary Mucormycosis",
+  "title": "폐 털곰팡이증에서의 항진균제",
+  "conditions": {
+   "Pulmonary Mucormycosis": "폐 털곰팡이증(Pulmonary Mucormycosis)"
+  },
+  "rules": {
+   "I1": {
+    "en": "Patients aged 18 years or older",
+    "ko": "18세 이상 환자"
+   },
+   "I2": {
+    "en": "diagnosed with pulmonary mucormycosis (PM)",
+    "ko": "폐 털곰팡이증(PM)으로 진단됨"
+   },
+   "I3": {
+    "en": "Individuals with Probable or proved PM, as indicated by clinical and radiological findings",
+    "ko": "임상 및 영상 소견상 PM 가능(probable) 또는 확진(proven)인 자"
+   },
+   "I4": {
+    "en": "Sex: All (male and female eligible)",
+    "ko": "성별 무관"
+   },
+   "E1": {
+    "en": "Patients with a history of pulmonary mucormycosis (PM) who have previously been treated with amphotericin B for a duration exceeding 5 days",
+    "ko": "폐 털곰팡이증(PM) 병력이 있으며 이전에 암포테리신 B(amphotericin B)로 5일을 초과하여 치료받은 환자"
+   },
+   "E2": {
+    "en": "Patients who have documented allergies to azoles or amphotericin B regimens",
+    "ko": "아졸계 또는 암포테리신 B(amphotericin B) 요법에 대한 알레르기가 기록된 환자"
+   },
+   "E3": {
+    "en": "Patients with serum aspartate aminotransferase (AST) exceeding five times the upper limit of normal (ULN)",
+    "ko": "혈청 아스파르테이트 아미노전이효소(AST)가 정상 상한치(ULN)의 5배를 초과하는 환자"
+   },
+   "E4": {
+    "en": "Patients with serum alanine aminotransferase (ALT) exceeding five times the upper limit of normal (ULN)",
+    "ko": "혈청 알라닌 아미노전이효소(ALT)가 정상 상한치(ULN)의 5배를 초과하는 환자"
+   },
+   "E5": {
+    "en": "Patients with serum alkaline phosphatase levels exceeding five times the upper limit of normal (ULN)",
+    "ko": "혈청 알칼리성 인산분해효소 수치가 정상 상한치(ULN)의 5배를 초과하는 환자"
+   },
+   "E6": {
+    "en": "Patients with serum bilirubin levels exceeding five times the upper limit of normal (ULN)",
+    "ko": "혈청 빌리루빈 수치가 정상 상한치(ULN)의 5배를 초과하는 환자"
+   },
+   "E7": {
+    "en": "Patients with irreversible heart failure",
+    "ko": "비가역적 심부전 환자"
+   },
+   "E8": {
+    "en": "Patients with irreversible liver failure",
+    "ko": "비가역적 간부전 환자"
+   },
+   "E9": {
+    "en": "Patients experiencing massive, fatal hemoptysis",
+    "ko": "대량의 치명적 객혈이 있는 환자"
+   },
+   "E10": {
+    "en": "Patients who have experienced a myocardial infarction",
+    "ko": "심근경색을 경험한 환자"
+   },
+   "E11": {
+    "en": "Patients who have experienced a cerebral infarction",
+    "ko": "뇌경색을 경험한 환자"
+   },
+   "E12": {
+    "en": "Patients currently receiving extracorporeal membrane oxygenation (ECMO) treatment",
+    "ko": "현재 체외막산소공급(ECMO) 치료를 받고 있는 환자"
+   },
+   "E13": {
+    "en": "Pregnant or breastfeeding individuals",
+    "ko": "임신 중이거나 수유 중인 자"
+   },
+   "E14": {
+    "en": "Patients with individual reasons that may prevent them from completing the treatment protocol",
+    "ko": "개인적 사유로 치료 프로토콜을 완료하지 못할 수 있는 환자"
+   }
+  }
+ },
+ "NCT04761523": {
+  "title_en": "The Effect of Dietary Fat Content on the Recurrence of Pancreatitis",
+  "title": "식이 지방 함량이 췌장염 재발에 미치는 영향",
+  "conditions": {
+   "Acute Pancreatitis": "급성 췌장염"
+  },
+  "rules": {
+   "I1": {
+    "en": "Individuals with at least two episodes of acute pancreatitis in the 2 years preceding the inclusion",
+    "ko": "등록 전 2년 동안 급성 췌장염 발작이 최소 2회 이상 있었던 자"
+   },
+   "I2": {
+    "en": "The last episode being idiopathic",
+    "ko": "마지막 발작이 특발성임"
+   },
+   "I3": {
+    "en": "Older than 14 years",
+    "ko": "14세 초과"
+   },
+   "I4": {
+    "en": "Sex eligibility: All (structured eligibility field)",
+    "ko": "성별 무관 (구조화 기준)"
+   },
+   "E1": {
+    "en": "Individuals already receiving regular nutritional guidance (with medical indication)",
+    "ko": "이미 정기적인 영양 지도를 받고 있는 자(의학적 적응증이 있는 경우)"
+   },
+   "E2": {
+    "en": "Individuals in critical condition or in terminal stage of cancer (with an expected survival <2 years)",
+    "ko": "위중한 상태이거나 말기 암 단계인 자(예상 생존 기간 <2년)"
+   },
+   "E3": {
+    "en": "Individuals undergoing treatment for active malignancy",
+    "ko": "활동성 악성종양에 대한 치료를 받고 있는 자"
+   },
+   "E4": {
+    "en": "Individuals with uncontrolled diabetes mellitus (admitted lack of compliance with antidiabetic therapy / HbA1c >6.5% / indication of uncontrolled diabetes mellitus in last 24 months' anamnesis / newly discovered diabetes mellitus)",
+    "ko": "조절되지 않는 당뇨병 환자(항당뇨 치료 순응도 부족을 인정 / HbA1c >6.5% / 최근 24개월 병력상 조절되지 않는 당뇨병 소견 / 새로 발견된 당뇨병)"
+   },
+   "E5": {
+    "en": "Individuals with known cholecystolithiasis",
+    "ko": "담낭결석이 알려진 자"
+   },
+   "E6": {
+    "en": "Individuals who are pregnant or nursing",
+    "ko": "임신 중이거나 수유 중인 자"
+   },
+   "E7": {
+    "en": "Individuals with a BMI < 18.5",
+    "ko": "BMI < 18.5인 자"
+   },
+   "E8": {
+    "en": "Individuals who are regularly receiving systemic corticosteroids",
+    "ko": "전신 코르티코스테로이드를 정기적으로 투여받고 있는 자"
+   },
+   "E9": {
+    "en": "Individuals consuming more alcohol than: 5 units per day or 15 units per week for men; 4 units per day or 8 units per week for women.",
+    "ko": "다음보다 많은 알코올을 섭취하는 자: 남성은 하루 5단위 또는 주 15단위, 여성은 하루 4단위 또는 주 8단위."
+   }
+  }
+ },
+ "NCT06391359": {
+  "title_en": "Preventing Recurrent 'Idiopathic' Acute Pancreatitis Through Laparoscopic Cholecystectomy (PICUS-2)",
+  "title": "복강경 담낭절제술을 통한 재발성 '특발성' 급성 췌장염 예방 (PICUS-2)",
+  "conditions": {
+   "Idiopathic Acute Pancreatitis": "특발성 급성 췌장염"
+  },
+  "rules": {
+   "I1": {
+    "en": "At least 18 years old",
+    "ko": "18세 이상"
+   },
+   "I2": {
+    "en": "Sex: All (structured eligibility field)",
+    "ko": "성별 무관 (구조화 기준)"
+   },
+   "I3": {
+    "en": "Eligible for early (laparoscopic) cholecystectomy",
+    "ko": "조기 (복강경) 담낭절제술 대상자"
+   },
+   "I4": {
+    "en": "Full required diagnostic work-up of patient has been performed, including EUS",
+    "ko": "EUS를 포함하여 필요한 진단 검사를 모두 시행함"
+   },
+   "I5": {
+    "en": "First, second or third episode of IAP",
+    "ko": "IAP(특발성 급성 췌장염)의 첫 번째, 두 번째 또는 세 번째 발작"
+   },
+   "I6": {
+    "en": "At least one episode characterized by a 'negative-EUS' result",
+    "ko": "최소 1회의 발작에서 'EUS 음성' 결과를 보임"
+   },
+   "I7": {
+    "en": "Informed consent for participation was obtained",
+    "ko": "참여에 대한 동의서를 받음"
+   },
+   "E1": {
+    "en": "Patients with more than 3 episodes of acute pancreatitis",
+    "ko": "급성 췌장염 발작이 3회를 초과한 환자"
+   },
+   "E2": {
+    "en": "Diagnosis of chronic pancreatitis",
+    "ko": "만성 췌장염 진단"
+   },
+   "E3": {
+    "en": "Diagnosis of necrotizing pancreatitis",
+    "ko": "괴사성 췌장염 진단"
+   },
+   "E4": {
+    "en": "Current pancreatic malignancy",
+    "ko": "현재 췌장 악성종양"
+   },
+   "E5": {
+    "en": "Prior cholecystectomy",
+    "ko": "담낭절제술 과거력"
+   },
+   "E6": {
+    "en": "Documented etiology of acute pancreatitis",
+    "ko": "급성 췌장염의 원인이 확인되어 기록됨"
+   }
+  }
+ },
+ "NCT06468397": {
+  "title_en": "Acute Retinal Detachment Repair With the iSeelr™ Retinal Detachment Repair System",
+  "title": "iSeelr™ 망막박리 복원 시스템을 이용한 급성 망막박리 복원",
+  "conditions": {
+   "Rhegmatogenous Retinal Detachment - Macula Off": "열공망막박리 - 황반 박리(macula-off)"
+  },
+  "rules": {
+   "I1": {
+    "en": "sex=ALL (structured eligibility)",
+    "ko": "성별 무관 (구조화 기준)"
+   },
+   "I2": {
+    "en": "Aged 50 years or older.",
+    "ko": "만 50세 이상."
+   },
+   "I3": {
+    "en": "Willing and able to comply with all study requirements and visits.",
+    "ko": "모든 연구 요건 및 방문 일정을 준수할 의지와 능력이 있는 자."
+   },
+   "I4": {
+    "en": "Provided written informed consent.",
+    "ko": "서면 동의서를 제출한 자."
+   },
+   "I5": {
+    "en": "Study Eye: Recent onset as demonstrated by symptoms or diagnosis macular involving rhegmatogenous retinal detachment.",
+    "ko": "연구 대상 눈: 증상 또는 진단으로 확인된 최근 발생한 황반 침범 열공망막박리."
+   },
+   "I6": {
+    "en": "Study Eye: Detachment due to single or multiple retinal tears in the superior region of the retina.",
+    "ko": "연구 대상 눈: 망막 상부 영역의 단일 또는 다발성 망막 열공으로 인한 박리."
+   },
+   "I7": {
+    "en": "Fellow eye: Visual acuity of 6/12 or better.",
+    "ko": "반대쪽 눈: 시력 6/12 이상."
+   },
+   "E1": {
+    "en": "History of medical, surgical, or other conditions that, in the opinion of the investigator, would limit study participation e.g. unstable diabetes, poorly controlled hypertension.",
+    "ko": "시험자 판단상 연구 참여를 제한할 수 있는 내과적, 외과적 또는 기타 질환의 병력(예: 불안정한 당뇨병, 조절이 잘 되지 않는 고혈압)."
+   },
+   "E2": {
+    "en": "Travel limitations that could prevent review at proscribed study intervals or any other time during the study.",
+    "ko": "규정된 연구 방문 시점 또는 연구 기간 중 기타 시점의 검진을 방해할 수 있는 이동 제약."
+   },
+   "E3": {
+    "en": "Inability to provide informed consent.",
+    "ko": "동의서를 제공할 수 없는 자."
+   },
+   "E4": {
+    "en": "Anaesthetic risk factors or inability to lie supine for 1 hour.",
+    "ko": "마취 위험 요인이 있거나 1시간 동안 앙와위(바로 누운 자세)를 유지할 수 없는 자."
+   },
+   "E5": {
+    "en": "Pregnant and/or breast feeding (to be confirmed on treatment day).",
+    "ko": "임신 및/또는 수유 중(치료 당일 확인 예정)."
+   },
+   "E6": {
+    "en": "Current systemic infection.",
+    "ko": "현재 전신 감염이 있는 자."
+   },
+   "E7": {
+    "en": "Current ocular infection.",
+    "ko": "현재 안구 감염이 있는 자."
+   },
+   "E8": {
+    "en": "Unable to return for post-treatment visits.",
+    "ko": "치료 후 방문에 다시 올 수 없는 자."
+   },
+   "E9": {
+    "en": "Known inability to attend the emergency department in the event of an adverse event.",
+    "ko": "이상반응 발생 시 응급실 방문이 불가능한 것으로 알려진 자."
+   },
+   "E10": {
+    "en": "Study eye: Significant vitreous haemorrhage partially or fully obscuring detailed examination of the retina.",
+    "ko": "연구 대상 눈: 망막의 정밀 검사를 부분적 또는 완전히 가리는 유의한 유리체 출혈."
+   },
+   "E11": {
+    "en": "Study eye: Intraoperative identification of tears below the superior region in the area of retinal detachment not identified at the screening visit or during pre-operative examination. (Note: Isolated retinal tears in attached retina, identified at any time are NOT an exclusion criterion and may be treated with laser as per standard of care.)",
+    "ko": "연구 대상 눈: 선별 방문 또는 수술 전 검사에서 확인되지 않았던, 망막박리 부위 중 상부 영역 아래의 열공이 수술 중 발견된 경우. (참고: 부착된 망막에 있는 단독 망막 열공은 언제 확인되든 제외 기준이 아니며, 표준 치료에 따라 레이저로 치료할 수 있음.)"
+   },
+   "E12": {
+    "en": "Study eye: Clinical signs of PVR (+1 flare, vitreous clumps, pigment clusters on the inferior retina, rolled retinal tear edge, star-fold).",
+    "ko": "연구 대상 눈: PVR(증식유리체망막병증)의 임상 징후(+1 플레어, 유리체 혼탁 덩어리, 하부 망막의 색소 응집, 말린 망막 열공 가장자리, 별모양 주름)."
+   },
+   "E13": {
+    "en": "Study eye: Myopia greater than -4 D spherical equivalent as confirmed by last refraction prior to becoming pseudophakic if cataract surgery has been performed.",
+    "ko": "연구 대상 눈: 백내장 수술을 받은 경우 인공수정체안이 되기 전 마지막 굴절검사로 확인된 구면대응치 -4 D를 초과하는 근시."
+   },
+   "E14": {
+    "en": "Study eye: History of glaucoma or elevated intraocular pressure >21mmHg.",
+    "ko": "연구 대상 눈: 녹내장 병력 또는 안압 상승 >21mmHg."
+   },
+   "E15": {
+    "en": "Study eye: Prior or current intraocular infection.",
+    "ko": "연구 대상 눈: 과거 또는 현재의 안내 감염."
+   },
+   "E16": {
+    "en": "Fellow eye: Visual Acuity worse than 6/12.",
+    "ko": "반대쪽 눈: 시력 6/12 미만."
+   },
+   "E17": {
+    "en": "Fellow eye: Myopia greater than -4D spherical equivalent or axial length greater than 26mm if known.",
+    "ko": "반대쪽 눈: 구면대응치 -4D를 초과하는 근시 또는 (알려진 경우) 안축장 26mm 초과."
+   },
+   "E18": {
+    "en": "Fellow eye: Any potential sight threatening pathology in the fellow eye as determined by the investigator.",
+    "ko": "반대쪽 눈: 시험자가 판단하기에 반대쪽 눈에 시력을 위협할 가능성이 있는 모든 병변."
+   },
+   "E19": {
+    "en": "Fellow eye: Extensive lattice degeneration.",
+    "ko": "반대쪽 눈: 광범위한 격자변성."
+   },
+   "E20": {
+    "en": "Fellow eye: Unilateral high myopia as determined by the investigator.",
+    "ko": "반대쪽 눈: 시험자가 판단한 편측성 고도근시."
+   },
+   "E21": {
+    "en": "Fellow eye: Family history of retinal detachment.",
+    "ko": "반대쪽 눈: 망막박리 가족력."
+   },
+   "E22": {
+    "en": "Fellow eye: Collagen disorders such as Marfan's or Sticklers syndrome.",
+    "ko": "반대쪽 눈: 마르판 증후군(Marfan's syndrome) 또는 스티클러 증후군(Stickler syndrome) 등의 교원질 질환."
+   },
+   "E23": {
+    "en": "Fellow eye: History of ocular trauma.",
+    "ko": "반대쪽 눈: 안구 외상 병력."
+   },
+   "E24": {
+    "en": "Fellow eye: Evidence of any abnormality of the eye structure as determined by the investigator.",
+    "ko": "반대쪽 눈: 시험자가 판단한 안구 구조 이상의 증거."
+   },
+   "E25": {
+    "en": "Fellow eye: Planned surgery during the study period.",
+    "ko": "반대쪽 눈: 연구 기간 중 수술 예정."
+   }
+  }
+ },
+ "NCT00575185": {
+  "title_en": "Activity of Valomaciclovir in Infectious Mononucleosis Due to Primary Epstein-Barr Virus Infection",
+  "title": "원발성 엡스타인-바 바이러스 감염에 의한 감염성 단핵구증에서 발로마시클로비르(valomaciclovir)의 효과",
+  "conditions": {
+   "Infectious Mononucleosis": "감염성 단핵구증"
+  },
+  "rules": {
+   "I1": {
+    "en": "Age 15 years or older",
+    "ko": "나이 15세 이상"
+   },
+   "I2": {
+    "en": "Within 14 days of initial symptoms of present illness",
+    "ko": "현재 질환의 초기 증상 발생 후 14일 이내"
+   },
+   "I3": {
+    "en": "Diagnosed by a health care provider as infectious mononucleosis",
+    "ko": "의료인에 의해 감염성 단핵구증으로 진단됨"
+   },
+   "I4": {
+    "en": "Confirmed to be due to primary EBV by antibody profile: positive for anti-EBV VCA IgM antibody and negative for anti-EBV EBNA1 IgG antibody",
+    "ko": "항체 프로필로 원발성 EBV 감염이 원인임이 확인됨: 항-EBV VCA IgM 항체 양성 및 항-EBV EBNA1 IgG 항체 음성"
+   },
+   "I5": {
+    "en": "Willingness to sign the Informed Consent Form (ICF)",
+    "ko": "동의서(ICF)에 서명할 의향이 있는 자"
+   },
+   "I6": {
+    "en": "Willingness to contribute samples of blood and oral washings at regular intervals",
+    "ko": "정해진 간격으로 혈액 및 구강 세척액 검체를 제공할 의향이 있는 자"
+   },
+   "I7": {
+    "en": "Males and females must use effective contraception during treatment and for at least 90 days following treatment",
+    "ko": "남성과 여성 모두 치료 기간 및 치료 후 최소 90일 동안 효과적인 피임법을 사용해야 함"
+   },
+   "I8": {
+    "en": "Negative pregnancy test result at the Screening Visit for females of childbearing potential (including females who have had a bilateral tubal ligation)",
+    "ko": "가임 여성(양측 난관결찰술을 받은 여성 포함)은 선별 방문 시 임신 검사 결과 음성"
+   },
+   "I9": {
+    "en": "Female patients of childbearing potential must be willing to use an approved method of double-barrier contraception (hormonal plus barrier or barrier plus barrier, eg, diaphragm plus condom) from the time of first dose administration until 90 days after completion of dosing and male patients with female partners of childbearing potential must be willing to use a condom; patients who are sterile or infertile (postmenopausal or complete hysterectomy) are eligible",
+    "ko": "가임 여성 환자는 첫 투약 시점부터 투약 완료 후 90일까지 승인된 이중 차단 피임법(호르몬 + 차단법 또는 차단법 + 차단법, 예: 페서리 + 콘돔)을 사용할 의향이 있어야 하며, 가임 여성 파트너가 있는 남성 환자는 콘돔을 사용할 의향이 있어야 함; 불임 또는 생식 불능 환자(폐경 후 또는 자궁 전절제술)는 참여 가능"
+   },
+   "I10": {
+    "en": "Estimated creatinine clearance (Cockcroft and Gault method) ≥ 60 ml/min",
+    "ko": "추정 크레아티닌 청소율(Cockcroft-Gault 방법) ≥ 60 ml/min"
+   },
+   "I11": {
+    "en": "Absolute neutrophil count ≥ 1000 cells/microliter",
+    "ko": "절대호중구수 ≥ 1000 cells/microliter"
+   },
+   "I12": {
+    "en": "Platelets ≥ 100,000/microliter",
+    "ko": "혈소판 ≥ 100,000/microliter"
+   },
+   "I13": {
+    "en": "Hemoglobin ≥ 9.5 g/dL",
+    "ko": "혈색소 ≥ 9.5 g/dL"
+   },
+   "E1": {
+    "en": "Previous history of infectious mononucleosis-like illness",
+    "ko": "과거 감염성 단핵구증 유사 질환의 병력"
+   },
+   "E2": {
+    "en": "Immunosuppressed due to medical disease and/or immunosuppressive or immunomodulating medications (e.g., corticosteroids prior to enrollment, cytotoxic drugs, interferons)",
+    "ko": "내과적 질환 및/또는 면역억제제 또는 면역조절제(예: 등록 전 코르티코스테로이드, 세포독성 약물, 인터페론)로 인한 면역억제 상태"
+   },
+   "E3": {
+    "en": "Another intercurrent viral infection (including HIV), based on history or referring physician medical evaluation",
+    "ko": "병력 또는 의뢰 의사의 의학적 평가에 근거한 다른 병발 바이러스 감염(HIV 포함)"
+   },
+   "E4": {
+    "en": "More than 7 days elapsed since onset of illness (including screening time)",
+    "ko": "질환 발생 후 7일 초과 경과(선별 기간 포함)"
+   },
+   "E5": {
+    "en": "The following concomitant medications are prohibited: probenecid, trimethoprim, myelosuppressive therapies, and medications known to be nephrotoxic",
+    "ko": "다음 병용 약물은 금지됨: 프로베네시드(probenecid), 트리메토프림(trimethoprim), 골수억제 요법 및 신독성이 알려진 약물"
+   },
+   "E6": {
+    "en": "Breast feeding during the study",
+    "ko": "연구 기간 중 수유"
+   },
+   "E7": {
+    "en": "Corticosteroids are not permitted; if prescribed by the subject's primary physician for treatment of this acute disease after enrollment, the subject will be replaced",
+    "ko": "코르티코스테로이드는 허용되지 않음; 등록 후 대상자의 주치의가 이 급성 질환의 치료를 위해 처방한 경우 해당 대상자는 교체됨"
+   }
+  }
+ },
+ "NCT06294847": {
+  "title_en": "Ursodeoxycholic Acid (UDCA) as a Neuroprotective Adjuvant Treatment to Rhegmatogenous Retinal Detachment Surgery",
+  "title": "열공망막박리 수술의 신경보호 보조 치료로서 우르소데옥시콜산(UDCA)",
+  "conditions": {
+   "Retinal Detachment": "망막박리"
+  },
+  "rules": {
+   "I1": {
+    "en": "Aged 18 years or older",
+    "ko": "만 18세 이상"
+   },
+   "I2": {
+    "en": "Scheduled to undergo surgical intervention through vitrectomy",
+    "ko": "유리체절제술을 통한 수술적 중재가 예정된 자"
+   },
+   "I3": {
+    "en": "Aphakic or pseudophakic patients",
+    "ko": "무수정체안 또는 인공수정체안 환자"
+   },
+   "I4": {
+    "en": "Experiencing rhegmatogenous retinal detachment affecting 2 quadrants or more",
+    "ko": "2개 사분면 이상을 침범한 열공망막박리"
+   },
+   "I5": {
+    "en": "Presenting with macula OFF (raised macula) for 7 days or less before the onset of symptoms",
+    "ko": "증상 발생 전 7일 이하 동안 황반 박리(macula OFF, 황반 융기) 상태"
+   },
+   "I6": {
+    "en": "Has signed a consent form",
+    "ko": "동의서에 서명한 자"
+   },
+   "I7": {
+    "en": "Affiliated with a health insurance plan",
+    "ko": "건강보험에 가입된 자"
+   },
+   "I8": {
+    "en": "Sex eligible for study: All (structured eligibility field)",
+    "ko": "성별 무관 (구조화 기준)"
+   },
+   "E1": {
+    "en": "Patients who have previously undergone vitrectomy for retinal detachment",
+    "ko": "과거 망막박리로 유리체절제술을 받은 환자"
+   },
+   "E2": {
+    "en": "Patients with vitreous hemorrhage or any other associated retinal pathologies",
+    "ko": "유리체 출혈 또는 기타 동반된 망막 병변이 있는 환자"
+   },
+   "E3": {
+    "en": "Monophthalmic patients",
+    "ko": "단안 환자"
+   },
+   "E4": {
+    "en": "Women of childbearing age without effective contraceptive methods",
+    "ko": "효과적인 피임법을 사용하지 않는 가임기 여성"
+   },
+   "E5": {
+    "en": "Pregnant or lactating women",
+    "ko": "임신 또는 수유 중인 여성"
+   },
+   "E6": {
+    "en": "Hypersensitivity to the active substance, bile acids, or any of the excipients in Ursolvan® (see §6.1.1 of this protocol)",
+    "ko": "활성 성분, 담즙산 또는 우르솔반®(Ursolvan®)의 첨가제에 대한 과민증(본 프로토콜 §6.1.1 참조)"
+   },
+   "E7": {
+    "en": "Patients with peptic ulcers",
+    "ko": "소화성 궤양 환자"
+   },
+   "E8": {
+    "en": "Patients with acute or chronic liver disease",
+    "ko": "급성 또는 만성 간질환 환자"
+   },
+   "E9": {
+    "en": "Patients with acute infection or inflammation of the gallbladder or bile ducts",
+    "ko": "담낭 또는 담관의 급성 감염 또는 염증이 있는 환자"
+   },
+   "E10": {
+    "en": "Patients with recurrent gallstones",
+    "ko": "재발성 담석 환자"
+   },
+   "E11": {
+    "en": "Patients with obstruction of the bile ducts (common bile duct or cystic duct obstruction)",
+    "ko": "담관 폐쇄(총담관 또는 담낭관 폐쇄) 환자"
+   },
+   "E12": {
+    "en": "Patients with radiopaque calcified gallstones",
+    "ko": "방사선 비투과성 석회화 담석 환자"
+   },
+   "E13": {
+    "en": "Patients with severe pancreatic disorders",
+    "ko": "중증 췌장 질환 환자"
+   },
+   "E14": {
+    "en": "Patients with Crohn's disease, ulcerative colitis, or other intestinal diseases that may alter the enterohepatic circulation of bile acids",
+    "ko": "크론병, 궤양성 대장염 또는 담즙산의 장간순환을 변화시킬 수 있는 기타 장 질환 환자"
+   },
+   "E15": {
+    "en": "Patients on oral treatment with cholestyramine, colestipol, antacids containing aluminum or magnesium hydroxide and/or smectite (aluminum oxide), cyclosporine, ciprofloxacin, nitrendipine, or dapsone",
+    "ko": "콜레스티라민(cholestyramine), 콜레스티폴(colestipol), 수산화알루미늄 또는 수산화마그네슘 및/또는 스멕타이트(산화알루미늄) 함유 제산제, 사이클로스포린(cyclosporine), 시프로플록사신(ciprofloxacin), 니트렌디핀(nitrendipine) 또는 답손(dapsone)을 경구 투여 중인 환자"
+   },
+   "E16": {
+    "en": "Patients with galactose intolerance, Lapp lactase deficiency, or glucose and galactose malabsorption syndrome (rare hereditary diseases)",
+    "ko": "갈락토오스 불내성, Lapp 유당분해효소 결핍증 또는 포도당-갈락토오스 흡수장애 증후군(드문 유전 질환) 환자"
+   },
+   "E17": {
+    "en": "Patients participating or in the exclusion period following an interventional research with the use of prohibited medications in this study",
+    "ko": "본 연구의 금지 약물을 사용하는 중재 연구에 참여 중이거나 그 이후의 제외 기간에 있는 환자"
+   },
+   "E18": {
+    "en": "Patients under protective custody",
+    "ko": "보호 관리(후견) 하에 있는 환자"
+   }
+  }
+ },
+ "NCT06080789": {
+  "title_en": "A Study to Evaluate the Safety and Efficacy of a Single Dose of RABI-767 in Participants With Acute Pancreatitis",
+  "title": "급성 췌장염 참여자에서 RABI-767 단회 투여의 안전성 및 유효성 평가 연구",
+  "conditions": {
+   "Acute Pancreatitis": "급성 췌장염"
+  },
+  "rules": {
+   "I1": {
+    "en": "minimum_age=18 Years",
+    "ko": "나이 18세 이상"
+   },
+   "I2": {
+    "en": "maximum_age=85 Years",
+    "ko": "나이 85세 이하"
+   },
+   "I3": {
+    "en": "sex=ALL",
+    "ko": "성별 무관"
+   },
+   "I4": {
+    "en": "Diagnosis of acute pancreatitis",
+    "ko": "급성 췌장염 진단"
+   },
+   "I5": {
+    "en": "Predicted severe acute pancreatitis, based on protocol defined criteria",
+    "ko": "프로토콜에 정의된 기준에 따라 중증 급성 췌장염으로 예측됨"
+   },
+   "I6": {
+    "en": "Lack of clinically meaningful improvement from status at admission, at the discretion of Investigator, at the time of randomization",
+    "ko": "무작위배정 시점에 시험자 판단상 입원 시 상태에서 임상적으로 의미 있는 호전이 없음"
+   },
+   "I7": {
+    "en": "Suitable for EUS-guided study drug administration procedure",
+    "ko": "EUS(내시경 초음파) 유도 시험약 투여 시술에 적합함"
+   },
+   "I8": {
+    "en": "Contrast-enhanced computed tomography (CECT) or magnetic resonance imaging (MRI) of the abdomen/pancreas available for the evaluation of exclusion criteria",
+    "ko": "제외 기준 평가를 위한 복부/췌장의 조영증강 컴퓨터단층촬영(CECT) 또는 자기공명영상(MRI)이 있음"
+   },
+   "E1": {
+    "en": "Confirmed severe acute pancreatitis as defined by the Revised Atlanta Classification of Acute Pancreatitis (ie, Persistent [> 48 hours] organ failure, per Modified Marshall Score), prior to randomization",
+    "ko": "무작위배정 전 개정 애틀랜타 분류(Revised Atlanta Classification)에 따라 정의된 중증 급성 췌장염으로 확진됨(즉, 수정 마샬 점수(Modified Marshall Score)에 따른 지속성 [> 48시간] 장기부전)"
+   },
+   "E2": {
+    "en": "Anticipated discharge from hospital within 48 hours of randomization",
+    "ko": "무작위배정 후 48시간 이내 퇴원 예상"
+   },
+   "E3": {
+    "en": "More than 30% pancreatic necrosis on screening CECT or MRI",
+    "ko": "선별 CECT 또는 MRI에서 30% 초과의 췌장 괴사"
+   },
+   "E4": {
+    "en": "History of previous pancreatic necrosis, including necrosectomy",
+    "ko": "괴사조직제거술을 포함한 과거 췌장 괴사 병력"
+   },
+   "E5": {
+    "en": "History of calcific chronic pancreatitis",
+    "ko": "석회성 만성 췌장염 병력"
+   },
+   "E6": {
+    "en": "Evidence of cholangitis",
+    "ko": "담관염의 증거"
+   }
+  }
+ },
+ "NCT06916494": {
+  "title_en": "Pilot Study on Rutin Combined With Tislelizumab and GC (Gemcitabine and Cisplatin) as Neoadjuvant Therapy for Platinum-refractory Muscle-invasive Bladder Cancer",
+  "title": "백금 불응성 근침윤성 방광암의 선행요법으로서 루틴(rutin)과 티슬렐리주맙(tislelizumab) 및 GC(젬시타빈·시스플라틴) 병용에 대한 파일럿 연구",
+  "conditions": {
+   "Muscle Invasive Bladder Cancer": "근침윤성 방광암"
+  },
+  "rules": {
+   "I1": {
+    "en": "Patients with cT2-cT4N0M0 muscle-invasive bladder cancer (MIBC)",
+    "ko": "cT2-cT4N0M0 근침윤성 방광암(MIBC) 환자"
+   },
+   "I2": {
+    "en": "No response after 2 cycles of GC neoadjuvant chemotherapy",
+    "ko": "GC 선행 항암화학요법 2주기 후 반응 없음"
+   },
+   "I3": {
+    "en": "No prior use of systemic immunotherapy or target therapy",
+    "ko": "전신 면역요법 또는 표적치료 사용 경험 없음"
+   },
+   "I4": {
+    "en": "Tumor is measurable according to New response evaluation criteria in solid tumours: Revised RECIST guideline",
+    "ko": "고형암 반응평가기준 개정판(Revised RECIST guideline)에 따라 측정 가능한 종양"
+   },
+   "I5": {
+    "en": "ECOG (ZPS, 5-point scale) 0-1",
+    "ko": "ECOG (ZPS, 5점 척도) 0-1"
+   },
+   "I6": {
+    "en": "Minimum age 18 Years (structured eligibility)",
+    "ko": "나이 18세 이상 (구조화 기준)"
+   },
+   "I7": {
+    "en": "Sex: All (structured eligibility)",
+    "ko": "성별 무관 (구조화 기준)"
+   },
+   "E1": {
+    "en": "Age less than 18 years",
+    "ko": "나이 18세 미만"
+   },
+   "E2": {
+    "en": "Patients with severe cardiac, cerebral, hepatic, or renal disease",
+    "ko": "중증 심장, 뇌, 간 또는 신장 질환 환자"
+   },
+   "E3": {
+    "en": "Severely malnourished patients",
+    "ko": "중증 영양실조 환자"
+   },
+   "E4": {
+    "en": "Patients with mental illness and those without insight and unable to express exactly",
+    "ko": "정신질환자 및 병식이 없고 정확하게 의사표현을 할 수 없는 자"
+   },
+   "E5": {
+    "en": "Combined with malignant tumors of other organs",
+    "ko": "다른 장기의 악성 종양 동반"
+   },
+   "E6": {
+    "en": "Systemic infectious diseases",
+    "ko": "전신 감염성 질환"
+   }
+  }
+ },
+ "NCT06694259": {
+  "title_en": "Comparison of Anatomical and Functional Outcomes of Laser Photocoagulation and Cryopexy in Patients with Rhegmatogenous Retinal Detachment Treated with Pneumatic Retinopexy",
+  "title": "공기망막유착술로 치료한 열공망막박리 환자에서 레이저 광응고술과 냉동유착술의 해부학적·기능적 결과 비교",
+  "conditions": {
+   "Rhegmatogenous Retinal Detachment": "열공망막박리"
+  },
+  "rules": {
+   "I1": {
+    "en": "Patients with rhegmatogenous retinal detachment with one or more tears within two clock hours, limited to the upper half of the retina",
+    "ko": "망막 상부 절반에 국한되고 2시계 시간(clock hours) 이내에 하나 이상의 열공이 있는 열공망막박리 환자"
+   },
+   "I2": {
+    "en": "minimum_age=18 Years (structured eligibility)",
+    "ko": "나이 18세 이상 (구조화 기준)"
+   },
+   "I3": {
+    "en": "sex=ALL (structured eligibility)",
+    "ko": "성별 무관 (구조화 기준)"
+   },
+   "E1": {
+    "en": "Patients with tears in the lower half of the retina",
+    "ko": "망막 하부 절반에 열공이 있는 환자"
+   },
+   "E2": {
+    "en": "Patients with multiple retinal tears covering more than two clock hours",
+    "ko": "2시계 시간을 초과하는 범위에 다발성 망막 열공이 있는 환자"
+   },
+   "E3": {
+    "en": "Patients with developed proliferative vitreoretinopathy",
+    "ko": "증식유리체망막병증이 발생한 환자"
+   },
+   "E4": {
+    "en": "Patients with vitreous hemorrhage",
+    "ko": "유리체 출혈 환자"
+   },
+   "E5": {
+    "en": "Patients with opaque optical media due to other conditions that could obstruct a detailed fundus examination or the procedure itself",
+    "ko": "정밀 안저검사 또는 시술 자체를 방해할 수 있는 기타 질환으로 인해 광학 매체가 혼탁한 환자"
+   },
+   "E6": {
+    "en": "Patients unable to follow postoperative head positioning instructions",
+    "ko": "수술 후 머리 자세 지시를 따를 수 없는 환자"
+   },
+   "E7": {
+    "en": "Patients under age of 18 years",
+    "ko": "18세 미만 환자"
+   }
+  }
+ },
+ "NCT00195949": {
+  "title_en": "Laparoscopic Versus Open Pyloromyotomy for Infants With Idiopathic Hypertrophic Pyloric Stenosis",
+  "title": "특발성 비후성 유문협착증 영아에서 복강경 대 개복 유문근절개술 비교",
+  "conditions": {
+   "Hypertrophic Pyloric Stenosis": "비후성 유문협착증"
+  },
+  "rules": {
+   "I1": {
+    "en": "All infants less than 12 weeks of age",
+    "ko": "생후 12주 미만의 모든 영아"
+   },
+   "I2": {
+    "en": "sex=ALL (structured eligibility)",
+    "ko": "성별 무관 (구조화 기준)"
+   },
+   "I3": {
+    "en": "who have undergone surgical consultation and abdominal ultrasound confirming the diagnosis of pyloric stenosis",
+    "ko": "외과 진료 및 복부 초음파로 유문협착증 진단이 확인된 자"
+   },
+   "I4": {
+    "en": "whose parents have given consent for inclusion in the study",
+    "ko": "부모가 연구 참여에 동의한 자"
+   },
+   "E1": {
+    "en": "All patients greater than 12 weeks of age",
+    "ko": "생후 12주를 초과한 모든 환자"
+   },
+   "E2": {
+    "en": "without parental consent",
+    "ko": "부모 동의가 없는 경우"
+   },
+   "E3": {
+    "en": "without pyloric stenosis",
+    "ko": "유문협착증이 없는 경우"
+   }
+  }
+ },
+ "NCT07516951": {
+  "title_en": "A Study to Find an Efficacious and Safe Dose of CHF10067 (Zampilimab) in Participants With Idiopathic Pulmonary Fibrosis",
+  "title": "특발성 폐섬유증 환자에서 CHF10067(잠필리맙, zampilimab)의 유효하고 안전한 용량을 찾기 위한 연구",
+  "conditions": {
+   "Idiopathic Pulmonary Fibrosis": "특발성 폐섬유증(Idiopathic Pulmonary Fibrosis)"
+  },
+  "rules": {
+   "I1": {
+    "en": "Participant's written informed consent obtained prior to any study-related procedure.",
+    "ko": "연구 관련 절차 시행 전에 참여자의 서면 동의서를 받은 자"
+   },
+   "I2": {
+    "en": "Male or female, of any race and ethnicity, aged ≥40 years",
+    "ko": "인종 및 민족 무관, 만 40세 이상(≥40세)의 남성 또는 여성"
+   },
+   "I3": {
+    "en": "Male or female, of any race and ethnicity",
+    "ko": "인종 및 민족 무관, 남성 또는 여성"
+   },
+   "I4": {
+    "en": "Life expectancy of at least 1 year at screening in the opinion of the Investigator.",
+    "ko": "시험자 판단상 스크리닝 시점의 기대 여명이 최소 1년 이상인 자"
+   },
+   "I5": {
+    "en": "Body weight ≥45 kg.",
+    "ko": "체중 ≥45 kg"
+   },
+   "I6": {
+    "en": "Diagnosis of IPF as defined by the 2018 and 2022 ATS/ERS/JRS/ALAT Guidelines for a maximum 8 years before screening.",
+    "ko": "2018년 및 2022년 ATS/ERS/JRS/ALAT 가이드라인에 따라 IPF로 진단받은 지 스크리닝 전 최대 8년 이내인 자"
+   },
+   "I7": {
+    "en": "The most recent HRCT ≤6 months prior to screening, reviewed by central reading, should be used to confirm the diagnosis.",
+    "ko": "진단 확인에는 스크리닝 전 ≤6개월 이내에 시행되고 중앙 판독으로 검토된 가장 최근의 HRCT를 사용해야 함"
+   },
+   "I8": {
+    "en": "FVC ≥45% of predicted normal value at screening.",
+    "ko": "스크리닝 시 FVC가 예측 정상치의 ≥45%인 자"
+   },
+   "I9": {
+    "en": "Ratio of FEV1/FVC ≥0.7 at screening.",
+    "ko": "스크리닝 시 FEV1/FVC 비율 ≥0.7인 자"
+   },
+   "I10": {
+    "en": "Diffusing capacity of the lung for carbon monoxide (DLCO) corrected for haemoglobin ≥25% of predicted normal at screening.",
+    "ko": "스크리닝 시 헤모글로빈 보정 일산화탄소 폐확산능(DLCO)이 예측 정상치의 ≥25%인 자"
+   },
+   "I11": {
+    "en": "Oxygen saturation measured by pulse oximetry (SpO2) >90% at rest when the maximum oxygen flow is 4 L/min by standard nasal cannula or the equivalent oxygen delivery via reservoir nasal cannula (≤2 L/min).",
+    "ko": "표준 비강 캐뉼라로 최대 산소 유량 4 L/min 또는 저장형 비강 캐뉼라를 통한 동등한 산소 공급(≤2 L/min) 시, 안정 시 맥박산소측정 산소포화도(SpO2) >90%인 자"
+   },
+   "E1": {
+    "en": "Participant with a documented diagnosis of coeliac disease.",
+    "ko": "셀리악병(coeliac disease) 진단이 기록된 참여자"
+   },
+   "E2": {
+    "en": "Documented low respiratory tract infection in the last 4 weeks prior to screening.",
+    "ko": "스크리닝 전 최근 4주 이내에 기록된 하기도 감염이 있는 자"
+   },
+   "E3": {
+    "en": "Documented acute exacerbation of IPF (defined as acute worsening or development of dyspnoea typically <1 month duration).",
+    "ko": "기록된 IPF 급성 악화(일반적으로 <1개월 기간 동안의 호흡곤란의 급성 악화 또는 발생으로 정의)가 있는 자"
+   },
+   "E4": {
+    "en": "Active diagnosis or history of lung cancer.",
+    "ko": "현재 폐암 진단 또는 폐암 병력이 있는 자"
+   },
+   "E5": {
+    "en": "HRCT shows the presence of emphysema ≥20%.",
+    "ko": "HRCT상 폐기종이 ≥20% 존재하는 자"
+   },
+   "E6": {
+    "en": "Extent of emphysema is greater than the extent of fibrosis on HRCT.",
+    "ko": "HRCT상 폐기종 범위가 섬유화 범위보다 큰 자"
+   },
+   "E7": {
+    "en": "End-stage fibrotic disease expected to require organ transplantation within 6 months from screening.",
+    "ko": "스크리닝 후 6개월 이내에 장기 이식이 필요할 것으로 예상되는 말기 섬유화 질환"
+   },
+   "E8": {
+    "en": "Clinically relevant and uncontrolled pulmonary (including any non-IPF pulmonary diagnosis), cardiac, hepatic, gastrointestinal, renal, endocrine, metabolic, neurologic, or psychiatric disorders that may interfere with the participant's ability to complete this study according to the Investigator's judgement.",
+    "ko": "시험자 판단상 참여자의 연구 완료 능력을 방해할 수 있는 임상적으로 유의하고 조절되지 않는 폐(IPF 외 폐 진단 포함), 심장, 간, 위장관, 신장, 내분비, 대사, 신경 또는 정신 질환"
+   },
+   "E9": {
+    "en": "Active or untreated latent tuberculosis/tuberculosis infection that may interfere with the participant's ability to complete this study.",
+    "ko": "참여자의 연구 완료 능력을 방해할 수 있는 활동성 결핵 또는 치료되지 않은 잠복 결핵/결핵 감염"
+   },
+   "E10": {
+    "en": "Any other comorbid non-IPF pulmonary condition that may impact FVC according to the Investigator's judgement. Emphysema is allowed, unless it meets the above exclusion criterion regarding emphysema.",
+    "ko": "시험자 판단상 FVC에 영향을 줄 수 있는 IPF 외의 기타 동반 폐 질환. 폐기종은 위의 폐기종 관련 제외 기준에 해당하지 않는 한 허용됨"
+   },
+   "E11": {
+    "en": "Participant currently treated, or been treated with cytotoxic and immunosuppressant/modulator drugs within 48 weeks prior to screening.",
+    "ko": "현재 세포독성 약물 및 면역억제제/면역조절제로 치료 중이거나 스크리닝 전 48주 이내에 치료받은 참여자"
+   },
+   "E12": {
+    "en": "Systemic (IV, intramuscular, or oral) corticosteroids prednisone-equivalent dose of >10 mg/day used for >10 days.",
+    "ko": "프레드니손 환산 용량 >10 mg/일의 전신(정맥, 근육 내 또는 경구) 코르티코스테로이드를 >10일간 사용한 자"
+   },
+   "E13": {
+    "en": "Known intolerance and/or hypersensitivity to any of the excipients contained in the formulation or any other substance used in the study.",
+    "ko": "제형에 포함된 부형제 또는 연구에 사용되는 기타 물질에 대해 알려진 불내성 및/또는 과민증이 있는 자"
+   },
+   "E14": {
+    "en": "History of allergic or anaphylactic reaction to human, humanised, chimeric immunoglobulins (Igs), or murine monoclonal antibodies.",
+    "ko": "인간, 인간화, 키메라 면역글로불린(Ig) 또는 마우스 단클론항체에 대한 알레르기 또는 아나필락시스 반응 병력이 있는 자"
+   }
+  }
+ },
+ "NCT06833073": {
+  "title_en": "A Clinical Study of Intismeran Autogene (V940) and BCG in People With Bladder Cancer (V940-011/INTerpath-011)",
+  "title": "방광암 환자에서 인티스메란 오토젠(intismeran autogene, V940)과 BCG의 임상연구 (V940-011/INTerpath-011)",
+  "conditions": {
+   "Urinary Bladder Neoplasms": "방광 종양(Urinary Bladder Neoplasms)",
+   "Non-Muscle Invasive Bladder Neoplasms": "비근침윤성 방광 종양(Non-Muscle Invasive Bladder Neoplasms)",
+   "Carcinoma in Situ": "상피내암(Carcinoma in Situ)"
+  },
+  "rules": {
+   "I1": {
+    "en": "minimum_age=18 Years (structured eligibility)",
+    "ko": "나이 18세 이상 (구조화 기준)"
+   },
+   "I2": {
+    "en": "sex=ALL (structured eligibility)",
+    "ko": "성별 무관 (구조화 기준)"
+   },
+   "I3": {
+    "en": "Is an individual whose most recent TURBT was performed within 12 weeks before randomization/allocation and showed BICR-confirmed high-risk NMIBC histology",
+    "ko": "가장 최근 TURBT가 무작위배정/배정 전 12주 이내에 시행되었고, BICR로 확인된 고위험 NMIBC 조직학적 소견을 보인 자"
+   },
+   "I4": {
+    "en": "Cohort A: Has high-risk non-muscle invasive (HG Ta, T1, and/or CIS) UC of the bladder",
+    "ko": "코호트 A: 방광의 고위험 비근침윤성(HG Ta, T1 및/또는 CIS) UC가 있는 자"
+   },
+   "I5": {
+    "en": "Cohort A: Is BCG-naïve defined as either having never received BCG or having received BCG more than 2 years before high-risk NMIBC recurrence. Recurrence must be at least 24 months from the last exposure to BCG with evidence of complete response during the 2-year period post BCG",
+    "ko": "코호트 A: BCG 치료 경험이 없는 자(BCG를 투여받은 적이 없거나, 고위험 NMIBC 재발 2년 이상 전에 BCG를 투여받은 경우로 정의). 재발은 마지막 BCG 노출로부터 최소 24개월 이후여야 하며, BCG 투여 후 2년 기간 동안 완전관해의 근거가 있어야 함"
+   },
+   "I6": {
+    "en": "Cohort B: Has CIS +/-papillary non-muscle invasive UC of the bladder",
+    "ko": "코호트 B: 방광의 CIS ± 유두상 비근침윤성 UC가 있는 자"
+   },
+   "I7": {
+    "en": "Cohort B: Is ineligible for, or refusing, any IVESIC therapy",
+    "ko": "코호트 B: 모든 IVESIC 치료에 부적격이거나 이를 거부하는 자"
+   },
+   "I8": {
+    "en": "Cohort B: Is either BCG-naïve (as defined above) or BCG-exposed but did not receive protocol-specified minimum dosing of BCG and experienced recurrence of high-risk NMIBC within 2 years of the last dose of BCG",
+    "ko": "코호트 B: BCG 치료 경험이 없거나(위 정의와 같음), BCG에 노출되었으나 프로토콜에 규정된 최소 BCG 용량을 투여받지 않았고 마지막 BCG 투여 후 2년 이내에 고위험 NMIBC가 재발한 자"
+   },
+   "I9": {
+    "en": "Cohort B: Human immunodeficiency virus (HIV)-infected individuals must have well controlled HIV on antiretroviral therapy (ART)",
+    "ko": "코호트 B: 인간면역결핍바이러스(HIV) 감염자는 항레트로바이러스 요법(ART)으로 HIV가 잘 조절되고 있어야 함"
+   },
+   "E1": {
+    "en": "Has a history of or concurrent locally-advanced (ie, T2, T3, T4) or metastatic UC",
+    "ko": "국소 진행성(즉, T2, T3, T4) 또는 전이성 UC의 병력이 있거나 현재 동반한 자"
+   },
+   "E2": {
+    "en": "Has concurrent extravesical (ie, urethra, ureter, renal pelvis) non-muscle invasive UC or a history of extravesical non-muscle invasive UC that recurred within the last 2 years, with certain exceptions",
+    "ko": "현재 방광 외(즉, 요도, 요관, 신우) 비근침윤성 UC를 동반하거나, 최근 2년 이내에 재발한 방광 외 비근침윤성 UC 병력이 있는 자(일부 예외 있음)"
+   },
+   "E3": {
+    "en": "Has a known additional malignancy that is progressing or has required active treatment within the last 3 years",
+    "ko": "진행 중이거나 최근 3년 이내에 적극적 치료가 필요했던 알려진 추가 악성 종양이 있는 자"
+   },
+   "E4": {
+    "en": "Has had a myocardial infarction within 6 months of randomization/allocation",
+    "ko": "무작위배정/배정 전 6개월 이내에 심근경색이 있었던 자"
+   },
+   "E5": {
+    "en": "Has received any systemic anticancer therapy including investigational agents within 4 weeks before randomization/allocation",
+    "ko": "무작위배정/배정 전 4주 이내에 시험약을 포함한 전신 항암 치료를 받은 자"
+   },
+   "E6": {
+    "en": "Has received prior treatment with a cancer vaccine",
+    "ko": "이전에 암 백신 치료를 받은 자"
+   },
+   "E7": {
+    "en": "Has immunodeficiency or is receiving chronic systemic steroid therapy",
+    "ko": "면역결핍이 있거나 만성 전신 스테로이드 치료를 받고 있는 자"
+   },
+   "E8": {
+    "en": "Has active autoimmune disease that has required systemic treatment in the last 2 years",
+    "ko": "최근 2년 이내에 전신 치료가 필요했던 활동성 자가면역질환이 있는 자"
+   },
+   "E9": {
+    "en": "Has any contraindication to IV contrast and gadolinium or is otherwise unable to have imaging with either computerized tomography urogram (CTU) or Magnetic resonance urography (MRU)",
+    "ko": "정맥 조영제 및 가돌리늄에 대한 금기가 있거나, 그 밖의 이유로 컴퓨터단층 요로조영술(CTU) 또는 자기공명 요로조영술(MRU) 영상 검사를 받을 수 없는 자"
+   },
+   "E10": {
+    "en": "Cohort A: Has current active tuberculosis",
+    "ko": "코호트 A: 현재 활동성 결핵이 있는 자"
+   },
+   "E11": {
+    "en": "Cohort A: Has a known history of HIV infection",
+    "ko": "코호트 A: 알려진 HIV 감염 병력이 있는 자"
+   },
+   "E12": {
+    "en": "Cohort B: HIV-infected individuals with a history of Kaposi's sarcoma and/or Multicentric Castleman's Disease",
+    "ko": "코호트 B: 카포시 육종(Kaposi's sarcoma) 및/또는 다중심성 캐슬만병(Multicentric Castleman's Disease) 병력이 있는 HIV 감염자"
+   }
+  }
+ },
+ "NCT05127980": {
+  "title_en": "Occurrence of Antibodies Cross-reacting With Autoantigens in Primary EBV Infection",
+  "title": "일차 EBV 감염에서 자가항원과 교차반응하는 항체의 발생",
+  "conditions": {
+   "Epstein-Barr Virus (EBV) Infection": "엡스타인-바 바이러스(EBV) 감염"
+  },
+  "rules": {
+   "I1": {
+    "en": "Informed consent as documented by signature",
+    "ko": "서명으로 기록된 동의서"
+   },
+   "I2": {
+    "en": "Minimum age 18 years (structured eligibility)",
+    "ko": "나이 18세 이상 (구조화 기준)"
+   },
+   "I3": {
+    "en": "Sex: all (structured eligibility)",
+    "ko": "성별 무관 (구조화 기준)"
+   },
+   "I4": {
+    "en": "Confirmed primary EBV infection as confirmed by the treating clinician",
+    "ko": "담당 임상의가 확인한 일차 EBV 감염"
+   },
+   "I5": {
+    "en": "Compatible clinical picture: infectious mononucleosis symptoms including but not limited to malaise, headache, fever, tonsillitis, pharyngitis, cervical lymph nodes enlargement (not all features required)",
+    "ko": "부합하는 임상 양상: 전신 쇠약감, 두통, 발열, 편도염, 인두염, 경부 림프절 비대 등을 포함하되 이에 국한되지 않는 감염성 단핵구증 증상(모든 소견이 필요한 것은 아님)"
+   },
+   "I6": {
+    "en": "Compatible laboratory picture: lymphocyte count elevation, LUC cells, reactive lymphocytes in manual differential, elevated liver enzymes (not all features required)",
+    "ko": "부합하는 검사 소견: 림프구 수 증가, LUC 세포, 수기 백혈구 감별 계산상 반응성 림프구, 간효소 상승(모든 소견이 필요한 것은 아님)"
+   },
+   "I7": {
+    "en": "Serology compatible with primary EBV infection: anti-EBNA IgG negative, anti-VCA IgG negative, anti-VCA IgM positive OR anti-EBNA IgG negative, anti-VCA IgG positive, anti-VCA IgM positive",
+    "ko": "일차 EBV 감염에 부합하는 혈청학적 소견: 항-EBNA IgG 음성, 항-VCA IgG 음성, 항-VCA IgM 양성 또는 항-EBNA IgG 음성, 항-VCA IgG 양성, 항-VCA IgM 양성"
+   },
+   "I8": {
+    "en": "One of the following: (1) Clinical picture of upper respiratory tract infection (including but not limited to tonsillitis/pharyngitis, malaise, headache, cough, rhinitis, cervical node enlargement) OR (2) confirmed primary Cytomegalovirus (CMV) infection",
+    "ko": "다음 중 하나: (1) 상기도 감염의 임상 양상(편도염/인두염, 전신 쇠약감, 두통, 기침, 비염, 경부 림프절 비대 등을 포함하되 이에 국한되지 않음) 또는 (2) 확인된 일차 거대세포바이러스(CMV) 감염"
+   },
+   "E1": {
+    "en": "Suspicion/diagnosis of IM as per judgement of the treating clinician (control group only); such individual may be eligible later for the IM group if primary EBV infection is confirmed subsequently",
+    "ko": "담당 임상의 판단상 IM(감염성 단핵구증)이 의심되거나 진단된 자(대조군에만 해당); 이후 일차 EBV 감염이 확인되면 IM군에 적격일 수 있음"
+   },
+   "E2": {
+    "en": "Immunosuppression (broadly defined as primary/secondary immunodeficiency or treatment with an immunosuppressive medication including ≥ 10mg prednisone equivalent)",
+    "ko": "면역억제(일차/이차 면역결핍 또는 프레드니손 환산 ≥ 10mg을 포함한 면역억제제 치료로 넓게 정의)"
+   },
+   "E3": {
+    "en": "History of autoimmune disease (e.g. SLE, vasculitis etc.)",
+    "ko": "자가면역질환 병력(예: SLE, 혈관염 등)"
+   }
+  }
+ },
+ "NCT04063540": {
+  "title_en": "Acid-Sensing Ion Channel and Migraine Disease Proof of Concept Study on the Efficacy of Amiloride in the Prophylaxis of Migraine Aura",
+  "title": "산감지 이온 채널과 편두통: 조짐 편두통 예방에서 아밀로라이드(amiloride)의 효능에 대한 개념증명 연구",
+  "conditions": {
+   "Migraine With Aura": "조짐 편두통(Migraine With Aura)"
+  },
+  "rules": {
+   "I1": {
+    "en": "Diagnosis of migraine with aura code",
+    "ko": "조짐 편두통 진단 코드"
+   },
+   "I2": {
+    "en": "At least 1 aura per month in the 3 months prior to inclusion",
+    "ko": "등록 전 3개월 동안 월 1회 이상의 조짐"
+   },
+   "I3": {
+    "en": "No prophylactic antimigraine treatment for at least 1 month prior to inclusion",
+    "ko": "등록 전 최소 1개월 동안 편두통 예방 치료를 받지 않은 자"
+   },
+   "I4": {
+    "en": "For women of childbearing age, use of a reliable contraceptive method at least 3 months before and 1 month after the study",
+    "ko": "가임기 여성의 경우, 연구 시작 최소 3개월 전부터 연구 종료 후 1개월까지 신뢰할 수 있는 피임법을 사용하는 자"
+   },
+   "I5": {
+    "en": "Signature of written informed consent",
+    "ko": "서면 동의서 서명"
+   },
+   "I6": {
+    "en": "Patient affiliated with Social Security",
+    "ko": "사회보장제도에 가입된 환자"
+   },
+   "I7": {
+    "en": "Minimum age 18 Years (structured eligibility)",
+    "ko": "나이 18세 이상 (구조화 기준)"
+   },
+   "I8": {
+    "en": "Maximum age 80 Years (structured eligibility)",
+    "ko": "나이 80세 이하 (구조화 기준)"
+   },
+   "I9": {
+    "en": "Sex: All (structured eligibility)",
+    "ko": "성별 무관 (구조화 기준)"
+   },
+   "E1": {
+    "en": "Known hypersensitivity to the molecule (amiloride)",
+    "ko": "해당 약물(아밀로라이드, amiloride)에 대한 알려진 과민증"
+   },
+   "E2": {
+    "en": "Hyperkalemia (potassium level > 5.5 mmol/l)",
+    "ko": "고칼륨혈증(칼륨 수치 > 5.5 mmol/l)"
+   },
+   "E3": {
+    "en": "Use of another hyperkalemic diuretic or potassium salts",
+    "ko": "다른 칼륨 증가성 이뇨제 또는 칼륨염 사용"
+   },
+   "E4": {
+    "en": "Renal insufficiency (clearance < 60 ml/min)",
+    "ko": "신기능 부전(청소율 < 60 ml/min)"
+   },
+   "E5": {
+    "en": "Severe hepatocellular insufficiency",
+    "ko": "중증 간세포 기능 부전"
+   },
+   "E6": {
+    "en": "In combination with lithium, converting enzyme inhibitors, angiotensin II inhibitors (except if there is hypokalemia), ciclosporin, tacrolimus, non-antiarrhythmic drugs giving torsades de pointes",
+    "ko": "리튬, 안지오텐신 전환효소 억제제, 안지오텐신 II 억제제(저칼륨혈증이 있는 경우 제외), 시클로스포린(ciclosporin), 타크로리무스(tacrolimus), 염전성 심실빈맥(torsades de pointes)을 유발하는 비항부정맥제와의 병용"
+   },
+   "E7": {
+    "en": "Cardiovascular and renal history, for subjects over 75 years old",
+    "ko": "75세 초과 대상자의 경우, 심혈관 및 신장 병력"
+   },
+   "E8": {
+    "en": "Patient, who from an investigator's point of view would not be compliant to the procedure of the study",
+    "ko": "시험자 판단상 연구 절차를 준수하지 않을 것으로 보이는 환자"
+   },
+   "E9": {
+    "en": "Pregnant or lactating patient",
+    "ko": "임신 또는 수유 중인 환자"
+   },
+   "E10": {
+    "en": "Patient under trusteeship, under guardianship, protected by law",
+    "ko": "법적 보호를 받는 피성년후견인 또는 후견 대상 환자"
+   }
+  }
+ },
+ "NCT02415049": {
+  "title_en": "A Trial to Assess Optimal Postoperative Feeding Regiments Following Pyloromyotomy",
+  "title": "유문근절개술 후 최적의 수술 후 수유 방법 평가 시험",
+  "conditions": {
+   "Postoperative Feeding Following Pyloromyotomy": "유문근절개술 후 수술 후 수유"
+  },
+  "rules": {
+   "I1": {
+    "en": "Subjects to be included in the study include infants who have a diagnosis of pyloric stenosis who will undergo pyloromyotomy.",
+    "ko": "유문협착증으로 진단받고 유문근절개술을 받을 예정인 영아를 연구 대상에 포함함"
+   },
+   "I2": {
+    "en": "minimum_age=2 Weeks",
+    "ko": "나이 2주 이상"
+   },
+   "I3": {
+    "en": "maximum_age=10 Weeks",
+    "ko": "나이 10주 이하"
+   },
+   "I4": {
+    "en": "sex=ALL",
+    "ko": "성별 무관"
+   },
+   "E1": {
+    "en": "Patients with severe underlying medical conditions including but not limited to hypothermia will not be included in the study.",
+    "ko": "저체온증을 포함하되 이에 국한되지 않는 중증 기저 질환이 있는 환자는 연구에 포함되지 않음"
+   },
+   "E2": {
+    "en": "Patients with severe underlying medical conditions including but not limited to sepsis will not be included in the study.",
+    "ko": "패혈증을 포함하되 이에 국한되지 않는 중증 기저 질환이 있는 환자는 연구에 포함되지 않음"
+   },
+   "E3": {
+    "en": "Patients with severe underlying medical conditions including but not limited to glycemic instability will not be included in the study.",
+    "ko": "혈당 불안정을 포함하되 이에 국한되지 않는 중증 기저 질환이 있는 환자는 연구에 포함되지 않음"
+   },
+   "E4": {
+    "en": "Patients with severe underlying medical conditions including but not limited to need for care in the intensive care unit/neonatal intensive care unit will not be included in the study.",
+    "ko": "중환자실/신생아 중환자실 치료 필요를 포함하되 이에 국한되지 않는 중증 기저 질환이 있는 환자는 연구에 포함되지 않음"
+   },
+   "E5": {
+    "en": "Patients with severe underlying medical conditions including but not limited to hypothermia, sepsis, glycemic instability, or need for care in the intensive care unit/neonatal intensive care unit will not be included in the study.",
+    "ko": "저체온증, 패혈증, 혈당 불안정 또는 중환자실/신생아 중환자실 치료 필요를 포함하되 이에 국한되지 않는 중증 기저 질환이 있는 환자는 연구에 포함되지 않음"
+   }
+  }
+ },
+ "NCT06878144": {
+  "title_en": "Mucormycosis Clinical Core for the MUCOR-ADVANCE P01 Project",
+  "title": "MUCOR-ADVANCE P01 프로젝트를 위한 털곰팡이증 임상 코어",
+  "conditions": {
+   "Mucormycosis": "털곰팡이증(Mucormycosis)"
+  },
+  "rules": {
+   "I1": {
+    "en": "Patients must be 18-100 years old",
+    "ko": "환자는 18-100세여야 함"
+   },
+   "I2": {
+    "en": "Patients must be 18-100 years old",
+    "ko": "환자는 18-100세여야 함"
+   },
+   "I3": {
+    "en": "Structured eligibility: sex=ALL",
+    "ko": "성별 무관"
+   },
+   "I4": {
+    "en": "Patients must ... have cancer",
+    "ko": "환자는 ... 암이 있어야 함"
+   },
+   "I5": {
+    "en": "Patients must ... have invasive mucormycosis, invasive aspergillosis, bacterial pneumonia, or a risk for fungal infection but no evidence of such infection",
+    "ko": "환자는 ... 침습성 털곰팡이증(mucormycosis), 침습성 아스페르길루스증(aspergillosis), 세균성 폐렴이 있거나, 또는 진균 감염 위험은 있으나 해당 감염의 근거가 없어야 함"
+   },
+   "I6": {
+    "en": "Patients must be willing to undergo routine diagnostic procedures (e.g., phlebotomy, bronchoscopy, biopsy) as part of their regular care",
+    "ko": "환자는 정규 진료의 일환으로 일상적인 진단 절차(예: 채혈, 기관지내시경, 생검)를 기꺼이 받아야 함"
+   },
+   "E1": {
+    "en": "Patients who are unwilling to undergo routine diagnostic procedures as part of their regular care",
+    "ko": "정규 진료의 일환으로 일상적인 진단 절차를 받을 의사가 없는 환자"
+   }
+  }
+ },
+ "NCT07616128": {
+  "title_en": "Study of EVO756 in Adults With Migraine",
+  "title": "편두통 성인 환자에서 EVO756 연구",
+  "conditions": {
+   "Migraine": "편두통"
+  },
+  "rules": {
+   "I1": {
+    "en": "Adults aged 18 to <65 years",
+    "ko": "18세 이상 65세 미만(<65세)의 성인"
+   },
+   "I2": {
+    "en": "Adults aged 18 to <65 years",
+    "ko": "18세 이상 65세 미만(<65세)의 성인"
+   },
+   "I3": {
+    "en": "Sex: All (structured eligibility)",
+    "ko": "성별 무관 (구조화 기준)"
+   },
+   "I4": {
+    "en": "Migraine with or without aura, per ICHD-3 criteria",
+    "ko": "ICHD-3 기준에 따른 조짐 동반 또는 비동반 편두통"
+   },
+   "I5": {
+    "en": "History of failure with prior preventive migraine treatments",
+    "ko": "이전 편두통 예방 치료에 실패한 병력"
+   },
+   "I6": {
+    "en": "Not currently using migraine preventive therapy",
+    "ko": "현재 편두통 예방 치료를 사용하지 않는 자"
+   },
+   "E1": {
+    "en": "Difficulty distinguishing migraine from other headache types or presence of other primary headache disorders",
+    "ko": "편두통을 다른 두통 유형과 구별하기 어렵거나 다른 일차 두통 질환이 있는 자"
+   },
+   "E2": {
+    "en": "Use of certain medications",
+    "ko": "특정 약물 사용"
+   },
+   "E3": {
+    "en": "Any clinically significant medical, psychiatric, neurological, cardiovascular, or laboratory abnormalities",
+    "ko": "임상적으로 유의한 내과적, 정신과적, 신경학적, 심혈관계 또는 검사실 이상"
+   }
+  }
+ }
+}

@@ -105,6 +105,13 @@ def _latest(labs: list[LabValue]) -> LabValue | None:
     return next(lab for d, lab in dated if d == latest)
 
 
+SEX_KO = {"male": "남성", "female": "여성"}
+
+
+def _ko(holds: bool) -> str:
+    return "조건 성립" if holds else "조건 불성립"
+
+
 def _result(rule: Rule, holds: str, evidence: str, reasoning: str) -> CriterionAssessment:
     return CriterionAssessment(
         rule_id=rule.rule_id,
@@ -169,7 +176,7 @@ def _evaluate_age(rule: Rule, patient: PatientProfile) -> CriterionAssessment | 
     if unit == rule_unit and float(target).is_integer() and float(value).is_integer():
         holds = _OPS[rule.operator](value, target)
         return _result(rule, "yes" if holds else "no", f"환자 나이 {shown}",
-                       f"{value:g} {rule.operator} {target:g} ({unit}) -> {holds}")
+                       f"{value:g} {rule.operator} {target:g} ({unit}) → {_ko(holds)}")
     lo, hi = value * _AGE_DAYS[unit], (value + 1) * _AGE_DAYS[unit]  # [lo, hi)
     t = target * _AGE_DAYS[rule_unit]
     cmp = _OPS[rule.operator]
@@ -180,7 +187,7 @@ def _evaluate_age(rule: Rule, patient: PatientProfile) -> CriterionAssessment | 
     if at_lo != at_hi:
         return None
     return _result(rule, "yes" if at_lo else "no", f"환자 나이 {shown}",
-                   f"{shown} = {lo:.0f}~{hi:.0f}일, 기준 {target:g} {rule_unit} = {t:.0f}일 -> {at_lo}")
+                   f"{shown} = {lo:.0f}~{hi:.0f}일, 기준 {target:g} {rule_unit} = {t:.0f}일 → {_ko(at_lo)}")
 
 
 def evaluate(rule: Rule, patient: PatientProfile) -> CriterionAssessment | None:
@@ -196,12 +203,12 @@ def evaluate(rule: Rule, patient: PatientProfile) -> CriterionAssessment | None:
             return None
         want = _norm(rule.value)
         if want in ("all", "any") and rule.operator == "==":
-            return _result(rule, "yes", f"환자 성별 {patient.sex}", "성별 제한 없음 (환자 성별과 무관하게 충족)")
+            return _result(rule, "yes", f"환자 성별 {SEX_KO.get(patient.sex, patient.sex)}", "성별 제한 없음 (환자 성별과 무관하게 충족)")
         if patient.sex == "unknown":
             return None
         holds = (patient.sex == want) if rule.operator == "==" else (patient.sex != want)
-        return _result(rule, "yes" if holds else "no", f"환자 성별 {patient.sex}",
-                       f"sex {rule.operator} {want} -> {holds}")
+        return _result(rule, "yes" if holds else "no", f"환자 성별 {SEX_KO.get(patient.sex, patient.sex)}",
+                       f"성별 {rule.operator} {want} → {_ko(holds)}")
 
     if field == "ecog":
         target = _to_float(rule.value)
@@ -209,7 +216,7 @@ def evaluate(rule: Rule, patient: PatientProfile) -> CriterionAssessment | None:
             return None
         holds = _OPS[rule.operator](patient.ecog, target)
         return _result(rule, "yes" if holds else "no", f"ECOG {patient.ecog}",
-                       f"{patient.ecog} {rule.operator} {rule.value} -> {holds}")
+                       f"{patient.ecog} {rule.operator} {rule.value} → {_ko(holds)}")
 
     if field.startswith("lab:"):
         target = _to_float(rule.value)
@@ -228,6 +235,6 @@ def evaluate(rule: Rule, patient: PatientProfile) -> CriterionAssessment | None:
         holds = _OPS[rule.operator](lab.value, target)
         return _result(rule, "yes" if holds else "no",
                        f"{lab.name} {lab.value} {lab.unit or ''} ({lab.date or '날짜 미상'}) - \"{lab.source_quote}\"",
-                       f"{lab.value} {rule.operator} {rule.value} -> {holds}")
+                       f"{lab.value} {rule.operator} {rule.value} → {_ko(holds)}")
 
     return None
