@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+import os
 import time
 import uuid
 from collections import Counter
@@ -155,8 +156,14 @@ def execute(plan: dict, price: lp.PriceTable, limits: lp.PilotLimits, inner, pai
         "process_guard": process_guard,
     }
     lp.assert_redacted(result, lp.forbidden_texts(pairs))
-    if save_to is not None:  # 기본 꺼짐. 비식별 검사를 지난 결과만
-        Path(save_to).write_text(json.dumps(result, ensure_ascii=False, indent=1), encoding="utf-8")
+    if save_to is not None:  # 기본 꺼짐. 비식별 검사를 지난 결과만, 임시 파일에 쓴 뒤 바꿔 넣음 (중단 시 반쪽 파일 없음)
+        target = Path(save_to)
+        tmp = target.with_name(f".{target.name}.{os.getpid()}.tmp")
+        try:
+            tmp.write_text(json.dumps(result, ensure_ascii=False, indent=1), encoding="utf-8")
+            os.replace(tmp, target)
+        finally:
+            tmp.unlink(missing_ok=True)
     return result
 
 

@@ -91,7 +91,8 @@ def make_plan(exp: str, case_ids: list[str], limits: lp.PilotLimits, price: lp.P
             "rounds": lp.EXPERIMENTS[exp]["rounds"], "question_budget": lp.EXPERIMENTS[exp]["question_budget"],
             "limits": lp.asdict(limits), "save_patient_data": False, "redact_outputs": True}
     plan["plan_hash"] = lp.plan_hash(plan)
-    plan["confirmation_phrase"] = f"RUN {exp} {plan['plan_hash'][:12]}"
+    # 확인 문구는 계획 해시가 확정된 뒤에만 (단가 확인 전 해시는 확인 후 바뀌므로 문구를 만들지 않음)
+    plan["confirmation_phrase"] = f"RUN {exp} {plan['plan_hash'][:12]}" if price.confirmed else None
     return plan
 
 

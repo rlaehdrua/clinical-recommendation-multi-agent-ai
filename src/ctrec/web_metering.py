@@ -139,7 +139,9 @@ class WebRunMeter:
                 s.update(usage_missing=1)
             else:
                 s.update(input_tokens=g("input_tokens"), output_tokens=g("output_tokens"),
-                         cache_write=g("cache_creation_input_tokens"), cache_read=g("cache_read_input_tokens"))
+                         cache_write=g("cache_creation_input_tokens"), cache_read=g("cache_read_input_tokens"),
+                         thinking_tokens=int(getattr(getattr(usage, "output_tokens_details", None),
+                                                     "thinking_tokens", 0) or 0))
             self.models[str(getattr(resp, "model", None) or UNKNOWN)] += 1
             s[f"stop_{getattr(resp, 'stop_reason', None)}"] += 1
             s["latency_ms"] += int(latency * 1000)
@@ -178,7 +180,7 @@ class WebRunMeter:
             tot = Counter()
             for s in self.by_stage.values():
                 tot.update({k: v for k, v in s.items() if k in ("calls", "failed", "input_tokens", "output_tokens",
-                                                                "cache_write", "cache_read")})
+                                                                "cache_write", "cache_read", "thinking_tokens")})
             usage_confirmed = status == FULLY_METERED
             return {
                 "run_id": self.run_id, "mode": "record_only" if self.mode == "record" else "off",
@@ -186,6 +188,7 @@ class WebRunMeter:
                 "calls": calls, "by_stage": {k: dict(v) for k, v in self.by_stage.items()},
                 "input_tokens": tot["input_tokens"], "output_tokens": tot["output_tokens"],
                 "cache_write_tokens": tot["cache_write"], "cache_read_tokens": tot["cache_read"],
+                "thinking_tokens": tot["thinking_tokens"],  # 출력 토큰에 포함된 사고 토큰 (응답이 알려 준 만큼)
                 "retries": self.retries if self.retries_visible else UNKNOWN,
                 "response_models": dict(self.models), "requested_model": config.MODEL,
                 "fallbacks_requested": self.fallbacks_requested, "errors": dict(self.errors),

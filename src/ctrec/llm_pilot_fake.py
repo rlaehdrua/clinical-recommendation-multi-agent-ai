@@ -45,7 +45,9 @@ class APIConnectionError(FakeAPIError):
 FAULTS = {"429": RateLimitError, "5xx": InternalServerError, "400": BadRequestError, "timeout": APITimeoutError,
           "connection": APIConnectionError}
 # 응답은 오지만 문제가 있는 경우
-RESPONSE_FAULTS = ("truncated", "refusal", "no_usage", "other_model", "fallback_iteration", "pii")
+RESPONSE_FAULTS = ("truncated", "refusal", "no_usage", "other_model", "fallback_iteration", "pii", "priority_tier")
+# 요청 도중 프로세스 중단(Ctrl+C 등) 흉내
+INTERRUPT = "interrupt"
 FAKE_PII = "연락처 010-1234-5678 test.patient@example.com"
 
 
@@ -112,6 +114,8 @@ class FakeSDKClient:
         if self._on_call:
             self._on_call(i, kw)
         fault = self._faults(i, stage) if self._faults else None
+        if fault == INTERRUPT:
+            raise KeyboardInterrupt("fake sdk interrupt")
         if fault in FAULTS:
             raise FAULTS[fault]("fake sdk fault")
         user = kw["messages"][0]["content"]
@@ -125,9 +129,12 @@ class FakeSDKClient:
         est_in = int(lp._request_chars(kw) / self._cpt)
         system_tokens = int(len(system[0]["text"]) / self._cpt) if isinstance(system, list) else 0
         cache_read = int(system_tokens * self._cache)
-        usage = SimpleNamespace(input_tokens=est_in - cache_read, output_tokens=min(self._out.get(stage, 1000),
-                                                                                   kw.get("max_tokens") or 16000),
-                                cache_creation_input_tokens=0, cache_read_input_tokens=cache_read, iterations=None)
+        out = min(self._out.get(stage, 1000), kw.get("max_tokens") or 16000)
+        # 공식 응답 구조: 출력 토큰 중 사고 토큰은 output_tokens_details.thinking_tokens (여기서는 출력의 절반으로 가정)
+        usage = SimpleNamespace(input_tokens=est_in - cache_read, output_tokens=out,
+                                output_tokens_details=SimpleNamespace(thinking_tokens=out // 2),
+                                cache_creation_input_tokens=0, cache_read_input_tokens=cache_read, iterations=None,
+                                service_tier="standard")
         stop = "end_turn"
         model = kw.get("model")
         if fault == "truncated":
@@ -138,6 +145,8 @@ class FakeSDKClient:
             usage = None
         elif fault == "other_model":
             model = "claude-other-model"
+        elif fault == "priority_tier":
+            usage.service_tier = "priority"
         elif fault == "fallback_iteration":
             usage.iterations = [SimpleNamespace(type="message"), SimpleNamespace(type="fallback_message")]
         return SimpleNamespace(

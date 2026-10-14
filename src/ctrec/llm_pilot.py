@@ -165,6 +165,20 @@ class PriceTable:
 # 가정값 (확인 전). 캐시 쓰기 1.25배, 읽기 0.1배도 가정
 ASSUMED_PRICE = PriceTable(model=config.MODEL, input=3.0, output=15.0, cache_write=3.75, cache_read=0.30)
 
+# 공식 문서에 적힌 단가 (Phase 5-4 조회). 문서에서 읽은 값일 뿐 사용자 확인 전이므로 confirmed=False -
+# 승인 게이트는 사용자가 확인(--price-confirmed + 출처)해야 통과. cache_write는 5분 캐시 (llm.create의 cache_control
+# ephemeral 기본 TTL). 1시간 캐시($4/MTok)는 쓰지 않음
+DOCUMENTED_PRICES = {
+    "claude-sonnet-5": PriceTable(
+        model="claude-sonnet-5", input=2.0, output=10.0, cache_write=2.50, cache_read=0.20, confirmed=False,
+        source="documented: platform.claude.com/docs/en/about-claude/pricing + models/sonnet-5/overview "
+               "(2026-10-14 조회, 5m cache write, 사용자 확인 전)"),
+}
+
+
+def documented_price(model: str | None = None) -> PriceTable | None:
+    return DOCUMENTED_PRICES.get(model or config.MODEL)
+
 
 @dataclass(frozen=True)
 class PilotLimits:
@@ -191,7 +205,7 @@ _RETRYABLE_NAMES = {"RateLimitError", "APIConnectionError", "APITimeoutError", "
 _POSSIBLY_BILLED_NAMES = {"APIConnectionError", "APITimeoutError", "InternalServerError", "OverloadedError",
                           "ServiceUnavailableError"}
 # 응답을 쓰지 않고 즉시 멈추는 이유 (대체 모델 응답·다른 모델 응답)
-_FATAL_RESPONSE = ("model_mismatch", "fallback_detected")
+_FATAL_RESPONSE = ("model_mismatch", "fallback_detected", "service_tier_mismatch")
 
 
 def is_retryable(e: Exception) -> bool:
@@ -253,7 +267,7 @@ class SharedBudget:
 
 
 _COUNTERS = ("calls", "retries", "input_tokens", "output_tokens", "cache_write_tokens", "cache_read_tokens",
-             "est_input_tokens", "est_output_tokens", "usage_missing", "possibly_billed_failures")
+             "est_input_tokens", "est_output_tokens", "usage_missing", "possibly_billed_failures", "thinking_tokens")
 
 
 class PilotMeter:
@@ -370,6 +384,13 @@ class PilotMeter:
                 self.cache_read_tokens += cr
                 self.cost += self.price.cost(inp, out, cw, cr)
                 s.update(input_tokens=inp, output_tokens=out, cache_write=cw, cache_read=cr)
+                # 출력 토큰 중 사고(thinking) 토큰 (공식 usage.output_tokens_details.thinking_tokens, 출력 단가로 이미 포함)
+                think = int(getattr(getattr(usage, "output_tokens_details", None), "thinking_tokens", 0) or 0)
+                self.thinking_tokens += think
+                s.update(thinking_tokens=think)
+                tier = getattr(usage, "service_tier", None)
+                if tier not in (None, "standard"):  # 단가가 다른 등급 (확인한 단가는 standard 기준)
+                    self.stopped = "service_tier_mismatch"
                 # 서버측 대체 모델이 돌았으면 usage.iterations에 message 외 항목이 생김
                 if any(getattr(it, "type", "message") != "message" for it in (getattr(usage, "iterations", None) or [])):
                     self.stopped = "fallback_detected"
@@ -441,7 +462,8 @@ class PilotMeter:
 
 
 BILLING_NOTES = {
-    "thinking": "사고(thinking) 토큰은 usage.output_tokens에 포함되어 출력 단가로 과금됨 (따로 보고되지 않음, 블록 수만 셈). "
+    "thinking": "사고(thinking) 토큰은 usage.output_tokens에 포함되어 출력 단가로 과금됨. 그중 사고 토큰 수는 "
+                "usage.output_tokens_details.thinking_tokens로 따로 기록 (없으면 0, 블록 수도 셈). "
                 "max_tokens가 사고+응답 전체의 상한이므로 예약(max_tokens)이 사고 토큰을 포함함",
     "cache": "usage.cache_creation_input_tokens(쓰기)·cache_read_input_tokens(읽기)를 따로 기록하고 각 단가로 계산. "
              "input_tokens는 캐시 밖 입력만",

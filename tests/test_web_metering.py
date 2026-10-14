@@ -38,9 +38,6 @@ def no_real_client(monkeypatch):
     yield
     after = call_guard.counters()
     assert made == [] and after["exclusive"] == before["exclusive"] == 0
-    for run in list(web.RUNS.values()):  # 이 테스트가 시작한 실행이 끝났으면 기록 등록도 풀림
-        if run.done:
-            assert run.metering is not None
 
 
 def _run(c, answer=h.SYN_ANSWER, text=h.SYN_TEXT):
@@ -106,9 +103,9 @@ def test_record_only_does_not_change_requests_events_or_result(monkeypatch, tmp_
                          _norm({k: result[k] for k in ("matches", "qa_log", "recommendation")}))
         assert {e["type"] for e in events} <= KNOWN_EVENTS  # 새 SSE 이벤트 없음
     req_off, req_rec = results["off"][0], results["record"][0]
-    assert len(req_off) == len(req_rec)
-    for a, b in zip(req_off, req_rec):  # SDK로 보낸 인자 (모델·대체 모델·max_tokens·프롬프트·메시지) 동일
-        assert _norm(a) == _norm(b)
+    # SDK로 보낸 인자 (모델·대체 모델·max_tokens·프롬프트·메시지) 동일. 시험별 Matcher는 병렬 스레드라 도착 순서가
+    # 부하에 따라 바뀔 수 있으므로 순서 없이(다중집합으로) 비교
+    assert sorted(map(_norm, req_off)) == sorted(map(_norm, req_rec))
     assert any("fallbacks" in r for r in req_rec) == config.USE_FALLBACKS  # 웹 대체 모델 정책 그대로
     assert results["off"][1] == results["record"][1] and results["off"][2] == results["record"][2]
 

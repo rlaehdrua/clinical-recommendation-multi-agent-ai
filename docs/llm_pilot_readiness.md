@@ -157,3 +157,14 @@ run_pilot -> authorize (12개 조건 + 코드 스위치) -> ExecutionTicket
 - 내용: 단계별 호출, 토큰, 캐시, 재시도(보일 때만), 응답 모델, 실행 시간, 계측 상태(`FULLY_METERED` / `PARTIALLY_METERED` / `UNMETERED` / `USAGE_UNKNOWN`)
 - 비용은 항상 `UNKNOWN`이고 `cost_cap_enforced: false`입니다.
 - 끄기: `CTREC_WEB_METERING=off` (끄면 상태는 `UNMETERED`로 표시됩니다)
+
+## 8. Phase 5-4: 최종 준비
+
+- 최종 실행 계획: `docs/llm_pilot_final_plan.md` (모델·단가 공식 확인, 사례, 상한, 명령, 중단·성공 기준)
+- 전용 프로세스 리허설: `scripts/run_llm_pilot.py --fake-sdk`
+  - 승인 게이트만 빼고 실제 실행 경로를 탑니다(프로세스 보호, 상한, 원자적 저장, 중단 시 exit 130).
+  - 테스트: `tests/test_pilot_process.py`
+- 계측 보강:
+  - 사고 토큰: 공식 `usage.output_tokens_details.thinking_tokens`를 기록합니다.
+  - `service_tier`가 standard가 아니면 중단합니다(확인한 단가와 등급이 다름).
+- 단가: `DOCUMENTED_PRICES`는 공식 문서 값이지만 `confirmed=False`입니다. CLI는 사용자가 단가를 확인하기 전에는 확인 문구를 만들지 않고, `readiness.ready_to_execute=False`로 표시합니다.
