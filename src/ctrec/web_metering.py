@@ -33,9 +33,15 @@ _MAYBE_BILLED = {"APIConnectionError", "APITimeoutError", "InternalServerError",
                  "ServiceUnavailableError"}
 
 
+MODES = ("off", "record", "enforce")
+
+
 def mode() -> str:
-    """CTREC_WEB_METERING: record(기본, 기록 전용) / off."""
-    return "off" if os.getenv("CTREC_WEB_METERING", "record").strip().lower() == "off" else "record"
+    """CTREC_WEB_METERING: record(기본, 기록 전용) / off / enforce(호출 전 예산 예약·상한, web/budget.py).
+
+    알 수 없는 값은 enforce로 봄 - 조용히 기록 전용으로 내려가지 않고 설정 검사에서 거절되게 함."""
+    v = os.getenv("CTREC_WEB_METERING", "record").strip().lower()
+    return v if v in ("off", "record") else "enforce"
 
 
 _STAGES: list | None = None
@@ -105,7 +111,7 @@ class WebRunMeter:
     @contextlib.contextmanager
     def recording(self):
         """이 실행(과 copy_context로 넘긴 하위 스레드)의 LLM 호출을 기록기로. off면 아무것도 하지 않음."""
-        if self.mode == "off":
+        if self.mode != "record":  # off: 기록 안 함, enforce: web/budget.run_context가 대신 기록
             yield self
             return
         proxy = RecordingClient(self)
@@ -183,7 +189,7 @@ class WebRunMeter:
                                                                 "cache_write", "cache_read", "thinking_tokens")})
             usage_confirmed = status == FULLY_METERED
             return {
-                "run_id": self.run_id, "mode": "record_only" if self.mode == "record" else "off",
+                "run_id": self.run_id, "mode": {"record": "record_only", "enforce": "enforce"}.get(self.mode, "off"),
                 "status": status, "status_reason": reason,
                 "calls": calls, "by_stage": {k: dict(v) for k, v in self.by_stage.items()},
                 "input_tokens": tot["input_tokens"], "output_tokens": tot["output_tokens"],
@@ -198,9 +204,11 @@ class WebRunMeter:
                 "usage_confirmed": usage_confirmed,
                 # 확인된 단가표가 없음 (모델·대체 모델 단가 미확인) -> 비용은 알 수 없음
                 "cost_estimable": False, "cost_usd": UNKNOWN,
-                # 기록 전용: 호출을 막지 않으므로 비용 상한을 보장하지 않음
-                "cost_cap_enforced": False,
-                "note": "기록 전용 계측입니다. 호출을 제한하지 않으며 비용 상한을 보장하지 않습니다.",
+                # 기록 전용: 호출을 막지 않으므로 비용 상한 없음. enforce: 예약액 기준 상한 (외부 청구 절대 상한은 아님)
+                "cost_cap_enforced": self.mode == "enforce",
+                "note": ("호출 전 예산을 예약해 한도를 넘는 요청을 막습니다. 외부 청구액의 절대 상한은 아닙니다."
+                         if self.mode == "enforce" else
+                         "기록 전용 계측입니다. 호출을 제한하지 않으며 비용 상한을 보장하지 않습니다."),
             }
 
     def finish(self) -> None:

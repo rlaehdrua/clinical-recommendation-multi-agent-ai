@@ -129,7 +129,7 @@ Phase 5-2에서 파일럿의 실행별 격리를 구현했습니다.
 
 웹 계측 상태의 판정 기준은 `web_metering` 모듈 설명과 아래 최종 보고 F항에 있습니다.
 
-### 12.2 실행별 비용 상한 (웹 enforce 모드, 미구현)
+### 12.2 실행별 비용 상한 (웹 enforce 모드, Phase 6-3에서 구현)
 
 - `CTREC_WEB_METERING`에 `enforce` 값을 추가합니다. 이 모드에서는 `RecordingClient` 대신 `MeteredClient`를 쓰고, 내부 SDK 클라이언트는 `max_retries=0`으로 만듭니다.
 - 상한 값:
@@ -139,7 +139,7 @@ Phase 5-2에서 파일럿의 실행별 격리를 구현했습니다.
 - 상한 초과 시 실행을 `budget_exceeded`로 끝냅니다(6절 SSE). 웹의 공용 슬롯 제한(`MAX_RUNS` 등)은 그대로 둡니다.
 - 먼저 enforce를 "그림자 모드"로 운영합니다. 실제로 막지는 않고 막았을 시점만 기록해 오탐률을 봅니다.
 
-### 12.3 공용 영속 비용 원장 (미구현, 스키마 제안)
+### 12.3 공용 영속 비용 원장 (Phase 6-3에서 단일 인스턴스 SQLite로 구현)
 
 ```
 ledger_window(window_key TEXT PRIMARY KEY,      -- 예: day:2026-10-14, month:2026-10
@@ -208,3 +208,18 @@ reservation(reservation_id TEXT PRIMARY KEY, run_id TEXT, window_key TEXT,
   2. **관리형 Postgres**: 인스턴스를 늘려도 쓸 수 있습니다. 무료 DB의 보존 기간 제한은 확인이 필요합니다.
   3. **외부 저장소 없음**: Anthropic Console의 워크스페이스 지출 한도만 사용합니다. 실행별·일별 세분화는 안 되지만 코드나 원장이 실패해도 작동합니다.
 - 권고: 어느 안이든 3번(Console 지출 한도)을 기본 방어선으로 같이 둡니다.
+
+## 13. Phase 6-3 구현 상태
+
+- 구현: `src/ctrec/web/budget.py`
+  - `enforce` 모드
+  - 실행별 한도: 비용, 호출, 입력·출력 토큰, 시간
+  - SQLite 공용 원장: 원자적 예약·정산, UNKNOWN 보류, 재시작 복구
+  - SDK 재시도 0 + 래퍼 재시도
+  - 대체 모델 거부
+- 운영 도구: `scripts/web_budget_ledger.py`
+- 운영 안내: `web_budget_operations.md`
+- 위 설계와 다른 점
+  - "그림자 모드"는 만들지 않았습니다. `record`가 기존 기록 전용 모드 역할을 합니다.
+  - 예산 초과는 별도 `budget_*` SSE 이벤트 대신 기존 `end` 이벤트의 종료 상태로 알립니다: `budget_exceeded` / `usage_unknown` / `budget_error`
+- 남은 일: 여러 인스턴스를 위한 외부 DB 원장 (단일 인스턴스 밖의 전역 한도는 보장하지 않음)

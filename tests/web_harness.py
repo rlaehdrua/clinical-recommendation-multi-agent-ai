@@ -161,7 +161,7 @@ class SDKAdapter:
 
     def _usage(self):
         return SimpleNamespace(input_tokens=100, output_tokens=20, cache_creation_input_tokens=0,
-                               cache_read_input_tokens=7) if self.usage else None
+                               cache_read_input_tokens=7, service_tier="standard") if self.usage else None
 
     def _create(self, **kw):
         with self._lock:

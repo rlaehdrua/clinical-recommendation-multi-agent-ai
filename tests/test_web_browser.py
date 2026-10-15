@@ -900,3 +900,46 @@ def test_end_state_screen_accessible(make_server, monkeypatch):
             page.context.close()
         browser.close()
     assert errors == [], errors
+
+
+# =============================================================== Phase 6-3: 비용 통제(enforce) 화면 안내
+
+
+def test_budget_exceeded_shown_and_not_completed(monkeypatch, tmp_path):
+    """enforce 모드에서 실행별 호출 한도에 걸리면: 완료·추천으로 보이지 않고 '비용 한도 도달' 안내, 중간 판정은 참고용으로 남김."""
+    from ctrec import config
+    from ctrec.web import budget
+    sdk = h.install_sdk(monkeypatch, tmp_path, h.SDKAdapter())
+    monkeypatch.setattr(config, "USE_FALLBACKS", False)
+    env = {"CTREC_WEB_METERING": "enforce", "CTREC_WEB_BUDGET_LEDGER": str(tmp_path / "ledger.db"),
+           "CTREC_WEB_BUDGET_LEDGER_PERSISTENT": "1", "CTREC_WEB_BUDGET_SINGLE_INSTANCE": "1",
+           "CTREC_WEB_RUN_MAX_USD": "10", "CTREC_WEB_RUN_MAX_CALLS": "3", "CTREC_WEB_RUN_MAX_INPUT_TOKENS": "5000000",
+           "CTREC_WEB_RUN_MAX_OUTPUT_TOKENS": "2000000", "CTREC_WEB_SHARED_MAX_USD": "100", "CTREC_WEB_SHARED_MAX_CALLS": "500",
+           "CTREC_WEB_SHARED_MAX_INPUT_TOKENS": "50000000", "CTREC_WEB_SHARED_MAX_OUTPUT_TOKENS": "20000000",
+           "CTREC_WEB_PRICE_INPUT": "2", "CTREC_WEB_PRICE_OUTPUT": "10", "CTREC_WEB_PRICE_CACHE_WRITE": "2.5",
+           "CTREC_WEB_PRICE_CACHE_READ": "0.2", "CTREC_WEB_PRICE_CONFIRMED": "1", "CTREC_WEB_PRICE_SOURCE": "test"}
+    for k, v in env.items():
+        monkeypatch.setenv(k, v)
+    budget.reset_ledgers()
+    srv, t, base = _serve()
+    errors = []
+    try:
+        with sync_api.sync_playwright() as p:
+            browser = _browser(p)
+            page = _page(browser, base, errors)
+            _fill_and_start(page, base)
+            _wait_js(page, "() => document.querySelector('#run-state').textContent === '비용 한도 도달'", None, 30000)
+            note = page.inner_text("#end-note")
+            assert "비용 한도에 도달" in note and "추천 결과가 아닙니다" in note
+            assert page.is_disabled('#pages [data-page="result"]') and page.locator("#final .rec").count() == 0
+            assert page.evaluate("() => document.activeElement.id") == "end-note"
+            rid = page.evaluate("() => sessionStorage.getItem('ctrec-run-id')")
+            assert rid is None  # 끝나지 않은 분석은 새로고침 복원 대상으로 남기지 않음 (완료만 기억)
+            assert len(sdk.requests) == 3
+            _assert_clean(page)
+            browser.close()
+    finally:
+        srv.should_exit = True
+        t.join(5)
+        budget.reset_ledgers()
+    assert errors == [], errors

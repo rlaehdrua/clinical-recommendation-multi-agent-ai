@@ -39,7 +39,7 @@ from ..schemas import ClarifyingQuestion
 from ..status import MATCH_NOTE
 from ..tools import ctgov
 from ..trace import Tracer
-from . import access, display, retention
+from . import access, budget, display, retention
 
 STATIC = Path(__file__).parent / "static"
 log = logging.getLogger("ctrec.web")
@@ -183,7 +183,9 @@ class Run:
     created_at: float = field(default_factory=time.time)
     deadline: float = 0.0
     finished_at: float | None = None
-    meter: Any = None  # 실행별 LLM 호출 기록 (기록 전용, web_metering.WebRunMeter)
+    meter: Any = None  # 실행별 LLM 호출 기록 (web_metering.WebRunMeter)
+    budget: Any = None  # enforce 모드의 실행별 예산 (web/budget.RunBudget). record·off에서는 None
+    budget_error: str | None = None  # enforce 준비 실패 코드 (운영자용, 화면에는 종류만)
     metering: dict | None = None  # 끝난 뒤 확정한 기록 요약 (숫자·코드만)
 
     def emit(self, type_: str, **data: Any) -> None:
@@ -287,7 +289,11 @@ def _client_record(rec: dict) -> dict:
     return {**rec, "message": f"{kind} (자세한 내용은 서버 실행 기록 참고)"}
 
 
-_END_MESSAGE = {"cancelled": "실행이 취소되었습니다.", "timed_out": "실행 시간 제한을 넘어 중단했습니다."}
+_END_MESSAGE = {"cancelled": "실행이 취소되었습니다.", "timed_out": "실행 시간 제한을 넘어 중단했습니다.",
+                budget.EXCEEDED: "비용 한도에 도달해 새 AI 호출을 멈췄습니다. 분석이 끝나지 않았으므로 추천 결과가 아닙니다.",
+                budget.USAGE_UNKNOWN: "AI 호출의 사용량을 확인할 수 없어 안전을 위해 분석을 멈췄습니다.",
+                budget.BUDGET_ERROR: "서버의 비용 관리 기능에 문제가 있어 분석을 멈췄습니다. 관리자에게 문의하세요."}
+_BUDGET_OUTCOMES = (budget.EXCEEDED, budget.USAGE_UNKNOWN, budget.BUDGET_ERROR)
 
 
 def _display(session) -> dict | None:
@@ -300,18 +306,43 @@ def _display(session) -> dict | None:
 
 
 def _execute(run: Run, req: RunRequest, case: PatientCase, trials: dict[str, dict]) -> None:
-    """실행 스레드 입구. 이 실행의 LLM 호출을 기록 (기록 전용: 호출을 막거나 바꾸지 않음, 비용 상한 없음)."""
+    """실행 스레드 입구. record: 호출을 기록만 (상한 없음). enforce: 호출마다 예산 예약·정산 (web/budget.py)."""
     run.meter = web_metering.WebRunMeter(run.run_id)
-    with run.meter.recording():
+    if run.meter.mode != "enforce":
+        with run.meter.recording():
+            _execute_run(run, req, case, trials)
+        return
+    try:  # 준비 실패는 조용히 기록 전용으로 내려가지 않고 실행을 비용 관리 오류로 끝냄
+        cfg = budget.load_config(default_run_seconds=RUN_TIMEOUT_S)
+        ctx = budget.run_context(run.run_id, cfg, budget.get_ledger(cfg), budget.make_inner(), run.meter)
+    except Exception as e:  # noqa: BLE001 - 종류만 기록
+        run.budget_error = type(e).__name__
+        log.warning("web budget setup failed: %s", run.budget_error)
+        _execute_run(run, req, case, trials, preflight=budget.BudgetStop("ledger_unavailable"))
+        return
+    with ctx as run_budget:
+        run.budget = run_budget
         _execute_run(run, req, case, trials)
 
 
-def _execute_run(run: Run, req: RunRequest, case: PatientCase, trials: dict[str, dict]) -> None:
+def _budget_fields(run: Run) -> dict:
+    if run.budget is not None:
+        return run.budget.summary()
+    if run.meter is not None and run.meter.mode == "enforce":
+        return {"budget_mode": "enforce", "budget_status": budget.BUDGET_ERROR, "cap_enforced": True,
+                "last_block_reason": "ledger_unavailable"}
+    return {"budget_mode": run.meter.mode if run.meter is not None else web_metering.mode(), "cap_enforced": False}
+
+
+def _execute_run(run: Run, req: RunRequest, case: PatientCase, trials: dict[str, dict],
+                 preflight: Exception | None = None) -> None:
     llm.reset_usage()
     llm.set_guard(run.stop_reason)  # 이 실행(과 하위 스레드)의 API 호출 직전마다 취소·시간 초과 확인
     outcome, error_type = "completed", None
     session = None
     try:
+        if preflight is not None:
+            raise preflight
         # 저장은 기본 off (retention.save_enabled). 켜져 있을 때만 trace.jsonl·result.json·report.md를 씀
         out_dir = retention.prepare_run_dir(run.run_id) if retention.save_enabled() else None
         tracer = Tracer(out_dir / "trace.jsonl" if out_dir else None, verbose=False,
@@ -325,6 +356,9 @@ def _execute_run(run: Run, req: RunRequest, case: PatientCase, trials: dict[str,
         tracer.log("pipeline", "start", message=f"mode=agent model={config.MODEL} trials={len(trials)}")
         Orchestrator(session).run()
         llm.guard()  # 오케스트레이터가 끝난 뒤라도 취소·시간 초과였으면 결과를 완료로 내보내지 않음
+        if run.budget is not None and run.budget.stopped:
+            # 예산 차단은 오케스트레이터·병렬 Matcher가 오류로 삼켜도 여기서 다시 확인: 중단된 분석을 완료로 내보내지 않음
+            raise budget.BudgetStop(run.budget.stopped)
         if out_dir is not None:
             session.save(out_dir)
         with run.lock:  # 취소 요청과 경합: 아직 running일 때만 결과를 보내고, 같은 잠금 안에서 completed로 확정
@@ -334,11 +368,15 @@ def _execute_run(run: Run, req: RunRequest, case: PatientCase, trials: dict[str,
                          display=_display(session),
                          trials={tid: {"title": t.get("title"), "overall_status": t.get("overall_status"),
                                        "url": (t.get("source") or {}).get("url")} for tid, t in session.trials.items()})
+    except budget.BudgetStop as e:
+        outcome = e.category
     except llm.RunCancelled as e:
         outcome = "timed_out" if e.args and e.args[0] == "timeout" else "cancelled"
     except Exception as e:  # noqa: BLE001 - 오류도 화면에 표시 (예외 메시지에는 환자 정보가 있을 수 있으므로 종류만)
         outcome, error_type = "error", type(e).__name__
     finally:
+        if outcome in ("error", "cancelled", "timed_out") and run.budget is not None and run.budget.stopped                 and not run.cancel_requested.is_set():
+            outcome = budget.CATEGORY.get(run.budget.stopped, budget.BUDGET_ERROR)  # 원인이 예산 차단이면 그것으로
         with run.lock:
             if run.state == "completed":
                 outcome = "completed"  # 결과를 보낸 실행은 이후 무슨 일이 있어도 완료 (취소·오류로 바뀌지 않음)
@@ -355,7 +393,8 @@ def _execute_run(run: Run, req: RunRequest, case: PatientCase, trials: dict[str,
             run.pending_questions = set()
             try:  # 기록 요약 실패가 실행 종료 처리에 영향을 주지 않음
                 run.meter.finish()
-                run.metering = run.meter.summary(llm_expected=session is not None and session.profile is not None)
+                run.metering = {**run.meter.summary(llm_expected=session is not None and session.profile is not None),
+                                **_budget_fields(run)}
             except Exception as e:  # noqa: BLE001
                 run.metering = {"run_id": run.run_id, "status": web_metering.UNMETERED,
                                 "status_reason": f"metering_error:{type(e).__name__}",
@@ -446,6 +485,13 @@ def _purge_outputs_periodically() -> None:
 @app.post("/api/runs")
 def start_run(req: RunRequest, request: Request, response: Response) -> dict:
     access.check_state_changing(request)
+    if web_metering.mode() == "enforce":
+        # 비용 통제를 켰는데 설정·원장이 준비되지 않았으면 시작하지 않음 (기록 전용으로 조용히 내려가지 않음)
+        try:
+            budget.get_ledger(budget.load_config(default_run_seconds=RUN_TIMEOUT_S))
+        except (budget.BudgetConfigError, budget.LedgerError) as e:
+            log.warning("web budget not ready: %s", getattr(e, "problems", None) or type(e).__name__)
+            raise HTTPException(503, "서버의 비용 관리 설정에 문제가 있어 지금은 분석을 시작할 수 없습니다. 관리자에게 문의하세요.")
     all_trials = _load_trials()
     trials = dict(all_trials) if req.screen else {t: all_trials[t] for t in req.trial_ids if t in all_trials}
     if not trials and not req.allow_search:
@@ -513,7 +559,7 @@ def run_metering(run_id: str, request: Request) -> dict:
     if meter is None:
         return {"run_id": run.run_id, "status": web_metering.UNMETERED, "status_reason": "not_started",
                 "cost_usd": web_metering.UNKNOWN, "cost_cap_enforced": False, "in_progress": True}
-    return {**meter.summary(llm_expected=False), "in_progress": True}  # 진행 중: 확정 전 값
+    return {**meter.summary(llm_expected=False), **_budget_fields(run), "in_progress": True}  # 진행 중: 확정 전 값
 
 
 @app.post("/api/runs/{run_id}/answers")
