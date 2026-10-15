@@ -22,6 +22,7 @@
 - `enforce`에 필요한 설정이 하나라도 빠지거나 잘못되면 분석 시작을 거부합니다(HTTP 503). `record`로 조용히 내려가지 않습니다.
 - `off`, `record`가 아닌 알 수 없는 값도 `enforce`로 취급하므로, 같은 방식으로 거부됩니다.
 - Phase 5 파일럿 실행 게이트와는 별개입니다. `PAID_EXECUTION_ENABLED = False`는 그대로입니다.
+- **Phase 8:** 어느 모드든 `CTREC_WEB_PAID_ENABLED=1`과 허가 조건(`web_deployment.md` 7절)이 없으면 웹은 실제 호출을 하지 않습니다. record로는 실제 호출을 켤 수 없습니다(enforce 필수).
 
 ## 2. 설정 (서버 환경 변수만, 사용자가 올릴 수 없음)
 

@@ -20,9 +20,8 @@
 | 원장 | 없음 | 운영자가 `init`으로 한 번 생성 |
 
 - **A는 유료 호출 허용을 뜻하지 않습니다.**
-  - A 구성에 API 키를 넣으면 비용 상한 없이 호출됩니다.
-  - 그래서 접속 비밀번호(`CTREC_PASSWORD`)와 Console의 키·워크스페이스 지출 한도를 반드시 함께 설정하세요.
-  - 점검 도구는 "API 키 있음 + 비밀번호 없음"을 BLOCKED로 봅니다.
+  - Phase 8부터 웹 실제 AI 분석은 `CTREC_WEB_PAID_ENABLED`(기본 0)로 막혀 있습니다. A 구성에 API 키를 넣어도 웹은 실제 호출을 하지 않습니다.
+  - record에서는 스위치를 1로 바꿔도 거부됩니다. 실제 호출은 B(enforce) + 모든 허가 조건 + 별도 승인일 때만입니다(7절).
 - 기본 구성을 enforce로 바꾸지 않았습니다. enforce의 강화된 사전 조건은 운영자가 `CTREC_WEB_METERING=enforce`를 고를 때만 검사합니다.
 
 ## 2. Render 설정 조사 결과
@@ -110,7 +109,7 @@ PYTHONPATH=src python scripts/check_web_deployment.py --process-env --probe  # �
 - 가격표의 최신성
 
 현재 저장소 기준 결과 (2026-10-15, 이 컴퓨터):
-- A(`render.yaml`): PASS 14 / WARNING 2 / BLOCKED 0 / UNVERIFIED 3
+- A(`render.yaml`): PASS 15 / WARNING 2 / BLOCKED 0 / UNVERIFIED 3 (Phase 8: 실제 분석 스위치 꺼짐 PASS 포함)
   - WARNING: 프록시 `'*'` 전제, Python 버전 차이
   - UNVERIFIED: 모델 접근, API 키, 비밀번호
 - B(예시 파일 그대로): BLOCKED 1 (`unconfirmed:CTREC_WEB_PRICE`) — 가격 확인 표시를 일부러 0으로 두었기 때문입니다.
@@ -145,3 +144,27 @@ PYTHONPATH=src python scripts/check_web_deployment.py --process-env --probe  # �
   - 새 탭에서 "진행 중인 분석 이어 보기" 버튼을 보여 줍니다.
   - 버튼을 눌러야만 이어 봅니다. 공용 컴퓨터에서 자동으로 열리지 않게 하기 위해서입니다.
   - 새 분석이 429로 거절되면 같은 버튼을 보여 줍니다.
+
+## 7. 웹 실제 AI 분석 허가 (Phase 8, `src/ctrec/web/paid_gate.py`)
+
+**허가 조건** (모두 충족해야 함)
+1. `CTREC_WEB_PAID_ENABLED=1` (기본 0)
+2. `CTREC_WEB_METERING=enforce`
+3. enforce 설정 완비: 한도, 가격 확인·가격 모델 일치, 대체 모델 끔, 영속·단일 인스턴스 확인
+4. 원장 정상
+5. `CTREC_PASSWORD` 12자 이상, `CTREC_ALLOW_INSECURE_HTTP` 꺼짐
+6. `ANTHROPIC_API_KEY`
+
+**차단 동작**
+- 하나라도 빠지면 `POST /api/runs`가 실행·스레드·SDK 클라이언트를 만들기 전에 503을 돌려줍니다. 환자 정보는 외부로 나가지 않습니다.
+- 실행 스레드도 시작할 때 한 번 더 확인합니다. 그사이 설정이 바뀌었으면 종료 상태 `analysis_disabled`로 끝납니다.
+- 화면은 `/api/config`의 `analysis.enabled`로 "실제 AI 분석이 꺼져 있습니다" 안내를 보여 줍니다. 어느 조건이 빠졌는지는 서버 로그(`web analysis blocked: [...]`)에만 남고, 화면·응답에는 나오지 않습니다.
+
+**테스트 대역**
+- 테스트 하네스가 코드에서 `TEST_LLM_BACKEND="fake"`로 바꿀 때만 씁니다. 환경 변수로는 켤 수 없습니다.
+- 이때 화면에 "테스트 대역 (실제 AI 분석 아님)"이 표시됩니다.
+- 실제 분석이 꺼져 있을 때 대역으로 자동 전환하는 경로는 없습니다.
+
+**적용 범위**
+- 이 스위치는 웹에만 적용됩니다. CLI(`python -m ctrec run`)와 기준 컴파일 스크립트에는 적용되지 않습니다(`team_handoff.md` 2절).
+- Phase 5 파일럿 게이트(`PAID_EXECUTION_ENABLED`)와는 별개이며, 그 게이트는 바꾸지 않았습니다.

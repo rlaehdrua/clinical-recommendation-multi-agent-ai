@@ -108,6 +108,9 @@ async function init() {
   try {
     const cfg = await (await fetch("/api/config")).json();
     $("#model").textContent = "모델 " + cfg.model; $("#disclaimer").textContent = cfg.disclaimer;
+    const an = cfg.analysis || {};
+    if (an.backend === "test_double") $("#model").textContent = "테스트 대역 (실제 AI 분석 아님)";  // 테스트 하네스에서만
+    $("#analysis-off").hidden = an.enabled !== false;
     state.patients = await (await fetch("/api/patients")).json();
     state.trials = await (await fetch("/api/trials")).json();
   } catch (e) { $("#start-hint").textContent = "서버에 연결하지 못했습니다. 잠시 후 새로고침하세요."; return; }
@@ -373,14 +376,15 @@ function onEnd(s) {
     // 비용 통제(enforce)로 멈춘 경우: 중간 판정은 남기되 추천 결과로 보이지 않게
     budget_exceeded: ["비용 한도 도달", "warn", "비용 한도에 도달해 새 AI 호출을 멈췄습니다. 분석이 끝나지 않았으므로 추천 결과가 아닙니다. 아래 '검토 중인 임상시험'의 중간 판정은 참고용입니다."],
     usage_unknown: ["사용량 확인 불가", "warn", "AI 호출의 사용량을 확인할 수 없어 안전을 위해 분석을 멈췄습니다. 추천 결과가 아니며, 중간 판정은 참고용입니다."],
-    budget_error: ["비용 관리 오류", "bad", "서버의 비용 관리 기능에 문제가 있어 분석을 멈췄습니다. 관리자에게 문의하세요."] };
+    budget_error: ["비용 관리 오류", "bad", "서버의 비용 관리 기능에 문제가 있어 분석을 멈췄습니다. 관리자에게 문의하세요."],
+    analysis_disabled: ["실제 분석 꺼짐", "bad", "이 서버에서는 실제 AI 분석이 꺼져 있어 분석하지 않았습니다. 입력한 환자 정보는 외부로 보내지 않았습니다."] };
   const [t, c, msg] = END[s] || END.error;
   if (s === "completed") { finishActive(); setStage("done", "done"); }
   else for (const [k] of STAGES) if (state.stages[k] === "active") setStage(k, "failed");
   $("#qslot").innerHTML = "";
   const note = $("#end-note"); note.hidden = false; note.className = "note " + (c === "ok" ? "ok" : c === "warn" ? "warn" : "bad");
   if (s !== "error" || !note.textContent) note.textContent = msg;
-  if (["budget_exceeded", "usage_unknown", "budget_error"].includes(s)) $('#pages [data-page="result"]').disabled = true;  // 중단된 분석은 결과 화면 없음
+  if (["budget_exceeded", "usage_unknown", "budget_error", "analysis_disabled"].includes(s)) $('#pages [data-page="result"]').disabled = true;  // 중단된 분석은 결과 화면 없음
   stageNote(msg);
   $("#conn-note").hidden = true;
   endLocal(t, c); remember(s === "completed" ? state.runId : null);

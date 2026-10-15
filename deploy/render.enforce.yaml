@@ -35,6 +35,8 @@ services:
         value: "0"
       - key: CTREC_WEB_METERING
         value: enforce
+      - key: CTREC_WEB_PAID_ENABLED
+        value: "0"   # 기본 꺼짐. 별도 승인 뒤 운영자가 대시보드에서 1로 (그래도 모든 허가 조건을 서버가 다시 확인)
       - key: CTREC_WEB_BUDGET_LEDGER
         value: /var/data/ctrec/web-ledger.db
       - key: CTREC_MAX_WORKERS

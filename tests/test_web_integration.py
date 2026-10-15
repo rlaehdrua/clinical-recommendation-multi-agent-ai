@@ -71,7 +71,8 @@ def test_index_and_static(client):
 
 def test_config_trials_patients_shape(client):
     cfg = client.get("/api/config").json()
-    assert set(cfg) == {"model", "disclaimer", "max_rounds"}
+    assert set(cfg) == {"model", "disclaimer", "max_rounds", "analysis"}
+    assert cfg["analysis"] == {"enabled": True, "backend": "test_double"}  # 하네스 대역 (게이트 세부 사유는 노출 안 함)
     trials = client.get("/api/trials").json()
     assert len(trials) == 26 and {"trial_id", "title", "overall_status", "open", "conditions", "synthetic"} <= set(trials[0])
     patients = client.get("/api/patients").json()

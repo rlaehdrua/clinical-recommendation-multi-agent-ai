@@ -103,6 +103,7 @@ def install(monkeypatch, tmp_path, fake: FakeLLM | None = None) -> FakeLLM:
     monkeypatch.setattr(llm, "structured", fake.structured)
     monkeypatch.setattr(llm, "plain", fake.plain)
     monkeypatch.setattr(llm, "client", lambda: (_ for _ in ()).throw(AssertionError("실제 API 클라이언트 사용 금지")))
+    monkeypatch.setattr(web, "TEST_LLM_BACKEND", "fake")  # 명시적 테스트 대역 (실제 호출 허가 게이트 대신)
     monkeypatch.setattr(config, "OUTPUT_DIR", tmp_path / "outputs")
     monkeypatch.setattr(web, "ANSWER_TIMEOUT_S", 20)
     web.RUNS.clear()
@@ -189,6 +190,7 @@ def install_sdk(monkeypatch, tmp_path, sdk: "SDKAdapter") -> "SDKAdapter":
     from ctrec.web import app as web
 
     monkeypatch.setattr(llm, "_client", sdk)
+    monkeypatch.setattr(web, "TEST_LLM_BACKEND", "fake")  # 명시적 테스트 대역 (Fake SDK, 실제 호출 허가 게이트 대신)
     monkeypatch.setattr(config, "OUTPUT_DIR", tmp_path / "outputs")
     monkeypatch.setattr(web, "ANSWER_TIMEOUT_S", 20)
     web.RUNS.clear()

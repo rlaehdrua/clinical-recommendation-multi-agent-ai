@@ -191,6 +191,15 @@ def check_env(r: Report, env: dict, target: str, provided: set) -> None:
     else:
         r.add("budget_mode", PASS, "enforce: 호출 전 예약·한도 검사")
 
+    paid = (env.get("CTREC_WEB_PAID_ENABLED") or "0").strip()
+    if paid != "1":
+        r.add("web_paid", PASS, "CTREC_WEB_PAID_ENABLED=0: 웹 실제 AI 분석(유료 호출) 꺼짐 (API 키가 있어도 호출하지 않음)")
+    elif mode != "enforce":
+        r.add("web_paid", BLOCKED, "CTREC_WEB_PAID_ENABLED=1인데 enforce가 아님: 서버가 분석 시작을 거부함")
+    else:
+        r.add("web_paid", WARNING, "CTREC_WEB_PAID_ENABLED=1: 웹 실제 유료 호출 허용 설정 - 별도 승인 기록 필요 "
+              "(서버가 시작마다 허가 조건을 다시 확인)")
+
     model = env.get("CTREC_MODEL") or "claude-sonnet-5"
     if model in OFFICIAL_PRICES:
         r.add("model", PASS, f"{model}: 공식 가격표에 있음 ({OFFICIAL_PRICES[model]['checked']} 확인)")
@@ -222,8 +231,8 @@ def check_env(r: Report, env: dict, target: str, provided: set) -> None:
         r.add("auth", PASS, "CTREC_PASSWORD: 설정됨 (12자 이상)")
     elif pw:
         r.add("auth", WARNING, "CTREC_PASSWORD: 12자 미만")
-    elif target == "record" and env.get(key):
-        r.add("auth", BLOCKED, "CTREC_PASSWORD 없음 + API 키 있음 + 비용 강제 차단 없음: 누구나 유료 호출을 일으킬 수 있음")
+    elif paid == "1":
+        r.add("auth", BLOCKED, "CTREC_PASSWORD 없음 + 실제 분석 허용: 서버가 분석 시작을 거부함 (12자 이상 필요)")
     else:
         r.add("auth", WARNING, "CTREC_PASSWORD 없음: 누구나 접속 가능")
 

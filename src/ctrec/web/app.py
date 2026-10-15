@@ -20,6 +20,7 @@ import json
 import logging
 import os
 import secrets
+import sys
 import threading
 import time
 import uuid
@@ -40,7 +41,7 @@ from ..schemas import ClarifyingQuestion
 from ..status import MATCH_NOTE
 from ..tools import ctgov
 from ..trace import Tracer
-from . import access, budget, display, retention
+from . import access, budget, display, paid_gate, retention
 
 STATIC = Path(__file__).parent / "static"
 log = logging.getLogger("ctrec.web")
@@ -295,6 +296,33 @@ _END_MESSAGE = {"cancelled": "실행이 취소되었습니다.", "timed_out": "�
                 budget.USAGE_UNKNOWN: "AI 호출의 사용량을 확인할 수 없어 안전을 위해 분석을 멈췄습니다.",
                 budget.BUDGET_ERROR: "서버의 비용 관리 기능에 문제가 있어 분석을 멈췄습니다. 관리자에게 문의하세요."}
 _BUDGET_OUTCOMES = (budget.EXCEEDED, budget.USAGE_UNKNOWN, budget.BUDGET_ERROR)
+_END_MESSAGE["analysis_disabled"] = ("이 서버에서는 실제 AI 분석이 꺼져 있어 분석하지 않았습니다. "
+                                     "입력한 환자 정보는 외부로 보내지 않았습니다.")
+
+# ---------------------------------------------------------------------------
+# 실제 LLM 호출 허가 (Phase 8, web/paid_gate.py). 기본 꺼짐: API 키만으로는 웹이 실제 호출을 하지 않음.
+# 테스트 대역(Fake LLM·Fake SDK)은 테스트 하네스가 이 값을 "fake"로 바꿀 때만 허용 (환경 변수로는 바꿀 수 없음).
+# 실제 분석이 꺼져 있을 때 대역으로 자동 전환하는 경로는 없음.
+# ---------------------------------------------------------------------------
+TEST_LLM_BACKEND: str | None = None
+_ANALYSIS_DISABLED = "이 서버에서는 실제 AI 분석이 꺼져 있습니다(관리자 설정). 입력한 환자 정보는 외부로 보내지 않았습니다."
+_ANALYSIS_NOT_READY = ("실제 AI 분석에 필요한 서버 설정(비용 관리·보안)이 갖춰지지 않아 분석을 시작할 수 없습니다. "
+                       "입력한 환자 정보는 외부로 보내지 않았습니다. 관리자에게 문의하세요.")
+
+
+class AnalysisDisabled(Exception):
+    """실제 LLM 호출이 허가되지 않음 (클라이언트를 만들거나 요청을 보내기 전에 멈춤)."""
+
+
+def _llm_backend() -> str:
+    return "test_double" if TEST_LLM_BACKEND == "fake" else "real"
+
+
+def _paid_problems() -> list[str]:
+    """실제 호출 허가 문제 (테스트 대역이면 없음)."""
+    if _llm_backend() != "real":
+        return []
+    return paid_gate.problems(default_run_seconds=RUN_TIMEOUT_S, password=PASSWORD)
 
 
 def _display(session) -> dict | None:
@@ -309,6 +337,9 @@ def _display(session) -> dict | None:
 def _execute(run: Run, req: RunRequest, case: PatientCase, trials: dict[str, dict]) -> None:
     """실행 스레드 입구. record: 호출을 기록만 (상한 없음). enforce: 호출마다 예산 예약·정산 (web/budget.py)."""
     run.meter = web_metering.WebRunMeter(run.run_id)
+    if _paid_problems():  # 시작 뒤 설정이 바뀌었어도: 클라이언트·예산 준비 전에 멈춤 (외부 요청 없음)
+        _execute_run(run, req, case, trials, preflight=AnalysisDisabled())
+        return
     if run.meter.mode != "enforce":
         with run.meter.recording():
             _execute_run(run, req, case, trials)
@@ -371,6 +402,8 @@ def _execute_run(run: Run, req: RunRequest, case: PatientCase, trials: dict[str,
                                        "url": (t.get("source") or {}).get("url")} for tid, t in session.trials.items()})
     except budget.BudgetStop as e:
         outcome = e.category
+    except AnalysisDisabled:
+        outcome = "analysis_disabled"
     except llm.RunCancelled as e:
         outcome = "timed_out" if e.args and e.args[0] == "timeout" else "cancelled"
     except Exception as e:  # noqa: BLE001 - 오류도 화면에 표시 (예외 메시지에는 환자 정보가 있을 수 있으므로 종류만)
@@ -436,7 +469,9 @@ def healthz() -> dict:
 
 @app.get("/api/config")
 def get_config() -> dict:
-    return {"model": config.MODEL, "disclaimer": DISCLAIMER, "max_rounds": config.MAX_CLARIFY_ROUNDS}
+    # 실제 분석 가능 여부만 알림 (어느 설정이 빠졌는지는 서버 로그에만)
+    return {"model": config.MODEL, "disclaimer": DISCLAIMER, "max_rounds": config.MAX_CLARIFY_ROUNDS,
+            "analysis": {"enabled": not _paid_problems(), "backend": _llm_backend()}}
 
 
 @app.get("/api/patients")
@@ -486,6 +521,10 @@ def _purge_outputs_periodically() -> None:
 @app.post("/api/runs")
 def start_run(req: RunRequest, request: Request, response: Response) -> dict:
     access.check_state_changing(request)
+    problems = _paid_problems()
+    if problems:  # 실제 호출 허가 전: 실행·스레드·SDK 클라이언트를 만들지 않음
+        log.warning("web analysis blocked: %s", problems)
+        raise HTTPException(503, _ANALYSIS_DISABLED if problems == ["web_paid_disabled"] else _ANALYSIS_NOT_READY)
     if web_metering.mode() == "enforce":
         # 비용 통제를 켰는데 설정·원장이 준비되지 않았으면 시작하지 않음 (기록 전용으로 조용히 내려가지 않음)
         try:
@@ -648,5 +687,10 @@ def main() -> None:
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8000)
     args = ap.parse_args()
+    if hasattr(sys.stdout, "reconfigure"):  # Windows 비 UTF-8 콘솔·리디렉션(cp949)에서 안내 문구(⚠) 때문에 시작이 멈추지 않게
+        sys.stdout.reconfigure(errors="replace")
     print(f"\n{DISCLAIMER}\n\n웹 UI: http://{args.host}:{args.port}  (모델: {config.MODEL})\n")
+    if _paid_problems():
+        print("실제 AI 분석: 꺼짐 (CTREC_WEB_PAID_ENABLED=0 또는 허가 조건 미충족). 화면은 열리지만 분석은 시작되지 않습니다.\n"
+              "자세한 내용: docs/team_local_setup.md\n")
     uvicorn.run(app, host=args.host, port=args.port, log_level="warning")

@@ -340,6 +340,7 @@ def test_web_run_and_pilot_concurrently(monkeypatch, tmp_path):
         return f
     web_sdk = WebDefaultSDK(on_call=once("web"))
     monkeypatch.setattr(llm, "_client", web_sdk)  # 일반 웹 실행이 쓰는 기본 클라이언트
+    monkeypatch.setattr(web, "TEST_LLM_BACKEND", "fake")  # 명시적 테스트 대역 (Phase 8 실제 호출 허가 게이트 대신)
     pilot_fake = FakeSDKClient(on_call=lambda i, kw: once("pilot")())
     holder = {}
     pilot_thread = threading.Thread(target=lambda: holder.setdefault(

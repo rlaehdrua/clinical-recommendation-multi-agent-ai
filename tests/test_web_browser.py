@@ -1069,3 +1069,40 @@ def test_expired_run_after_refresh(make_server):
         assert page.is_disabled('#pages [data-page="result"]') and page.locator("#final .rec").count() == 0
         browser.close()
     assert errors == [], errors
+
+
+# =============================================================== Phase 8: 실제 분석이 꺼진 서버 (기본)
+
+
+def test_real_analysis_off_by_default_is_explained(monkeypatch):
+    """하네스 대역 없이 띄운 기본 서버: API 키가 있어도 실제 분석 꺼짐 안내, 시작해도 실행·외부 요청 없음."""
+    import anthropic
+    from ctrec import llm
+    made = []
+    monkeypatch.setattr(anthropic, "Anthropic", lambda *a, **k: made.append(1) or (_ for _ in ()).throw(RuntimeError("x")))
+    monkeypatch.setattr(llm, "_client", None)
+    monkeypatch.setattr(web, "TEST_LLM_BACKEND", None)
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test-browser-key-0000")
+    for k in ("CTREC_WEB_PAID_ENABLED", "CTREC_WEB_METERING", "CTREC_REQUIRE_HTTPS"):
+        monkeypatch.delenv(k, raising=False)
+    web.RUNS.clear()
+    web.CLIENT_STARTS.clear()
+    srv, t, base = _serve()
+    errors = []
+    try:
+        with sync_api.sync_playwright() as p:
+            browser = _browser(p)
+            page = _page(browser, base, errors)
+            page.goto(base)
+            page.wait_for_selector("#analysis-off", state="visible", timeout=10000)
+            assert "실제 AI 분석이 꺼져" in page.inner_text("#analysis-off")
+            _fill_and_start(page, base)
+            _wait_js(page, "() => document.querySelector('#start-hint').textContent.includes('꺼져')")
+            assert page.is_hidden("#progress-panel") and not page.is_disabled("#custom")
+            assert page.evaluate("sessionStorage.getItem('ctrec-run-id')") is None
+            _assert_clean(page)
+            browser.close()
+    finally:
+        srv.should_exit = True
+        t.join(5)
+    assert errors == [] and web.RUNS == {} and made == [] and llm._client is None

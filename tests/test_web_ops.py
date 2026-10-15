@@ -460,7 +460,12 @@ def test_deploy_check_blocks_unsafe_settings_and_hides_secrets(tmp_path, capsys)
         """, "rec.yaml")
     env.write_text("ANTHROPIC_API_KEY=sk-ant-test-x\nCTREC_PASSWORD=\n", encoding="utf-8")
     got, _ = _check("--render-yaml", rec, "--env-file", str(env), "--target", "record")
-    assert {("budget_mode", "BLOCKED"), ("auth", "BLOCKED"), ("proxy", "PASS")} <= got  # 비밀번호 없는 유료 호출 가능 구성
+    # Phase 8: 실제 분석 스위치가 꺼져 있으면 API 키·비밀번호 없음은 경고 (유료 호출이 일어나지 않음)
+    assert {("budget_mode", "BLOCKED"), ("auth", "WARNING"), ("proxy", "PASS"), ("web_paid", "PASS")} <= got
+    env.write_text("ANTHROPIC_API_KEY=sk-ant-test-x\nCTREC_PASSWORD=\nCTREC_WEB_PAID_ENABLED=1\nCTREC_WEB_METERING=record\n",
+                   encoding="utf-8")
+    got, _ = _check("--render-yaml", rec, "--env-file", str(env), "--target", "record")
+    assert {("web_paid", "BLOCKED"), ("auth", "BLOCKED")} <= got  # record에서 실제 분석 허용 시도·비밀번호 없음
 
 
 # ================================================================ 탭을 닫았다 다시 연 경우 (6-6)
