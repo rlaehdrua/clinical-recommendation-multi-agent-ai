@@ -34,7 +34,8 @@ TRIALS = {t: ALL[t] for t in PARSED}
 # ---------------------------------------------------------------- 가짜 클라이언트
 
 def _usage(i=100, o=50):
-    return SimpleNamespace(input_tokens=i, output_tokens=o, cache_creation_input_tokens=0, cache_read_input_tokens=0)
+    return SimpleNamespace(input_tokens=i, output_tokens=o, cache_creation_input_tokens=0, cache_read_input_tokens=0,
+                           service_tier="standard")  # 실제 API 응답처럼 등급 포함 (없으면 Phase 7부터 중단)
 
 
 class RateLimitError(Exception):  # 이름으로 일시 오류 판단 (SDK 예외와 같은 이름)
@@ -216,10 +217,10 @@ def test_actual_usage_over_cap_stops_next_call():
     m = _meter(max_input_tokens=6000, chars_per_token=50.0)
     with lp.metered(m, inner):
         _call(llm.current_client())
-        _call(llm.current_client())
-        with pytest.raises(lp.PilotStop, match="input_token_cap"):
+        # Phase 7: 실제 입력이 호출 전 예약보다 크면 상한에 닿기 전이라도 다음 호출부터 중단 (추정을 믿을 수 없음)
+        with pytest.raises(lp.PilotStop, match="estimate_exceeded"):
             _call(llm.current_client())
-    assert inner.calls == 2
+    assert inner.calls == 1 and m.input_tokens == 5000  # 실제값으로 정산
 
 
 def test_retry_cap_on_transient_errors_and_no_retry_on_bad_request():

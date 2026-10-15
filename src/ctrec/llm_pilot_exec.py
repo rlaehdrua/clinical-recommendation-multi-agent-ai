@@ -28,7 +28,9 @@ from .llm_pilot_fake import FakeSDKClient
 _STOP_CODES = {"cancelled", "timeout", "call_cap", "cost_cap", "input_token_cap", "output_token_cap", "retry_cap",
                "consecutive_failures", "usage_missing", "model_mismatch", "fallback_detected", "fallback_requested",
                "model_price_mismatch", "sdk_retries_enabled", "retry_exhausted", "unmetered_call_blocked",
-               "sdk_hidden_retry", "shared_cost_cap", "shared_concurrency_cap"}
+               "sdk_hidden_retry", "shared_cost_cap", "shared_concurrency_cap", "service_tier_mismatch",
+               "cache_ttl_mismatch", "inference_geo_mismatch", "estimate_exceeded", "request_option_unsupported",
+               "server_tool_requested"}
 
 
 def _is_real_sdk(inner) -> bool:

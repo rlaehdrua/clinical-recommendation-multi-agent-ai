@@ -1,0 +1,4 @@
+patient_id,trial_id,label
+P7-SYN-DEMO-A-conflict-ecog,DEMO-LUNG-001,UNCERTAIN
+P7-SYN-DEMO-A-conflict-plt,DEMO-LUNG-001,UNCERTAIN
+P7-SYN-DEMO-A-units-hb,DEMO-LUNG-001,INELIGIBLE

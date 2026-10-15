@@ -37,7 +37,8 @@ RESCUE, SHARED, BIOMARKER, COHORT, CONFIRMED, EGFR = lp.PILOT_CASE_POOL
 KEY = "sk-ant-test-guard-key-0000"
 MSG = {"id": "msg_1", "type": "message", "role": "assistant", "model": None, "content": [{"type": "text", "text": "{\"assessments\": []}"}],
        "stop_reason": "end_turn", "stop_sequence": None,
-       "usage": {"input_tokens": 10, "output_tokens": 5, "cache_creation_input_tokens": 0, "cache_read_input_tokens": 0}}
+       "usage": {"input_tokens": 10, "output_tokens": 5, "cache_creation_input_tokens": 0, "cache_read_input_tokens": 0,
+                 "service_tier": "standard"}}
 
 
 @pytest.fixture(autouse=True)

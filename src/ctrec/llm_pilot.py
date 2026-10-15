@@ -192,7 +192,9 @@ class PilotLimits:
     call_timeout_s: float = 180.0
     run_deadline_s: float = 1800.0
     max_tokens_per_call: int = 16000  # 출력 상한 예약에 쓰는 값 (에이전트 호출의 max_tokens)
-    chars_per_token: float = 1.0  # 호출 전 입력 토큰 예약용 보수적 환산 (가정, 한글은 1자=1토큰 이상일 수도 있음)
+    # 호출 전 입력 토큰 예약용 환산: request_tokens_bound(UTF-8 바이트 + 여유분) / 이 값. 1.0 = 1바이트 1토큰 (보수적 가정,
+    # 보증 아님 - 실제가 예약보다 크면 estimate_exceeded로 중단). 이름은 Phase 5 계획 해시 호환을 위해 유지
+    chars_per_token: float = 1.0
 
 
 class PilotStop(llm.RunCancelled):
@@ -205,7 +207,8 @@ _RETRYABLE_NAMES = {"RateLimitError", "APIConnectionError", "APITimeoutError", "
 _POSSIBLY_BILLED_NAMES = {"APIConnectionError", "APITimeoutError", "InternalServerError", "OverloadedError",
                           "ServiceUnavailableError"}
 # 응답을 쓰지 않고 즉시 멈추는 이유 (대체 모델 응답·다른 모델 응답)
-_FATAL_RESPONSE = ("model_mismatch", "fallback_detected", "service_tier_mismatch")
+_FATAL_RESPONSE = ("model_mismatch", "fallback_detected", "service_tier_mismatch", "cache_ttl_mismatch",
+                   "inference_geo_mismatch")
 
 
 def is_retryable(e: Exception) -> bool:
@@ -388,12 +391,12 @@ class PilotMeter:
                 think = int(getattr(getattr(usage, "output_tokens_details", None), "thinking_tokens", 0) or 0)
                 self.thinking_tokens += think
                 s.update(thinking_tokens=think)
-                tier = getattr(usage, "service_tier", None)
-                if tier not in (None, "standard"):  # 단가가 다른 등급 (확인한 단가는 standard 기준)
-                    self.stopped = "service_tier_mismatch"
-                # 서버측 대체 모델이 돌았으면 usage.iterations에 message 외 항목이 생김
-                if any(getattr(it, "type", "message") != "message" for it in (getattr(usage, "iterations", None) or [])):
-                    self.stopped = "fallback_detected"
+                code = usage_problem(usage)  # 대체 모델·등급·1시간 캐시·지역 추론: 확인한 단가로 정산할 수 없음
+                if code:
+                    self.stopped = code
+                elif inp + cw + cr > tok["input"] or out > tok["output"]:
+                    # 실제 사용량이 호출 전 예약(입력 추정)보다 큼: 정산은 실제값으로 했고, 추정을 믿을 수 없으니 다음부터 중단
+                    self.stopped = self.stopped or "estimate_exceeded"
             s[f"stop_{getattr(resp, 'stop_reason', None)}"] += 1
             s.update(thinking_blocks=sum(getattr(b, "type", "") in ("thinking", "redacted_thinking")
                                          for b in (getattr(resp, "content", None) or [])))
@@ -475,6 +478,73 @@ BILLING_NOTES = {
 }
 
 
+# ---------------------------------------------------------------------------
+# 요청·응답 검사 (파일럿 MeteredClient와 웹 비용 통제 web.budget이 함께 씀)
+# Phase 6-3에서 웹에 먼저 만든 검사를 Phase 7에서 이곳으로 옮겨 파일럿에도 적용
+# ---------------------------------------------------------------------------
+
+
+def _jsonable(o):
+    """요청 크기 추정용: 이전 응답 블록(SDK 모델·네임스페이스 객체)도 직렬화 (오케스트레이터는 이전 턴을 다시 보냄)."""
+    if hasattr(o, "model_dump"):
+        return o.model_dump()
+    if hasattr(o, "__dict__"):
+        return vars(o)
+    return str(o)
+
+
+# 요청 형식 외에 API가 붙이는 입력 (메시지 경계 표식, 도구 사용·구조화 출력용 시스템 지시 등)에 대한 여유분.
+# 가격표에 적힌 claude-sonnet-5 도구 사용 시스템 프롬프트(354·474토큰)의 몇 배로 잡았지만 공식 상한은 없음
+# -> 실제 사용량이 예약을 넘으면 정산 후 멈춤 (estimate_exceeded).
+REQUEST_OVERHEAD_TOKENS = 4096
+# llm.create가 보내는 옵션만 허용. 그 밖의 옵션(service_tier, speed, inference_geo, betas, fallbacks, stream, temperature,
+# extra_* 등)은 단가·사용량 형식을 바꾸거나 claude-sonnet-5에서 400이 될 수 있으므로 보내지 않고 막음.
+ALLOWED_OPTIONS = frozenset({"model", "max_tokens", "system", "messages", "output_config", "tools", "tool_choice"})
+
+
+def request_tokens_bound(kw: dict) -> int:
+    """입력 토큰 예약값: 요청 내용(모델·max_tokens 제외)의 UTF-8 바이트 수 + 여유분.
+
+    바이트 단위 BPE 토크나이저라면 토큰 하나가 1바이트 이상이므로 바이트 수가 토큰 수의 상한이 됨 (한글 1자 = 3바이트,
+    이모지 = 4바이트). Claude 토크나이저는 공개되지 않았으므로 이 가정 자체는 확인할 수 없음 -> 보증이 아니라 추정."""
+    body = {k: v for k, v in kw.items() if k not in ("model", "max_tokens", "timeout")}
+    return len(json.dumps(body, ensure_ascii=False, default=_jsonable).encode("utf-8")) + REQUEST_OVERHEAD_TOKENS
+
+
+def request_problem(kw: dict) -> str | None:
+    """보내면 안 되는 요청이면 이유 코드 (보내기 전 검사)."""
+    if "fallbacks" in kw or "betas" in kw:  # 대체 모델 자동 호출 금지 (모델·단가 미확인)
+        return "fallback_requested"
+    if set(kw) - ALLOWED_OPTIONS:
+        return "request_option_unsupported"
+    if any(isinstance(t, dict) and t.get("type") not in (None, "custom") for t in kw.get("tools") or ()):
+        return "server_tool_requested"  # 서버 도구(웹 검색 등)는 토큰 외 요금이 붙고 단가표에 없음
+    return None
+
+
+def usage_problem(usage) -> str | None:
+    """사용량이 있는 응답에서 확인한 단가로 정산할 수 없는 이유 (없으면 None)."""
+    if any(getattr(it, "type", "message") != "message" for it in (getattr(usage, "iterations", None) or [])):
+        return "fallback_detected"  # 서버측 대체 모델이 돌았으면 usage.iterations에 message 외 항목이 생김
+    if getattr(usage, "service_tier", None) != "standard":
+        return "service_tier_mismatch"  # 없거나 다른 등급: 확인한 단가는 standard 기준
+    if getattr(getattr(usage, "cache_creation", None), "ephemeral_1h_input_tokens", 0) or 0:
+        return "cache_ttl_mismatch"  # 1시간 캐시 쓰기는 5분 캐시 단가보다 비쌈
+    if getattr(usage, "inference_geo", None) not in (None, "global"):
+        return "inference_geo_mismatch"  # 지역 지정 추론(예: us)은 1.1배 단가
+    return None
+
+
+def response_problem(resp, requested_model: str | None) -> str | None:
+    """응답을 확인한 단가로 정산할 수 없는 이유: 사용량 누락, 다른 모델, 그 밖의 usage_problem."""
+    usage = getattr(resp, "usage", None)
+    if usage is None or getattr(usage, "input_tokens", None) is None or getattr(usage, "output_tokens", None) is None:
+        return "usage_missing"
+    if requested_model is not None and not same_model(requested_model, getattr(resp, "model", None)):
+        return "model_mismatch"
+    return usage_problem(usage)
+
+
 def _request_chars(kw: dict) -> int:
     return len(json.dumps({"s": kw.get("system"), "m": kw.get("messages"), "o": kw.get("output_config"),
                            "t": kw.get("tools")}, ensure_ascii=False))
@@ -503,13 +573,14 @@ class MeteredClient:
 
     def _call(self, inner_create, kw):
         m, lim = self._meter, self._meter.limits
-        if "fallbacks" in kw or "betas" in kw:  # 대체 모델 자동 호출 금지 (모델·단가 미확인)
-            m.refuse("fallback_requested")
+        code = request_problem(kw)  # 대체 모델·허용 밖 옵션·서버 도구는 보내지 않음
+        if code:
+            m.refuse(code)
         model = kw.get("model")
         if model != m.price.model:  # 단가를 확인한 모델만
             m.refuse("model_price_mismatch")
         stage = stage_of(kw.get("system"))
-        est_in = math.ceil(_request_chars(kw) / lim.chars_per_token)
+        est_in = math.ceil(request_tokens_bound(kw) / lim.chars_per_token)
         max_out = min(int(kw.get("max_tokens") or lim.max_tokens_per_call), lim.max_tokens_per_call)
         kw = {**kw, "max_tokens": max_out, "timeout": lim.call_timeout_s}
         for attempt in range(1 + lim.max_retries_per_call):

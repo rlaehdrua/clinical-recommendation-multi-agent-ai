@@ -1,5 +1,7 @@
 # 실제 LLM 파일럿 최종 실행 계획 (Phase 5-4, 실행 전)
 
+> **Phase 7 갱신:** 이 계획은 그대로 유효합니다(게이트·상한·사례 풀 변경 없음). 계측 강화(입력 바이트 예약·추정 초과 중단·service tier 엄격 확인 등), 유형별 사례 보강, 실행 전 점검 스크립트, 웹과의 관계는 `llm_pilot_phase7.md`를 보세요.
+
 ## Phase 5 종료 상태
 
 | 항목 | 상태 |
@@ -200,7 +202,7 @@ PYTHONPATH=src CTREC_ALLOW_PAID_EVAL=1 CTREC_FALLBACKS=0 python scripts/run_llm_
 | 9 | 실제 환자 데이터 미사용 | VERIFIED | 게이트가 합성 사례 6개(`PILOT_CASE_POOL`) 밖을 거절, 6개 모두 사례 파일의 `synthetic: true`를 테스트로 확인 |
 | 10 | 승인된 합성 사례만 사용 | VERIFIED | 같은 게이트, 사례 목록·순서가 해시에 포함 |
 | 11 | SDK 자동 재시도 비활성화 | VERIFIED | 재시도가 켜진 클라이언트를 거부, SDK 훅이 재시도 회차를 차단(가짜 HTTP로 실제 SDK 객체 확인). 단 실제 클라이언트 생성 줄(`sdk_client`)은 스위치가 꺼져 있어 실행된 적 없음 |
-| 12 | SDK 내부 훅 호환 (실행 환경의 SDK 버전) | PENDING_RUNTIME_VERIFICATION | anthropic 1.13.0에서 확인. `requirements.txt`·`pyproject.toml`은 버전을 고정하지 않으므로 실행 환경에서 `tests/test_call_guard.py`를 먼저 통과시킬 것 |
+| 12 | SDK 내부 훅 호환 (실행 환경의 SDK 버전) | PENDING_RUNTIME_VERIFICATION | anthropic 1.13.0에서 확인. Phase 6-4부터 `anthropic>=1.13,<2`로 고정. 실행 환경에서 `tests/test_call_guard.py`·`tests/test_pilot_phase7.py`를 먼저 통과시킬 것 |
 | 13 | 대체 모델 비활성화 | VERIFIED | `CTREC_FALLBACKS=0` 필수, 실행 중 대체 모델 끔, `fallbacks` 요청 거부, 대체 모델 응답이 보이면 중단 |
 | 14 | 계측 우회 차단 | VERIFIED | 컨텍스트 없는 스레드·스레드 풀·`run_in_executor`·직접 SDK 사용·async SDK 차단. 막지 못하는 것: SDK 밖 직접 HTTP, 다른 프로세스 |
 | 15 | 비용·호출·토큰 상한 | VERIFIED | Fake SDK로 같은 프로세스·별도 프로세스 모두 확인. 실제 토큰 수에 따른 동작은 #19 |

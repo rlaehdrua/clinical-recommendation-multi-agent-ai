@@ -1,0 +1,80 @@
+[
+ {
+  "patient_id": "P7-SYN-DEMO-A-conflict-ecog",
+  "text": "- The patient is 62 years old.\n- The patient is female.\n- The patient has lung adenocarcinoma.\n- Lung adenocarcinoma was diagnosed in 2023-03.\n- The lung adenocarcinoma was stage IVA at diagnosis.\n- Biopsy confirmed EGFR exon 19 deletion.\n- The patient received first-line osimertinib 80mg.\n- A 2026-07 CT showed increased lung lesions.\n- A 2026-07 CT showed new liver metastasis.\n- The findings represent progression by RECIST criteria with measurable lesions present.\n- A 2026-07 brain MRI showed no metastasis.\n- ECOG performance status is 1.\n- On 2026-09-10, ANC was 2.8 x10^9/L.\n- On 2026-09-10, PLT was 185 x10^9/L.\n- On 2026-09-10, Hb was 11.2 g/dL.\n- On 2026-09-10, total bilirubin was 0.6 mg/dL (ULN 1.2).\n- The patient has hypertension and is taking amlodipine.\n- The patient has no history of interstitial lung disease.\n- The patient was negative for hepatitis B in 2023.\n- The patient was negative for hepatitis C in 2023.\n- The patient is postmenopausal with no possibility of pregnancy.\n- Osimertinib is the only cancer treatment the patient has received.\n- Since the 2026-07 progression, the patient has not yet received additional anticancer treatment.\n- The patient has no history of using other anticancer agents, including an EGFR-targeted antibody-drug conjugate (ADC).\n- The patient is willing to participate in a clinical trial and able to visit.\n- A 2026-09 referral letter from another hospital records ECOG performance status 2.",
+  "hidden_facts": [],
+  "masked_fact_ids": [],
+  "clue_fact_ids": [],
+  "masked_criteria": [],
+  "case_type": "full",
+  "source_patient": "SYN-DEMO-A",
+  "candidate_trials": [
+   "DEMO-LUNG-001"
+  ],
+  "synthetic": true,
+  "phase7": {
+   "type": "E",
+   "derived_from": "F-SYN-DEMO-A",
+   "changed_line": "- A 2026-09 referral letter from another hospital records ECOG performance status 2.",
+   "expected_eligibility": {
+    "DEMO-LUNG-001": "UNCERTAIN"
+   },
+   "check_rules": [
+    "DEMO-LUNG-001:I6"
+   ],
+   "purpose": "ECOG 기록 충돌(1 vs 2): 한쪽을 임의로 골라 적합(ELIGIBLE)으로 확정하지 않는지, 충돌을 질문·확인 대상으로 남기는지"
+  }
+ },
+ {
+  "patient_id": "P7-SYN-DEMO-A-conflict-plt",
+  "text": "- The patient is 62 years old.\n- The patient is female.\n- The patient has lung adenocarcinoma.\n- Lung adenocarcinoma was diagnosed in 2023-03.\n- The lung adenocarcinoma was stage IVA at diagnosis.\n- Biopsy confirmed EGFR exon 19 deletion.\n- The patient received first-line osimertinib 80mg.\n- A 2026-07 CT showed increased lung lesions.\n- A 2026-07 CT showed new liver metastasis.\n- The findings represent progression by RECIST criteria with measurable lesions present.\n- A 2026-07 brain MRI showed no metastasis.\n- ECOG performance status is 1.\n- On 2026-09-10, ANC was 2.8 x10^9/L.\n- On 2026-09-10, PLT was 185 x10^9/L.\n- On 2026-09-10, Hb was 11.2 g/dL.\n- On 2026-09-10, total bilirubin was 0.6 mg/dL (ULN 1.2).\n- The patient has hypertension and is taking amlodipine.\n- The patient has no history of interstitial lung disease.\n- The patient was negative for hepatitis B in 2023.\n- The patient was negative for hepatitis C in 2023.\n- The patient is postmenopausal with no possibility of pregnancy.\n- Osimertinib is the only cancer treatment the patient has received.\n- Since the 2026-07 progression, the patient has not yet received additional anticancer treatment.\n- The patient has no history of using other anticancer agents, including an EGFR-targeted antibody-drug conjugate (ADC).\n- The patient is willing to participate in a clinical trial and able to visit.\n- On 2026-09-10, an outside laboratory reported PLT 85 x10^9/L.",
+  "hidden_facts": [],
+  "masked_fact_ids": [],
+  "clue_fact_ids": [],
+  "masked_criteria": [],
+  "case_type": "full",
+  "source_patient": "SYN-DEMO-A",
+  "candidate_trials": [
+   "DEMO-LUNG-001"
+  ],
+  "synthetic": true,
+  "phase7": {
+   "type": "E",
+   "derived_from": "F-SYN-DEMO-A",
+   "changed_line": "- On 2026-09-10, an outside laboratory reported PLT 85 x10^9/L.",
+   "expected_eligibility": {
+    "DEMO-LUNG-001": "UNCERTAIN"
+   },
+   "check_rules": [
+    "DEMO-LUNG-001:I8"
+   ],
+   "purpose": "같은 날 혈소판 두 값(185 vs 85): 규칙 엔진은 최신 값을 정할 수 없어 LLM에 넘김. 임의로 한 값을 골라 확정하지 않는지"
+  }
+ },
+ {
+  "patient_id": "P7-SYN-DEMO-A-units-hb",
+  "text": "- The patient is 62 years old.\n- The patient is female.\n- The patient has lung adenocarcinoma.\n- Lung adenocarcinoma was diagnosed in 2023-03.\n- The lung adenocarcinoma was stage IVA at diagnosis.\n- Biopsy confirmed EGFR exon 19 deletion.\n- The patient received first-line osimertinib 80mg.\n- A 2026-07 CT showed increased lung lesions.\n- A 2026-07 CT showed new liver metastasis.\n- The findings represent progression by RECIST criteria with measurable lesions present.\n- A 2026-07 brain MRI showed no metastasis.\n- ECOG performance status is 1.\n- On 2026-09-10, ANC was 2.8 x10^9/L.\n- On 2026-09-10, PLT was 185 x10^9/L.\n- On 2026-09-10, Hb was 88 g/L.\n- On 2026-09-10, total bilirubin was 0.6 mg/dL (ULN 1.2).\n- The patient has hypertension and is taking amlodipine.\n- The patient has no history of interstitial lung disease.\n- The patient was negative for hepatitis B in 2023.\n- The patient was negative for hepatitis C in 2023.\n- The patient is postmenopausal with no possibility of pregnancy.\n- Osimertinib is the only cancer treatment the patient has received.\n- Since the 2026-07 progression, the patient has not yet received additional anticancer treatment.\n- The patient has no history of using other anticancer agents, including an EGFR-targeted antibody-drug conjugate (ADC).\n- The patient is willing to participate in a clinical trial and able to visit.",
+  "hidden_facts": [],
+  "masked_fact_ids": [],
+  "clue_fact_ids": [],
+  "masked_criteria": [],
+  "case_type": "full",
+  "source_patient": "SYN-DEMO-A",
+  "candidate_trials": [
+   "DEMO-LUNG-001"
+  ],
+  "synthetic": true,
+  "phase7": {
+   "type": "G",
+   "derived_from": "F-SYN-DEMO-A",
+   "changed_line": "- On 2026-09-10, Hb was 88 g/L.",
+   "expected_eligibility": {
+    "DEMO-LUNG-001": "INELIGIBLE"
+   },
+   "check_rules": [
+    "DEMO-LUNG-001:I9"
+   ],
+   "purpose": "단위 환산(88 g/L = 8.8 g/dL < 9.0 g/dL): 숫자만 비교해 충족(88 >= 9)으로 보지 않는지"
+  }
+ }
+]

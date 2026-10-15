@@ -29,7 +29,8 @@ from pathlib import Path
 from typing import Callable
 
 from .. import call_guard, config, llm
-from ..llm_pilot import is_retryable, possibly_billed, same_model
+from ..llm_pilot import (ALLOWED_OPTIONS, REQUEST_OVERHEAD_TOKENS, is_retryable, possibly_billed,  # noqa: F401
+                         request_problem, request_tokens_bound, response_problem)  # 파일럿과 같은 요청·응답 검사
 
 # 차단 이유 코드 -> 사용자에게 보이는 종료 종류
 EXCEEDED = "budget_exceeded"  # 한도에 도달해 새 호출을 막음
@@ -583,32 +584,6 @@ class RunBudget:
 # ---------------------------------------------------------------- 예산 통제 클라이언트
 
 
-def _jsonable(o):
-    """요청 크기 추정용: 이전 응답 블록(SDK 모델·네임스페이스 객체)도 직렬화 (오케스트레이터는 이전 턴을 다시 보냄)."""
-    if hasattr(o, "model_dump"):
-        return o.model_dump()
-    if hasattr(o, "__dict__"):
-        return vars(o)
-    return str(o)
-
-
-# 요청 형식 외에 API가 붙이는 입력 (메시지 경계 표식, 도구 사용·구조화 출력용 시스템 지시 등)에 대한 여유분.
-# 공개된 값의 몇 배로 잡았지만 공식 상한은 없음 -> 실제 사용량이 예약을 넘으면 정산 후 실행을 멈춤 (estimate_exceeded).
-REQUEST_OVERHEAD_TOKENS = 4096
-# llm.create가 보내는 옵션만 허용. 그 밖의 옵션(service_tier, speed, inference_geo, betas, fallbacks, stream,
-# extra_* 등)은 단가·사용량 형식을 바꿀 수 있으므로 보내지 않고 막음.
-ALLOWED_OPTIONS = frozenset({"model", "max_tokens", "system", "messages", "output_config", "tools", "tool_choice"})
-
-
-def request_tokens_bound(kw: dict) -> int:
-    """입력 토큰 예약값: 요청 내용(모델·max_tokens 제외)의 UTF-8 바이트 수 + 여유분.
-
-    바이트 단위 BPE 토크나이저라면 토큰 하나가 1바이트 이상이므로 바이트 수가 토큰 수의 상한이 됨 (한글 1자 = 3바이트,
-    이모지 = 4바이트). Claude 토크나이저는 공개되지 않았으므로 이 가정 자체는 확인할 수 없음 -> 보증이 아니라 추정."""
-    body = {k: v for k, v in kw.items() if k not in ("model", "max_tokens", "timeout")}
-    return len(json.dumps(body, ensure_ascii=False, default=_jsonable).encode("utf-8")) + REQUEST_OVERHEAD_TOKENS
-
-
 class _Endpoint:
     def __init__(self, owner: "BudgetClient", create):
         self._owner, self._create = owner, create
@@ -636,15 +611,10 @@ class BudgetClient:
         from .. import web_metering
         b, cfg = self._budget, self._budget.cfg
         b.check()
-        if "fallbacks" in kw or "betas" in kw:  # 대체 모델 자동 호출 금지 (단가 미확인)
+        code = request_problem(kw)  # 대체 모델·허용 밖 옵션·서버 도구는 보내지 않음 (파일럿과 같은 검사)
+        if code:
             with b.lock:
-                raise b._stop("fallback_requested")
-        if set(kw) - ALLOWED_OPTIONS:
-            with b.lock:
-                raise b._stop("request_option_unsupported")
-        if any(isinstance(t, dict) and t.get("type") not in (None, "custom") for t in kw.get("tools") or ()):
-            with b.lock:  # 서버 도구(웹 검색 등)는 토큰 외 요금이 붙고 단가표에 없음
-                raise b._stop("server_tool_requested")
+                raise b._stop(code)
         model = kw.get("model")
         if model != cfg.price.model:
             with b.lock:
@@ -673,24 +643,11 @@ class BudgetClient:
             except BaseException:  # 요청 도중 중단 (KeyboardInterrupt 등): 결과 불명확
                 b.unknown(res, "interrupted", stop=True)
                 raise
-            usage = getattr(resp, "usage", None)
-            iters = getattr(usage, "iterations", None) or []
-            tier = getattr(usage, "service_tier", None)
-            ttl_1h = getattr(getattr(usage, "cache_creation", None), "ephemeral_1h_input_tokens", 0) or 0
-            geo = getattr(usage, "inference_geo", None)
-            if usage is None or getattr(usage, "input_tokens", None) is None or getattr(usage, "output_tokens", None) is None:
-                b.unknown(res, "usage_missing", stop=True)  # 사용량 미확인: 0으로 보지 않고 다음 요청부터 막음
-            elif not same_model(model, getattr(resp, "model", None)):
-                b.unknown(res, "model_mismatch", stop=True)  # 다른 모델의 응답: 단가 모름, 응답도 쓰지 않음
-            elif any(getattr(it, "type", "message") != "message" for it in iters):
-                b.unknown(res, "fallback_detected", stop=True)
-            elif tier != "standard":  # 없거나 다른 등급: 단가를 확인할 수 없음
-                b.unknown(res, "service_tier_mismatch", stop=True)
-            elif ttl_1h:  # 1시간 캐시 쓰기는 설정 단가(5분 캐시)보다 비쌈
-                b.unknown(res, "cache_ttl_mismatch", stop=True)
-            elif geo not in (None, "global"):  # 지역 지정 추론(예: us)은 1.1배 단가
-                b.unknown(res, "inference_geo_mismatch", stop=True)
-            elif b.settle(res, usage):
+            # 사용량 누락·다른 모델·대체 모델·등급·1시간 캐시·지역 추론: 정산하지 않고 UNKNOWN으로 점유, 다음 요청부터 막음
+            code = response_problem(resp, model)
+            if code:
+                b.unknown(res, code, stop=True)
+            elif b.settle(res, resp.usage):
                 with b.lock:
                     b._stop("estimate_exceeded")
             if self._meter is not None:
