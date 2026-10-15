@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import contextlib
 import json
-
 import os
 import sqlite3
 import threading
@@ -26,6 +25,7 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Callable
 
 from .. import call_guard, config, llm
@@ -42,10 +42,12 @@ CATEGORY = {
     "shared_output_token_cap": EXCEEDED,
     "usage_missing": USAGE_UNKNOWN, "response_lost": USAGE_UNKNOWN, "model_mismatch": USAGE_UNKNOWN,
     "fallback_detected": USAGE_UNKNOWN, "service_tier_mismatch": USAGE_UNKNOWN, "cache_ttl_mismatch": USAGE_UNKNOWN,
+    "inference_geo_mismatch": USAGE_UNKNOWN,
     "interrupted": USAGE_UNKNOWN,
     "fallback_requested": BUDGET_ERROR, "model_price_mismatch": BUDGET_ERROR, "sdk_retries_enabled": BUDGET_ERROR,
     "request_option_unsupported": BUDGET_ERROR, "server_tool_requested": BUDGET_ERROR, "estimate_exceeded": BUDGET_ERROR,
-    "ledger_unavailable": BUDGET_ERROR, "ledger_inconsistent": BUDGET_ERROR,
+    "ledger_unavailable": BUDGET_ERROR, "ledger_inconsistent": BUDGET_ERROR, "ledger_missing": BUDGET_ERROR,
+    "ledger_in_use": BUDGET_ERROR,
 }
 
 
@@ -155,6 +157,8 @@ def load_config(env=None, default_run_seconds: float = 3600.0) -> BudgetConfig:
         p.append("unconfirmed:CTREC_WEB_BUDGET_SINGLE_INSTANCE")  # 이 원장을 쓰는 서버 프로세스가 하나뿐임을 확인
     if env.get("CTREC_WEB_PRICE_CONFIRMED") != "1" or not (env.get("CTREC_WEB_PRICE_SOURCE") or "").strip():
         p.append("unconfirmed:CTREC_WEB_PRICE")  # 공식 가격표 확인 기록 필요
+    if (env.get("CTREC_WEB_PRICE_MODEL") or "").strip() != config.MODEL:
+        p.append("price_model_mismatch:CTREC_WEB_PRICE_MODEL")  # 단가를 확인한 모델과 실제 호출 모델이 같아야 함
     period = (env.get("CTREC_WEB_BUDGET_PERIOD") or "day").strip()
     if period not in ("day", "month", "total"):
         p.append("invalid:CTREC_WEB_BUDGET_PERIOD")
@@ -203,6 +207,80 @@ def window_key(period: str, now: float | None = None) -> str:
     return {"day": d.strftime("day:%Y-%m-%d"), "month": d.strftime("month:%Y-%m")}.get(period, "total")
 
 
+_PROC_LOCKS: dict[str, object] = {}
+_PROC_LOCKS_GUARD = threading.Lock()
+
+
+def _try_lock(fh) -> bool:
+    try:
+        if os.name == "nt":
+            import msvcrt
+            fh.seek(0)
+            msvcrt.locking(fh.fileno(), msvcrt.LK_NBLCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(fh.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        return True
+    except OSError:
+        return False
+
+
+def process_lock(path: str) -> None:
+    """원장 옆 잠금 파일(<원장>.lock)을 이 프로세스가 끝날 때까지 배타적으로 쥠. OS 잠금이라 프로세스가 비정상 종료해도 풀림.
+    같은 프로세스 안에서는 다시 열어도 됨. 다른 프로세스가 쥐고 있으면 LedgerError(ledger_in_use)."""
+    key = os.path.normcase(os.path.abspath(path))
+    with _PROC_LOCKS_GUARD:
+        if key in _PROC_LOCKS:
+            return
+        try:
+            fh = open(key + ".lock", "a+b")  # noqa: SIM115 - 프로세스 수명 동안 유지
+        except OSError as e:
+            raise LedgerError("ledger_unavailable") from e
+        if not _try_lock(fh):
+            fh.close()
+            raise LedgerError("ledger_in_use")
+        _PROC_LOCKS[key] = fh
+
+
+def release_process_lock(path: str) -> None:
+    """운영 도구(복구 명령)용: 이 프로세스가 쥔 잠금을 놓음."""
+    key = os.path.normcase(os.path.abspath(path))
+    with _PROC_LOCKS_GUARD:
+        fh = _PROC_LOCKS.pop(key, None)
+    if fh is not None:
+        fh.close()  # 닫으면 OS 잠금도 풀림
+
+
+def inspect_ledger(path: str, full: bool = True) -> dict:
+    """원장 파일을 읽기 전용으로 검사 (잠금·복구·쓰기 없음). 운영 도구·배포 점검용.
+    무결성 검사, 스키마 버전, 정산 행의 실제값 누락, 상태별 행 수, 마지막 갱신 시각. 문제가 있으면 LedgerError."""
+    if not os.path.isfile(path):
+        raise LedgerError("ledger_missing")
+    try:
+        c = sqlite3.connect(Path(os.path.abspath(path)).as_uri() + "?mode=ro", uri=True, timeout=10)
+    except sqlite3.Error as e:
+        raise LedgerError("ledger_unavailable") from e
+    try:
+        tables = {r[0] for r in c.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+        if not {"meta", "reservations"} <= tables:
+            raise LedgerError("ledger_inconsistent" if tables else "ledger_missing")
+        if c.execute("PRAGMA integrity_check" if full else "PRAGMA quick_check").fetchone()[0] != "ok":
+            raise LedgerError("ledger_inconsistent")
+        row = c.execute("SELECT value FROM meta WHERE key = 'schema'").fetchone()
+        if row is None or row[0] != SCHEMA_VERSION:
+            raise LedgerError("ledger_inconsistent")
+        if c.execute("SELECT COUNT(*) FROM reservations WHERE status = 'settled' AND (actual_cost IS NULL "
+                     "OR actual_input IS NULL OR actual_output IS NULL)").fetchone()[0]:
+            raise LedgerError("ledger_inconsistent")
+        by = dict(c.execute("SELECT status, COUNT(*) FROM reservations GROUP BY status").fetchall())
+        last = c.execute("SELECT MAX(updated_at) FROM reservations").fetchone()[0]
+        return {"rows": sum(by.values()), "rows_by_status": by, "last_updated_at": last}
+    except sqlite3.Error as e:
+        raise LedgerError("ledger_inconsistent") from e
+    finally:
+        c.close()
+
+
 class Ledger:
     """공용 예산 원장. 예약·정산은 SQLite 트랜잭션(BEGIN IMMEDIATE) 하나로 원자적으로 처리 (같은 호스트의 여러
     스레드·연결 사이에서). 여러 서버 인스턴스(다른 호스트)의 전역 한도는 보장하지 않음."""
@@ -213,8 +291,10 @@ class Ledger:
         self.boot_id = boot_id or uuid.uuid4().hex
         self.recovered = 0
 
-    def _conn(self) -> sqlite3.Connection:
-        c = sqlite3.connect(self.path, timeout=10, isolation_level=None)
+    def _conn(self, create: bool = False) -> sqlite3.Connection:
+        # mode=rw: 원장 파일이 없으면 새로 만들지 않고 실패 (영속 디스크가 빠진 경로에 빈 원장이 생겨 사용액이 0이 되는 것 방지)
+        uri = Path(os.path.abspath(self.path)).as_uri() + ("?mode=rwc" if create else "?mode=rw")
+        c = sqlite3.connect(uri, uri=True, timeout=10, isolation_level=None)
         c.execute("PRAGMA busy_timeout = 10000")
         return c
 
@@ -241,21 +321,32 @@ class Ledger:
         finally:
             c.close()
 
-    def open(self) -> "Ledger":
-        """스키마 준비 + 무결성 확인 + 이전 프로세스가 남긴 예약을 UNKNOWN으로 (재시작 복구, 과금됐을 수 있음)."""
-        try:
-            c0 = self._conn()
+    def open(self, create: bool = False) -> "Ledger":
+        """프로세스 잠금 + 스키마 확인 + 무결성 확인 + 이전 프로세스가 남긴 예약을 UNKNOWN으로 (재시작 복구).
+
+        create=False(서버): 원장 파일이 없으면 ledger_missing (운영자가 scripts/web_budget_ledger.py init으로 만듦).
+        같은 원장을 다른 프로세스가 열고 있으면 ledger_in_use (여러 워커·서버가 서로의 진행 중 예약을 복구하지 않도록)."""
+        if not create and not os.path.exists(self.path):
+            raise LedgerError("ledger_missing")
+        process_lock(self.path)
+        if create:
             try:
-                c0.executescript(_SCHEMA)  # 없으면 만들기 (있으면 그대로)
-            finally:
-                c0.close()
-        except sqlite3.Error as e:
-            raise LedgerError("ledger_unavailable") from e
+                c0 = self._conn(create=True)
+                try:
+                    c0.executescript(_SCHEMA)  # 없으면 만들기 (있으면 그대로)
+                finally:
+                    c0.close()
+            except sqlite3.Error as e:
+                raise LedgerError("ledger_unavailable") from e
         with self._tx() as c:
+            tables = {r[0] for r in c.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+            if not {"meta", "reservations"} <= tables:
+                # 빈 파일·다른 DB: 서버는 새 원장으로 시작하지 않음 (사용액이 0으로 돌아가는 것 방지)
+                raise LedgerError("ledger_inconsistent" if tables else "ledger_missing")
             row = c.execute("SELECT value FROM meta WHERE key = 'schema'").fetchone()
-            if row is None:
+            if row is None and create:
                 c.execute("INSERT INTO meta(key, value) VALUES ('schema', ?)", (SCHEMA_VERSION,))
-            elif row[0] != SCHEMA_VERSION:
+            elif row is None or row[0] != SCHEMA_VERSION:
                 raise LedgerError("ledger_inconsistent")
             if c.execute("PRAGMA quick_check").fetchone()[0] != "ok":
                 raise LedgerError("ledger_inconsistent")
@@ -527,7 +618,7 @@ class _Endpoint:
 
 
 _FATAL_RESPONSE = ("model_mismatch", "fallback_detected", "service_tier_mismatch", "cache_ttl_mismatch",
-                   "estimate_exceeded")
+                   "inference_geo_mismatch", "estimate_exceeded")
 
 
 class BudgetClient:
@@ -586,6 +677,7 @@ class BudgetClient:
             iters = getattr(usage, "iterations", None) or []
             tier = getattr(usage, "service_tier", None)
             ttl_1h = getattr(getattr(usage, "cache_creation", None), "ephemeral_1h_input_tokens", 0) or 0
+            geo = getattr(usage, "inference_geo", None)
             if usage is None or getattr(usage, "input_tokens", None) is None or getattr(usage, "output_tokens", None) is None:
                 b.unknown(res, "usage_missing", stop=True)  # 사용량 미확인: 0으로 보지 않고 다음 요청부터 막음
             elif not same_model(model, getattr(resp, "model", None)):
@@ -596,6 +688,8 @@ class BudgetClient:
                 b.unknown(res, "service_tier_mismatch", stop=True)
             elif ttl_1h:  # 1시간 캐시 쓰기는 설정 단가(5분 캐시)보다 비쌈
                 b.unknown(res, "cache_ttl_mismatch", stop=True)
+            elif geo not in (None, "global"):  # 지역 지정 추론(예: us)은 1.1배 단가
+                b.unknown(res, "inference_geo_mismatch", stop=True)
             elif b.settle(res, usage):
                 with b.lock:
                     b._stop("estimate_exceeded")

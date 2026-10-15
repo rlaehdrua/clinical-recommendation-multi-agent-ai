@@ -1,6 +1,8 @@
 # 웹 비용 통제 통합 설계 (Phase 5-2 설계, Phase 5-3 구체화)
 
-이 문서는 설계안입니다. **웹의 호출 정책은 바꾸지 않았습니다.** 대체 모델 켜짐(`CTREC_FALLBACKS=1`), SDK 자동 재시도 4회, 비용 상한 없음은 그대로입니다.
+이 문서는 Phase 5 때의 설계안입니다. 당시에는 웹의 호출 정책(대체 모델 켜짐, SDK 자동 재시도 4회, 비용 상한 없음)을 바꾸지 않았습니다.
+
+> 이후 변경: Phase 6-3에서 enforce 모드를 구현했습니다(13절). Phase 6-4에서 기본 배포 구성(`render.yaml`)도 `CTREC_FALLBACKS=0`으로 바꿨습니다. 5절의 두 안 중 1안(대체 모델 끔)을 택한 것이며, 이유와 영향은 `web_deployment.md` 3절에 있습니다.
 
 Phase 5-3에서는 **기록 전용 계측**만 연결했습니다(`web_metering`, `GET /api/runs/{id}/metering`). 이 계측은 호출을 막지 않으므로 비용 상한을 보장하지 않습니다. 구체화한 내용은 12절에 있습니다.
 
@@ -223,3 +225,4 @@ reservation(reservation_id TEXT PRIMARY KEY, run_id TEXT, window_key TEXT,
   - "그림자 모드"는 만들지 않았습니다. `record`가 기존 기록 전용 모드 역할을 합니다.
   - 예산 초과는 별도 `budget_*` SSE 이벤트 대신 기존 `end` 이벤트의 종료 상태로 알립니다: `budget_exceeded` / `usage_unknown` / `budget_error`
 - 남은 일: 여러 인스턴스를 위한 외부 DB 원장 (단일 인스턴스 밖의 전역 한도는 보장하지 않음)
+- Phase 6-5: 원장 자동 생성 금지(`init`), 프로세스 잠금(두 번째 프로세스 거부), 백업·검증·복구 명령, 단가-모델 연결(`CTREC_WEB_PRICE_MODEL`). `web_budget_operations.md` 참조

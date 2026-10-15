@@ -108,6 +108,12 @@
         </div>
       </div>
       <div class="err" id="start-hint" role="alert"></div>
+      <!-- 탭을 닫았다 다시 연 경우: 같은 브라우저의 진행 중 분석 -->
+      <div class="note info" id="active-note" hidden role="region" aria-labelledby="active-h">
+        <b id="active-h">이 브라우저에서 진행 중인 분석이 있습니다.</b>
+        <div class="hint mt4">이전 탭을 닫았어도 분석은 서버에서 계속됩니다. 이어 보거나, 이어 본 뒤 취소할 수 있습니다. 입력 원문은 보안상 다시 표시하지 않습니다.</div>
+        <div class="row mt10"><button class="btn" id="resume-active" type="button">진행 중인 분석 이어 보기</button></div>
+      </div>
     </div>
   </section>
 

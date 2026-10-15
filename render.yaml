@@ -1,14 +1,19 @@
 # Render Blueprint: 대시보드에서 New → Blueprint로 이 저장소를 연결하면 자동 생성됩니다.
+# 이 파일은 "기본 배포 구성(record)"입니다: 사용량을 기록만 하고 비용을 강제로 막지 않습니다. 유료 호출 허용을 뜻하지 않습니다.
+# 비용 상한(enforce) 구성은 영속 디스크·유료 플랜이 필요하므로 docs/web_deployment.md의 "B. enforce 구성"을 따르세요.
+# 배포 전 점검: PYTHONPATH=src python scripts/check_web_deployment.py --target record
 services:
   - type: web
     name: ctrec
     runtime: python
-    plan: free            # 무료 플랜은 15분간 접속이 없으면 잠듦 (첫 접속 30초 내외 지연)
+    plan: free            # 무료 플랜은 15분간 접속이 없으면 잠듦 (첫 접속 30초 내외 지연), 영속 디스크 없음
     numInstances: 1       # 실행 상태를 메모리에 보관하므로 반드시 1개
     buildCommand: pip install -r requirements.txt
     # Render는 TLS를 앞단 프록시가 처리하고 서비스는 그 프록시를 통해서만 접근됨 -> 프록시 헤더를 신뢰해야 HTTPS가 인식됨.
     # '*'는 이 전제(외부에서 직접 접근 불가)에서만 안전. 다른 플랫폼에서는 실제 프록시 주소로 좁히세요.
-    startCommand: uvicorn ctrec.web.app:app --host 0.0.0.0 --port $PORT --log-level warning --proxy-headers --forwarded-allow-ips '*'
+    # --workers 1: uvicorn은 지정하지 않으면 WEB_CONCURRENCY(Render가 인스턴스 CPU에 따라 설정할 수 있음)만큼 워커를 띄움.
+    #   실행 상태·소유권·SSE가 프로세스 메모리에 있으므로 워커가 2개 이상이면 다른 워커로 간 요청이 실행을 찾지 못함.
+    startCommand: uvicorn ctrec.web.app:app --host 0.0.0.0 --port $PORT --workers 1 --log-level warning --proxy-headers --forwarded-allow-ips '*'
     healthCheckPath: /healthz
     envVars:
       - key: PYTHON_VERSION
@@ -16,9 +21,9 @@ services:
       - key: PYTHONPATH
         value: src
       - key: ANTHROPIC_API_KEY
-        sync: false       # 대시보드에서 직접 입력
+        sync: false       # 대시보드에서 직접 입력 (웹 전용 키 권장, Console에서 키·워크스페이스 지출 한도 설정)
       - key: CTREC_PASSWORD
-        sync: false       # 접속 비밀번호 (비우면 누구나 접속 가능)
+        sync: false       # 접속 비밀번호 (비우면 누구나 접속 가능 -> 기록 모드에서는 비용 상한이 없으므로 반드시 설정)
       - key: CTREC_REQUIRE_HTTPS
         value: "1"        # HTTPS만 허용 (프록시 설정이 빠져 HTTPS가 인식되지 않으면 403으로 실패)
       - key: CTREC_COOKIE_SECURE
@@ -26,6 +31,8 @@ services:
       - key: CTREC_MODEL
         value: claude-sonnet-5
       - key: CTREC_FALLBACKS
-        value: "1"
+        value: "0"        # 서버측 대체 모델 끔: 대체 모델의 판정·단가는 검증되지 않음. 거절은 해당 단계 실패로 표시 (docs/web_deployment.md 4절)
+      - key: CTREC_WEB_METERING
+        value: record     # 기본 구성: 기록만 (비용 강제 차단 없음). enforce는 B 구성에서만
       - key: CTREC_MAX_WORKERS
-        value: "4"
+        value: "4"        # 한 실행 안의 Matcher 병렬 스레드 수 (uvicorn 워커 수와 다름)

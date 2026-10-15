@@ -56,7 +56,7 @@ def _cfg(tmp_path, run=BIG, shared=BIG, **kw):
 
 
 def _ledger(cfg, boot=None):
-    return budget.Ledger(cfg.ledger_path, cfg.shared, cfg.period, boot_id=boot).open()
+    return budget.Ledger(cfg.ledger_path, cfg.shared, cfg.period, boot_id=boot).open(create=True)
 
 
 def _call():
@@ -81,7 +81,7 @@ ENV = {"CTREC_WEB_RUN_MAX_USD": "10", "CTREC_WEB_RUN_MAX_CALLS": "50", "CTREC_WE
        "CTREC_WEB_SHARED_MAX_INPUT_TOKENS": "50000000", "CTREC_WEB_SHARED_MAX_OUTPUT_TOKENS": "20000000",
        "CTREC_WEB_PRICE_INPUT": "2", "CTREC_WEB_PRICE_OUTPUT": "10", "CTREC_WEB_PRICE_CACHE_WRITE": "2.5",
        "CTREC_WEB_PRICE_CACHE_READ": "0.2", "CTREC_WEB_PRICE_CONFIRMED": "1", "CTREC_WEB_PRICE_SOURCE": "test",
-       "CTREC_WEB_BUDGET_LEDGER_PERSISTENT": "1", "CTREC_WEB_BUDGET_SINGLE_INSTANCE": "1", "CTREC_WEB_BUDGET_PERIOD": "day"}
+       "CTREC_WEB_PRICE_MODEL": config.MODEL, "CTREC_WEB_BUDGET_LEDGER_PERSISTENT": "1", "CTREC_WEB_BUDGET_SINGLE_INSTANCE": "1", "CTREC_WEB_BUDGET_PERIOD": "day"}
 
 
 def test_config_complete_and_each_missing_item_refused(tmp_path):
@@ -170,7 +170,7 @@ def test_shared_cap_across_runs_and_period(tmp_path):
         _run(cfg, fake, "run-b", led, n=5)
     assert len(fake.calls) == 2 and led.used()["calls"] == 3 and len({r["run_id"] for r in led.rows()}) == 2
     assert led.used("day:1999-01-01")["calls"] == 0  # 다른 기간은 따로
-    cost_led = budget.Ledger(str(tmp_path / "cost.db"), budget.Limits(1.0, 100, 10**9, 10**9), "day").open()
+    cost_led = budget.Ledger(str(tmp_path / "cost.db"), budget.Limits(1.0, 100, 10**9, 10**9), "day").open(create=True)
     cost_led.reserve("r", PRICE.model, 0.6, 1, 1)
     with pytest.raises(budget.BudgetStop, match="shared_cost_cap"):
         cost_led.reserve("r", PRICE.model, 0.6, 1, 1)
@@ -411,6 +411,7 @@ def test_matcher_parallel_threads_metered(tmp_path):
 def enforce(monkeypatch, tmp_path):
     def setup(**over):
         env = {**ENV, "CTREC_WEB_METERING": "enforce", "CTREC_WEB_BUDGET_LEDGER": str(tmp_path / "web-ledger.db"), **over}
+        budget.Ledger(str(tmp_path / "web-ledger.db"), BIG, "day").open(create=True)  # 운영자 init에 해당
         sdk = h.install_sdk(monkeypatch, tmp_path, h.SDKAdapter())
         for k, v in env.items():
             if v is None:

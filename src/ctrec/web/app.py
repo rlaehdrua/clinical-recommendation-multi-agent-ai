@@ -15,6 +15,7 @@ import argparse
 import asyncio
 import base64
 import contextvars
+import hmac
 import json
 import logging
 import os
@@ -490,7 +491,7 @@ def start_run(req: RunRequest, request: Request, response: Response) -> dict:
         try:
             budget.get_ledger(budget.load_config(default_run_seconds=RUN_TIMEOUT_S))
         except (budget.BudgetConfigError, budget.LedgerError) as e:
-            log.warning("web budget not ready: %s", getattr(e, "problems", None) or type(e).__name__)
+            log.warning("web budget not ready: %s", getattr(e, "problems", None) or (e.args[0] if e.args else type(e).__name__))
             raise HTTPException(503, "서버의 비용 관리 설정에 문제가 있어 지금은 분석을 시작할 수 없습니다. 관리자에게 문의하세요.")
     all_trials = _load_trials()
     trials = dict(all_trials) if req.screen else {t: all_trials[t] for t in req.trial_ids if t in all_trials}
@@ -537,6 +538,20 @@ def start_run(req: RunRequest, request: Request, response: Response) -> dict:
     ctx = contextvars.copy_context()  # 실행별 토큰 사용량 집계·취소 확인
     threading.Thread(target=ctx.run, args=(_execute, run, req, case, trials), daemon=True).start()
     return {"run_id": run.run_id}
+
+
+@app.get("/api/runs/active")
+def active_run(request: Request) -> dict:
+    """탭을 닫았다 다시 연 경우용: 이 브라우저(클라이언트 쿠키)가 시작한 진행 중 실행의 ID만 알려 줌.
+    내용 접근은 여전히 실행별 소유권 쿠키가 필요 (같은 브라우저에만 있음). 끝난 실행은 알려 주지 않음."""
+    token = request.cookies.get(access.CLIENT_COOKIE)
+    if not token:
+        return {"run_id": None}
+    d = access.digest(token)
+    with RUNS_LOCK:
+        mine = sorted((r for r in RUNS.values() if hmac.compare_digest(r.client_digest or "", d) and _active(r)),
+                      key=lambda r: r.created_at)
+    return {"run_id": mine[-1].run_id if mine else None}
 
 
 @app.get("/api/runs/{run_id}")

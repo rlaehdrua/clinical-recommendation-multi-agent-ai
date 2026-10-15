@@ -9,7 +9,7 @@ description = "Interactive Clinical Trial Recommendation - multi-agent system (H
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "anthropic",
+    "anthropic>=1.13,<2",
     "pydantic>=2.6",
     "requests>=2.31",
     "python-dotenv>=1.0",

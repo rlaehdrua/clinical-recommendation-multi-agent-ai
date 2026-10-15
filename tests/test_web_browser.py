@@ -917,10 +917,12 @@ def test_budget_exceeded_shown_and_not_completed(monkeypatch, tmp_path):
            "CTREC_WEB_RUN_MAX_OUTPUT_TOKENS": "2000000", "CTREC_WEB_SHARED_MAX_USD": "100", "CTREC_WEB_SHARED_MAX_CALLS": "500",
            "CTREC_WEB_SHARED_MAX_INPUT_TOKENS": "50000000", "CTREC_WEB_SHARED_MAX_OUTPUT_TOKENS": "20000000",
            "CTREC_WEB_PRICE_INPUT": "2", "CTREC_WEB_PRICE_OUTPUT": "10", "CTREC_WEB_PRICE_CACHE_WRITE": "2.5",
-           "CTREC_WEB_PRICE_CACHE_READ": "0.2", "CTREC_WEB_PRICE_CONFIRMED": "1", "CTREC_WEB_PRICE_SOURCE": "test"}
+           "CTREC_WEB_PRICE_CACHE_READ": "0.2", "CTREC_WEB_PRICE_CONFIRMED": "1", "CTREC_WEB_PRICE_SOURCE": "test",
+           "CTREC_WEB_PRICE_MODEL": config.MODEL}
     for k, v in env.items():
         monkeypatch.setenv(k, v)
     budget.reset_ledgers()
+    budget.Ledger(env["CTREC_WEB_BUDGET_LEDGER"], budget.Limits(1, 1, 1, 1), "day").open(create=True)
     srv, t, base = _serve()
     errors = []
     try:
@@ -942,4 +944,128 @@ def test_budget_exceeded_shown_and_not_completed(monkeypatch, tmp_path):
         srv.should_exit = True
         t.join(5)
         budget.reset_ledgers()
+    assert errors == [], errors
+
+
+# =============================================================== Phase 6-6: 탭 종료 후 복귀, 운영 시간 측정
+
+
+def test_tab_closed_and_returned(server):
+    """탭을 닫으면 실행 ID(sessionStorage)가 사라짐: 같은 브라우저의 새 탭은 진행 중 분석을 이어 볼 수 있고,
+    새 분석은 한도(동시 1개) 안내와 함께 이어 보기를 권함. 다른 브라우저에는 알려 주지 않음."""
+    base, _ = server
+    errors = []
+    with sync_api.sync_playwright() as p:
+        browser = _browser(p)
+        first = _page(browser, base, errors)
+        _fill_and_start(first, base)
+        first.wait_for_selector("#qslot .q", timeout=20000)
+        ctx = first.context
+        first.close()
+        page = ctx.new_page()
+        page.on("pageerror", lambda e: errors.append(str(e)))
+        page.goto(base)
+        page.wait_for_selector("#active-note", state="visible", timeout=10000)
+        assert page.evaluate("sessionStorage.length") == 0 and "보안상" in page.inner_text("#active-note")
+        page.click("#to-custom")
+        page.fill("#custom", h.SYN_TEXT)
+        page.click("#review")
+        page.click("#start")
+        _wait_js(page, "() => document.querySelector('#start-hint').textContent.includes('진행 중인 실행')")
+        assert page.is_visible("#active-note")
+        page.click("#resume-active")
+        page.wait_for_selector("#qslot .q", timeout=20000)
+        assert page.is_hidden("#active-note") and page.evaluate("sessionStorage.getItem('ctrec-run-id')")
+        _answer(page)
+        page.wait_for_selector("#final .rec", timeout=30000)
+        _wait_end(page)
+        other = _page(browser, base, errors)
+        other.goto(base)
+        other.wait_for_selector("#patient option", state="attached")
+        time.sleep(0.5)
+        assert other.is_hidden("#active-note")
+        browser.close()
+    assert errors == [], errors
+
+
+def test_operational_timings(make_server):
+    """Fake LLM(즉시 응답) 기준 서버·화면 처리 시간. 실제 LLM 응답 시간이 아님. 결과는 CTREC_TIMING_OUT 파일에 기록."""
+    fake = h.FakeLLM(block_on="MatcherOutput")
+    base, _ = make_server(fake)
+    errors, t = [], {}
+    with sync_api.sync_playwright() as p:
+        browser = _browser(p)
+        page = _page(browser, base, errors)
+        # 1) 취소 처리: 조건 비교 중(대역이 멈춘 외부 호출) 취소 -> 호출이 끝나는 즉시 멈춤
+        _fill_and_start(page, base)
+        assert fake.entered.wait(20)
+        _wait_js(page, "() => document.querySelector('#stage-criteria').dataset.state === 'active'")
+        s = time.perf_counter()
+        page.click("#cancel")
+        _wait_js(page, "() => document.querySelector('#run-state').textContent === '취소 중'")
+        t["cancel_request_ack_s"] = time.perf_counter() - s
+        s = time.perf_counter()
+        fake.release.set()
+        _wait_js(page, "() => document.querySelector('#run-state').textContent === '취소됨'", None, 15000)
+        t["cancel_after_inflight_call_s"] = time.perf_counter() - s
+        # 2) 정상 흐름
+        page.click("#review")
+        page.wait_for_selector("#review-panel", state="visible")
+        s = time.perf_counter()
+        page.click("#start")
+        _wait_js(page, "() => !!sessionStorage.getItem('ctrec-run-id') && document.querySelector('#run-state').textContent === '분석 중'")
+        t["start_response_s"] = time.perf_counter() - s
+        _wait_js(page, "() => document.querySelectorAll('#feed .ev').length > 0")
+        t["first_sse_event_s"] = time.perf_counter() - s
+        page.wait_for_selector("#qslot .q", timeout=20000)
+        t["questions_shown_s"] = time.perf_counter() - s
+        # 3) 동시 실행 제한: 같은 브라우저의 두 번째 시작은 즉시 거절
+        s2 = time.perf_counter()
+        st = page.evaluate("async () => (await fetch('/api/runs', {method: 'POST', headers: {'Content-Type': 'application/json',"
+                           " 'X-CTREC-Request': '1'}, body: JSON.stringify({custom_text: 'x', trial_ids: ['NCT04063540']})})).status")
+        t["concurrent_start_rejected_s"] = time.perf_counter() - s2
+        assert st == 429
+        page.wait_for_selector(f"#qslot input[data-q='Q1']")
+        page.fill("#qslot input[data-q='Q1']", h.SYN_ANSWER)
+        page.click("#send")
+        page.wait_for_selector("#confirm-send", state="visible")
+        s = time.perf_counter()
+        page.click("#confirm-send")
+        page.wait_for_selector("#final .rec", timeout=30000)
+        t["answer_to_result_s"] = time.perf_counter() - s
+        _wait_end(page)
+        t["answer_to_completed_s"] = time.perf_counter() - s
+        s = time.perf_counter()
+        page.click('#pages [data-page="result"]')
+        page.click("#final .rec details.more > summary")
+        page.wait_for_selector("#final .rec details.more[open]")
+        t["result_tab_and_detail_render_s"] = time.perf_counter() - s
+        _assert_clean(page)
+        browser.close()
+    assert errors == [], errors
+    t = {k: round(v, 3) for k, v in t.items()}
+    print("TIMINGS", json.dumps(t, ensure_ascii=False))
+    if os.getenv("CTREC_TIMING_OUT"):
+        Path(os.environ["CTREC_TIMING_OUT"]).write_text(json.dumps({"basis": "Fake LLM, 로컬 서버, 헤드리스 Edge", **t},
+                                                                   ensure_ascii=False, indent=1), encoding="utf-8")
+    assert all(v < 15 for v in t.values()), t
+
+
+def test_expired_run_after_refresh(make_server):
+    """보관 기간이 지난 실행: 새로고침하면 접근 불가 안내, 실행 ID를 지우고 새 입력은 가능 (완료로 보이지 않음)."""
+    base, _ = make_server(NoQuestionsLLM())
+    errors = []
+    with sync_api.sync_playwright() as p:
+        browser = _browser(p)
+        page = _page(browser, base, errors)
+        _fill_and_start(page, base)
+        page.wait_for_selector("#final .rec", timeout=30000)
+        _wait_end(page)
+        web._prune_runs(now=time.time() + web.RUN_TTL_S + 1)  # 세션(실행 기록) 만료
+        page.reload()
+        _wait_js(page, "() => document.querySelector('#start-hint').textContent.includes('접근할 수 없습니다')")
+        assert page.evaluate("sessionStorage.getItem('ctrec-run-id')") is None
+        assert page.is_hidden("#progress-panel") and not page.is_disabled("#custom")
+        assert page.is_disabled('#pages [data-page="result"]') and page.locator("#final .rec").count() == 0
+        browser.close()
     assert errors == [], errors

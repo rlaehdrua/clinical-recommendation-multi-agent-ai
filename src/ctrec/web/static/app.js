@@ -133,7 +133,8 @@ async function init() {
   const first = state.patients.find(p => p.group === "사업단 제공") || state.patients[0];
   if (first) { $("#patient").value = first.patient_id; onPatient(); }
   setCustom(true); countTrials(); onTextInput();
-  resume();
+  $("#resume-active").addEventListener("click", () => { $("#active-note").hidden = true; resume(state.activeId); });
+  if (remembered()) resume(); else checkActive();
 }
 function tabKeys(e) {  // 탭 목록: 왼쪽·오른쪽 화살표로 이동 (WAI-ARIA 탭 패턴)
   if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
@@ -232,6 +233,7 @@ async function start() {
     state.running = false; lockInput(false);
     $("#start-hint").textContent = r ? await detailOf(r) : "서버에 연결하지 못했습니다. 잠시 후 다시 시도하세요.";
     $("#start").focus();
+    if (r && r.status === 429) checkActive();  // 다른 탭에서 시작한 분석이 남아 있으면 이어 보기 안내
     return;
   }
   $("#review-panel").hidden = true;
@@ -240,6 +242,7 @@ async function start() {
 function connect(runId, fresh) {
   if (state.es) state.es.close();
   state.runId = runId; remember(runId); state.running = true; state.ended = false; lockInput(true);
+  $("#active-note").hidden = true;
   $("#progress-panel").hidden = false; $("#cancel").hidden = false; $("#cancel").disabled = false;
   setRunState("분석 중", "accent");
   if (fresh) state.t0 = Date.now();
@@ -288,8 +291,14 @@ async function cancelRun() {
   if (r && r.ok) { setRunState("취소 중", "warn"); stageNote("취소 요청을 보냈습니다. 진행 중인 단계가 끝나면 멈춥니다."); }
   else { $("#cancel").disabled = false; stageNote("취소 요청이 실패했습니다: " + (r ? await detailOf(r) : "서버에 연결하지 못했습니다.")); }
 }
-async function resume() {
-  const id = remembered(); if (!id) return;
+async function checkActive() {
+  // 탭을 닫으면 실행 ID(sessionStorage)가 사라짐 -> 같은 브라우저의 진행 중 실행만 서버에 물어 이어 보기 버튼을 보여 줌
+  let d = null; try { const r = await fetch("/api/runs/active"); if (r.ok) d = await r.json(); } catch (e) { d = null; }
+  state.activeId = d && typeof d.run_id === "string" ? d.run_id : null;
+  if (state.activeId && !state.running) $("#active-note").hidden = false;
+}
+async function resume(given) {
+  const id = given || remembered(); if (!id) return;
   let r = null; try { r = await fetch(`/api/runs/${encodeURIComponent(id)}`); } catch (e) { r = null; }
   if (!r || !r.ok) { remember(null); $("#start-hint").textContent = "이전 분석에 접근할 수 없습니다(보관 기간이 지났거나 권한이 없음)."; return; }
   resetView();
