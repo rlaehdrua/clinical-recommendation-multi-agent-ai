@@ -438,16 +438,76 @@ def test_result_format_fields_and_no_saving_by_default():
     assert r["cost_kind"].startswith("estimate") and not (ROOT / "outputs").exists()
 
 
+# 판정·추천·Decision Loop·웹·프로파일러는 바뀌지 않음 (llm.py·question_generator.py·config.py의 실행별 격리
+# 장치는 기본 동작이 같다는 것을 동작 테스트로 확인 - test_llm_isolation.py)
+# 웹 화면(static)은 Phase 6-1 사용자 흐름 작업 범위라 제외. 보안·보관 정책(access·retention)은 유지
+PROTECTED = ("src/ctrec/pipeline.py", "src/ctrec/agents/matcher.py", "src/ctrec/agents/patient_profiler.py",
+             "src/ctrec/agents/recommender.py", "src/ctrec/decision_loop.py", "src/ctrec/decision_policy.py",
+             "src/ctrec/decision_state.py", "src/ctrec/question_priority.py", "src/ctrec/web/access.py",
+             "src/ctrec/web/retention.py", "src/ctrec/status.py", "data")
+
+
+def _git(*args: str) -> str:
+    p = subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True, encoding="utf-8")
+    assert p.returncode == 0, p.stderr
+    return p.stdout
+
+
+def _changed_lines(diff: str) -> list[str]:
+    """-U0 diff의 추가·삭제 줄(파일 헤더 제외), 순서 무관 비교용으로 정렬."""
+    return sorted(l for l in diff.splitlines() if l[:1] in "+-" and not l.startswith(("+++ ", "--- ")))
+
+
+def merge_protection_problems(ours: dict[str, str], theirs: dict[str, str], statuses: dict[str, str]) -> list[str]:
+    """병합 중 보호 파일 검사. ours: HEAD→작업 트리 diff, theirs: 병합 기준→MERGE_HEAD diff (파일별 -U0 diff).
+
+    통과 조건: 보호 파일의 변경은 병합해 들어오는 커밋의 변경과 줄 단위로 같아야 함.
+    충돌 해결에서 더한 줄은 주석 줄만 허용. data 아래는 새 파일 추가만 허용 (기존 데이터 수정·삭제 불가).
+    """
+    problems = []
+    for f, d in ours.items():
+        if f not in theirs:
+            problems.append(f"{f}: 병합 대상 커밋이 바꾸지 않은 보호 파일이 바뀜")
+            continue
+        if f.startswith("data/") and statuses.get(f) != "A":
+            problems.append(f"{f}: data 아래 기존 파일 변경({statuses.get(f)})")
+        mine, team = _changed_lines(d), _changed_lines(theirs[f])
+        extra = [l for l in mine if l not in team or mine.count(l) > team.count(l)]
+        if [l for l in extra if not (l.startswith("+") and l[1:].strip().startswith("#"))]:
+            problems.append(f"{f}: 병합 대상 변경 외의 코드 변경 {len(extra)}줄")
+        if [l for l in team if l not in mine]:
+            problems.append(f"{f}: 병합 대상 변경 일부가 빠짐")
+    problems += [f"{f}: 병합 대상 변경이 반영되지 않음" for f in theirs if f not in ours]
+    return problems
+
+
 def test_frozen_store_and_policy_files_unchanged():
     assert store_patch.verify_frozen() == []
-    # 판정·추천·Decision Loop·웹·프로파일러는 바뀌지 않음 (llm.py·question_generator.py·config.py의 실행별 격리
-    # 장치는 기본 동작이 같다는 것을 동작 테스트로 확인 - test_llm_isolation.py)
-    diff = subprocess.run(["git", "diff", "--name-only", "HEAD", "--", "src/ctrec/pipeline.py",
-                           "src/ctrec/agents/matcher.py", "src/ctrec/agents/patient_profiler.py",
-                           "src/ctrec/agents/recommender.py", "src/ctrec/decision_loop.py",
-                           "src/ctrec/decision_policy.py", "src/ctrec/decision_state.py",
-                           "src/ctrec/question_priority.py", "src/ctrec/web/access.py",
-                           "src/ctrec/web/retention.py", "src/ctrec/status.py", "data"],
-                           # 웹 화면(static)은 Phase 6-1 사용자 흐름 작업 범위라 제외. 보안·보관 정책(access·retention)은 유지
-                          cwd=ROOT, capture_output=True, text=True)
-    assert diff.returncode == 0 and diff.stdout.strip() == ""
+    if not (ROOT / ".git" / "MERGE_HEAD").exists():
+        assert _git("diff", "--name-only", "HEAD", "--", *PROTECTED).strip() == ""
+        return
+    # 다른 브랜치를 병합하는 중(커밋 전, Phase 9: 팀원 커밋 4ea12d6)에는 그 커밋의 변경이 HEAD 대비 차이로 보임.
+    # 검사를 건너뛰지 않고, 보호 파일 변경이 병합 대상 커밋의 변경과 같은지 확인. 병합 커밋 뒤에는 위의 엄격 검사로 돌아감
+    base = _git("merge-base", "HEAD", "MERGE_HEAD").strip()
+    statuses = dict(reversed(l.split("\t", 1)) for l in
+                    _git("diff", "--name-status", "HEAD", "--", *PROTECTED).splitlines())
+    ours = {f: _git("diff", "-U0", "HEAD", "--", f) for f in statuses}
+    theirs = {f: _git("diff", "-U0", base, "MERGE_HEAD", "--", f)
+              for f in _git("diff", "--name-only", base, "MERGE_HEAD", "--", *PROTECTED).split()}
+    assert merge_protection_problems(ours, theirs, statuses) == []
+
+
+def test_merge_protection_check_rejects_unexpected_changes():
+    team = {"src/ctrec/pipeline.py": "@@ -1 +1 @@\n-a = 1\n+a = 2\n", "data/i18n/x.json": "@@ -0,0 +1 @@\n+{}\n"}
+    ok = {"src/ctrec/pipeline.py": "@@ -1 +1,2 @@\n-a = 1\n+# 설명 주석\n+a = 2\n", "data/i18n/x.json": team["data/i18n/x.json"]}
+    st = {"src/ctrec/pipeline.py": "M", "data/i18n/x.json": "A"}
+    assert merge_protection_problems(ok, team, st) == []
+    # 충돌 해결 중 코드 줄 추가
+    assert merge_protection_problems({**ok, "src/ctrec/pipeline.py": ok["src/ctrec/pipeline.py"] + "+b = 3\n"}, team, st)
+    # 병합 대상이 건드리지 않은 보호 파일 변경
+    assert merge_protection_problems({**ok, "src/ctrec/status.py": "@@ -1 +1 @@\n-x\n+y\n"}, team, st)
+    # 팀원 변경 누락 (파일 전체 또는 일부)
+    assert merge_protection_problems({"data/i18n/x.json": team["data/i18n/x.json"]}, team, st)
+    assert merge_protection_problems({**ok, "src/ctrec/pipeline.py": "@@ -1 +1 @@\n-a = 1\n+a = 3\n"}, team, st)
+    # data 아래 기존 파일 수정
+    assert merge_protection_problems(ok, team, {**st, "data/i18n/x.json": "M"})

@@ -2,6 +2,8 @@
 
 저장소를 처음 받은 팀원 기준입니다. **Windows(PowerShell)를 먼저** 적고, macOS/Linux 명령은 그 아래에 둡니다.
 
+> **Phase 9:** 다른 팀원 커밋(4ea12d6)의 객관식 질문·한국어 번역을 통합했습니다. 단계별 화면과 저장된 실행 다시 보기는 보안 문제로 보류했습니다(`docs/team_handoff.md` 4절).
+>
 > **먼저 알아 둘 것: 웹의 실제 AI 분석은 기본적으로 꺼져 있습니다.**
 > - `.env`에 API 키를 넣어도 웹은 실제 Claude API를 호출하지 않습니다. 화면은 열리지만, 분석을 시작하면 "실제 AI 분석이 꺼져 있습니다"가 나옵니다(8절).
 > - 이것은 비용·개인정보 안전장치이며 고장이 아닙니다.
@@ -120,6 +122,7 @@ python -m ctrec.web --port 8080   # 포트 변경
 | 무엇을 보나 | 명령 | 2026-10-15 이 컴퓨터에서 |
 |---|---|---|
 | 웹 전체 흐름 (입력 → 질문 → 답변 → 재분석 → 결과·근거): 브라우저 자동 테스트, 화면은 보이지 않음 | `$env:CTREC_BROWSER_TESTS="1"; python -m pytest tests/test_web_browser.py -k full_journey` | 통과 |
+| 객관식 질문·한국어 번역 화면 (테스트 대역) | `$env:CTREC_BROWSER_TESTS="1"; python -m pytest tests/test_web_browser.py -k choice_questions` | 통과 |
 | 웹 흐름 (서버 API, 브라우저 없이) | `python -m pytest tests/test_web_integration.py -q` | 통과 |
 | Decision Loop 질문 계획 시나리오 | `python scripts/decision_scenarios.py` | 실행됨 |
 | 질문 계획 오프라인 비교 | `python scripts/eval_question_plans.py --cases M-SYN-DEMO-A-DEMO-LUNG-001-rescue-1` | 실행됨 |

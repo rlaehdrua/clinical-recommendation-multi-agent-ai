@@ -1106,3 +1106,52 @@ def test_real_analysis_off_by_default_is_explained(monkeypatch):
         srv.should_exit = True
         t.join(5)
     assert errors == [] and web.RUNS == {} and made == [] and llm._client is None
+
+
+# =============================================================== Phase 9: 팀원 기능 통합 (객관식 질문, 한국어 번역)
+
+
+def test_choice_questions_and_korean_titles(make_server):
+    """객관식(하나·여러 개·기타)·예/아니요·단위 숫자·모름을 화면에서 답하고, 저장값(선택지 문구)이 재분석에 반영됨.
+    시험 제목·기준은 번역 파일이 있을 때 한국어로, 원문은 함께 보임."""
+    from test_team_integration import ChoiceLLM
+    import json as _json
+    base, fake = make_server(ChoiceLLM())
+    ko = _json.loads((Path(__file__).resolve().parents[1] / "data" / "i18n" / "trials_ko.json").read_text(encoding="utf-8"))
+    errors = []
+    with sync_api.sync_playwright() as p:
+        browser = _browser(p)
+        page = _page(browser, base, errors)
+        page.goto(base)
+        page.wait_for_selector("#patient option", state="attached")
+        _wait_js(page, "t => [...document.querySelectorAll('#trials .ttl')].some(e => e.textContent === t)",
+                 ko["NCT04063540"]["title"])
+        _fill_and_start(page, base)
+        page.wait_for_selector("#qslot .q", timeout=20000)
+        page.check("input[data-yn='Q1'][value='아니요']")
+        assert page.is_disabled("input[data-etc='Q2']")
+        page.check("input[data-ch='Q2'][value='3']")  # 기타(직접 입력)
+        assert not page.is_disabled("input[data-etc='Q2']")
+        page.fill("input[data-etc='Q2']", "6주 전")
+        page.check("input[data-mc='Q3'][value='0']")
+        page.check("input[data-mc='Q3'][value='1']")  # 선택지 안에 쉼표 ("당뇨, 2형")
+        assert "단위: g/dL" in page.inner_text("#qslot .q[data-qid='Q4']")
+        page.fill("input[data-q='Q4']", "11.2")
+        page.check("input[data-unknown='Q5']")
+        page.click("#send")
+        page.wait_for_selector("#confirm-send", state="visible")
+        review = page.inner_text("#qreview")
+        for v in ("아니요", "기타: 6주 전", "고혈압, 당뇨, 2형", "11.2 g/dL", "모름 · 확인 불가"):
+            assert v in review, v
+        page.click("#confirm-send")
+        page.wait_for_selector("#final .rec", timeout=30000)
+        _wait_end(page)
+        second = fake.profiler_inputs[-1]
+        for v in ("아니요", "기타: 6주 전", "고혈압, 당뇨, 2형", "11.2 g/dL"):
+            assert v in second, v
+        page.click("#final .rec details.more > summary")
+        assert "원문:" in page.inner_text("#final")  # 번역한 제목·기준 옆에 원문
+        assert "AI 요약" not in page.inner_text("#final")  # 추천 카드 줄글 설명 삭제 (팀원 결정)
+        _assert_clean(page)
+        browser.close()
+    assert errors == [], errors

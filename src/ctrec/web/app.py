@@ -7,6 +7,7 @@
 실행:
     python -m ctrec.web            # http://127.0.0.1:8000
     python -m ctrec.web --port 8080
+
 """
 
 from __future__ import annotations
@@ -37,6 +38,7 @@ from .. import DISCLAIMER, config, llm, web_metering
 from ..agents.recommender import is_open
 from ..orchestrator import Orchestrator
 from ..pipeline import PatientCase, Session, load_patients
+from ..decision_state import DECLINED_ANSWERS
 from ..schemas import ClarifyingQuestion
 from ..status import MATCH_NOTE
 from ..tools import ctgov
@@ -180,6 +182,7 @@ class Run:
     cancel_requested: threading.Event = field(default_factory=threading.Event)
     answers: dict[str, str] = field(default_factory=dict)
     pending_questions: set[str] = field(default_factory=set)  # 답변을 기다리는 질문 ID (없으면 답변을 받지 않음)
+    pending_specs: dict[str, dict] = field(default_factory=dict)  # 질문 ID -> 답변 형식·선택지 (서버 답변 검증용)
     state: str = "running"
     done: bool = False  # 작업 스레드가 실제로 끝났는가 (동시 실행 슬롯은 이때만 반환)
     created_at: float = field(default_factory=time.time)
@@ -243,6 +246,7 @@ class WebAnswerer:
         with run.lock:
             run.answers = {}
             run.pending_questions = {q.question_id for q in questions}
+            run.pending_specs = {q.question_id: {"answer_type": q.answer_type, "options": list(q.options)} for q in questions}
         run.emit("questions", questions=[q.model_dump() for q in questions])
         wait_until = time.time() + ANSWER_TIMEOUT_S
         while not run.answer_ready.wait(0.2):
@@ -256,6 +260,50 @@ class WebAnswerer:
                 break
         llm.guard()  # 답변을 받는 사이 취소됐으면 재평가(유료 호출)로 넘어가지 않음
         return {q.question_id: (run.answers.get(q.question_id) or "모름") for q in questions}
+
+
+# ---------------------------------------------------------------------------
+# 확인 질문 답변 검증 (객관식: 팀원 커밋 4ea12d6의 질문 형식). 저장값 = 선택지 문구 그대로(표시 문구와 같음),
+# 여러 개는 ", "로 이음, '기타'류 선택지는 "기타: <내용>", 모르면 '모름'(decision_state.DECLINED_ANSWERS).
+# 숫자·날짜·자유 입력은 형식을 서버에서 강제하지 않음 (화면이 형식 안내·검사).
+# ---------------------------------------------------------------------------
+YES_NO = ("예", "아니요")
+
+
+def _is_etc(option: str) -> bool:
+    return option.strip().startswith("기타")
+
+
+def _choice_parts(answer: str, options: list[str]) -> bool:
+    """answer가 선택지 문구들을 ", "로 이은 것인지 (선택지 안의 쉼표도 허용). 마지막은 "기타: ..."일 수 있음."""
+    if not answer:
+        return False
+    etc = any(_is_etc(o) for o in options)
+    if etc and answer.startswith("기타:"):
+        return True
+    for o in sorted(set(options), key=len, reverse=True):
+        if answer == o:
+            return True
+        if answer.startswith(o + ", ") and _choice_parts(answer[len(o) + 2:], options):
+            return True
+    return False
+
+
+def answer_problem(spec: dict | None, answer: str) -> bool:
+    """서버가 받을 수 없는 답변인가 (True면 거절). 질문 정보가 없으면 형식 검사를 하지 않음."""
+    if spec is None:
+        return False
+    a = (answer or "").strip()
+    if a.casefold() in DECLINED_ANSWERS:
+        return False
+    t, opts = spec.get("answer_type"), [o for o in spec.get("options") or [] if o.strip()]
+    if t == "yes_no":
+        return a not in YES_NO
+    if t == "single_choice" and len(opts) >= 2:
+        return not (a in opts or (any(_is_etc(o) for o in opts) and a.startswith("기타:")))
+    if t == "multi_choice" and len(opts) >= 2:
+        return not _choice_parts(a, opts)
+    return False
 
 
 class RunRequest(BaseModel):
@@ -284,7 +332,13 @@ def _forward(run: "Run", rec: dict) -> None:
     run.emit("trace", record=_client_record(rec))
 
 
+# trace에 실리지만 이 화면이 쓰지 않는 큰 필드 (팀원 단계 화면용, 4ea12d6): 환자 원문 인용(프로필·기준별 근거)과
+# 오류 원문이 들어 있으므로 SSE로 보내지 않음. 결과 화면은 result 이벤트의 표시 정보(display.py)를 씀
+_TRACE_DROP = frozenset({"profile", "screening", "assessments", "evaluation_error"})
+
+
 def _client_record(rec: dict) -> dict:
+    rec = {k: v for k, v in rec.items() if k not in _TRACE_DROP}
     if (rec.get("agent"), rec.get("event")) not in _ERROR_TRACES:
         return rec
     kind = str(rec.get("message", "")).split("(", 1)[0].split(":", 1)[0].strip() or "Error"
@@ -440,6 +494,11 @@ def _execute_run(run: Run, req: RunRequest, case: PatientCase, trials: dict[str,
             log.warning("web run ended: state=%s error_type=%s", outcome, error_type)
 
 
+# 저장된 실행 '다시 보기'(팀원 커밋 4ea12d6의 /api/replays, _replay)는 Phase 9 통합에서 비활성화함:
+# 실행 소유권·CSRF 확인이 없고, 환자 원문(patient_text)과 프로필을 SSE로 보내며, 결과 저장(기본 꺼짐)에 의존함.
+# 안전한 재설계 조건과 후속 작업은 docs/team_handoff.md. 원래 구현은 git show 4ea12d6:src/ctrec/web/app.py
+
+
 # ---------------------------------------------------------------------------
 # API
 # ---------------------------------------------------------------------------
@@ -516,6 +575,16 @@ def _purge_outputs_periodically() -> None:
         retention.purge_expired(now)
     except Exception as e:  # noqa: BLE001 - 정리 실패가 실행 시작을 막지 않음
         log.warning("web output purge failed: %s", type(e).__name__)
+
+
+# 화면 표시용 한국어 번역 (팀원 커밋 4ea12d6에서 가져옴). 판정에는 쓰지 않음: 화면이 원문(en)과 같을 때만 번역을 보여 줌
+_KO_FILE = config.DATA_DIR / "i18n" / "trials_ko.json"
+
+
+@app.get("/api/ko")
+def trials_ko() -> dict:
+    """시험 제목·질환·기준 번역. 공개 시험 정보뿐이며 환자 정보 없음 (소유권 확인 불필요)."""
+    return json.loads(_KO_FILE.read_text(encoding="utf-8")) if _KO_FILE.exists() else {}
 
 
 @app.post("/api/runs")
@@ -626,6 +695,9 @@ def submit_answers(run_id: str, body: AnswerRequest, request: Request) -> dict:
         pending = run.pending_questions
         if run.state != "running" or not pending:  # 끝난·취소된 실행, 질문 전, 이미 답한 질문(중복 제출)
             raise HTTPException(409, "지금은 답변을 받을 수 있는 질문이 없습니다.")
+        bad = [q for q, a in body.answers.items() if q in pending and answer_problem(run.pending_specs.get(q), a)]
+        if bad:  # 질문은 그대로 대기 (같은 답변 화면에서 고쳐 다시 보낼 수 있음). 답변 내용은 응답·로그에 넣지 않음
+            raise HTTPException(400, "선택지에 없는 답변이 있습니다. 화면의 선택지에서 고르거나 '모름'을 선택하세요.")
         run.answers = {q: a for q, a in body.answers.items() if q in pending}
         run.pending_questions = set()
         run.emit("answers", n_answered=sum(bool(a.strip()) for a in run.answers.values()))  # 답변 내용은 보내지 않음

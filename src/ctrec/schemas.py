@@ -225,7 +225,16 @@ class TrialMatch(BaseModel):
 class ClarifyingQuestion(BaseModel):
     question_id: str
     question: str = Field(description="환자/보호자가 이해할 수 있는 한국어 질문")
-    answer_type: Literal["yes_no", "number", "date", "free_text"]
+    answer_type: Literal["yes_no", "single_choice", "multi_choice", "number", "date", "free_text"] = Field(
+        description="yes_no: 예/아니요 / single_choice: 선택지 중 하나 / multi_choice: 해당하는 것 모두 / "
+                    "number: 수치 / date: 날짜 / free_text: 목록·서술이 꼭 필요할 때만"
+    )
+    options: list[str] = Field(
+        default_factory=list,
+        description="single_choice·multi_choice의 선택지 2~6개(서로 겹치지 않게). '모름'은 화면이 자동으로 붙이므로 넣지 않음. "
+                    "다른 answer_type이면 빈 목록",
+    )
+    unit: str | None = Field(default=None, description="number일 때 답의 단위(예: mg/dL, kg, 주). 그 외에는 null")
     target: list[str] = Field(description="해결 대상 '<trial_id>:<rule_id>' 목록")
     purpose: Literal["eligibility", "physician_reference"] = Field(
         description="eligibility: 적격성 판정용 / physician_reference: 원문에 구체 기준이 없는 항목에 대해 의사 참고용 정보 수집"

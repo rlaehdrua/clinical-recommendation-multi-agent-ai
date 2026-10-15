@@ -155,3 +155,8 @@ details.raw .rawtext { white-space: pre-wrap; background: var(--panel-2); border
 .ev .t { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12px; } .ev .who { font-weight: 700; margin-right: 6px; }
 .chip { display: inline-block; font-size: 12px; padding: 0 7px; border-radius: 6px; background: var(--panel-2); margin-left: 4px; }
 #decision-panel > summary { padding: 10px 14px; }
+/* 객관식 확인 질문 (Phase 9: 팀원 4ea12d6 질문 형식) */
+.q .opts.col { flex-direction: column; align-items: flex-start; gap: 4px; }
+.q .opts.col input[data-etc] { width: 100%; max-width: 480px; margin-top: 4px; }
+/* 번역 표시 시 원문 (Phase 9: 팀원 4ea12d6 번역 파일) */
+.orig { font-size: 12px; overflow-wrap: anywhere; }

@@ -113,6 +113,7 @@ async function init() {
     $("#analysis-off").hidden = an.enabled !== false;
     state.patients = await (await fetch("/api/patients")).json();
     state.trials = await (await fetch("/api/trials")).json();
+    try { state.ko = await (await fetch("/api/ko")).json(); } catch (e) { state.ko = {}; }  // 번역이 없어도 원문으로 동작
   } catch (e) { $("#start-hint").textContent = "서버에 연결하지 못했습니다. 잠시 후 새로고침하세요."; return; }
   const groups = {};
   for (const p of state.patients) (groups[p.group] ||= []).push(p);
@@ -120,7 +121,7 @@ async function init() {
     `<optgroup label="${esc(g)} (가상 데이터)">${ps.map(p => `<option value="${esc(p.patient_id)}">${esc(p.patient_id)} · ${esc(p.text.slice(0, 48))}…</option>`).join("")}</optgroup>`).join("");
   $("#trials").innerHTML = state.trials.map(t => `<label class="trial-opt"><input type="checkbox" value="${esc(t.trial_id)}">
     <span><span class="tid">${esc(t.trial_id)}</span> ${statusBadge(t.overall_status)}${t.synthetic ? ' <span class="badge">가상 시험</span>' : ""}
-    <span class="ttl">${esc(t.title)}</span></span></label>`).join("");
+    <span class="ttl"${koTitle(t.trial_id, t.title) !== t.title ? ` title="${esc(t.title)}"` : ""}>${esc(koTitle(t.trial_id, t.title))}</span></span></label>`).join("");
   $("#trials").addEventListener("change", countTrials);
   $("#patient").addEventListener("change", onPatient);
   document.querySelectorAll('input[name="cand-mode"]').forEach(r => r.addEventListener("change", countTrials));
@@ -492,7 +493,29 @@ function formatError(type, v) {
   if (type === "date" && !validDate(v)) return "YYYY-MM-DD(또는 YYYY-MM, YYYY) 형식의 실제 날짜로 입력하거나 \"모름 · 확인 불가\"를 선택하세요.";
   return "";
 }
+// 객관식 질문 (팀원 4ea12d6): 서버(web/app.answer_problem)와 같은 규칙. 저장값 = 선택지 문구, 여러 개는 ", ", 기타는 "기타: 내용"
+const ANSWER_INPUTS = "input[data-q], input[data-yn], input[data-ch], input[data-mc], input[data-etc]";
+const isEtc = (o) => String(o).trim().startsWith("기타");
+function choiceOptions(q) {
+  if (q.answer_type !== "single_choice" && q.answer_type !== "multi_choice") return null;
+  const opts = (q.options || []).map(o => String(o).trim()).filter(Boolean);
+  return opts.length >= 2 ? opts : null;  // 선택지가 모자라면 자유 입력으로 받음 (서버도 형식 검사를 하지 않음)
+}
+function choiceAnswer(q, box) {
+  const opts = choiceOptions(q), etc = box.querySelector("input[data-etc]");
+  const picked = [...box.querySelectorAll("input[data-ch]:checked, input[data-mc]:checked")].map(i => opts[+i.value]).filter(o => o != null);
+  const text = (etc && etc.value || "").trim();
+  return picked.map(o => isEtc(o) && text ? `기타: ${text}` : o).join(", ");
+}
+function syncEtc(box) {  // '기타'를 골랐을 때만 내용 입력란을 켬
+  const etc = box.querySelector("input[data-etc]"); if (!etc) return;
+  const unknown = box.querySelector("input[data-unknown]").checked;
+  const qid = etc.dataset.etc, q = (state.questions || []).find(x => x.question_id === qid);
+  const on = !unknown && q && [...box.querySelectorAll("input[data-ch]:checked, input[data-mc]:checked")].some(i => isEtc(choiceOptions(q)[+i.value]));
+  etc.disabled = !on;
+}
 function showQuestions(qs) {
+  state.questions = qs;
   state.waiting = true; state.questionsSeen = true; state.submitting = false;
   activate("questions", qs.length ? `추가 질문 ${qs.length}개가 있습니다. 답해 주시면 다시 분석합니다.` : "질문이 없습니다.");
   setRunState("답변 대기", "warn");
@@ -501,6 +524,18 @@ function showQuestions(qs) {
     const desc = `qwhy-${id} qerr-${id}` + (FORMAT[q.answer_type] && FORMAT[q.answer_type][0] ? ` qfmt-${id}` : "");
     if (q.answer_type === "yes_no") return `<fieldset class="opts" aria-describedby="${desc}"><legend class="sr-only">질문 ${n} 답변</legend>
         <label><input type="radio" name="yn-${id}" value="예" data-yn="${id}"> 예</label><label><input type="radio" name="yn-${id}" value="아니요" data-yn="${id}"> 아니요</label></fieldset>`;
+    const opts = choiceOptions(q);
+    if (opts) {  // 객관식 (팀원 4ea12d6 질문 형식): 선택지 문구가 곧 보낼 값. 입력 값에는 번호만 두고 문구는 글자로만 표시
+      const multi = q.answer_type === "multi_choice";
+      return `<fieldset class="opts col" aria-describedby="${desc}"><legend class="sr-only">질문 ${n} 답변${multi ? " (여러 개 선택 가능)" : ""}</legend>
+        ${opts.map((o, k) => `<label><input type="${multi ? "checkbox" : "radio"}" name="ch-${id}" value="${k}" ${multi ? "data-mc" : "data-ch"}="${id}"> ${esc(o)}</label>`).join("")}
+        ${opts.some(isEtc) ? `<input type="text" data-etc="${id}" maxlength="${MAX_ANSWER}" aria-label="질문 ${n}의 기타 내용" placeholder="기타를 골랐다면 내용을 적어 주세요" autocomplete="off" disabled>` : ""}
+        ${multi ? '<div class="fmt">해당하는 것을 모두 고르세요.</div>' : ""}</fieldset>`;
+    }
+    if (q.answer_type === "number" && q.unit) {
+      return `<input type="text" data-q="${id}" data-type="number" maxlength="${MAX_ANSWER}" inputmode="decimal"
+      aria-labelledby="qt-${id}" aria-describedby="${desc}" autocomplete="off"><div class="fmt" id="qfmt-${id}">${esc(FORMAT.number[0])} 단위: ${esc(q.unit)}</div>`;
+    }
     const [fmt, mode] = FORMAT[q.answer_type] || FORMAT.free_text;
     return `<input type="text" data-q="${id}" data-type="${esc(q.answer_type)}" maxlength="${MAX_ANSWER}" inputmode="${mode}"
       aria-labelledby="qt-${id}" aria-describedby="${desc}" autocomplete="off">${fmt ? `<div class="fmt" id="qfmt-${id}">${esc(fmt)}</div>` : ""}`;
@@ -516,12 +551,13 @@ function showQuestions(qs) {
       <button class="btn ghost" id="skip" type="button">모두 모름으로 보내기</button></div>
     <div id="qreview" hidden></div><div class="err mt8" id="qerror" role="alert"></div></div>`;
   $("#qslot").querySelectorAll("input[data-unknown]").forEach(cb => cb.addEventListener("change", () => {
-    const box = cb.closest(".q"); box.querySelectorAll("input[data-q], input[data-yn]").forEach(i => { i.disabled = cb.checked; i.removeAttribute("aria-invalid"); });
+    const box = cb.closest(".q"); box.querySelectorAll(ANSWER_INPUTS).forEach(i => { i.disabled = cb.checked; i.removeAttribute("aria-invalid"); });
+    if (!cb.checked) syncEtc(box);
     box.querySelector(".qerr").textContent = ""; $("#qreview").hidden = true;
   }));
-  $("#qslot").querySelectorAll("input[data-q], input[data-yn]").forEach(i => i.addEventListener("input", () => {
+  $("#qslot").querySelectorAll(ANSWER_INPUTS).forEach(i => i.addEventListener(i.type === "text" ? "input" : "change", () => {
     $("#qreview").hidden = true; i.removeAttribute("aria-invalid");
-    const box = i.closest(".q"); box.querySelector(".qerr").textContent = "";
+    const box = i.closest(".q"); box.querySelector(".qerr").textContent = ""; syncEtc(box);
   }));
   $("#send").addEventListener("click", () => reviewAnswers(qs, false));
   $("#skip").addEventListener("click", () => reviewAnswers(qs, true));
@@ -536,7 +572,8 @@ function collectAnswers(qs, allUnknown) {
     let v = "";
     if (!unknown) {
       const t = box.querySelector("input[data-q]"); const yn = box.querySelector("input[data-yn]:checked");
-      v = (t ? t.value : yn ? yn.value : "").trim();
+      v = choiceOptions(q) ? choiceAnswer(q, box) : (t ? t.value : yn ? yn.value : "").trim();
+      if (t && q.answer_type === "number" && q.unit && v && !DECLINED.has(v) && !v.includes(q.unit)) v = `${v} ${q.unit}`;
       const err = t ? formatError(q.answer_type, v) : "";
       box.querySelector(".qerr").textContent = err;
       if (t) { if (err) t.setAttribute("aria-invalid", "true"); else t.removeAttribute("aria-invalid"); }
@@ -558,7 +595,7 @@ function reviewAnswers(qs, allUnknown) {
     <div class="row mt10"><button class="btn" id="confirm-send" type="button">이대로 보내기</button>
     <button class="btn ghost" id="edit-answers" type="button">답변 수정</button></div></div>`;
   $("#confirm-send").addEventListener("click", () => submitAnswers(answers));
-  $("#edit-answers").addEventListener("click", () => { box.hidden = true; const f = $("#qslot input[data-q]:not(:disabled), #qslot input[data-yn]:not(:disabled)"); if (f) f.focus(); });
+  $("#edit-answers").addEventListener("click", () => { box.hidden = true; const f = $("#qslot :is(" + ANSWER_INPUTS + "):not(:disabled)"); if (f) f.focus(); });
   $("#confirm-send").focus();
 }
 async function submitAnswers(answers) {
@@ -614,7 +651,7 @@ function critItem(a, g) {
   if (g === "procedural") extra.push("동의서 등 연구기관에서 확인하는 절차 조건으로, 이 결과의 판정에는 영향을 주지 않습니다.");
   if (g === "unclassified") extra.push("판정이 보류되었으나 자세한 분류를 할 수 없습니다. 의료진 확인이 필요합니다.");
   if (g === "missing" && a.missing_info) extra.push("필요한 정보: " + a.missing_info);
-  return `<div class="crit ${g}"><div class="ct">${esc(a.criterion_text)}</div>
+  return `<div class="crit ${g}"><div class="ct">${esc(critLabel(a))}</div>${origLine(critLabel(a), a.criterion_text)}
     <div class="meta"><span class="badge">${a.kind === "exclusion" ? "제외 기준" : "선정 기준"}</span><span class="badge">${esc(critOutcome(a))}</span>
       <span class="badge wrap">${a.method === "rule_engine" ? "규칙 엔진 판정" : "AI 판정 · 검증된 사실 아님"}</span>
       <span class="badge wrap">근거 출처: ${esc(SOURCE[a.evidence_source] || "근거 없음")}</span>${a.cohort ? `<span class="badge">코호트 ${esc(a.cohort)}</span>` : ""}</div>
@@ -648,11 +685,11 @@ function criteriaDetails(m, d) {
 function checksBlock(r, d) {
   let html = "";
   const rc = (d && d.record_checks) || [];
-  if (rc.length) html += `<div class="phys"><b>진료 기록 확인 필요 (${rc.length})</b>${rc.map(x => `<div class="item">• ${esc(x.criterion_text)}
+  if (rc.length) html += `<div class="phys"><b>진료 기록 확인 필요 (${rc.length})</b>${rc.map(x => `<div class="item">• ${esc(critLabel(x))}
       <div class="hint">${esc(SAID[x.said] || SAID.unclear)}. 이 조건은 진료 기록이 필요해 답변만으로 판정하지 않았습니다.</div>
       ${x.evidence && !/^근거 없음/.test(x.evidence) ? `<div class="hint">근거: <q>${esc(x.evidence)}</q></div>` : ""}</div>`).join("")}</div>`;
   const ph = (d && d.physician_items) || [];
-  if (ph.length) html += `<div class="phys"><b>의사 확인 필요 (${ph.length})</b>${ph.map(x => `<div class="item">• ${esc(x.criterion_text)}
+  if (ph.length) html += `<div class="phys"><b>의사 확인 필요 (${ph.length})</b>${ph.map(x => `<div class="item">• ${esc(critLabel(x))}
       <div class="hint">공개된 프로토콜 원문에 구체 기준이 없어 시스템이 판정하지 않았습니다. 참여 결정 전 담당 의사가 전체 프로토콜과 대조해 확인하세요.</div>
       ${(x.related_qa || []).map(q => `<div class="hint">관련 문답: ${esc(q.question)} → ${esc(q.answer)}</div>`).join("")}</div>`).join("")}</div>`;
   const notes = [...(r.verification_needed || []), ...(r.physician_review || [])];
@@ -664,7 +701,7 @@ function trialHead(tid, status, info, rank) {
   const url = safeTrialUrl(info.url);
   return `<div class="head">${rank ? `<span class="rank" aria-label="표시 순서 ${esc(rank)}">${esc(rank)}</span>` : ""}<span class="tid">${esc(tid)}</span>${matchBadge(status)}${statusBadge(info.overall_status)}
     ${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">ClinicalTrials.gov에서 원문 보기<span class="sr-only"> (${esc(tid)}, 새 창)</span><span class="hint" aria-hidden="true"> (새 창)</span></a>` : ""}</div>
-    <div class="ttl">${esc(info.title || "")}</div><div class="hint mt4">${esc((STATUS[status] || [])[2] || "")}</div>`;
+    <div class="ttl">${esc(koTitle(tid, info.title || ""))}</div>${origLine(koTitle(tid, info.title || ""), info.title)}<div class="hint mt4">${esc((STATUS[status] || [])[2] || "")}</div>`;
 }
 const EXCLUDE_TEXT = {
   not_evaluated: () => "평가 중 오류로 판정하지 못했습니다(부적격 아님). 다시 분석하거나 담당자 확인이 필요합니다.",
@@ -678,7 +715,7 @@ function excludedCard(x, m, d, info) {
   let html = `<div class="card mt8">${trialHead(x.trial_id, m ? m.match_status : null, info)}<div class="sum">${esc(EXCLUDE_TEXT[kind](d || {}))}</div>`;
   if (kind === "mismatch" && m) {
     const bad = (m.assessments || []).filter(a => groupOf(d, a) === "not_met");
-    if (bad.length) html += `<div class="sum">맞지 않는 조건:</div><ul>${bad.slice(0, 3).map(a => `<li>${esc(a.criterion_text)}</li>`).join("")}</ul>${bad.length > 3 ? `<div class="hint">외 ${bad.length - 3}개는 조건별 판정에서 확인하세요.</div>` : ""}`;
+    if (bad.length) html += `<div class="sum">맞지 않는 조건:</div><ul>${bad.slice(0, 3).map(a => `<li>${esc(critLabel(a))}</li>`).join("")}</ul>${bad.length > 3 ? `<div class="hint">외 ${bad.length - 3}개는 조건별 판정에서 확인하세요.</div>` : ""}`;
   }
   html += counts(m, d) + criteriaDetails(m, d);
   if (kind !== "not_evaluated") html += raw(x.reason, "시스템 원문 사유 보기");  // 평가 오류 원문은 보이지 않음 (요청 내용이 섞일 수 있음)
@@ -698,7 +735,26 @@ function noRecommendation(rec, display) {
 }
 // marked 12 렌더러: 원시 HTML 블록·인라인 HTML은 이스케이프한 글자로 출력
 const REPORT_RENDERER = window.marked ? Object.assign(new marked.Renderer(), { html: (html) => esc(html) }) : null;
+// ------------------------------------------------------------ 한국어 표시 (번역 파일 data/i18n/trials_ko.json, 팀원 4ea12d6)
+// 판정·상태 코드는 바꾸지 않고 글자만: 번역 당시 원문과 지금 원문이 같을 때만 번역을 쓰고, 원문은 함께 보여 줌
+function koTitle(tid, title) {
+  const k = (state.ko || {})[tid];
+  return k && k.title && title && k.title_en === title ? k.title : title;
+}
+function koRule(tid, rid, en) {
+  const r = (((state.ko || {})[tid] || {}).rules || {})[rid];
+  return r && r.ko && r.en === en ? r.ko : null;
+}
+const critLabel = (a) => a.criterion_ko || a.criterion_text || "";
+function origLine(shown, original) {
+  return original && shown !== original ? `<div class="hint orig" lang="en">원문: ${esc(original)}</div>` : "";
+}
+function annotateKo(result) {
+  for (const [tid, m] of Object.entries((result && result.matches) || {}))
+    for (const a of m.assessments || []) { const ko = koRule(tid, a.rule_id, a.criterion_text); if (ko) a.criterion_ko = ko; }
+}
 function showResult(ev) {
+  annotateKo(ev.result);
   const result = ev.result || {}; const rec = result.recommendation || { ranked: [], excluded: [] };
   const matches = result.matches || {}; const trials = ev.trials || {};
   const display = ev.display || null; const dOf = (tid) => (display && display.trials && display.trials[tid]) || null;
@@ -721,7 +777,7 @@ function showResult(ev) {
   const recCard = (r, top) => {
     const info = trials[r.trial_id] || {}; const d = dOf(r.trial_id);
     return `<div class="rec${top ? " top" : ""}">${trialHead(r.trial_id, r.match_status || r.eligibility, info, r.rank)}${counts(matches[r.trial_id], d)}
-      ${aiText("AI 요약", r.rationale)}${aiList("AI가 정리한 확인할 점", r.key_concerns)}${aiList("AI가 제안한 다음 단계", r.next_steps)}
+      ${aiList("AI가 정리한 확인할 점", r.key_concerns)}${aiList("AI가 제안한 다음 단계", r.next_steps)}
       ${checksBlock(r, d)}${criteriaDetails(matches[r.trial_id], d)}</div>`;
   };
   const top = rec.recommended || [];
