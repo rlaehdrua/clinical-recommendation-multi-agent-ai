@@ -123,7 +123,7 @@ sequenceDiagram
   - 나이·성별·ECOG·수치형 검사값은 **결정론적 규칙 엔진**이 먼저 판정해 산술 오류를 막습니다.
   - 시험 단위 최종 적격성은 **코드가 정한 결정 규칙**으로 계산합니다. 선정 기준 불충족이나 제외 기준 해당이 하나라도 있으면 `INELIGIBLE`, 그렇지 않고 판정 불가 항목이 있으면 `UNCERTAIN`, 모두 통과하면 `ELIGIBLE`입니다.
   - 추천 에이전트가 이 판정과 어긋나는 출력을 내면 코드가 교정합니다.
-- **후보는 전체 시험에서 에이전트가 고름**: 후보 추림 에이전트가 시험 풀 전체(현재 26개)의 제목·대상 질환·대상군·요약을 한 번에 보고, 이 환자에게 해당될 만한 시험을 최대 5개 고릅니다(`--max-candidates`). 기준별 자세한 판정은 고른 시험에만 하므로 비용이 시험 수에 비례해 늘지 않습니다.
+- **후보는 전체 시험에서 에이전트가 고름**: 후보 추림 에이전트가 시험 풀 전체(실제 CT.gov 시험 25개)의 제목·대상 질환·대상군·요약을 한 번에 보고, 이 환자에게 해당될 만한 시험을 최대 5개 고릅니다(`--max-candidates`). 기준별 자세한 판정은 고른 시험에만 하므로 비용이 시험 수에 비례해 늘지 않습니다.
   - 제외 사유는 ① 대상 질환 자체가 다름 ② 나이·성별 범위를 명백히 벗어남, 두 가지뿐입니다. 같은 질환이면 원인·병기·동반 질환 같은 세부 차이로는 제외하지 않고 다음 단계의 기준별 판정에 맡깁니다.
   - 모델이 판단을 빠뜨린 시험은 후보로 남기고(안전한 기본값), 목록에 없는 시험 ID는 버립니다. 선택·제외된 시험과 사유는 `result.json`의 `screening`과 `report.md`의 "후보 시험 추림" 섹션에 남습니다.
   - 이전 방식(질환별로 사람이 미리 정한 2–3개, `data/topic_map.json`)은 `--candidates given`으로 쓸 수 있습니다.
@@ -141,7 +141,7 @@ sequenceDiagram
 
   - 추천 에이전트(LLM)는 순위를 매기지 않고 시험별 근거만 씁니다. 표시 순서는 코드가 정합니다: 추천 그룹(위 표 순서) → 모집 상태(모집 중 → 모집 예정) → 남은 미확인 항목 수 → 후보 추림 순서. `rank`는 이 표시 순서(1, 2, 3…)이고, `selection_reason`에 이 기준을 적습니다.
   - `recommended`는 가장 앞 그룹의 시험 전부입니다(1순위 하나를 고르지 않음).
-- **가상 데모 시험은 데모 모드에서만 추천 (아키텍처 §67)**: `"synthetic": true`인 시험(예: `DEMO-LUNG-001`)은 적격성 판정(평가용)은 하지만 추천에서는 빼고, 제외 목록에 "가상 데모 시험(실제 시험 아님)"이라고 남깁니다. `--demo` 또는 `CTREC_DEMO_MODE=1`일 때만 추천에 나옵니다.
+- **가상 데모 시험은 데모 모드에서만 추천 (아키텍처 §67)**: `"synthetic": true`인 시험(예: `DEMO-LUNG-001`)은 적격성 판정(평가용)은 하지만 추천에서는 빼고, 제외 목록에 "가상 데모 시험(실제 시험 아님)"이라고 남깁니다. `--demo` 또는 `CTREC_DEMO_MODE=1`일 때만 추천에 나옵니다. 후보 추림 풀에도 데모 모드에서만 들어가며, 웹 화면은 데모 모드가 아니면 이 시험과 이 시험만 후보로 둔 환자(`SYN-DEMO-A/B`)를 목록에서 숨깁니다.
 - **값싼 확정 제외 (아키텍처 §27)**: 후보 추림(LLM) 전에 코드가 명백히 맞지 않는 시험을 먼저 뺍니다(`hard_filter.py`). 모집 종료, CT.gov 구조화 나이 범위와 환자 나이 구간이 겹치지 않음, 한 성별 전용 시험과 환자 성별 불일치만 씁니다. 나이·성별을 모르거나 단위를 해석할 수 없으면 빼지 않습니다. 뺀 시험과 사유는 `screening.hard_filtered`와 보고서에 남습니다.
 - **환자 답변 ≠ 확인된 진료 기록 (UNVERIFIED, 아키텍처 §19)**: 검사 수치·바이오마커·진단·병기처럼 진료 기록이 필요한 기준을 환자 답변만으로 판정하면 판정을 확정하지 않고 `UNVERIFIED`(판정 불가)로 남깁니다. 답변이 가리킨 값은 `self_reported_holds`에 보존하고, 같은 질문을 반복하지 않고 문서(검사 결과지·보고서) 확인을 요청합니다(`missing_facts`의 `document_requested`). 추천의 `verification_needed`와 보고서의 "문서 확인 필요 사항 (UNVERIFIED)" 섹션에 표시됩니다.
 - **추천 가능 조건과 '추천 없음' 사유**: 시험은 **적격성(ELIGIBLE/UNCERTAIN)**과 **현재 모집 상태(모집 중·모집 예정)**를 모두 만족해야 추천됩니다.
@@ -236,7 +236,7 @@ python -m ctrec.web              # http://127.0.0.1:8000 (--port로 변경)
 
 ### 3.3 사업단 제공 환자 + 실제 ClinicalTrials.gov 시험
 
-사업단 제공 환자 10명(S001–S010)마다 CT.gov에서 관련 시험 2–3개를 골라 `data/trials/`에 저장해 두었습니다(전체 26개). 기본 실행은 이 26개 전체를 후보 풀로 보고 후보 추림 에이전트가 고릅니다. 이전처럼 질환별로 정해 둔 후보(`data/topic_map.json`)만 평가하려면 `--candidates given --topic-map data/topic_map.json`을 붙입니다.
+사업단 제공 환자 10명(S001–S010)마다 CT.gov에서 같은 질환 시험 2–3개를 골라 `data/trials/`에 저장해 두었습니다(실제 시험 25개, 이 밖에 시연용 가상 시험 `DEMO-LUNG-001` 1개). 고른 기준은 문서로 남아 있지 않고, 환자 진단과 같은 질환의 시험이라는 것 외에 정해 둔 규칙은 없었습니다(모집 종료 시험 3개도 포함). 기본 실행은 실제 시험 25개 전체를 후보 풀로 보고 후보 추림 에이전트가 고릅니다. 이전처럼 질환별로 정해 둔 후보(`data/topic_map.json`)만 평가하려면 `--candidates given --topic-map data/topic_map.json`을 붙입니다.
 
 ```bash
 # 사람이 직접 답하는 인터랙티브 모드 (S004: 방광암)
@@ -267,7 +267,7 @@ python -m ctrec batch --patients-dir data/patients/synthetic --trials-dir data/t
   --answers simulated --mode agent --out outputs/with_qa --workers 4 --quiet
 python eval/evaluate.py --labels data/labels/synthetic_labels.csv --outputs outputs/with_qa --label-column label
 
-# (C) 후보 추림 포함: 전체 26개 시험에서 후보를 골라 평가 -> 전체 시험으로 확장한 라벨과 비교
+# (C) 후보 추림 포함: 전체 시험(데모 모드가 아니면 실제 25개)에서 후보를 골라 평가 -> 전체 시험으로 확장한 라벨과 비교
 python scripts/expand_labels.py   # data/labels/synthetic_labels_all.csv (다른 분야 시험은 자동으로 INELIGIBLE)
 python -m ctrec batch --patients-dir data/patients/synthetic --trials-dir data/trials \
   --answers simulated --mode fixed --out outputs/screen --workers 4 --quiet
@@ -559,6 +559,19 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 ## 10. 변경 이력
 
 수정할 때마다 무엇을 왜 바꿨는지 여기에 기록합니다. 최신 항목이 위에 옵니다.
+
+### 2026-10-15 — 가상 데모 시험을 후보 풀에서 제외
+
+배경: 후보 추림 풀 26개 중 1개(`DEMO-LUNG-001`)가 파이프라인 확인용으로 직접 만든 가상 시험이었습니다. 추천에서는 이미 빠졌지만 후보 추림·화면 목록에는 실제 시험처럼 들어가 있었습니다.
+
+| # | 변경 | 파일 |
+|---|---|---|
+| 1 | **후보 추림 풀**: `"synthetic": true` 시험은 데모 모드(`--demo`, `CTREC_DEMO_MODE=1`)에서만 풀에 넣는 `screen_pool()` 추가. CLI `--candidates screen`과 웹 실행이 이 풀을 씀. CLI `--candidates given`(환자 파일·topic-map에 직접 적은 후보)은 그대로 | `agents/recommender.py`, `cli.py`, `web/app.py` |
+| 2 | **웹 목록**: 데모 모드가 아니면 시험 목록에서 가상 시험을, 환자 목록에서 가상 시험만 후보로 둔 `SYN-DEMO-A/B`를 숨김. 시험 수 표시는 26 → 25 | `web/app.py` |
+| 3 | **README**: 시험 풀 수(25개)와 환자별 시험을 고른 방식(정해 둔 기준 없음) 정정 | `README.md` |
+
+- 테스트: 오프라인 테스트 121개 통과(후보 풀 테스트 1개 추가). 웹 목록 함수로 시험 25개·가상 시험 없음·`SYN-DEMO` 환자 숨김 확인.
+- 평가 영향: (C) 후보 추림 평가에서 `SYN-DEMO-A/B`의 `DEMO-LUNG-001` 라벨은 데모 모드가 아니면 시험이 풀에 없어 예측 없음이 되고, 다른 환자의 `DEMO-LUNG-001` 자동 라벨(부적격)도 예측 없음이 됩니다. 이 두 환자를 평가하려면 `--demo`를 붙입니다. 저장된 파일(`data/trials/`, `data/parsed/`, 라벨)은 바꾸지 않았습니다.
 
 ### 2026-10-14 — 추천 카드의 줄글 설명 삭제
 

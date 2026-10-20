@@ -18,6 +18,7 @@ from pathlib import Path
 from . import DISCLAIMER, config, llm
 from .agents.answerers import (FactRevealAnswerer, InteractiveAnswerer, NoAnswerer, RoutingAnswerer,
                                SimulatedPatientAnswerer)
+from .agents.recommender import screen_pool
 from .orchestrator import Orchestrator
 from .pipeline import PatientCase, Session, load_patients
 from .status import MATCH_NOTE
@@ -62,11 +63,11 @@ def _answerer(kind: str, cases: list[PatientCase]):
 def _candidates(case: PatientCase, trials: dict[str, dict], topic_map: dict, mode: str = "given") -> dict[str, dict]:
     """환자별 후보 시험.
 
-    screen: 불러온 시험 전체를 풀로 넘기고, 후보 추림 에이전트가 고름 (candidate_trials·topic-map 무시)
+    screen: 불러온 시험 전체(가상 데모 시험은 --demo일 때만)를 풀로 넘기고, 후보 추림 에이전트가 고름 (candidate_trials·topic-map 무시)
     given : 환자 파일의 candidate_trials > --topic-map > 전체 (사람이 정한 후보, 이전 방식)
     """
     if mode == "screen":
-        return dict(trials)
+        return screen_pool(trials)
     ids = case.candidate_trials or topic_map.get(case.patient_id)
     if not ids:
         return dict(trials)

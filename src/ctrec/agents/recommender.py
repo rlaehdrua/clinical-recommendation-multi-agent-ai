@@ -79,6 +79,11 @@ def is_demo(trial: dict) -> bool:
     return bool(trial.get("synthetic"))
 
 
+def screen_pool(trials: dict[str, dict]) -> dict[str, dict]:
+    """후보 추림 풀. 가상 데모 시험은 데모 모드에서만 넣음 (실제 후보는 CT.gov 시험만)."""
+    return {tid: t for tid, t in trials.items() if config.DEMO_MODE or not is_demo(t)}
+
+
 def is_recommendable(m: TrialMatch, trial: dict) -> bool:
     return is_candidate(m) and is_open(trial) and (config.DEMO_MODE or not is_demo(trial))
 

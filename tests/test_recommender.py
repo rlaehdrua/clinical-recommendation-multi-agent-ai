@@ -132,3 +132,12 @@ def test_demo_trial_noted_when_real_trials_fail(monkeypatch, no_llm):
     rec = recommender.recommend(_profile(), [_match("DEMO", "ELIGIBLE"), _match("A", "INELIGIBLE")], trials)
     assert "모집 중인 후보 시험이 모두 선정/제외 기준에 맞지 않았습니다" in rec.no_recommendation_reason
     assert "가상 데모 시험 1개(DEMO)" in rec.no_recommendation_reason
+
+
+def test_demo_trial_left_out_of_screen_pool(monkeypatch):
+    """후보 추림 풀에는 실제 시험만. 가상 데모 시험은 데모 모드에서만 들어감."""
+    trials = {"DEMO": {"synthetic": True}, "A": {}}
+    monkeypatch.setattr(recommender.config, "DEMO_MODE", False)
+    assert list(recommender.screen_pool(trials)) == ["A"]
+    monkeypatch.setattr(recommender.config, "DEMO_MODE", True)
+    assert list(recommender.screen_pool(trials)) == ["DEMO", "A"]

@@ -32,7 +32,7 @@ from fastapi.responses import FileResponse, Response, StreamingResponse
 from pydantic import BaseModel
 
 from .. import DISCLAIMER, config, llm
-from ..agents.recommender import is_open
+from ..agents.recommender import is_open, screen_pool
 from ..orchestrator import Orchestrator
 from ..pipeline import PatientCase, Session, load_patients, trace_match
 from ..schemas import ClarifyingQuestion, TrialMatch
@@ -258,10 +258,14 @@ def get_config() -> dict:
 
 @app.get("/api/patients")
 def list_patients() -> list[dict]:
+    # 가상 데모 시험만 후보로 둔 환자(SYN-DEMO-*)는 데모 모드에서만 보임
+    all_trials = _load_trials()
+    demo = set(all_trials) - set(screen_pool(all_trials))
     return [
         {"patient_id": c.patient_id, "group": group, "text": c.raw_text,
          "candidate_trials": c.candidate_trials or [], "has_hidden": bool(c.hidden_details)}
         for c, group in _load_cases().values()
+        if not (c.candidate_trials and set(c.candidate_trials) <= demo)
     ]
 
 
@@ -270,7 +274,7 @@ def list_trials() -> list[dict]:
     return [
         {"trial_id": tid, "title": t.get("title"), "overall_status": t.get("overall_status"),
          "open": is_open(t), "conditions": t.get("conditions", []), "synthetic": t.get("synthetic", False)}
-        for tid, t in _load_trials().items()
+        for tid, t in screen_pool(_load_trials()).items()
     ]
 
 
@@ -283,8 +287,8 @@ def trials_ko() -> dict:
 
 @app.post("/api/runs")
 def start_run(req: RunRequest) -> dict:
-    all_trials = _load_trials()
-    trials = dict(all_trials) if req.screen else {t: all_trials[t] for t in req.trial_ids if t in all_trials}
+    pool = screen_pool(_load_trials())
+    trials = dict(pool) if req.screen else {t: pool[t] for t in req.trial_ids if t in pool}
     if not trials and not req.allow_search:
         raise HTTPException(400, "평가할 임상시험을 하나 이상 선택하세요.")
     if req.custom_text and req.custom_text.strip():
