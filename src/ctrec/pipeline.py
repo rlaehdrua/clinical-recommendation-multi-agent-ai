@@ -9,13 +9,16 @@ from __future__ import annotations
 
 import contextvars
 import json
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from . import DISCLAIMER, acquisition, config, llm, trial_store
+from . import DISCLAIMER, acquisition, config, evidence, fact_compare, incremental, llm, profile_facts, trial_store
 from .agents import criteria_parser, explainer, matcher, patient_profiler, question_generator, recommender, screener
 from .agents.answerers import Answerer
+from .fact_changes import take_snapshot
+from .fact_store import FactStore
 from .schemas import ParsedTrial, PatientProfile, QAPair, Recommendation, TrialMatch
 from .trace import Tracer
 
@@ -51,11 +54,14 @@ class PatientCase:
     hidden_details: str | None = None  # 가상 환자 시뮬레이션용 (파이프라인에는 노출되지 않음)
     candidate_trials: list[str] | None = None  # 이 환자에게 평가할 후보 시험 ID (없으면 전체)
     oracle_facts: list[dict] | None = None  # 정보 가리기 평가셋: 전체 사실 목록 (가상 환자만 사용, 파이프라인에는 노출되지 않음)
+    # 최초 입력(raw_text)의 선언된 출처: clinical_record / self_report / unknown (evidence.InputSource).
+    # 선언이 없으면 unknown -> 진료 기록이 필요한 기준은 UNVERIFIED (문자열이라는 이유로 진료 기록으로 보지 않음)
+    input_source: str = "unknown"
 
 
 # 파이프라인에 노출하지 않는 필드 (시뮬레이터·평가용 메타데이터)
 _HIDDEN_KEYS = {
-    "hidden_details", "labels", "design_note", "synthetic", "base_topic", "candidate_trials",
+    "hidden_details", "labels", "design_note", "synthetic", "base_topic", "candidate_trials", "input_source",
     # 정보 가리기 평가셋(scripts/build_masked_benchmark.py)의 정답·숨긴 사실
     "oracle_facts", "hidden_facts", "masked_fact_ids", "clue_fact_ids", "masked_criteria", "case_type", "source_patient",
 }
@@ -71,8 +77,12 @@ def _case_from_dict(data: dict, default_id: str) -> PatientCase:
     else:
         visible = {k: v for k, v in data.items() if k not in _HIDDEN_KEYS}
         text = json.dumps(visible, ensure_ascii=False, indent=1)
+    source = data.get("input_source", "unknown")
+    if source not in evidence.INPUT_SOURCES:
+        raise ValueError(f"{pid}: input_source는 {', '.join(evidence.INPUT_SOURCES)} 중 하나여야 합니다 (받은 값: {source!r})")
     return PatientCase(patient_id=pid, raw_text=text, hidden_details=hidden,
-                       candidate_trials=data.get("candidate_trials"), oracle_facts=data.get("oracle_facts"))
+                       candidate_trials=data.get("candidate_trials"), oracle_facts=data.get("oracle_facts"),
+                       input_source=source)
 
 
 def load_patients(path: Path) -> list[PatientCase]:
@@ -84,6 +94,8 @@ def load_patients(path: Path) -> list[PatientCase]:
     - {"topics": [{"num", "title"}, ...]}: 사업단 제공 예시(TREC topic) 형식, 여러 명
     - [{...}, {...}]: 여러 명
     그 외 JSON 필드는 텍스트로 직렬화해 환자 정보 이해 에이전트에 전달합니다.
+    JSON 환자마다 "input_source"(clinical_record / self_report / unknown)로 최초 입력의 출처를 밝힐 수 있고,
+    없으면(.txt 포함) unknown입니다.
     """
     if path.suffix.lower() == ".txt":
         return [PatientCase(patient_id=path.stem, raw_text=path.read_text(encoding="utf-8"))]
@@ -133,6 +145,32 @@ class Session:
     reference_date: str = field(default_factory=config.reference_date)
     # 판정 불가 항목별 확보 시도 기록 (D7): "<trial_id>:<rule_id>" -> MissingFact
     missing_facts: dict[str, acquisition.MissingFact] = field(default_factory=dict)
+    # 환자 사실 저장소 병행 기록(shadow, Phase 1-3A): 프로필을 추출할 때마다 사실로 옮겨 이력·출처·충돌을 남김.
+    # 판정·질문·추천에는 쓰지 않으며(모두 기존 profile 사용), 기록에 실패해도 파이프라인은 그대로 진행.
+    # 기본은 이 Session의 메모리에만 두고 파일로 저장하지 않음. fact_store_dir는 개발·테스트용 명시 옵션.
+    session_id: str = field(default_factory=lambda: f"S-{uuid.uuid4().hex[:12]}")
+    fact_shadow: bool = True
+    fact_store_dir: Path | None = None
+    fact_store: FactStore = field(default_factory=FactStore)
+    fact_shadow_log: list[dict] = field(default_factory=list)  # 기록 결과 (건수·상태만, 환자 값은 넣지 않음)
+    # 사실 기반 비교 Matcher (진단용, Phase 1-3B/1-4): 기본 off. "deterministic"은 LLM 없이 규칙 엔진 기준만,
+    # "llm"은 Matcher를 사실 기반 프로필로 한 번 더 실행(유료 API, 명시적 선택). 결과는 fact_comparison에만 두고
+    # 판정·질문·추천에는 쓰지 않음. 실패해도 추천 흐름은 그대로.
+    fact_compare: str = "off"
+    fact_compare_strict: bool = False  # True면 진료 기록 기준에 문서 검증(document_verified)을 요구
+    fact_comparison: dict | None = None
+    # 의존 그래프·부분 재평가 진단 (Phase 2): 기본 off. 매칭이 끝날 때마다 사실 스냅샷으로 부분 재평가와 전체 평가를 하고
+    # 비교 결과를 dependency_diagnostics에만 둠. LLM 판정은 기존 Matcher가 이미 낸 값만 쓰며(새 호출 없음),
+    # 판정·질문·추천에는 쓰지 않음. 실패해도 추천 흐름은 그대로.
+    dependency_diagnostic: bool = False
+    dependency_diagnostics: list[dict] = field(default_factory=list)
+    _dependency_tracker: incremental.DependencyTracker | None = field(default=None, repr=False)
+    # Agentic Decision Loop 진단 (Phase 3): 기본 "off". "diagnostic"이면 매칭이 끝날 때마다 현재 사실·판정을 읽어
+    # 다음 행동 계획(질문 후보·문서 요청·검토·종료 사유)을 decision_diagnostics에만 기록. 질문을 보내거나 판정·질문·추천을
+    # 바꾸지 않고 LLM을 부르지 않음. 실패해도 추천 흐름은 그대로.
+    decision_loop: str = "off"
+    decision_diagnostics: list[dict] = field(default_factory=list)
+    _decision_tracker: object | None = field(default=None, repr=False)
 
     # ----------------------------------------------------------- 후보
     def candidate_ids(self) -> list[str]:
@@ -184,9 +222,64 @@ class Session:
         self.tracer.log("patient_profiler", "start", patient_id=self.case.patient_id)
         self.profile = patient_profiler.profile_patient(self.case.patient_id, self.case.raw_text,
                                                         reference_date=self.reference_date)
+        # 팀원 화면용 trace에 프로필 전체(원문 인용 포함)를 실음. 웹은 SSE로 보낼 때 이 필드를 뺌(web/app._client_record)
         self.tracer.log("patient_profiler", "done", missing=self.profile.missing_or_ambiguous,
                         profile=self.profile.model_dump())
+        self._shadow_record()
         return self.profile
+
+    def _shadow_record(self) -> None:
+        """프로필을 환자 사실 저장소에 병행 기록. 프로필 사본을 넘기고, 어떤 오류도 판정 흐름으로 번지지 않게 함.
+
+        출처는 profile_facts가 인용 위치로 정함: 처음 입력에서 확인되면 선언된 출처, 확인 질문 답변에서만 확인되면
+        self_report, 확인하지 못하면 unknown. 다시 추출한 프로필의 같은 근거는 새 사실을 만들지 않음.
+        """
+        if not self.fact_shadow or self.profile is None:
+            return
+        pid = self.case.patient_id
+        entry: dict = {"round": self.rounds, "session_id": self.session_id}
+        before = len(self.fact_store.facts(pid))
+        try:
+            r = profile_facts.ingest_profile(self.fact_store, self.profile.model_copy(deep=True),
+                                             raw_text=self.case.raw_text, input_source=self.case.input_source,
+                                             session_id=self.session_id)
+            entry.update(status="partial" if r.rejected else "ok", added=len(r.added), duplicates=len(r.duplicates),
+                         skipped=len(r.skipped), rejected=len(r.rejected),
+                         rejected_kinds=sorted({name.split(":")[0] for name, _ in r.rejected}))
+            if self.fact_store_dir is not None:
+                self.fact_store.root = self.fact_store_dir
+                self.fact_store.save()
+                entry["saved"] = True
+        except Exception as e:  # noqa: BLE001 - 병행 기록 실패는 판정에 영향을 주지 않고 상태로 남김
+            # 예외 메시지에는 환자 값이 들어 있을 수 있으므로 종류만 기록
+            entry.update(status="error", error_type=type(e).__name__,
+                         added_before_error=len(self.fact_store.facts(pid)) - before)
+            if self.fact_store_dir is not None:
+                entry["saved"] = False
+        self.fact_shadow_log.append(entry)
+        self.tracer.log("fact_store", entry["status"], **{k: v for k, v in entry.items() if k != "status"})
+
+    def _run_fact_comparison(self) -> None:
+        """사실 기반 비교 (진단용). 추천이 끝난 뒤 기준선 판정 사본과 비교하고, 결과는 fact_comparison에만 둠."""
+        if self.fact_compare == "off":
+            return
+        if self.fact_compare not in ("deterministic", "llm"):
+            self.fact_comparison = {"status": "error", "error_type": "InvalidMode"}
+        elif not self.fact_shadow:
+            self.fact_comparison = {"status": "skipped", "reason": "fact_shadow가 꺼져 있어 사실이 없음"}
+        else:
+            try:
+                out = fact_compare.compare_session(
+                    self.fact_store, self.case.patient_id,
+                    {t: m.model_copy(deep=True) for t, m in self.matches.items()}, self.parsed, self.trials,
+                    self.reference_date, mode=self.fact_compare,  # type: ignore[arg-type]
+                    require_document_verification=self.fact_compare_strict)
+                self.fact_comparison = {"status": "ok", **out}
+            except Exception as e:  # noqa: BLE001 - 비교 실패는 추천에 영향을 주지 않고 상태로 남김
+                self.fact_comparison = {"status": "error", "error_type": type(e).__name__}
+        c = self.fact_comparison
+        self.tracer.log("fact_compare", c["status"], mode=self.fact_compare,
+                        risks=len(c.get("risks", [])), changes=c.get("summary", {}).get("changes"))
 
     # ----------------------------------------------------------- 단계 ③c, ④
     def match(self, trial_ids: list[str] | None = None) -> list[TrialMatch]:
@@ -197,7 +290,8 @@ class Session:
         def work(tid: str):
             self.tracer.log("matcher", "start", trial_id=tid)
             m = matcher.match_trial(self.profile, self.parsed[tid], self.trials[tid],
-                                    reference_date=self.reference_date, source_text=self.case.raw_text)
+                                    reference_date=self.reference_date, source_text=self.case.raw_text,
+                                    input_source=self.case.input_source)
             self.tracer.log("matcher", "done", trial_id=tid, message=m.summary, round=self.rounds, **trace_match(m))
             return tid, m
 
@@ -216,7 +310,54 @@ class Session:
                 out.append(m)
         self._snapshot(f"match(round={self.rounds})")
         acquisition.update(self.missing_facts, self.matches.values())
+        self._run_dependency_diagnostic({tid for tid, _ in results})
+        self._run_decision_diagnostic({tid for tid, _ in results})
         return out
+
+    def _run_decision_diagnostic(self, fresh: set[str]) -> None:
+        """Decision Loop 진단 (기본 off). Session 사본만 읽고 결과는 decision_diagnostics에만 둠."""
+        if self.decision_loop == "off":
+            return
+        entry: dict = {"round": self.rounds}
+        if self.decision_loop != "diagnostic":
+            entry.update(status="error", error_type="InvalidMode")
+        elif not self.fact_shadow:
+            entry.update(status="skipped", reason="fact_shadow가 꺼져 있어 사실이 없음")
+        else:
+            try:
+                from . import decision_loop
+                if self._decision_tracker is None:
+                    self._decision_tracker = decision_loop.DecisionTracker()
+                entry.update(status="ok", **self._decision_tracker.observe(self, fresh))
+            except Exception as e:  # noqa: BLE001 - 진단 실패는 추천에 영향을 주지 않고 상태로 남김 (종류만 기록)
+                entry.update(status="error", error_type=type(e).__name__)
+        self.decision_diagnostics.append(entry)
+        self.tracer.log("decision", entry["status"], round=self.rounds,
+                        stop_reason=entry.get("stop_reason"), diagnostic=entry)
+
+    def _run_dependency_diagnostic(self, fresh: set[str]) -> None:
+        """부분 재평가 진단 (기본 off). 사실 저장소의 스냅샷과 판정 사본만 읽고, 결과는 dependency_diagnostics에만 둠."""
+        if not self.dependency_diagnostic:
+            return
+        entry: dict = {"round": self.rounds}
+        if not self.fact_shadow:
+            entry.update(status="skipped", reason="fact_shadow가 꺼져 있어 사실이 없음")
+        else:
+            try:
+                pid = self.case.patient_id
+                if self._dependency_tracker is None:
+                    self._dependency_tracker = incremental.DependencyTracker(
+                        pid, incremental.EvaluationPolicy(reference_date=self.reference_date))
+                matches = {t: m.model_copy(deep=True) for t, m in self.matches.items()}
+                parsed = {t: None if m.eligibility == "NOT_EVALUATED" else self.parsed.get(t) for t, m in matches.items()}
+                out = self._dependency_tracker.observe(take_snapshot(self.fact_store, pid), parsed,
+                                                       incremental.baseline_assessor(matches, fresh))
+                entry.update(status="ok", **out)
+            except Exception as e:  # noqa: BLE001 - 진단 실패는 추천에 영향을 주지 않고 상태로 남김 (종류만 기록)
+                entry.update(status="error", error_type=type(e).__name__)
+        self.dependency_diagnostics.append(entry)
+        self.tracer.log("dependency", entry["status"], round=self.rounds, mode=entry.get("mode"),
+                        equivalence=entry.get("equivalence", {}).get("status"))
 
     def uncertain(self) -> list[TrialMatch]:
         """확인 질문 대상: 판정 보류이면서 현재 참여 가능한(모집 중) 시험 중 질문으로 해소할 항목이 있는 시험.
@@ -308,6 +449,7 @@ class Session:
         self.recommendation = recommender.recommend(self.profile, matches, evaluated, self.qa_log)
         self.tracer.log("recommender", "done",
                         message=" > ".join(r.trial_id for r in self.recommendation.ranked) or "(추천 없음)")
+        self._run_fact_comparison()
         self.tracer.log("explainer", "start")
         if not config.WRITE_REPORT:  # 평가 실험용: 보고서(설명 에이전트) 생략
             return
@@ -336,6 +478,7 @@ class Session:
     def result(self) -> dict:
         return {
             "patient_id": self.case.patient_id,
+            "input_source": self.case.input_source,
             "model": config.MODEL,
             "disclaimer": DISCLAIMER,
             "profile": self.profile.model_dump() if self.profile else None,
@@ -350,6 +493,14 @@ class Session:
             # 사실 단위 가상 환자가 질문별로 공개한 사실 ID (정보 가리기 평가용)
             "revealed_facts": self.answerer.revealed(self.case.patient_id) if hasattr(self.answerer, "revealed") else [],
             "usage": self.usage,
+            # 사실 저장소 병행 기록 상태 (판정·추천과 별개, 건수·상태만)
+            "fact_shadow": self.fact_shadow_log,
+            # 사실 기반 비교 (진단용, 켰을 때만. ID·상태·이유 코드만)
+            **({"fact_comparison": self.fact_comparison} if self.fact_compare != "off" else {}),
+            # 의존 그래프·부분 재평가 진단 (켰을 때만. 항목 이름·ID·건수·이유 코드만)
+            **({"dependency_diagnostic": self.dependency_diagnostics} if self.dependency_diagnostic else {}),
+            # Decision Loop 진단 (켰을 때만. 행동·이유 코드·ID·건수만, 판정·추천이 아님)
+            **({"decision_diagnostic": self.decision_diagnostics} if self.decision_loop != "off" else {}),
         }
 
     def save(self, out_dir: Path) -> None:

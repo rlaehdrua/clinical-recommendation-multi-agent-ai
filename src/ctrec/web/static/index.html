@@ -3,1247 +3,164 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>임상시험 추천 에이전트</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
-<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
-<style>
-/* 토스 디자인 언어 참고: 회색 바탕 + 흰 카드, 큰 굵은 헤드라인, 파란 단일 강조색, 테두리 없는 둥근 면 */
-:root {
-  --bg: #f2f4f6; --panel: #ffffff; --panel-2: #f2f4f6; --panel-3: #f9fafb; --line: #e5e8eb;
-  --text: #191f28; --sub: #4e5968; --muted: #6b7684; --faint: #8b95a1; --idle: #d1d6db;
-  --accent: #3182f6; --accent-d: #1b64da; --accent-w: #e8f3ff;
-  --ok: #03a65f; --ok-w: #e8f8f0; --warn: #e57a00; --warn-w: #fff4e5; --bad: #f04452; --bad-w: #ffeef0;
-  --c-trials: #5b5ff0; --c-patient: #10a5a0; --c-screen: #a234c7; --c-match: #3182f6; --c-gaps: #f08c00; --c-qa: #e5498d; --c-rec: #03a65f;
-  --mark: #fff0a6; --shadow-lg: 0 8px 28px rgba(0,27,55,.12);
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #101013; --panel: #1c1c22; --panel-2: #2a2a32; --panel-3: #23232a; --line: #33333d;
-    --text: #ececef; --sub: #c3c3c9; --muted: #9e9ea8; --faint: #7b7b86; --idle: #4a4a55;
-    --accent: #4c94ff; --accent-d: #79adff; --accent-w: #1b2a44;
-    --ok: #3cc98a; --ok-w: #173327; --warn: #ffab40; --warn-w: #3a2a12; --bad: #ff6b78; --bad-w: #3d1c21;
-    --c-trials: #8a8dff; --c-patient: #3cc8c2; --c-screen: #c983e6; --c-match: #4c94ff; --c-gaps: #ffab40; --c-qa: #ff7eb3; --c-rec: #3cc98a;
-    --mark: #5a4b12; --shadow-lg: 0 8px 28px rgba(0,0,0,.5);
-  }
-}
-* { box-sizing: border-box; }
-[hidden] { display: none !important; }
-html { -webkit-text-size-adjust: 100%; }
-body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.6 "Pretendard Variable", Pretendard, -apple-system, "Apple SD Gothic Neo", "Segoe UI", sans-serif; letter-spacing: -.1px; -webkit-font-smoothing: antialiased; }
-button { font: inherit; color: inherit; }
-button, a, summary { -webkit-tap-highlight-color: transparent; }
-.soft { background: color-mix(in srgb, var(--sc, var(--accent)) 10%, var(--panel)); }
-
-/* 헤더 */
-header { display: flex; align-items: center; gap: 10px; padding: 0 24px; height: 60px; background: color-mix(in srgb, var(--panel) 88%, transparent); backdrop-filter: saturate(180%) blur(16px); -webkit-backdrop-filter: saturate(180%) blur(16px); position: sticky; top: 0; z-index: 20; }
-header h1 { font-size: 17px; margin: 0; font-weight: 700; letter-spacing: -.4px; display: flex; align-items: center; gap: 9px; white-space: nowrap; }
-header h1 .logo { width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; background: var(--accent); color: #fff; }
-header .sp { flex: 1; }
-@media (max-width: 640px) { header { height: auto; padding: 10px 16px; flex-wrap: wrap; } #model { display: none; } }
-.badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; background: var(--panel-2); color: var(--sub); white-space: nowrap; line-height: 1.6; }
-.badge.ok { background: var(--ok-w); color: var(--ok); }
-.badge.warn { background: var(--warn-w); color: var(--warn); }
-.badge.bad { background: var(--bad-w); color: var(--bad); }
-.badge.accent { background: var(--accent-w); color: var(--accent-d); }
-.badge.st { background: color-mix(in srgb, var(--sc) 12%, var(--panel)); color: var(--sc); }
-.btn { border: 0; background: var(--accent); color: #fff; font-weight: 600; font-size: 15px; padding: 11px 18px; border-radius: 12px; cursor: pointer; white-space: nowrap; transition: background .15s, transform .1s; }
-.btn:hover { background: var(--accent-d); }
-.btn:active { transform: scale(.97); }
-.btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
-.btn.ghost { background: var(--accent-w); color: var(--accent-d); }
-.btn.ghost:hover { background: color-mix(in srgb, var(--accent) 18%, var(--panel)); }
-.btn.grey { background: var(--panel-2); color: var(--sub); }
-.btn.sm { padding: 7px 12px; font-size: 13.5px; border-radius: 10px; }
-.btn.wide { width: 100%; padding: 16px; font-size: 17px; border-radius: 16px; }
-.link { background: none; border: 0; color: var(--accent); font-size: 14px; font-weight: 600; cursor: pointer; padding: 0; text-decoration: none; }
-.hint { font-size: 13.5px; color: var(--muted); }
-.disclaimer { font-size: 12.5px; color: var(--faint); padding: 0 24px 10px; background: color-mix(in srgb, var(--panel) 88%, transparent); text-align: center; }
-
-/* 단계 레일: 토스 탭처럼 선택 단계 아래 검은 막대, 진행은 파란색 */
-#rail { background: var(--panel); border-bottom: 1px solid var(--line); position: sticky; top: 60px; z-index: 15; overflow-x: auto; scrollbar-width: none; }
-#rail::-webkit-scrollbar { display: none; }
-#rail ol { list-style: none; margin: 0 auto; padding: 14px 24px 0; display: flex; min-width: 860px; max-width: 1320px; }
-#rail li { flex: 1; position: relative; }
-#rail li + li::before { content: ""; position: absolute; top: 17px; left: calc(-50% + 24px); right: calc(50% + 24px); height: 2px; background: var(--line); border-radius: 2px; }
-#rail li.done-line::before { background: var(--accent); }
-.stop { width: 100%; background: none; border: 0; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 0 4px 14px; position: relative; }
-.stop .dot { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--panel-2); color: var(--faint); transition: all .25s; position: relative; }
-.stop .dot svg { width: 18px; height: 18px; }
-.stop .lbl { text-align: center; line-height: 1.35; }
-.stop .lbl b { display: block; font-size: 14px; color: var(--faint); font-weight: 600; }
-.stop .lbl small { display: block; font-size: 12px; color: var(--faint); min-height: 16px; font-variant-numeric: tabular-nums; }
-.stop.active .dot { color: var(--accent); background: var(--accent-w); }
-.stop.active .dot::after { content: ""; position: absolute; inset: -5px; border-radius: 50%; border: 2px solid var(--accent); opacity: .5; animation: ring 1.6s ease-out infinite; }
-.stop.done .dot { background: var(--accent); color: #fff; }
-.stop.skip .dot { background: var(--panel-2); color: var(--idle); }
-.stop.active .lbl b, .stop.done .lbl b { color: var(--sub); }
-.stop.active .lbl small { color: var(--accent); font-weight: 600; }
-.stop.viewing .lbl b { color: var(--text); font-weight: 700; }
-.stop.viewing::after { content: ""; position: absolute; left: 22%; right: 22%; bottom: -1px; height: 3px; border-radius: 3px 3px 0 0; background: var(--text); }
-.stop:hover .lbl b { color: var(--text); }
-@keyframes ring { from { transform: scale(.9); opacity: .6; } to { transform: scale(1.3); opacity: 0; } }
-@media (max-width: 640px) { #rail { position: static; } #rail ol { padding-left: 16px; padding-right: 16px; } }
-
-/* 레이아웃 */
-main { display: grid; grid-template-columns: minmax(0,1fr) 340px; gap: 20px; padding: 24px 24px 72px; align-items: start; max-width: 1320px; margin: 0 auto; }
-@media (max-width: 1100px) { main { grid-template-columns: minmax(0,1fr); } }
-@media (max-width: 640px) { main { padding: 12px 12px 48px; gap: 12px; } .disclaimer { padding: 0 16px 8px; text-align: left; } }
-.panel { background: var(--panel); border-radius: 24px; overflow: hidden; }
-.panel > h3 { font-size: 17px; font-weight: 700; letter-spacing: -.3px; margin: 0; padding: 22px 22px 10px; display: flex; align-items: center; gap: 8px; }
-.panel > h3 .hint { margin-left: auto; font-weight: 500; font-size: 12.5px; color: var(--faint); }
-.pad { padding: 14px 22px; }
-.stack { display: flex; flex-direction: column; gap: 16px; }
-@media (min-width: 1101px) { #side { position: sticky; top: 168px; max-height: calc(100vh - 188px); overflow: auto; scrollbar-width: thin; border-radius: 24px; } }
-#side > * { flex: none; }
-
-/* 단계 화면 공통: 토스식 큰 헤드라인 */
-.stage { border-radius: 28px; background: var(--panel); animation: rise .35s cubic-bezier(.2,.8,.2,1) both; }
-@keyframes rise { from { opacity: 0; transform: translateY(8px); } }
-.stage-head { display: flex; gap: 16px; align-items: flex-start; padding: 36px 36px 8px; }
-.stage-ico { flex: none; width: 56px; height: 56px; border-radius: 18px; background: color-mix(in srgb, var(--sc) 12%, var(--panel)); display: grid; place-items: center; font-size: 30px; line-height: 1; }
-.stage-ico svg { width: 26px; height: 26px; color: var(--sc); }
-.stage-kicker { font-size: 14px; font-weight: 600; color: var(--sc); }
-.stage-head h2 { margin: 4px 0 8px; font-size: 28px; font-weight: 700; letter-spacing: -.8px; line-height: 1.35; word-break: keep-all; }
-.stage-head p { margin: 0; color: var(--muted); font-size: 15.5px; line-height: 1.65; max-width: 720px; word-break: keep-all; }
-.stage-head .st-right { margin-left: auto; flex: none; padding-top: 4px; }
-.stage-body { padding: 24px 36px 36px; }
-@media (max-width: 640px) { .stage { border-radius: 22px; } .stage-head { padding: 26px 20px 4px; flex-direction: column; gap: 12px; } .stage-head h2 { font-size: 23px; } .stage-head p { font-size: 14.5px; } .stage-ico { width: 48px; height: 48px; font-size: 26px; border-radius: 15px; } .stage-body { padding: 18px 20px 24px; } .stage-head .st-right { display: none; } }
-.empty { color: var(--faint); padding: 56px 16px; text-align: center; font-size: 15px; word-break: keep-all; }
-.empty svg { width: 44px; height: 44px; color: var(--idle); display: block; margin: 0 auto 12px; }
-.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 24px; }
-.stat { border-radius: 18px; padding: 16px 18px; background: var(--panel-3); }
-.stat b { display: block; font-size: 26px; font-weight: 700; letter-spacing: -.6px; font-variant-numeric: tabular-nums; line-height: 1.25; }
-.stat span { font-size: 13px; color: var(--muted); }
-.stat.hl { background: color-mix(in srgb, var(--sc) 9%, var(--panel)); } .stat.hl b { color: var(--sc); }
-.sec-t { font-size: 16px; font-weight: 700; letter-spacing: -.3px; color: var(--text); margin: 32px 0 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.sec-t:first-child { margin-top: 0; }
-.chip { display: inline-block; font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 6px; background: var(--panel-2); color: var(--sub); white-space: nowrap; }
-.skel { border-radius: 8px; height: 16px; background: linear-gradient(90deg, var(--panel-2) 25%, var(--panel-3) 50%, var(--panel-2) 75%); background-size: 200% 100%; animation: shimmer 1.4s linear infinite; }
-@keyframes shimmer { to { background-position: -200% 0; } }
-.working { display: flex; align-items: center; gap: 12px; padding: 16px 18px; border-radius: 16px; background: color-mix(in srgb, var(--sc) 8%, var(--panel)); color: var(--sc); font-weight: 600; font-size: 15px; margin-bottom: 18px; word-break: keep-all; }
-.spinner { width: 18px; height: 18px; border-radius: 50%; border: 2.5px solid color-mix(in srgb, var(--sc, var(--accent)) 25%, transparent); border-top-color: var(--sc, var(--accent)); animation: spin .8s linear infinite; flex: none; }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* 설정 */
-.setup { display: grid; grid-template-columns: minmax(0,1.1fr) minmax(0,1fr); gap: 32px; }
-@media (max-width: 900px) { .setup { grid-template-columns: 1fr; gap: 24px; } }
-label.field { display: block; font-size: 14px; font-weight: 600; color: var(--sub); margin-bottom: 8px; }
-select, textarea, input[type=text] { width: 100%; font: inherit; font-size: 15px; color: var(--text); background: var(--panel-2); border: 1.5px solid transparent; border-radius: 14px; padding: 13px 16px; transition: border-color .15s, background .15s; }
-select { appearance: none; -webkit-appearance: none; padding-right: 40px; cursor: pointer;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%238b95a1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 16px center; }
-select:focus, textarea:focus, input[type=text]:focus { outline: none; border-color: var(--accent); background-color: var(--panel); }
-textarea { resize: vertical; min-height: 160px; line-height: 1.7; }
-input[type=checkbox] { accent-color: var(--accent); width: 18px; height: 18px; flex: none; }
-.preview { font-size: 14.5px; line-height: 1.75; background: var(--panel-3); border-radius: 16px; padding: 16px 18px; max-height: 230px; overflow: auto; white-space: pre-wrap; color: var(--sub); }
-.seg { display: flex; background: var(--panel-2); border-radius: 12px; padding: 4px; gap: 4px; }
-.seg button { flex: 1; border: 0; background: transparent; color: var(--muted); font-size: 14px; font-weight: 500; padding: 9px 8px; border-radius: 9px; cursor: pointer; transition: background .15s; }
-.seg button.on { background: var(--panel); color: var(--text); font-weight: 700; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
-.trial-list { max-height: 300px; overflow: auto; border-radius: 16px; margin-top: 10px; background: var(--panel-3); }
-.trial-opt { display: flex; gap: 12px; padding: 12px 16px; font-size: 14px; cursor: pointer; align-items: flex-start; border-bottom: 1px solid var(--line); }
-.trial-opt:last-child { border-bottom: 0; } .trial-opt input { margin-top: 2px; }
-.trial-opt:hover { background: var(--panel-2); }
-.trial-opt .ttl { color: var(--muted); display: block; font-size: 13.5px; }
-.how { display: flex; flex-direction: column; gap: 2px; }
-.how div { display: grid; grid-template-columns: 40px minmax(0,1fr); gap: 0 14px; align-items: center; padding: 10px 4px; font-size: 13.5px; color: var(--muted); }
-.how .e { grid-row: span 2; width: 40px; height: 40px; border-radius: 13px; display: grid; place-items: center; font-size: 21px; background: color-mix(in srgb, var(--sc) 11%, var(--panel)); }
-.how b { color: var(--text); font-size: 15px; font-weight: 600; }
-
-/* ① 시험 카드 */
-.tgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
-.tcard { border-radius: 18px; padding: 16px 18px; background: var(--panel-3); display: flex; flex-direction: column; gap: 7px; position: relative; overflow: hidden; box-shadow: inset 0 0 0 1.5px transparent; transition: box-shadow .2s; }
-.tcard .tid { font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-.tcard .ttl { font-size: 13.5px; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.tcard.cand { background: color-mix(in srgb, var(--sc) 6%, var(--panel)); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--sc) 55%, transparent); }
-.tcard.out { opacity: .45; }
-.tcard .why { font-size: 12.5px; color: var(--muted); padding-top: 4px; }
-.tcard.parsing::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--sc) 14%, transparent) 50%, transparent 70%); background-size: 250% 100%; animation: shimmer 1.2s linear infinite; }
-.iebar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--panel-2); gap: 2px; margin-top: 4px; }
-.iebar i { display: block; height: 100%; border-radius: 4px; }
-.iebar .inc { background: var(--sc); } .iebar .exc { background: color-mix(in srgb, var(--sc) 35%, var(--panel-2)); }
-.ielbl { font-size: 12.5px; color: var(--muted); display: flex; justify-content: space-between; }
-
-/* ② 환자 */
-.pgrid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.15fr); gap: 28px; }
-@media (max-width: 900px) { .pgrid { grid-template-columns: 1fr; } }
-.ptext { background: var(--panel-3); border-radius: 18px; padding: 20px 22px; font-size: 15px; line-height: 1.85; white-space: pre-wrap; max-height: 640px; overflow: auto; overflow-wrap: anywhere; color: var(--sub); }
-.ptext mark { background: var(--mark); color: var(--text); border-radius: 4px; padding: 1px 2px; transition: all .15s; }
-.ptext mark.hot { background: color-mix(in srgb, var(--sc) 28%, var(--panel)); box-shadow: 0 0 0 2px var(--sc); }
-.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
-.tile { border-radius: 16px; padding: 14px 16px; background: var(--panel-3); }
-.tile span { display: block; font-size: 13px; color: var(--muted); }
-.tile b { font-size: 18px; font-weight: 700; letter-spacing: -.3px; overflow-wrap: anywhere; }
-.tile.wide { grid-column: span 2; }
-.tile.nil b { color: var(--idle); font-weight: 500; font-size: 15px; }
-.facts { display: flex; flex-direction: column; }
-.fact { display: flex; gap: 12px; align-items: baseline; padding: 11px 12px; border-radius: 12px; font-size: 15px; cursor: default; }
-.fact:hover { background: var(--panel-3); }
-.fact .d { flex: none; font-size: 12.5px; color: var(--faint); font-variant-numeric: tabular-nums; min-width: 72px; }
-.fact.unlinked { color: var(--muted); }
-.labs { width: 100%; border-collapse: collapse; font-size: 15px; }
-.labs td { padding: 11px 12px; border-bottom: 1px solid var(--line); }
-.labs tr:last-child td { border-bottom: 0; }
-.labs tr:hover td { background: var(--panel-3); }
-.labs td.v { font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
-.miss { border-radius: 16px; padding: 16px 18px; background: var(--warn-w); }
-.miss b { color: var(--warn); font-size: 14.5px; }
-.miss ul { margin: 6px 0 0; padding-left: 18px; font-size: 14.5px; color: var(--sub); }
-.miss li + li { margin-top: 3px; }
-
-/* + 후보 추림 */
-.funnel { display: flex; flex-direction: column; gap: 10px; margin-bottom: 32px; }
-.frow { display: grid; grid-template-columns: 160px minmax(0,1fr) 190px; gap: 14px; align-items: center; font-size: 14px; color: var(--sub); }
-.frow .bar { height: 40px; border-radius: 12px; background: var(--sc); display: flex; align-items: center; padding: 0 14px; color: #fff; font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 44px; transform-origin: left; animation: grow .8s cubic-bezier(.2,.8,.2,1) both; }
-.frow:nth-child(1) .bar { opacity: .3; } .frow:nth-child(2) .bar { opacity: .5; } .frow:nth-child(3) .bar { opacity: .72; }
-.frow .cut { color: var(--muted); font-size: 13.5px; }
-.frow .cut b { color: var(--bad); }
-@keyframes grow { from { transform: scaleX(0); } }
-@media (max-width: 640px) { .frow { grid-template-columns: 1fr; gap: 4px; } }
-.cols2 { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 24px; }
-@media (max-width: 900px) { .cols2 { grid-template-columns: 1fr; } }
-.lrow { border-radius: 16px; padding: 14px 16px; font-size: 14px; background: var(--panel-3); }
-.lrow + .lrow { margin-top: 8px; }
-.lrow .h { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-weight: 700; }
-.lrow .t { color: var(--muted); margin-top: 3px; }
-.lrow.sel { background: color-mix(in srgb, var(--sc) 7%, var(--panel)); }
-
-/* ③ 매칭 */
-.ttabs { display: flex; gap: 8px; overflow-x: auto; margin: 0 -4px 22px; padding: 2px 4px 4px; scrollbar-width: none; }
-.ttabs::-webkit-scrollbar { display: none; }
-.ttab { flex: none; border: 0; background: var(--panel-2); border-radius: 14px; padding: 10px 14px; cursor: pointer; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 136px; text-align: left; transition: background .15s; }
-.ttab:hover { background: color-mix(in srgb, var(--text) 8%, var(--panel)); }
-.ttab b { font-size: 14px; font-variant-numeric: tabular-nums; }
-.ttab.on { background: var(--text); color: var(--panel); }
-.ttab.busy b::after { content: " ···"; color: var(--faint); }
-.mhead { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
-.mhead .ttl { font-size: 19px; font-weight: 700; letter-spacing: -.4px; flex: 1 1 100%; line-height: 1.45; word-break: keep-all; }
-.msum { font-size: 15px; color: var(--muted); margin: 10px 0 18px; }
-.sbar { display: flex; height: 14px; border-radius: 7px; overflow: hidden; background: var(--panel-2); gap: 3px; }
-.sbar i { display: block; height: 100%; border-radius: 3px; animation: grow .8s cubic-bezier(.2,.8,.2,1) both; transform-origin: left; }
-.c-pass { background: var(--ok); } .c-fail { background: var(--bad); } .c-unk { background: var(--c-gaps); } .c-na { background: var(--idle); }
-.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13.5px; color: var(--muted); margin: 10px 0 24px; align-items: center; }
-.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
-.legend .seg { margin-left: auto; }
-.legend .seg button { padding: 6px 12px; flex: none; font-size: 13px; }
-@media (max-width: 640px) { .legend .seg { margin-left: 0; width: 100%; } .legend .seg button { flex: 1; } }
-.rule { border-radius: 16px; transition: background .15s; }
-.rule:hover, .rule[open] { background: var(--panel-3); }
-.rule summary { list-style: none; display: grid; grid-template-columns: 28px 38px minmax(0,1fr) auto; gap: 10px; align-items: start; padding: 13px 12px; cursor: pointer; font-size: 15px; }
-.rule summary::-webkit-details-marker { display: none; }
-.ri { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 13px; color: #fff; }
-.ri.pass { background: var(--ok); } .ri.fail { background: var(--bad); } .ri.unk { background: var(--c-gaps); } .ri.na { background: var(--panel-2); color: var(--faint); }
-.rule .rid { font-weight: 600; font-size: 13px; color: var(--faint); padding-top: 3px; font-variant-numeric: tabular-nums; }
-.rule .rtx { overflow-wrap: anywhere; padding-top: 1px; }
-.rule:not([open]) .rtx { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.rule .rmeta { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; padding-top: 2px; }
-.rbody { padding: 0 16px 18px 88px; font-size: 14.5px; display: grid; gap: 12px; color: var(--sub); }
-.rbody .k { font-size: 13px; font-weight: 600; color: var(--faint); margin-bottom: 3px; }
-.quote { border-left: 3px solid var(--sc); padding: 8px 14px; background: var(--panel); border-radius: 0 12px 12px 0; color: var(--text); }
-@media (max-width: 640px) { .rule summary { grid-template-columns: 28px minmax(0,1fr); } .rule .rid { display: none; } .rule .rmeta { grid-column: 2; justify-content: flex-start; } .rbody { padding-left: 16px; } }
-.scan { position: relative; overflow: hidden; border-radius: 18px; background: var(--panel-3); padding: 18px 20px; }
-.scan::after { content: ""; position: absolute; left: 0; right: 0; height: 50px; top: -50px; background: linear-gradient(transparent, color-mix(in srgb, var(--sc) 14%, transparent), transparent); animation: scan 1.6s ease-in-out infinite; }
-@keyframes scan { to { top: 100%; } }
-
-/* ④ 부족 정보 */
-.lanes { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
-@media (max-width: 1000px) { .lanes { grid-template-columns: 1fr; } }
-.lane { border-radius: 22px; padding: 20px 18px 18px; background: color-mix(in srgb, var(--lc) 7%, var(--panel)); }
-.lane h4 { margin: 0 0 4px; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 6px; color: var(--text); word-break: keep-all; }
-.lane h4 .n { margin-left: auto; font-size: 24px; font-weight: 700; color: var(--lc); }
-.lane > p { margin: 0 0 14px; font-size: 13.5px; color: var(--muted); word-break: keep-all; }
-.gap { background: var(--panel); border-radius: 14px; padding: 12px 14px; font-size: 14px; }
-.gap + .gap { margin-top: 8px; }
-.gap .g1 { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; margin-bottom: 6px; }
-.gap .g2 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.gap .g3 { color: var(--muted); margin-top: 6px; font-size: 13px; }
-.delta h5 svg { width: 16px; height: 16px; color: var(--ok); }
-.clear svg { width: 24px; height: 24px; flex: none; }
-.clear { display: flex; gap: 14px; align-items: center; padding: 20px 22px; border-radius: 18px; background: var(--ok-w); color: var(--ok); font-weight: 600; font-size: 15.5px; word-break: keep-all; }
-
-/* ⑤ 대화: 에이전트 회색 말풍선, 내 답변 파란 말풍선 */
-.thread { display: flex; flex-direction: column; gap: 14px; }
-.rnd { text-align: center; font-size: 13px; font-weight: 600; color: var(--faint); display: flex; align-items: center; gap: 12px; margin: 6px 0; }
-.rnd::before, .rnd::after { content: ""; flex: 1; height: 1px; background: var(--line); }
-.msg { display: flex; gap: 10px; align-items: flex-start; max-width: 82%; animation: rise .3s ease both; }
-.msg .av { flex: none; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; color: var(--sc); background: color-mix(in srgb, var(--sc) 12%, var(--panel)); }
-.msg .av svg { width: 19px; height: 19px; }
-.msg .bub { border-radius: 6px 20px 20px 20px; padding: 13px 17px; background: var(--panel-2); font-size: 15.5px; line-height: 1.6; min-width: 0; }
-.msg .who { font-size: 12.5px; font-weight: 600; color: var(--muted); margin-bottom: 4px; display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
-.msg .why { font-size: 13.5px; color: var(--muted); margin-top: 6px; }
-.msg.me { margin-left: auto; flex-direction: row-reverse; }
-.msg.me .av { color: var(--muted); background: var(--panel-2); }
-.msg.me .bub { border-radius: 20px 6px 20px 20px; background: var(--accent); color: #fff; }
-.msg.me .who { color: rgba(255,255,255,.75); justify-content: flex-end; }
-.msg.me.unknown .bub { background: var(--panel-2); color: var(--muted); }
-.msg.me.unknown .who { color: var(--faint); }
-.msg .bub input { margin-top: 10px; background: var(--panel); }
-@media (max-width: 640px) { .msg { max-width: 100%; } .msg .av { display: none; } }
-/* 객관식 답변: 예/아니요는 가로 버튼, 선택지는 세로 목록. '모름'은 항상 마지막 */
-.opts { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
-.opts.yn { flex-direction: row; flex-wrap: wrap; }
-.opts.yn .opt { flex: 1; justify-content: center; min-width: 84px; }
-.opt { display: flex; align-items: center; gap: 10px; border: 0; background: var(--panel); color: var(--text); font-size: 15px; font-weight: 500; padding: 13px 16px; border-radius: 14px; cursor: pointer; text-align: left; box-shadow: inset 0 0 0 1.5px var(--line); transition: box-shadow .15s, background .15s, transform .1s; }
-.opt:hover { box-shadow: inset 0 0 0 1.5px var(--idle); }
-.opt:active { transform: scale(.98); }
-.opt.on { background: var(--accent-w); color: var(--accent-d); font-weight: 700; box-shadow: inset 0 0 0 2px var(--accent); }
-.opt.unk { color: var(--muted); }
-.opt.unk.on { background: var(--panel-2); color: var(--sub); box-shadow: inset 0 0 0 2px var(--faint); }
-.opt .mk { flex: none; width: 20px; height: 20px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--idle); display: grid; place-items: center; font-size: 12px; font-weight: 800; color: #fff; }
-.opt .mk.box { border-radius: 6px; }
-.opt.on .mk { background: var(--accent); box-shadow: none; }
-.opt.on .mk::after { content: "✓"; }
-.opt.unk.on .mk { background: var(--faint); }
-.opts.ro { flex-direction: row; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-.opts.ro .opt { cursor: default; padding: 6px 12px; font-size: 13px; border-radius: 10px; transform: none; }
-.ansrow { display: flex; gap: 8px; align-items: center; margin-top: 14px; flex-wrap: wrap; }
-.ansrow input { flex: 1; min-width: 140px; margin: 0 !important; }
-.ansrow .unit { color: var(--sub); font-weight: 600; }
-.ansrow .opt { flex: none; }
-.etc { margin-top: 8px !important; }
-.msg.live { max-width: 100%; } .msg.live .bub { flex: 1; }
-.compose { position: sticky; bottom: 16px; display: flex; gap: 8px; align-items: center; padding: 14px 14px 14px 20px; margin-top: 6px; border-radius: 22px; background: var(--panel); box-shadow: var(--shadow-lg); flex-wrap: wrap; }
-.compose .hint { flex: 1; min-width: 200px; }
-@media (max-width: 640px) { .compose { padding: 10px; bottom: 10px; gap: 6px; } .compose .hint { min-width: 0; flex: none; } .compose .long { display: none; } .compose .btn { flex: 1; padding: 11px 10px; } }
-.delta { border-radius: 18px; padding: 16px 18px; background: var(--panel-3); }
-.delta h5 { margin: 0 0 8px; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-.drow { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 14px; flex-wrap: wrap; }
-.drow b { min-width: 112px; font-variant-numeric: tabular-nums; }
-.drow .arr { color: var(--faint); }
-.drow.chg .arr { color: var(--accent); font-weight: 800; }
-
-/* ⑥ 추천 */
-.callout { background: var(--bad-w); color: var(--bad); border-radius: 18px; padding: 18px 20px; font-weight: 600; font-size: 15.5px; margin-bottom: 20px; }
-.tier { margin-bottom: 28px; }
-.tier-h { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 17px; font-weight: 700; letter-spacing: -.3px; flex-wrap: wrap; }
-.rec { border-radius: 22px; padding: 22px 24px; background: var(--panel-3); display: grid; grid-template-columns: 48px minmax(0,1fr); gap: 4px 16px; animation: rise .35s ease both; }
-.rec + .rec { margin-top: 10px; }
-.rec.top { background: color-mix(in srgb, var(--sc) 6%, var(--panel)); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--sc) 45%, transparent); }
-.rec .rank { width: 48px; height: 48px; border-radius: 16px; display: grid; place-items: center; font-weight: 700; font-size: 20px; background: var(--panel-2); color: var(--muted); grid-row: span 3; }
-.rec.top .rank { background: var(--sc); color: #fff; }
-.rec .rh { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-.rec .rh b { font-size: 17px; letter-spacing: -.3px; }
-.rec .ttl { font-size: 14px; color: var(--muted); margin-top: 2px; }
-.rec .lists { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 10px; margin-top: 14px; grid-column: 2; }
-.rec .lists > div { background: var(--panel); border-radius: 16px; padding: 14px 16px; }
-.rec .lists .k b { font-size: 14px; color: var(--text); }
-@media (max-width: 760px) { .rec { grid-template-columns: 1fr; padding: 20px; } .rec .rank { grid-row: auto; width: 40px; height: 40px; font-size: 17px; border-radius: 13px; } .rec .lists { grid-column: 1; grid-template-columns: 1fr; } }
-.rec ul { margin: 6px 0 0; padding-left: 0; list-style: none; font-size: 14px; color: var(--sub); }
-.rec li { padding: 3px 0 3px 22px; position: relative; }
-.rec li::before { position: absolute; left: 2px; font-weight: 800; }
-.rec .km li::before { content: "✓"; color: var(--ok); }
-.rec .kc li::before { content: "!"; color: var(--warn); left: 6px; }
-.rec .ns { grid-column: 2; font-size: 14px; color: var(--muted); margin-top: 12px; }
-.note { grid-column: 2; margin-top: 10px; border-radius: 14px; padding: 12px 16px; font-size: 14px; background: var(--warn-w); color: var(--sub); }
-.note b { color: var(--warn); }
-@media (max-width: 760px) { .rec .ns, .note { grid-column: 1; } }
-.excl { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; }
-details.more { border-top: 1px solid var(--line); }
-details.more > summary { cursor: pointer; font-size: 16px; font-weight: 700; padding: 18px 0; list-style: none; display: flex; align-items: center; justify-content: space-between; }
-details.more > summary::-webkit-details-marker { display: none; }
-details.more > summary::after { content: ""; width: 9px; height: 9px; border-right: 2px solid var(--faint); border-bottom: 2px solid var(--faint); transform: rotate(45deg); transition: transform .2s; margin-right: 6px; }
-details.more[open] > summary::after { transform: rotate(-135deg); }
-details.more[open] { padding-bottom: 18px; }
-.md { font-size: 15px; line-height: 1.75; overflow-wrap: anywhere; color: var(--sub); } .md h1 { font-size: 21px; color: var(--text); } .md h2 { font-size: 18px; margin-top: 28px; color: var(--text); } .md h3 { font-size: 16px; color: var(--text); }
-.md table { border-collapse: collapse; width: 100%; font-size: 13.5px; display: block; overflow-x: auto; }
-.md th, .md td { border-bottom: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
-.md th { background: var(--panel-3); }
-.md blockquote { margin: 12px 0; padding: 12px 16px; border-radius: 14px; background: var(--warn-w); }
-
-/* 사이드 */
-.roster { display: flex; flex-direction: column; }
-.ag { display: grid; grid-template-columns: 10px minmax(0,1fr) auto; gap: 12px; align-items: center; padding: 9px 22px; font-size: 14px; }
-.ag .d { width: 10px; height: 10px; border-radius: 50%; background: var(--panel-2); }
-.ag .nm b { font-weight: 600; } .ag .nm small { display: block; color: var(--faint); font-size: 12.5px; line-height: 1.35; }
-.ag .n { font-size: 12.5px; color: var(--faint); font-variant-numeric: tabular-nums; }
-.ag.active .d { background: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent); animation: blink 1.1s ease-in-out infinite; }
-.ag.active .nm b { color: var(--accent); }
-.ag.done .d { background: var(--accent); opacity: .4; }
-@keyframes blink { 50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--accent) 5%, transparent); } }
-#feed { max-height: 460px; overflow: auto; padding: 0 10px 10px; }
-.ev { display: grid; grid-template-columns: 42px minmax(0,1fr); gap: 8px; padding: 10px 12px; border-radius: 12px; font-size: 13.5px; cursor: pointer; }
-.ev:hover { background: var(--panel-3); }
-.ev .t { color: var(--faint); font-variant-numeric: tabular-nums; font-size: 12px; padding-top: 2px; }
-.ev .w { font-weight: 700; margin-right: 6px; color: var(--sc, var(--text)); }
-.ev.plan .m { display: block; background: var(--accent-w); border-radius: 12px; padding: 10px 12px; margin-top: 6px; white-space: pre-wrap; }
-.replays { display: flex; flex-direction: column; padding: 0 10px 10px; }
-.rp { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 10px; align-items: center; padding: 11px 12px; border-radius: 14px; font-size: 14px; }
-.rp:hover { background: var(--panel-3); }
-.rp small { display: block; color: var(--faint); font-size: 12px; }
-.toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 30; background: #191f28; color: #fff; border-radius: 18px; padding: 12px 12px 12px 22px; display: flex; gap: 14px; align-items: center; box-shadow: var(--shadow-lg); font-size: 15px; font-weight: 600; max-width: calc(100% - 32px); animation: pop .3s cubic-bezier(.2,.8,.2,1) both; }
-@keyframes pop { from { opacity: 0; transform: translate(-50%, 12px); } }
-.err { background: var(--bad-w); color: var(--bad); border-radius: 16px; padding: 14px 18px; font-weight: 600; margin-bottom: 16px; font-size: 14.5px; overflow-wrap: anywhere; }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
-</style>
+<meta name="color-scheme" content="light dark">
+<title>임상시험 탐색 도우미</title>
+<!-- 모든 자원은 같은 서버에서 (CSP: script-src·style-src 'self'). 외부 라이브러리: static/VENDOR.md -->
+<link rel="stylesheet" href="/static/app.css">
+<script src="/static/marked.min.js" defer></script>
+<script src="/static/purify.min.js" defer></script>
+<script src="/static/app.js" defer></script>
 </head>
 <body>
+<a class="skip" href="#input-panel">본문으로 건너뛰기</a>
 <header>
-  <h1><span class="logo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"/><path d="M7.5 15h9"/></svg></span>인터랙티브 임상시험 추천</h1>
-  <span class="badge" id="model">모델 -</span>
-  <span class="sp"></span>
-  <span class="badge" id="run-state">대기 중</span>
-  <span class="badge" id="elapsed" hidden>0s</span>
-  <button class="btn sm" id="follow" data-act="follow" hidden>진행 따라가기</button>
-  <button class="btn sm" data-act="view" data-v="setup">새 실행</button>
+  <h1>임상시험 탐색 도우미</h1>
+  <span class="badge" id="run-state" role="status" aria-live="polite" aria-label="분석 상태">대기 중</span>
+  <span class="badge" id="elapsed" hidden aria-label="경과 시간">0초</span>
+  <span class="badge" id="model" title="분석에 쓰는 AI 모델">모델 -</span>
+  <nav id="pages" aria-label="화면 전환">
+    <button class="on" data-page="run" aria-current="page" type="button">입력·진행</button>
+    <button data-page="result" disabled type="button">추천 결과</button>
+  </nav>
 </header>
 <div class="disclaimer" id="disclaimer"></div>
-<nav id="rail" aria-label="진행 단계"></nav>
 
-<main>
-  <section id="view" aria-live="polite"></section>
-  <aside id="side" class="stack">
-    <div class="panel" id="replay-panel">
-      <h3>저장된 실행 다시 보기 <span class="hint">비용 없이 재생</span></h3>
-      <div class="pad" style="padding-bottom:6px;padding-top:10px">
-        <div class="seg" id="speed" role="group" aria-label="재생 속도">
-          <button data-act="speed" data-v="1" class="on">1×</button><button data-act="speed" data-v="2">2×</button><button data-act="speed" data-v="4">4×</button>
+<main id="page-run">
+  <!-- 실제 AI 분석이 꺼진 서버 (관리자 설정): 입력해도 분석하지 않음 -->
+  <div class="note warn" id="analysis-off" role="status" hidden><b>이 서버에서는 실제 AI 분석이 꺼져 있습니다.</b>
+    분석을 시작해도 실행되지 않으며, 입력한 환자 정보는 외부로 보내지 않습니다. 관리자에게 문의하세요.</div>
+  <!-- 1. 소개·안내 -->
+  <section class="panel" id="intro" aria-labelledby="intro-h">
+    <h2 id="intro-h">이 서비스는 무엇을 하나요?</h2>
+    <div class="body stack">
+      <p class="m0">입력한 환자 정보를 공개된 임상시험의 선정·제외 기준과 비교해, 검토해 볼 만한 임상시험과 그 근거를 정리합니다.
+        <b>임상시험 참여 자격을 확정하지 않습니다.</b> 실제 참여 가능 여부는 연구기관의 스크리닝과 연구자 판단으로 정해집니다.</p>
+      <ol class="howto">
+        <li><b>환자 정보 입력</b> — 진단, 치료 이력, 검사 결과 등을 자유롭게 적습니다.</li>
+        <li><b>분석</b> — AI가 정보를 정리하고 임상시험 기준과 비교합니다. 단계마다 진행 상황이 표시됩니다.</li>
+        <li><b>추가 질문</b> — 판단에 필요한 정보가 부족하면 질문이 나옵니다. 모르는 항목은 "모름 · 확인 불가"로 답할 수 있습니다.</li>
+        <li><b>결과 확인</b> — 시험별 매칭 상태와, 충족·불충족·정보 부족·추가 확인이 필요한 조건을 근거와 함께 봅니다.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 2. 환자 정보 입력 -->
+  <section class="panel" id="input-panel" aria-labelledby="input-h" tabindex="-1">
+    <h2 id="input-h">① 환자 정보 입력</h2>
+    <div class="body stack">
+      <div class="tabs" role="tablist" aria-label="입력 방식">
+        <button id="to-custom" role="tab" aria-selected="true" aria-controls="custom-wrap" type="button">직접 입력</button>
+        <button id="to-list" role="tab" aria-selected="false" aria-controls="preview-wrap" type="button">예시 사례 선택 (가상 데이터)</button>
+      </div>
+      <div class="note warn" id="privacy-note"><b>개인 식별 정보를 입력하지 마세요.</b>
+        이름, 주민등록번호, 연락처, 주소, 병원 등록번호처럼 사람을 알아볼 수 있는 정보는 빼고 적어 주세요.
+        입력 내용은 이 브라우저에 저장하지 않으며, 서버의 결과 파일 저장은 기본으로 꺼져 있습니다.</div>
+      <div id="custom-wrap" role="tabpanel" aria-labelledby="to-custom">
+        <div class="cols">
+          <div>
+            <label class="field" for="custom">환자 상태 설명</label>
+            <textarea id="custom" aria-describedby="custom-tips char-count privacy-note" maxlength="20000"
+              placeholder="예) 58세 남성, 비소세포폐암 4기, EGFR 검사 결과 미확인, ECOG 1, 백금 기반 항암 2주기 후 진행 ..."></textarea>
+            <div class="counter" id="char-count" aria-live="polite">0 / 20,000자</div>
+          </div>
+          <div class="hint" id="custom-tips">
+            <b class="strong">이런 정보가 있으면 도움이 됩니다</b>
+            <ul class="tips">
+              <li>나이, 성별</li>
+              <li>진단명, 병기(예: 4기, T2N0M0)</li>
+              <li>유전자·바이오마커 검사 결과(예: EGFR, ALK, PD-L1)</li>
+              <li>받은 치료와 반응(수술, 항암, 방사선 등)</li>
+              <li>최근 검사 수치와 날짜(혈액, 신장·간 기능 등)</li>
+              <li>전신 상태(ECOG), 동반 질환, 복용 중인 약</li>
+            </ul>
+            <div class="row mt8">
+              <button class="link" id="fill-example" type="button">합성 예시 넣기 (실제 환자 아님)</button>
+              <button class="link" id="clear-input" type="button">입력 지우기</button>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="replays" id="replays"><div class="empty" style="padding:14px">불러오는 중…</div></div>
+      <div id="preview-wrap" role="tabpanel" aria-labelledby="to-list" hidden>
+        <label class="field" for="patient">예시 사례 (챌린지 제공·합성 데이터, 실제 환자 아님)</label>
+        <select id="patient"></select>
+        <div class="preview mt8" id="preview" aria-live="polite" aria-label="예시 사례 내용"></div>
+      </div>
+      <details class="adv" id="advanced">
+        <summary>고급 설정: 비교할 임상시험 <span class="hint" id="trial-count"></span></summary>
+        <div class="stack mt8">
+          <fieldset class="cand-mode">
+            <legend>후보 임상시험 선택 방식</legend>
+            <label><input type="radio" name="cand-mode" value="screen" checked> 전체 시험에서 자동으로 추리기 (권장)</label>
+            <label><input type="radio" name="cand-mode" value="given"> 직접 선택</label>
+          </fieldset>
+          <div class="hint" id="cand-hint"></div>
+          <div class="trial-list" id="trials" role="group" aria-label="비교할 임상시험 목록"></div>
+          <label class="hint inline-check"><input type="checkbox" id="search"> 후보가 모두 맞지 않거나 모집이 끝났으면 ClinicalTrials.gov에서 추가 검색 허용</label>
+        </div>
+      </details>
+      <div class="row"><button class="btn" id="review" type="button">입력 내용 확인</button></div>
+      <div class="err" id="input-error" role="alert"></div>
+      <!-- 입력 내용 확인 -->
+      <div class="note info" id="review-panel" hidden role="region" aria-labelledby="review-h">
+        <b id="review-h">이 내용으로 분석할까요?</b>
+        <div class="hint mt4 mb6" id="review-meta"></div>
+        <div class="preview" id="review-text" aria-label="분석할 입력 내용"></div>
+        <div class="row mt10">
+          <button class="btn" id="start" type="button">이 내용으로 분석 시작</button>
+          <button class="btn ghost" id="edit" type="button">수정하기</button>
+        </div>
+      </div>
+      <div class="err" id="start-hint" role="alert"></div>
+      <!-- 탭을 닫았다 다시 연 경우: 같은 브라우저의 진행 중 분석 -->
+      <div class="note info" id="active-note" hidden role="region" aria-labelledby="active-h">
+        <b id="active-h">이 브라우저에서 진행 중인 분석이 있습니다.</b>
+        <div class="hint mt4">이전 탭을 닫았어도 분석은 서버에서 계속됩니다. 이어 보거나, 이어 본 뒤 취소할 수 있습니다. 입력 원문은 보안상 다시 표시하지 않습니다.</div>
+        <div class="row mt10"><button class="btn" id="resume-active" type="button">진행 중인 분석 이어 보기</button></div>
+      </div>
     </div>
-    <div class="panel">
-      <h3>에이전트 현황 <span class="hint" id="ag-hint">오케스트레이터가 도구로 호출</span></h3>
-      <div class="roster" id="roster" style="padding:6px 0"></div>
+  </section>
+
+  <!-- 3. 분석 진행 -->
+  <section class="panel" id="progress-panel" aria-labelledby="progress-h" hidden>
+    <h2 id="progress-h" tabindex="-1">② 분석 진행 <button class="btn danger" id="cancel" type="button" hidden>분석 취소</button></h2>
+    <div class="body stack">
+      <ol class="stages" id="stages" aria-label="분석 단계"></ol>
+      <div class="note info" id="stage-note" role="status" aria-live="polite">분석을 준비하고 있습니다.</div>
+      <div class="note warn" id="wait-note" hidden role="status">응답을 기다리고 있습니다. AI 분석은 한 단계에 수십 초 이상 걸릴 수 있으며, 화면을 닫지 않아도 서버에서 계속 진행됩니다.</div>
+      <div class="note bad" id="conn-note" hidden role="alert"></div>
+      <div class="note" id="end-note" hidden role="status" tabindex="-1"></div>
+      <div id="qslot"></div>
+      <div>
+        <h3 class="h3">검토 중인 임상시험</h3>
+        <div id="cards"><div class="empty">아직 검토를 시작한 임상시험이 없습니다.</div></div>
+      </div>
+      <details class="dev" id="devlog">
+        <summary>자세한 진행 기록 (개발자용)</summary>
+        <div class="stack mt8">
+          <svg id="graph" viewBox="0 0 720 330" role="img" aria-label="에이전트 구성도"></svg>
+          <div class="steps" id="steps"></div>
+          <div id="feed"><div class="empty">진행 기록이 여기에 표시됩니다.</div></div>
+          <div class="hint" id="feed-count"></div>
+        </div>
+      </details>
+      <!-- 개발자용 진단 (주소에 ?diagnostic=1일 때만): 판정·질문·추천에 쓰이지 않음 -->
+      <details class="panel" id="decision-panel" hidden>
+        <summary><b>개발자 진단 · Decision Loop</b> <span class="hint">판정·질문·추천에 쓰이지 않는 참고 정보</span></summary>
+        <div class="body" id="decision-body"></div>
+      </details>
     </div>
-    <div class="panel">
-      <h3>진행 로그 <span class="hint" id="feed-count"></span></h3>
-      <div id="feed"><div class="empty" style="padding:18px">실행하면 오케스트레이터의 계획과 에이전트의 작업이 여기에 쌓여요. 항목을 누르면 그 단계로 이동해요.</div></div>
-    </div>
-  </aside>
+  </section>
 </main>
-<div class="toast" id="toast" hidden></div>
 
-<script>
-const $ = (s, r = document) => r.querySelector(s);
-const $$ = (s, r = document) => [...r.querySelectorAll(s)];
-const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-
-// ------------------------------------------------------------ 아이콘
-const ICON = {
-  doc: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>',
-  person: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/>',
-  funnel: '<path d="M3 4h18l-7 9v6l-4 2v-8z"/>',
-  match: '<path d="M10 6h10M10 12h10M10 18h10"/><path d="M3.5 6l1.5 1.5L7.5 5M3.5 12l1.5 1.5 2.5-2.5M3.5 18l1.5 1.5 2.5-2.5"/>',
-  gaps: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5M11 8v3.5M11 14.5h.01"/>',
-  chat: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12z"/><path d="M9 10.5h.01M12 10.5h.01M15 10.5h.01"/>',
-  rec: '<circle cx="12" cy="9" r="6"/><path d="M8.6 13.8L7 22l5-3 5 3-1.6-8.2"/>',
-  play: '<path d="M7 4l13 8-13 8z"/>',
-  check: '<path d="M4 12.5l5 5L20 6.5"/>',
-  bot: '<rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01"/>',
-  setup: '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
-};
-const ico = (k, sw = 2) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg>`;
-
-// ------------------------------------------------------------ 단계 정의 (과제 6단계 + 후보 추림)
-const STAGES = [
-  { k: "trials", n: "①", name: "기준 입력", title: "임상시험 기준 입력·파싱", agent: "기준 파싱 에이전트", ico: "doc", emoji: "📋", color: "--c-trials",
-    desc: "프로토콜의 선정·제외 기준을 하나씩 판정할 수 있는 작은 규칙으로 나눠요. 기준은 미리 컴파일해 고정 저장소에 둔 것을 써요." },
-  { k: "patient", n: "②", name: "환자 정보", title: "환자 정보 이해·구조화", agent: "환자 정보 이해 에이전트", ico: "person", emoji: "🩺", color: "--c-patient",
-    desc: "자유롭게 쓴 환자 기록에서 진단·검사·투약·치료력을 뽑아 정리해요. 사실마다 원문 근거를 남기고, 빠지거나 모호한 정보도 알려 드려요." },
-  { k: "screen", n: "+", name: "후보 추림", title: "후보 시험 추림", agent: "후보 추림 에이전트", ico: "funnel", emoji: "🔎", color: "--c-screen",
-    desc: "모집 종료·나이·성별처럼 명백히 안 맞는 시험은 코드가 먼저 빼요. 남은 시험은 에이전트가 대상 질환과 대상군만 보고 골라요." },
-  { k: "match", n: "③", name: "추출·매칭", title: "기준별 매칭과 근거", agent: "추론·매칭 에이전트 + 규칙 엔진", ico: "match", emoji: "🧩", color: "--c-match",
-    desc: "나이·성별·전신 상태(ECOG)·검사 수치는 규칙 엔진이 정해진 규칙대로 판정하고, 나머지는 에이전트가 환자 원문을 인용해 판정해요. 기록에 근거가 없으면 억지로 정하지 않고 판정 불가로 남겨요." },
-  { k: "gaps", n: "④", name: "부족 정보", title: "부족 정보 탐지", agent: "추론·매칭 에이전트", ico: "gaps", emoji: "🧐", color: "--c-gaps",
-    desc: "판정하지 못한 기준을 해결 방법에 따라 나눠요. 환자에게 물어볼 것, 진료 기록으로 확인할 것, 의료진이 봐야 할 것으로요." },
-  { k: "qa", n: "⑤", name: "질문·재평가", title: "확인 질문과 재평가", agent: "질문 생성 에이전트", ico: "chat", emoji: "💬", color: "--c-qa",
-    desc: "부족한 정보를 묻는 질문을 만들고, 답변을 환자 정보에 반영해 판정이 보류된 시험을 다시 평가해요." },
-  { k: "rec", n: "⑥", name: "추천", title: "임상시험 추천", agent: "추천 · 결과 설명 에이전트", ico: "rec", emoji: "🎯", color: "--c-rec",
-    desc: "공개 기준 충족 여부로 시험을 묶고, 설명할 수 있는 기준으로 보여 줄 순서를 정해요. 시험끼리 임상적 우열은 매기지 않아요." },
-];
-const SMAP = Object.fromEntries(STAGES.map(s => [s.k, s]));
-const scol = (k) => `--sc: var(${(SMAP[k] || {}).color || "--accent"})`;
-
-const AGENTS = [
-  { k: "orchestrator", name: "오케스트레이터", role: "계획 수립 · 도구 호출", stage: null },
-  { k: "patient_profiler", name: "환자 정보 이해", role: "원문 → 구조화 프로파일", stage: "patient" },
-  { k: "screener", name: "후보 추림", role: "전체 시험 → 후보", stage: "screen" },
-  { k: "criteria_parser", name: "기준 파싱", role: "기준 → 원자 규칙", stage: "trials" },
-  { k: "matcher", name: "추론·매칭 + 규칙 엔진", role: "규칙별 판정 + 근거", stage: "match" },
-  { k: "question_generator", name: "질문 생성", role: "부족 정보 확인 질문", stage: "qa" },
-  { k: "answerer", name: "환자 / 보호자", role: "답변", stage: "qa" },
-  { k: "recommender", name: "추천", role: "추천 그룹 · 표시 순서", stage: "rec" },
-  { k: "explainer", name: "결과 설명", role: "근거 보고서", stage: "rec" },
-];
-const WHO = Object.fromEntries(AGENTS.map(a => [a.k, a.name]));
-WHO.pipeline = "파이프라인"; WHO.answerer = "환자 답변";
-const TOOL_KO = { screen_trials: "후보 시험 추림", profile_patient: "환자 프로파일 구조화", list_candidate_trials: "후보 시험 확인", search_trials: "ClinicalTrials.gov 검색",
-  evaluate_trials: "시험 적격성 평가", ask_clarifying_questions: "확인 질문 라운드", finalize_recommendation: "최종 추천 생성" };
-const TOOL_STAGE = { screen_trials: "screen", profile_patient: "patient", list_candidate_trials: "trials", search_trials: "trials",
-  evaluate_trials: "match", ask_clarifying_questions: "qa", finalize_recommendation: "rec" };
-
-// ------------------------------------------------------------ 상태
-const state = {
-  cfg: {}, patients: [], trials: [], trialMap: {}, ko: {}, replays: [], speed: 1, draft: {}, draftEtc: {},
-  setup: { patientId: null, custom: false, customText: "", mode: "screen", picked: new Set(), search: false },
-  view: "setup", follow: true, running: false, ui: { matchTrial: null, ruleFilter: "all" },
-  run: null,
-};
-function freshRun(extra) {
-  return {
-    id: null, replay: null, screen: false, patientId: null, patientText: "", trialIds: [], t0: Date.now(),
-    stages: Object.fromEntries(STAGES.map(s => [s.k, "idle"])),
-    agents: Object.fromEntries(AGENTS.map(a => [a.k, { st: "idle", n: 0 }])),
-    profile: null, profileRound: 0, profiling: false, screening: null, screening_busy: false, candidates: null,
-    parsed: {}, matches: {}, pendingMatch: 0, qround: 0, rounds: [], waiting: null, recBusy: false, reportBusy: false,
-    result: null, report: null, resTrials: {}, error: null, feedN: 0, ...extra,
-  };
-}
-
-// ------------------------------------------------------------ 배지
-function statusBadge(s) {
-  const map = { RECRUITING: ["모집 중","ok"], NOT_YET_RECRUITING: ["모집 예정","ok"], COMPLETED: ["완료","bad"], TERMINATED: ["조기 종료","bad"],
-    WITHDRAWN: ["철회","bad"], ACTIVE_NOT_RECRUITING: ["모집 종료","bad"], SUSPENDED: ["중단","bad"], UNKNOWN: ["상태 미확인","warn"] };
-  if (!s) return "";
-  const [t, c] = map[s] || [s, ""]; return `<span class="badge ${c}">${esc(t)}</span>`;
-}
-// 외부 표현(아키텍처 §49): 등록 확정처럼 보이지 않는 표현. match_status가 있으면 우선
-const ELIG = { ELIGIBLE: ["공개 기준 충족","ok"], INELIGIBLE: ["공개 기준 불충족","bad"], UNCERTAIN: ["확인 필요","warn"], NOT_EVALUATED: ["평가 실패","warn"],
-  CRITERIA_MATCH: ["공개 기준 충족","ok"], POTENTIAL_MATCH: ["기록 확인 시 충족 가능","warn"], NEEDS_REVIEW: ["의료진 검토 필요","warn"],
-  INSUFFICIENT_INFORMATION: ["추가 정보 필요","warn"], CRITERIA_MISMATCH: ["공개 기준 불충족","bad"] };
-function eligBadge(e) { const [t, c] = ELIG[e] || ["평가 중","accent"]; return `<span class="badge ${c}">${esc(t)}</span>`; }
-const trialOf = (tid) => state.trialMap[tid] || (state.run && state.run.resTrials[tid]) || {};
-
-// ------------------------------------------------------------ 한국어 표시
-// 시험 제목·질환·기준은 data/i18n/trials_ko.json의 번역으로 보여 줌. 원문이 번역 당시와 같을 때만 바꾸고, 원문은 펼쳤을 때 함께 보여 줌.
-function koTrial(t) {
-  const k = state.ko[t.trial_id]; if (!k || t.title_en) return t;
-  const out = { ...t, title_en: t.title };
-  if (t.title && k.title_en === t.title) out.title = k.title;
-  out.conditions = [...new Set((t.conditions || []).map(c => (k.conditions || {})[c] || c))];
-  return out;
-}
-// 규칙 번호로 먼저 찾고, 번호가 달라진 예전 기록은 원문 문장으로 찾음 (legacy = 기준표 잠금 전 기록에만 있는 문장)
-function koRule(tid, rid, en) {
-  const k = state.ko[tid]; if (!k) return en;
-  const r = (k.rules || {})[rid]; if (r && r.en === en) return r.ko;
-  if (k.legacy && k.legacy[en]) return k.legacy[en];
-  const hit = Object.values(k.rules || {}).find(x => x.en === en); return hit ? hit.ko : en;
-}
-const ruleName = (rid) => String(rid || "").replace(/^I(\d+)$/, "선정 $1").replace(/^E(\d+)$/, "제외 $1");
-const targetName = (x) => String(x).replace(/:([IE]\d+)$/, (_, id) => " · " + ruleName(id));
-const LAB_KO = { hemoglobin: "혈색소", platelets: "혈소판", "absolute neutrophil count": "절대 호중구 수", "white blood cell count": "백혈구 수", creatinine: "크레아티닌",
-  "creatinine clearance": "크레아티닌 청소율", "total bilirubin": "총 빌리루빈", ast: "AST", alt: "ALT", hba1c: "당화혈색소(HbA1c)", "ldl cholesterol": "LDL 콜레스테롤",
-  inr: "INR", albumin: "알부민", lvef: "좌심실 박출률(LVEF)", "egfr (renal)": "사구체여과율(eGFR)", tsh: "갑상선자극호르몬(TSH)", "free t4": "유리 T4", "free t3": "유리 T3",
-  "total t3": "총 T3", "total t4": "총 T4", trab: "TSH 수용체 항체(TRAb)", calcium: "칼슘", potassium: "칼륨", sodium: "나트륨", glucose: "혈당", lipase: "리파아제", amylase: "아밀라아제" };
-const labName = (n) => LAB_KO[String(n || "").toLowerCase()] || n;
-// 코드가 만든 근거·추론 표기를 한국어로 (예전 기록 포함)
-const koText = (s) => String(s ?? "").replace(/\bsex: male\b/g, "성별: 남성").replace(/\bsex: female\b/g, "성별: 여성").replace(/\bage: (\d+)/g, "나이: $1세")
-  .replace(/\becog: (\d)/g, "ECOG: $1").replace(/환자 성별 male\b/g, "환자 성별 남성").replace(/환자 성별 female\b/g, "환자 성별 여성")
-  .replace(/\s*->\s*True\b/g, " → 조건 성립").replace(/\s*->\s*False\b/g, " → 조건 불성립").replace(/\[UNVERIFIED:/g, "[기록 미확인:");
-const ARG_KO = { trial_ids: "시험", patient_id: "환자", query: "검색어", condition: "질환", max_results: "최대", round: "라운드" };
-const argText = (o) => Object.entries(o).map(([k, v]) => `${ARG_KO[k] || k} ${Array.isArray(v) ? v.join(", ") : typeof v === "object" ? JSON.stringify(v) : v}`).join(" · ");
-
-// ------------------------------------------------------------ 초기화
-async function init() {
-  const get = async (u) => (await fetch(u)).json();
-  const [cfg, patients, trials, ko] = await Promise.all([get("/api/config"), get("/api/patients"), get("/api/trials"), get("/api/ko").catch(() => ({}))]);
-  state.cfg = cfg; state.patients = patients; state.ko = ko || {}; state.trials = trials.map(koTrial);
-  state.trialMap = Object.fromEntries(state.trials.map(t => [t.trial_id, t]));
-  $("#model").textContent = "모델 " + cfg.model; $("#disclaimer").textContent = cfg.disclaimer;
-  const first = patients.find(p => p.group === "사업단 제공") || patients[0];
-  if (first) pickPatient(first.patient_id);
-  bind(); render(); loadReplays();
-}
-async function loadReplays() {
-  try { state.replays = await (await fetch("/api/replays")).json(); } catch { state.replays = []; }
-  $("#replays").innerHTML = state.replays.length ? state.replays.map(r => `<div class="rp"><div><b>${esc(r.patient_id)}</b> <span class="hint">· 시험 ${r.n_trials}개 · 질문 ${r.n_questions}개${r.screened ? " · 자동 추림" : ""}</span>
-      <small>${esc(r.run_id)} · ${esc(r.model || "")}</small></div><button class="btn sm ghost" data-act="replay" data-v="${esc(r.run_id)}" ${state.running ? "disabled" : ""}>▶ 재생</button></div>`).join("")
-    : '<div class="empty" style="padding:14px">아직 저장된 실행이 없어요. 실행을 마치면 outputs/web에 저장돼 여기에 나타나요.</div>';
-}
-function pickPatient(id) {
-  const s = state.setup, p = state.patients.find(x => x.patient_id === id); if (!p) return;
-  s.patientId = id; s.picked = new Set(p.candidate_trials || []);
-}
-
-// ------------------------------------------------------------ 렌더링
-function render() { renderRail(); renderView(); renderRoster(); renderToast(); }
-
-let lastRail = "";
-function renderRail() {
-  const r = state.run;
-  const html = `<ol>${STAGES.map((s, i) => {
-    const st = r ? r.stages[s.k] : "idle";
-    const prevDone = i > 0 && r && ["done","skip"].includes(r.stages[STAGES[i-1].k]) && st !== "idle";
-    return `<li class="${prevDone ? "done-line" : ""}" style="${scol(s.k)}"><button class="stop ${st} ${state.view === s.k ? "viewing" : ""}" data-act="view" data-v="${s.k}" aria-current="${state.view === s.k ? "step" : "false"}">
-      <span class="dot">${st === "done" ? ico("check", 2.6) : ico(s.ico)}</span><span class="lbl"><b>${s.n === "+" ? "" : s.n + " "}${esc(s.name)}</b><small>${esc(metric(s.k))}</small></span></button></li>`;
-  }).join("")}</ol>`;
-  $("#follow").hidden = !(r && state.running && !state.follow);
-  if (html !== lastRail) { $("#rail").innerHTML = html; lastRail = html; }
-}
-function metric(k) {
-  const r = state.run;
-  if (!r) return k === "trials" ? `시험 ${state.trials.length}개` : "";
-  const ms = Object.values(r.matches).filter(m => m.status === "done");
-  switch (k) {
-    case "trials": { const n = Object.values(r.parsed).reduce((a, p) => a + (p.n_rules || 0), 0); return n ? `규칙 ${n}개` : `시험 ${r.trialIds.length || state.trials.length}개`; }
-    case "patient": return r.profiling && !r.profile ? "추출 중" : r.profile ? `사실 ${factCount(r.profile)}개 · 누락 ${(r.profile.missing_or_ambiguous || []).length}` : "";
-    case "screen": { const s = r.screening; return r.stages.screen === "skip" ? "직접 지정" : s ? `${s.pool_size} → ${s.selected.length}개` : r.screening_busy ? "추림 중" : ""; }
-    case "match": return Object.keys(r.matches).length ? `판정 ${ms.length}/${Object.keys(r.matches).length}` : "";
-    case "gaps": { if (r.stages.gaps === "idle") return ""; const n = gapsOf().length; return n ? `미확인 ${n}개` : "없음"; }
-    case "qa": return r.rounds.length ? `${r.rounds.length}라운드 · ${r.rounds.reduce((a, x) => a + x.questions.length, 0)}문항` : r.stages.qa === "skip" ? "질문 없음" : "";
-    case "rec": { const rec = r.result && r.result.recommendation; return rec ? (rec.recommended || []).length ? `추천 ${(rec.recommended || []).length}개` : "추천 없음" : r.recBusy ? "정리 중" : ""; }
-  }
-  return "";
-}
-function factCount(p) { return ["diagnoses","biomarkers","labs","medications","treatment_history","other_facts"].reduce((a, k) => a + (p[k] || []).length, 0); }
-
-let lastView = "";
-function renderView() {
-  const v = $("#view");
-  const html = (VIEWS[state.view] || VIEWS.setup)();
-  if (html === lastView) return;
-  // 다시 그려도 펼친 항목·입력 중인 값·스크롤·포커스를 유지
-  const open = new Set($$("details[open][data-k]", v).map(d => d.dataset.k));
-  const vals = Object.fromEntries($$("input[data-q]", v).map(i => [i.dataset.q, i.value]));
-  const scroll = Object.fromEntries($$("[data-scroll]", v).map(e => [e.dataset.scroll, e.scrollTop]));
-  const ae = document.activeElement, focusId = ae && v.contains(ae) && ae.id ? ae.id : null;
-  const sel = focusId && "selectionStart" in ae ? [ae.selectionStart, ae.selectionEnd] : null;
-  v.innerHTML = html; lastView = html;
-  $$("details[data-k]", v).forEach(d => { if (open.has(d.dataset.k)) d.open = true; });
-  $$("input[data-q]", v).forEach(i => { if (vals[i.dataset.q] != null) i.value = vals[i.dataset.q]; });
-  $$("[data-scroll]", v).forEach(e => { if (scroll[e.dataset.scroll] != null) e.scrollTop = scroll[e.dataset.scroll]; });
-  if (focusId) { const el = document.getElementById(focusId); if (el) { el.focus(); if (sel) try { el.setSelectionRange(...sel); } catch {} } }
-}
-function stageShell(k, body, right = "") {
-  const s = SMAP[k], st = state.run ? state.run.stages[k] : "idle";
-  const stb = { idle: '<span class="badge">대기</span>', active: '<span class="badge st">진행 중</span>', done: '<span class="badge st">완료</span>', skip: '<span class="badge">건너뜀</span>' }[st];
-  return `<div class="stage" style="${scol(k)}">
-    <div class="stage-head"><div class="stage-ico" aria-hidden="true">${s.emoji}</div>
-      <div><div class="stage-kicker">${s.n === "+" ? "" : s.n + " "}${esc(s.title)} · ${esc(s.agent)}</div><h2>${esc(headline(k)).replace(/\n/g, "<br>")}</h2><p>${esc(s.desc)}</p></div>
-      <div class="st-right">${right || stb}</div></div>
-    <div class="stage-body">${state.run && state.run.error ? `<div class="err">오류: ${esc(state.run.error)}</div>` : ""}${body}</div></div>`;
-}
-function headline(k) {
-  const r = state.run, st = r ? r.stages[k] : "idle";
-  if (!r) return { trials: `임상시험 ${state.trials.length}개가 준비돼 있어요`, patient: "환자 기록을 읽고 정리해요", screen: "이 환자에게 맞을 만한 시험만 골라요",
-    match: "기준을 하나씩 대조해요", gaps: "판정하지 못한 기준을 모아요", qa: "부족한 정보는 직접 물어볼게요", rec: "추천 결과를 정리해 드려요" }[k];
-  const parsed = Object.values(r.parsed).filter(p => p.status === "done"), done = Object.values(r.matches).filter(m => m.status === "done");
-  switch (k) {
-    case "trials": return st === "active" ? "선정·제외 기준을 규칙으로 바꾸고 있어요" : parsed.length ? `시험 ${parsed.length}개의 기준을 규칙 ${parsed.reduce((a, p) => a + (p.n_rules || 0), 0)}개로 나눴어요` : "평가할 시험의 기준을 불러올게요";
-    case "patient": { const p = r.profile; if (!p) return r.profiling ? "환자 기록에서 사실을 뽑고 있어요" : "곧 환자 기록을 읽을게요";
-      const m = (p.missing_or_ambiguous || []).length; return r.profiling ? "답변을 반영해 다시 정리하고 있어요" : `사실 ${factCount(p)}개를 찾았어요${m ? `,\n빠진 정보는 ${m}개예요` : ""}`; }
-    case "screen": { const s = r.screening; if (st === "skip" || (!s && r.candidates && !r.screen)) return "후보를 직접 골라서 이 단계는 건너뛰었어요";
-      return s ? `${s.pool_size}개 중 ${s.selected.length}개를 골랐어요` : r.screening_busy ? `시험 ${state.trials.length}개를 훑어보고 있어요` : "환자 정보가 정리되면 후보를 골라요"; }
-    case "match": { const n = Object.keys(r.matches).length; if (!n) return "후보가 정해지면 기준을 대조해요";
-      return done.length < n ? `시험 ${n}개 중 ${done.length}개를 판정했어요` : `시험 ${n}개의 기준을 모두 대조했어요`; }
-    case "gaps": { if (st === "idle") return "판정이 끝나면 부족한 정보를 모아요"; const n = gapsOf().length; return n ? `판정하지 못한 기준이 ${n}개 있어요` : "모든 기준을 판정했어요"; }
-    case "qa": { if (r.waiting) return `질문 ${r.waiting.length}개에 답해 주세요`; const q = r.rounds.reduce((a, x) => a + x.questions.length, 0);
-      if (st === "skip" || (!r.rounds.length && r.noQuestions)) return "물어볼 질문이 없었어요"; if (st === "active") return r.rounds.length ? "답변을 반영해 다시 평가하고 있어요" : "물어볼 질문을 만들고 있어요";
-      return q ? `질문 ${q}개로 다시 평가했어요` : "부족한 정보는 직접 물어볼게요"; }
-    case "rec": { const rec = r.result && r.result.recommendation; if (!rec) return r.recBusy ? "추천 그룹을 정리하고 있어요" : r.reportBusy ? "근거 보고서를 쓰고 있어요" : "모든 판정이 끝나면 추천해 드려요";
-      const n = (rec.recommended || []).length; return n ? `추천할 임상시험이 ${n}개 있어요` : "지금은 추천할 임상시험이 없어요"; }
-  }
-  return SMAP[k].title;
-}
-const working = (t) => `<div class="working"><span class="spinner"></span>${esc(t)}</div>`;
-const emptyBox = (k, t) => `<div class="empty">${ico(SMAP[k] ? SMAP[k].ico : k, 1.6)}${t}</div>`;
-
-const VIEWS = {};
-
-// ---------------------------- 설정
-VIEWS.setup = () => {
-  const s = state.setup, groups = {};
-  for (const p of state.patients) (groups[p.group] ||= []).push(p);
-  const p = state.patients.find(x => x.patient_id === s.patientId);
-  const screen = s.mode === "screen";
-  const trialsSorted = [...state.trials].sort((a, b) => s.picked.has(b.trial_id) - s.picked.has(a.trial_id));
-  return `<div class="stage" style="--sc: var(--accent)">
-    <div class="stage-head"><div class="stage-ico" aria-hidden="true">🧪</div><div><div class="stage-kicker">새 실행</div><h2>어떤 환자에게 맞는<br>임상시험을 찾아볼까요?</h2>
-      <p>환자를 고르고 시작하면 오케스트레이터가 계획을 세워 전문 에이전트 6개를 차례로 불러요. 위 단계를 누르면 단계별 결과를 볼 수 있어요.</p></div></div>
-    <div class="stage-body"><div class="setup">
-      <div class="stack">
-        <div><label class="field" for="f-patient">환자</label>
-          <select id="f-patient" ${s.custom ? "disabled" : ""}>${Object.entries(groups).map(([g, ps]) => `<optgroup label="${esc(g)}">${ps.map(x =>
-            `<option value="${esc(x.patient_id)}" ${x.patient_id === s.patientId ? "selected" : ""}>${esc(x.patient_id)} · ${esc(x.text.slice(0, 46))}…</option>`).join("")}</optgroup>`).join("")}</select></div>
-        ${s.custom ? `<div><label class="field" for="f-custom">환자 정보 직접 입력 (인구학·병력·검사·투약)</label>
-            <textarea id="f-custom" placeholder="예) 58세 남성, 방광암 cT2N0M0, 시스플라틴 기반 항암 2주기 후 반응 없음, ECOG 1 ...">${esc(s.customText)}</textarea>
-            <button class="link" data-act="custom" data-v="0">목록에서 선택하기</button></div>`
-          : `<div><div class="preview" data-scroll="pv">${esc(p ? p.text : "")}</div><button class="link" data-act="custom" data-v="1" style="margin-top:10px">환자 정보 직접 입력하기</button></div>`}
-        <div><label class="field">이렇게 진행돼요</label><div class="how">${STAGES.map(x => `<div style="${scol(x.k)}"><span class="e" aria-hidden="true">${x.emoji}</span><b>${x.n === "+" ? "" : x.n + " "}${esc(x.name)}</b><span>${esc(x.agent)}</span></div>`).join("")}</div></div>
-      </div>
-      <div class="stack">
-        <div><label class="field">후보 임상시험</label>
-          <div class="seg" role="group"><button class="${screen ? "on" : ""}" data-act="mode" data-v="screen">전체 ${state.trials.length}개에서 자동 추림</button><button class="${screen ? "" : "on"}" data-act="mode" data-v="given">직접 선택 (${s.picked.size}개)</button></div>
-          <div class="hint" style="margin-top:6px">${screen ? "후보 추림 에이전트가 전체 시험을 훑어 해당될 만한 시험을 최대 5개 고르고, 그 시험만 기준별로 자세히 평가해요."
-            : `평가할 시험을 직접 골라요. 환자 질환별로 정해 둔 후보가 미리 선택돼 있어요. <button class="link" data-act="clear">선택 해제</button>`}</div>
-          ${screen ? "" : `<div class="trial-list" data-scroll="tl">${trialsSorted.map(t => `<label class="trial-opt"><input type="checkbox" data-trial="${esc(t.trial_id)}" ${s.picked.has(t.trial_id) ? "checked" : ""}>
-            <span><b>${esc(t.trial_id)}</b> ${statusBadge(t.overall_status)}${t.synthetic ? ' <span class="badge">가상</span>' : ""}<span class="ttl">${esc(t.title)}</span></span></label>`).join("")}</div>`}
-        </div>
-        <label class="hint" style="display:flex;gap:10px;align-items:flex-start;cursor:pointer"><input type="checkbox" id="f-search" ${s.search ? "checked" : ""} style="margin-top:2px"> 후보가 모두 맞지 않거나 모집이 끝났으면 ClinicalTrials.gov에서 더 찾아볼게요</label>
-        <button class="btn wide" data-act="start" ${state.running ? "disabled" : ""}>${state.running ? "실행하고 있어요" : "임상시험 찾기"}</button>
-        <div class="hint" id="start-hint" style="min-height:18px"></div>
-      </div>
-    </div></div></div>`;
-};
-
-// ---------------------------- ① 기준 입력
-VIEWS.trials = () => {
-  const r = state.run;
-  const cand = r && r.candidates ? new Set(r.candidates) : null;
-  const sc = r && r.screening;
-  const outWhy = {};
-  if (sc) {
-    for (const h of sc.hard_filtered || []) outWhy[h.trial_id] = ["확정 제외", h.reason];
-    for (const x of sc.excluded || []) outWhy[x.trial_id] = ["추림 제외", x.reason];
-    for (const x of sc.over_limit || []) outWhy[x.trial_id] = ["상한 초과", x.reason];
-  }
-  const pool = r && r.trialIds.length && !r.screen ? r.trialIds.map(trialOf).filter(t => t.trial_id) : state.trials;
-  const extra = r ? Object.keys(r.parsed).filter(t => !pool.some(p => p.trial_id === t)).map(t => ({ trial_id: t, ...trialOf(t) })) : [];
-  const all = [...pool, ...extra];
-  const rank = (t) => (r && r.parsed[t.trial_id] ? 0 : cand && cand.has(t.trial_id) ? 1 : outWhy[t.trial_id] ? 3 : 2);
-  all.sort((a, b) => rank(a) - rank(b));
-  const parsedN = r ? Object.values(r.parsed).filter(p => p.status === "done") : [];
-  const nRules = parsedN.reduce((a, p) => a + p.n_rules, 0);
-  const open = all.filter(t => t.open !== false && ["RECRUITING","NOT_YET_RECRUITING"].includes(t.overall_status)).length;
-  const body = `<div class="stats">
-      <div class="stat"><b>${all.length}</b><span>${r && !r.screen ? "평가할 시험" : "시험 풀"}</span></div>
-      <div class="stat"><b>${open}</b><span>모집 중·예정</span></div>
-      <div class="stat hl"><b>${parsedN.length}</b><span>기준 파싱 완료</span></div>
-      <div class="stat hl"><b>${nRules}</b><span>원자 규칙 (선정 ${parsedN.reduce((a, p) => a + (p.n_inc || 0), 0)} · 제외 ${parsedN.reduce((a, p) => a + (p.n_exc || 0), 0)})</span></div></div>
-    ${r && Object.values(r.parsed).some(p => p.status === "parsing") ? working("기준 파싱 에이전트가 선정·제외 기준을 원자 규칙으로 불러오는 중") : ""}
-    <div class="tgrid">${all.map(t => {
-      const p = r && r.parsed[t.trial_id], why = outWhy[t.trial_id];
-      const cls = [p && p.status === "parsing" ? "parsing" : "", (cand && cand.has(t.trial_id)) || p ? "cand" : "", why ? "out" : ""].join(" ");
-      const tot = p && p.n_rules ? p.n_rules : 0;
-      return `<div class="tcard ${cls}"><div class="tid">${esc(t.trial_id)} ${statusBadge(t.overall_status)}${t.synthetic ? '<span class="badge">가상</span>' : ""}</div>
-        <div class="ttl" title="${esc(t.title_en || t.title)}">${esc(t.title || "")}</div>
-        ${(t.conditions || []).length ? `<div>${t.conditions.slice(0, 2).map(c => `<span class="chip">${esc(c)}</span>`).join(" ")}</div>` : ""}
-        ${p && p.status === "done" ? `<div class="iebar"><i class="inc" style="width:${tot ? (p.n_inc || 0) / tot * 100 : 0}%"></i><i class="exc" style="width:${tot ? (p.n_exc || 0) / tot * 100 : 0}%"></i></div>
-          <div class="ielbl"><span>선정 ${p.n_inc ?? "-"}</span><span>규칙 ${p.n_rules}개</span><span>제외 ${p.n_exc ?? "-"}</span></div>
-          ${p.review && p.review.length ? `<div class="why">자동 판정 제외(검토 필요) 규칙 ${p.review.length}개: ${esc(p.review.map(ruleName).join(", "))}</div>` : ""}` : ""}
-        ${p && p.status === "parsing" ? '<div class="skel" style="width:70%"></div>' : ""}
-        ${why ? `<div class="why"><b>${esc(why[0])}</b> · ${esc(why[1])}</div>` : ""}</div>`;
-    }).join("")}</div>`;
-  return stageShell("trials", body);
-};
-
-// ---------------------------- ② 환자 정보
-function highlight(text, quotes) {
-  const spans = [];
-  quotes.forEach(([q, id]) => {
-    if (!q || q.length < 3) return;
-    const i = text.indexOf(q);
-    if (i >= 0) spans.push([i, i + q.length, id]);
-  });
-  spans.sort((a, b) => a[0] - b[0]);
-  let out = "", pos = 0; const linked = new Set();
-  for (const [s, e, id] of spans) {
-    if (s < pos) continue;
-    out += esc(text.slice(pos, s)) + `<mark data-m="${id}">${esc(text.slice(s, e))}</mark>`; pos = e; linked.add(id);
-  }
-  return { html: out + esc(text.slice(pos)), linked };
-}
-VIEWS.patient = () => {
-  const r = state.run;
-  if (!r) return stageShell("patient", emptyBox("patient", "실행하면 환자 기록을 정리한 결과를 여기서 보여 드려요."));
-  const p = r.profile, text = r.patientText || "";
-  const groups = [["diagnoses","진단"],["biomarkers","바이오마커"],["treatment_history","치료력"],["medications","투약"],["other_facts","기타 사실"]];
-  const quotes = []; let fid = 0; const ids = {};
-  if (p) {
-    for (const [k] of groups) (p[k] || []).forEach((f, i) => { ids[k + i] = "f" + fid; quotes.push([f.source_quote, "f" + fid++]); });
-    (p.labs || []).forEach((l, i) => { ids["lab" + i] = "f" + fid; quotes.push([l.source_quote, "f" + fid++]); });
-  }
-  const hl = highlight(text, quotes);
-  const sex = { male: "남성", female: "여성", other: "기타", unknown: "모름" };
-  const tile = (lbl, v, wide) => `<div class="tile ${wide ? "wide" : ""} ${v == null || v === "" ? "nil" : ""}"><span>${lbl}</span><b>${v == null || v === "" ? "정보 없음" : esc(v)}</b></div>`;
-  const right = !p ? `${working(r.profiling ? "환자 정보 이해 에이전트가 원문에서 사실을 추출하는 중" : "환자 정보 이해 대기 중")}
-      <div class="stack" style="gap:10px">${[80, 60, 90, 45, 70].map(w => `<div class="skel" style="width:${w}%"></div>`).join("")}</div>`
-    : `${r.profiling ? working("답변을 반영해 환자 정보를 다시 추출하는 중") : ""}
-      <div class="tiles">
-        ${tile("나이", p.age != null ? `${p.age}세` : null)}${tile("성별", sex[p.sex] || p.sex)}${tile("전신 상태(ECOG)", p.ecog)}
-        ${tile("주 진단", p.primary_diagnosis, true)}${tile("병기", p.disease_stage)}</div>
-      ${groups.map(([k, lbl]) => (p[k] || []).length ? `<div class="sec-t">${lbl} <span class="chip">${p[k].length}</span></div><div class="facts">${p[k].map((f, i) =>
-        `<div class="fact ${hl.linked.has(ids[k + i]) ? "" : "unlinked"}" data-f="${ids[k + i]}" title="${esc(f.source_quote)}"><span class="d">${esc(f.date || "날짜 없음")}</span><span>${esc(f.description)}</span></div>`).join("")}</div>` : "").join("")}
-      ${(p.labs || []).length ? `<div class="sec-t">검사 수치 <span class="chip">${p.labs.length}</span></div><table class="labs">${p.labs.map((l, i) =>
-        `<tr data-f="${ids["lab" + i]}" title="${esc(l.source_quote)}"><td>${esc(labName(l.name))}</td><td class="v">${l.value ?? "-"} <span class="hint">${esc(l.unit || "")}</span></td><td class="hint" style="text-align:right">${esc(l.date || "")}</td></tr>`).join("")}</table>` : ""}
-      ${(p.missing_or_ambiguous || []).length ? `<div class="miss" style="margin-top:16px"><b>누락·모호한 정보 ${p.missing_or_ambiguous.length}개</b><ul>${p.missing_or_ambiguous.map(m => `<li>${esc(m)}</li>`).join("")}</ul></div>` : ""}`;
-  const body = `<div class="pgrid">
-    <div><div class="sec-t">환자 원문</div>${p ? '<div class="hint" style="margin:-6px 0 12px">형광 표시는 추출한 사실의 근거예요. 오른쪽 항목에 마우스를 올리면 강조돼요.</div>' : ""}
-      <div class="ptext" data-scroll="pt">${hl.html || '<span class="hint">원문 없음</span>'}</div></div>
-    <div><div class="sec-t">구조화 프로파일 ${r.profileRound ? `<span class="badge st">라운드 ${r.profileRound} 답변 반영본</span>` : ""}</div>${right}</div></div>`;
-  return stageShell("patient", body);
-};
-
-// ---------------------------- + 후보 추림
-VIEWS.screen = () => {
-  const r = state.run;
-  if (!r) return stageShell("screen", emptyBox("screen", "실행하면 전체 시험에서 후보를 고르는 과정을 여기서 보여 드려요."));
-  const s = r.screening;
-  if (!s) {
-    if (r.screening_busy) return stageShell("screen", working(`후보 추림 에이전트가 전체 ${state.trials.length}개 시험의 제목·대상 질환·대상군을 훑는 중`) +
-      `<div class="tgrid">${state.trials.slice(0, 12).map(() => '<div class="tcard"><div class="skel" style="width:50%"></div><div class="skel"></div><div class="skel" style="width:80%"></div></div>').join("")}</div>`);
-    if (r.stages.screen === "skip" || (r.candidates && !r.screen))
-      return stageShell("screen", `<div class="clear" style="background:var(--panel-2);color:var(--muted)">${ico("funnel")}<div>후보를 직접 지정해 실행했습니다. 추림 없이 ${r.trialIds.length}개 시험을 그대로 평가합니다.
-        <div style="margin-top:6px">${r.trialIds.map(t => `<span class="chip">${esc(t)}</span>`).join(" ")}</div></div></div>`);
-    return stageShell("screen", emptyBox("screen", "환자 정보 정리가 끝나면 후보를 고르기 시작해요."));
-  }
-  const hard = (s.hard_filtered || []).length, exc = (s.excluded || []).length, over = (s.over_limit || []).length, sel = s.selected.length, N = s.pool_size || (hard + exc + over + sel);
-  const w = (n) => `${Math.max(N ? n / N * 100 : 0, 4)}%`;
-  const a1 = N - hard, a2 = a1 - exc;
-  const KIND = { status: "모집 종료", age: "나이 범위", sex: "성별" }, REL = { high: ["관련도 높음","ok"], medium: ["관련도 중간","accent"], low: ["관련도 낮음",""] };
-  const t = (id) => trialOf(id);
-  const body = `<div class="funnel">
-      <div class="frow"><span>전체 시험 풀</span><div><div class="bar" style="width:${w(N)}">${N}</div></div><span class="cut"></span></div>
-      <div class="frow"><span>코드 확정 제외 후</span><div><div class="bar" style="width:${w(a1)};animation-delay:.12s">${a1}</div></div><span class="cut"><b>−${hard}</b> 모집 종료·나이·성별</span></div>
-      <div class="frow"><span>에이전트 판단 후</span><div><div class="bar" style="width:${w(a2)};animation-delay:.24s">${a2}</div></div><span class="cut"><b>−${exc}</b> 대상 질환·대상군 불일치</span></div>
-      <div class="frow"><span><b>자세히 평가할 후보</b></span><div><div class="bar" style="width:${w(sel)};animation-delay:.36s">${sel}</div></div><span class="cut">${over ? `<b>−${over}</b> 후보 상한 초과` : "상한 이내"}</span></div>
+<!-- 4. 추천 결과 -->
+<main id="page-result" hidden>
+  <section class="panel" aria-labelledby="result-h">
+    <h2 id="result-h" tabindex="-1">③ 추천 결과 <span class="usage" id="usage"></span></h2>
+    <div class="body stack">
+      <div id="final"><div class="empty">분석이 끝나면 결과가 표시됩니다.</div></div>
+      <div class="row"><button class="btn" id="new-run" type="button">새 분석 시작</button></div>
     </div>
-    <div class="cols2">
-      <div><div class="sec-t">선택된 후보 ${sel}개</div>${s.selected.map(x => `<div class="lrow sel"><div class="h">${esc(x.trial_id)} ${statusBadge(t(x.trial_id).overall_status)}
-          <span class="badge ${(REL[x.relevance] || ["",""])[1]}">${(REL[x.relevance] || [x.relevance])[0]}</span>${(s.kept_by_default || []).includes(x.trial_id) ? '<span class="badge warn">판단 누락 · 안전하게 유지</span>' : ""}</div>
-          <div class="t">${esc(t(x.trial_id).title || "")}</div><div style="margin-top:4px">${esc(x.reason)}</div></div>`).join("") || '<div class="hint">선택된 후보가 없습니다.</div>'}</div>
-      <div><div class="sec-t">제외된 시험 ${hard + exc + over}개</div>
-        ${(s.hard_filtered || []).map(h => `<div class="lrow"><div class="h">${esc(h.trial_id)} <span class="badge bad">확정 제외 · ${KIND[h.kind] || h.kind}</span></div><div class="t">${esc(h.reason)}</div></div>`).join("")}
-        ${(s.excluded || []).map(x => `<div class="lrow"><div class="h">${esc(x.trial_id)} <span class="badge">추림 제외</span></div><div class="t">${esc(x.reason)}</div></div>`).join("")}
-        ${(s.over_limit || []).map(x => `<div class="lrow"><div class="h">${esc(x.trial_id)} <span class="badge warn">상한 초과</span></div><div class="t">${esc(x.reason)}</div></div>`).join("")}
-      </div></div>`;
-  return stageShell("screen", body);
-};
-
-// ---------------------------- ③ 추출·매칭
-function ruleClass(a) { if (a.applicable === false) return "na"; return a.passes === true ? "pass" : a.passes === false ? "fail" : "unk"; }
-const RI = { pass: "✓", fail: "✕", unk: "?", na: "–" };
-const GAP = { ask: ["확인 질문","accent"], verify: ["문서 확인 필요","warn"], physician: ["의료진 확인","warn"] };
-const HOLDS = { yes: "해당함", no: "해당하지 않음", unknown: "판단 불가" };
-function ruleRow(tid, a) {
-  const c = ruleClass(a);
-  return `<details class="rule ${c}" data-k="r-${esc(tid)}-${esc(a.rule_id)}"><summary><span class="ri ${c}">${RI[c]}</span><span class="rid">${esc(ruleName(a.rule_id))}</span>
-    <span class="rtx">${esc(koRule(tid, a.rule_id, a.criterion_text))}</span><span class="rmeta"><span class="chip">${a.method === "rule_engine" ? "규칙 엔진" : "AI 추론"}</span>${a.gap ? `<span class="badge ${GAP[a.gap][1]}">${GAP[a.gap][0]}</span>` : ""}${a.cohort ? `<span class="chip">${esc(a.cohort)}</span>` : ""}</span></summary>
-    <div class="rbody">
-      <div><span class="k">판정</span> · 조건이 환자에게 <b>${HOLDS[a.holds] || esc(a.holds)}</b> → ${a.applicable === false ? "해당 없음(통과)" : a.passes === true ? "통과" : a.passes === false ? "불충족" : "판정 불가"}${a.kind === "exclusion" ? " <span class='hint'>(제외 기준은 해당하지 않아야 통과)</span>" : ""}</div>
-      ${a.evidence && a.evidence !== "근거 없음" ? `<div><div class="k">근거 (환자 원문)</div><div class="quote">${esc(koText(a.evidence))}</div></div>` : `<div class="hint">환자 기록에서 근거를 찾지 못했습니다.</div>`}
-      ${a.reasoning ? `<div><div class="k">추론</div>${esc(koText(a.reasoning))}</div>` : ""}
-      ${a.missing_info ? `<div><div class="k">판정에 필요한 정보</div>${esc(a.missing_info)}</div>` : ""}
-      ${a.needs_verification ? `<div class="miss"><b>기록 미확인</b> · 환자 답변은 '${esc(HOLDS[a.self_reported_holds] || "-")}'이지만, 이 기준은 진료 기록으로 확인해야 해요.</div>` : ""}
-      ${koRule(tid, a.rule_id, a.criterion_text) !== a.criterion_text ? `<div><div class="k">기준 원문 (영어)</div><span class="hint">${esc(a.criterion_text)}</span></div>` : ""}
-    </div></details>`;
-}
-VIEWS.match = () => {
-  const r = state.run;
-  if (!r || !Object.keys(r.matches).length) return stageShell("match", r && r.stages.match === "active" ? working("평가 준비 중") : emptyBox("match", "후보 시험이 정해지면 기준별 판정 결과를 여기서 보여 드려요."));
-  const tids = Object.keys(r.matches);
-  if (!tids.includes(state.ui.matchTrial)) state.ui.matchTrial = tids[0];
-  const tid = state.ui.matchTrial, m = r.matches[tid], t = trialOf(tid);
-  const tabs = `<div class="ttabs" role="tablist">${tids.map(id => { const x = r.matches[id]; return `<button class="ttab ${id === tid ? "on" : ""} ${x.status !== "done" ? "busy" : ""}" role="tab" data-act="mtrial" data-v="${esc(id)}">
-      <b>${esc(id)}</b>${x.status === "done" ? eligBadge(x.match_status || x.eligibility) : '<span class="badge accent">판정 중</span>'}</button>`; }).join("")}</div>`;
-  let body = tabs + `<div class="mhead"><div class="ttl">${esc(t.title || "")}</div>${statusBadge(t.overall_status)}${m.status === "done" ? eligBadge(m.match_status || m.eligibility) : ""}
-      ${t.url ? `<a class="link" href="${esc(t.url)}" target="_blank" rel="noopener">등록 정보 ↗</a>` : ""}</div>`;
-  if (m.status !== "done") {
-    body += working(`규칙 엔진이 나이·성별·수치 기준을 먼저 판정하고, 추론·매칭 에이전트가 나머지 기준을 환자 원문과 대조하는 중${m.round ? ` (라운드 ${m.round} 재평가)` : ""}`) +
-      `<div class="scan">${[90, 70, 85, 60, 75, 50].map(w => `<div class="skel" style="width:${w}%;margin:8px 0"></div>`).join("")}</div>`;
-    return stageShell("match", body);
-  }
-  const as = m.assessments;
-  if (m.summary) body += `<div class="msum">${esc(m.summary.replace(/^[A-Z_]+:\s*/, ""))}</div>`;
-  if (m.evaluation_error) body += `<div class="err">${esc(m.evaluation_error)}</div>`;
-  if (!as) return stageShell("match", body + '<div class="hint">이 기록에는 기준별 판정이 남아 있지 않습니다.</div>');
-  const cnt = { pass: 0, fail: 0, unk: 0, na: 0 }; as.forEach(a => cnt[ruleClass(a)]++);
-  const f = state.ui.ruleFilter, show = (a) => f === "all" || ruleClass(a) === f;
-  const grp = (kind, lbl) => { const xs = as.filter(a => a.kind === kind); const vs = xs.filter(show);
-    return xs.length ? `<div class="sec-t">${lbl} <span class="chip">${xs.length}</span></div>${vs.map(a => ruleRow(tid, a)).join("") || '<div class="hint">해당하는 기준이 없습니다.</div>'}` : ""; };
-  body += `<div class="sbar">${["pass","fail","unk","na"].map(k => cnt[k] ? `<i class="c-${k}" style="flex:${cnt[k]}"></i>` : "").join("")}</div>
-    <div class="legend"><span><i class="c-pass"></i>통과 ${cnt.pass}</span><span><i class="c-fail"></i>불충족 ${cnt.fail}</span><span><i class="c-unk"></i>판정 불가 ${cnt.unk}</span><span><i class="c-na"></i>해당 없음 ${cnt.na}</span>
-      <span class="seg">${[["all","전체"],["fail","불충족"],["unk","판정 불가"],["pass","통과"]].map(([k, l]) => `<button class="${f === k ? "on" : ""}" data-act="rf" data-v="${k}">${l}</button>`).join("")}</span></div>
-    ${m.matched_cohort ? `<div class="hint" style="margin-bottom:8px">판정에 사용한 코호트: <b>${esc(m.matched_cohort)}</b></div>` : ""}
-    ${grp("inclusion", "선정 기준 (해당해야 통과)")}${grp("exclusion", "제외 기준 (해당하지 않아야 통과)")}`;
-  return stageShell("match", body);
-};
-
-// ---------------------------- ④ 부족 정보
-function gapsOf() {
-  const r = state.run, out = [];
-  if (!r) return out;
-  for (const [tid, m] of Object.entries(r.matches)) for (const a of m.assessments || []) if (a.gap) out.push({ tid, a });
-  return out;
-}
-VIEWS.gaps = () => {
-  const r = state.run;
-  if (!r || r.stages.gaps === "idle") return stageShell("gaps", r && r.stages.match === "active" ? working("기준별 판정이 끝나면 판정하지 못한 항목을 모읍니다") : emptyBox("gaps", "기준별 판정이 끝나면 판정하지 못한 항목을 여기에 모아 드려요."));
-  const gs = gapsOf();
-  const lanes = [["ask", "확인 질문으로 해소", "환자·보호자에게 물어볼 수 있는 항목", "--c-qa"], ["verify", "진료 기록 확인 필요", "진료 기록이 필요한 기준인데 환자 답변만 있는 항목", "--c-gaps"],
-    ["physician", "의료진 확인 필요", "프로토콜 원문에 구체 기준이 없어 원문만으로 판정할 수 없는 항목", "--c-screen"]];
-  const miss = (r.profile && r.profile.missing_or_ambiguous) || [];
-  let body = `<div class="stats"><div class="stat hl"><b>${gs.length}</b><span>판정 불가 항목</span></div>
-      ${lanes.map(([k, l]) => `<div class="stat"><b>${gs.filter(g => g.a.gap === k).length}</b><span>${esc(l)}</span></div>`).join("")}
-      <div class="stat"><b>${miss.length}</b><span>프로파일 누락·모호</span></div></div>`;
-  if (!gs.length) body += `<div class="clear">${ico("check", 2.4)}<div>모든 기준을 판정했어요. 확인 질문 없이 추천으로 넘어가요.</div></div>`;
-  else body += `<div class="lanes">${lanes.map(([k, l, d, c]) => { const xs = gs.filter(g => g.a.gap === k);
-      return `<div class="lane" style="--lc: var(${c})"><h4>${esc(l)}<span class="n">${xs.length}</span></h4><p>${esc(d)}</p>${xs.map(({ tid, a }) => `<div class="gap">
-        <div class="g1"><span class="chip">${esc(tid)}</span><span class="chip">${esc(ruleName(a.rule_id))}</span></div>
-        <div class="g2" title="${esc(a.criterion_text)}">${esc(koRule(tid, a.rule_id, a.criterion_text))}</div>${a.missing_info ? `<div class="g3">→ ${esc(a.missing_info)}</div>` : ""}</div>`).join("") || '<div class="hint">없음</div>'}</div>`; }).join("")}</div>`;
-  if (miss.length) body += `<div class="miss" style="margin-top:16px"><b>환자 정보 이해 단계에서 찾은 누락·모호 정보</b><ul>${miss.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>`;
-  return stageShell("gaps", body);
-};
-
-// ---------------------------- ⑤ 질문·재평가
-VIEWS.qa = () => {
-  const r = state.run;
-  if (!r || (!r.rounds.length && r.stages.qa !== "skip")) return stageShell("qa", r && r.stages.qa === "active" ? working("질문 생성 에이전트가 판정 불가 항목을 해소할 질문을 만드는 중") : emptyBox("qa", "판정하지 못한 항목이 있으면 질문과 답변, 재평가 결과를 대화로 보여 드려요."));
-  if (!r.rounds.length) return stageShell("qa", `<div class="clear">${ico("check", 2.4)}<div>${r.noQuestions ? "질문으로 해결할 수 있는 항목이 없어서, 확인 질문 없이 추천으로 넘어갔어요." : "질문으로 해결할 판정 불가 항목이 없어서 확인 질문이 필요하지 않았어요."}</div></div>`);
-  const waiting = r.waiting;
-  let body = `<div class="thread">`;
-  for (const rd of r.rounds) {
-    body += `<div class="rnd">라운드 ${rd.round}</div>`;
-    const ans = Object.fromEntries((rd.qa || []).map(x => [x.question_id, x.answer]));
-    const live = waiting && rd === r.rounds[r.rounds.length - 1] && !rd.qa;
-    for (const q of rd.questions) {
-      const phys = q.purpose === "physician_reference";
-      body += `<div class="msg ${live ? "live" : ""}"><div class="av">${ico("bot")}</div><div class="bub"><div class="who">질문 생성 에이전트 <span class="badge ${phys ? "warn" : "accent"}">${phys ? "의사 참고용" : "판정용"}</span>
-          ${(q.target || []).slice(0, 3).map(x => `<span class="chip">${esc(targetName(x))}</span>`).join("")}${(q.target || []).length > 3 ? `<span class="chip">+${q.target.length - 3}</span>` : ""}</div>
-        ${esc(q.question)}${q.why ? `<div class="why">${esc(q.why)}</div>` : ""}
-        ${live ? answerBox(q) : pastChoices(q, ans[q.question_id])}</div></div>`;
-      if (ans[q.question_id] != null) { const unk = ans[q.question_id] === "모름";
-        body += `<div class="msg me ${unk ? "unknown" : ""}"><div class="av">${ico("person")}</div><div class="bub"><div class="who">환자 / 보호자</div>${esc(ans[q.question_id])}</div></div>`; }
-    }
-    if (live) { const n = rd.questions.filter(q => answerOf(q, true) != null).length;
-      body += `<div class="compose"><span class="hint"><b style="color:var(--text)">${n}/${rd.questions.length}개 답함</b><span class="long"> · 고르지 않은 질문은 '모름'으로 보내요. 이름·연락처 같은 개인 정보는 적지 말아 주세요.</span></span>
-        <button class="btn grey" data-act="skip">모두 모름</button><button class="btn" data-act="send">답변 보내기</button></div>`; }
-    if (rd.qa) {
-      const ids = [...rd.reeval];
-      const done = ids.filter(t => rd.after[t]);
-      const busy = !ids.length ? rd.round === r.qround && state.running : done.length < ids.length;
-      body += `<div class="delta"><h5>${busy ? '<span class="spinner"></span>' : ico("check")} 답변 반영 재평가 ${ids.length && busy ? `(${done.length}/${ids.length})` : ""}</h5>
-        ${!ids.length ? `<div class="hint">${busy ? "답변을 환자 정보에 반영하는 중" : "재평가한 시험이 없습니다."}</div>` : ""}
-        ${ids.map(t => { const b = rd.before[t], a = rd.after[t]; const chg = a && a !== b;
-          return `<div class="drow ${chg ? "chg" : ""}"><b>${esc(t)}</b>${eligBadge(b)}<span class="arr">→</span>${a ? eligBadge(a) : '<span class="badge accent">재평가 중</span>'}${a && !chg ? '<span class="hint">변화 없음</span>' : ""}</div>`; }).join("")}</div>`;
-    }
-  }
-  body += `</div>`;
-  return stageShell("qa", body, waiting ? '<span class="badge warn">답변 대기 중</span>' : "");
-};
-
-// 답변 초안: state.draft[qid] = 선택한 문구(객관식 하나) | 문구 배열(여러 개) | 입력값(주관식), state.draftEtc[qid] = '기타' 직접 입력
-const UNK = "모름";
-const optsOf = (q) => q.answer_type === "yes_no" ? ["예", "아니요"] : (q.options || []);
-const isEtc = (o) => /^기타/.test(o);
-function answerBox(q) {
-  const id = esc(q.question_id), v = state.draft[q.question_id], opts = optsOf(q);
-  if (opts.length >= 2) {
-    const multi = q.answer_type === "multi_choice", on = (o) => o === UNK ? v === UNK : multi ? Array.isArray(v) && v.includes(o) : v === o;
-    const etcOn = opts.some(o => isEtc(o) && on(o));
-    return `<div class="opts ${q.answer_type === "yes_no" ? "yn" : ""}" role="${multi ? "group" : "radiogroup"}" aria-label="답변 선택">${[...opts, UNK].map(o =>
-      `<button type="button" class="opt ${on(o) ? "on" : ""} ${o === UNK ? "unk" : ""}" role="${multi && o !== UNK ? "checkbox" : "radio"}" aria-checked="${on(o)}" data-act="pick" data-q="${id}" data-v="${esc(o)}">${q.answer_type === "yes_no" ? "" : `<span class="mk ${multi && o !== UNK ? "box" : ""}"></span>`}${esc(o)}</button>`).join("")}</div>
-      ${multi ? '<div class="why">해당하는 것을 모두 골라 주세요.</div>' : ""}
-      ${etcOn ? `<input type="text" class="etc" id="qa-${id}-etc" data-etc="${id}" placeholder="기타 내용을 적어 주세요" value="${esc(state.draftEtc[q.question_id] || "")}">` : ""}`;
-  }
-  const ph = { number: "숫자로 입력", date: "예) 2026-07 또는 2026-07-15" }[q.answer_type] || "답변을 적어 주세요";
-  return `<div class="ansrow"><input type="text" id="qa-${id}" data-q="${id}" inputmode="${q.answer_type === "number" ? "decimal" : "text"}" placeholder="${ph}" value="${v && v !== UNK ? esc(v) : ""}">
-    ${q.unit ? `<span class="unit">${esc(q.unit)}</span>` : ""}<button type="button" class="opt unk ${v === UNK ? "on" : ""}" data-act="pick" data-q="${id}" data-v="${UNK}">모름</button></div>`;
-}
-// 지난 질문: 어떤 선택지가 있었고 무엇을 골랐는지 (읽기 전용)
-function pastChoices(q, a) {
-  const opts = optsOf(q); if (opts.length < 2 || a == null) return "";
-  const picked = new Set(String(a).split(/,\s*/).map(x => x.replace(/^기타:.*/, "기타")));
-  return `<div class="opts ro">${[...opts, UNK].map(o => `<span class="opt ${picked.has(o) || (isEtc(o) && picked.has("기타")) ? "on" : ""} ${o === UNK ? "unk" : ""}">${esc(o)}</span>`).join("")}</div>`;
-}
-function pick(qid, o) {
-  const r = state.run, q = r && r.waiting && r.waiting.find(x => x.question_id === qid); if (!q) return;
-  const d = state.draft, cur = d[qid];
-  if (q.answer_type === "multi_choice" && o !== UNK) {
-    const s = new Set(Array.isArray(cur) ? cur : []); s.has(o) ? s.delete(o) : s.add(o); d[qid] = [...s];
-    if (!d[qid].length) delete d[qid];
-  } else if (cur === o) delete d[qid];
-  else d[qid] = o;
-  if (o === UNK) { const inp = document.getElementById("qa-" + qid); if (inp) inp.value = ""; }
-}
-// 보낼 답변 문구. loose=true면 아직 답하지 않은 질문은 null
-function answerOf(q, loose = false) {
-  const id = q.question_id, v = state.draft[id], etc = (state.draftEtc[id] || "").trim();
-  const fix = (o) => isEtc(o) && etc ? `기타: ${etc}` : o;
-  const out = v == null || v === "" || (Array.isArray(v) && !v.length) ? null : Array.isArray(v) ? v.map(fix).join(", ") : fix(String(v).trim());
-  if (out && out !== UNK && q.answer_type === "number" && q.unit && !out.includes(q.unit)) return `${out} ${q.unit}`;
-  return out || (loose ? null : UNK);
-}
-
-// ---------------------------- ⑥ 추천
-VIEWS.rec = () => {
-  const r = state.run;
-  if (!r || !r.result) {
-    if (r && (r.recBusy || r.reportBusy)) return stageShell("rec", working(r.recBusy ? "추천 에이전트가 시험별 근거를 정리하고, 코드가 추천 그룹과 표시 순서를 정하는 중" : "결과 설명 에이전트가 근거 보고서를 쓰는 중") +
-      `<div class="stack" style="gap:10px">${[1, 2].map(() => '<div class="rec"><div class="rank"></div><div class="stack" style="gap:8px"><div class="skel" style="width:40%"></div><div class="skel"></div><div class="skel" style="width:75%"></div></div></div>').join("")}</div>`);
-    return stageShell("rec", emptyBox("rec", "모든 판정이 끝나면 추천 결과와 근거를 보여 드려요."));
-  }
-  const res = r.result, rec = res.recommendation || { ranked: [], excluded: [] }, top = rec.recommended || [];
-  const tinfo = (id) => ({ ...trialOf(id), ...(r.resTrials[id] || {}) });
-  const card = (x, isTop) => { const t = tinfo(x.trial_id); return `<div class="rec ${isTop ? "top" : ""}"><div class="rank">${x.rank}</div>
-    <div><div class="rh"><b>${esc(x.trial_id)}</b>${eligBadge(x.match_status || x.eligibility)}${statusBadge(t.overall_status)}${t.url ? `<a class="link" href="${esc(t.url)}" target="_blank" rel="noopener">등록 정보 ↗</a>` : ""}</div>
-      <div class="ttl">${esc(t.title || "")}</div></div>
-    ${(x.key_matches || []).length || (x.key_concerns || []).length ? `<div class="lists">${(x.key_matches || []).length ? `<div><div class="k hint"><b>맞는 점</b></div><ul class="km">${x.key_matches.map(k => `<li>${esc(k)}</li>`).join("")}</ul></div>` : "<div></div>"}
-      ${(x.key_concerns || []).length ? `<div><div class="k hint"><b>확인할 점</b></div><ul class="kc">${x.key_concerns.map(k => `<li>${esc(k)}</li>`).join("")}</ul></div>` : ""}</div>` : ""}
-    ${(x.next_steps || []).length ? `<div class="ns">다음 단계 · ${x.next_steps.map(esc).join(" · ")}</div>` : ""}
-    ${(x.physician_review || []).length ? `<div class="note"><b>의료진 확인 필요 ${x.physician_review.length}</b>${x.physician_review.map(n => `<div>• ${esc(n)}</div>`).join("")}</div>` : ""}
-    ${(x.verification_needed || []).length ? `<div class="note"><b>진료 기록 확인 필요 ${x.verification_needed.length}</b>${x.verification_needed.map(n => `<div>• ${esc(n)}</div>`).join("")}</div>` : ""}</div>`; };
-  let body = rec.no_recommendation_reason ? `<div class="callout">${esc(rec.no_recommendation_reason)}</div>` : "";
-  if (top.length) body += `<div class="tier"><div class="tier-h">추천 그룹 ${eligBadge(top[0].match_status || top[0].eligibility)} <span class="chip">${top.length}개</span></div>${top.map(x => card(x, true)).join("")}
-      ${r.matchNote ? `<div class="hint" style="margin-top:8px">${esc(r.matchNote)}</div>` : ""}</div>`;
-  const others = (rec.ranked || []).filter(x => !top.some(y => y.trial_id === x.trial_id));
-  if (others.length) body += `<div class="tier"><div class="tier-h">다른 후보 <span class="chip">${others.length}개</span><span class="hint" style="font-weight:500">추가 확인이 필요한 시험</span></div>${others.map(x => card(x, false)).join("")}</div>`;
-  if (rec.selection_reason) body += `<div class="lrow sel" style="margin-bottom:16px"><div class="h">표시 순서 기준</div><div class="t">${esc(rec.selection_reason)}</div></div>`;
-  if ((rec.excluded || []).length) body += `<details class="more" data-k="excl"><summary>제외된 시험 ${rec.excluded.length}개</summary><div class="excl">${rec.excluded.map(x =>
-      `<div class="lrow"><div class="h">${esc(x.trial_id)} ${statusBadge(tinfo(x.trial_id).overall_status)}</div><div class="t">${esc(x.reason)}</div></div>`).join("")}</div></details>`;
-  if (r.report) { const md = window.marked && window.DOMPurify ? DOMPurify.sanitize(marked.parse(r.report)) : `<pre style="white-space:pre-wrap">${esc(r.report)}</pre>`;
-    body += `<details class="more" data-k="report"><summary>결과 설명 보고서</summary><div class="md">${md}</div></details>`; }
-  const u = res.usage || {};
-  const right = u.calls ? `<span class="badge">AI 호출 ${u.calls}회 · 토큰 ${((u.input_tokens || 0) + (u.output_tokens || 0)).toLocaleString()}</span>` : "";
-  return stageShell("rec", body, right);
-};
-
-// ------------------------------------------------------------ 사이드
-let lastRoster = "";
-function renderRoster() {
-  const r = state.run;
-  const html = AGENTS.map(a => { const s = r ? r.agents[a.k] : { st: "idle", n: 0 };
-    return `<div class="ag ${s.st}" style="${a.stage ? scol(a.stage) : "--sc: var(--accent)"}"><span class="d"></span><span class="nm"><b>${esc(a.name)}</b><small>${esc(a.role)}</small></span><span class="n">${s.n ? s.n + "회" : ""}</span></div>`; }).join("");
-  if (html !== lastRoster) { $("#roster").innerHTML = html; lastRoster = html; }
-}
-function renderToast() {
-  const r = state.run, t = $("#toast");
-  const show = r && r.waiting && state.view !== "qa";
-  t.hidden = !show;
-  if (show) t.innerHTML = `질문 ${r.waiting.length}개가 답변을 기다리고 있어요 <button class="btn sm" data-act="view" data-v="qa">답변하기</button>`;
-}
-function feed(t, who, html, stage, cls = "") {
-  const r = state.run, f = $("#feed"); if (!r.feedN) f.innerHTML = "";
-  r.feedN++; $("#feed-count").textContent = `${r.feedN}개`;
-  const d = document.createElement("div"); d.className = "ev " + cls;
-  if (stage) { d.style.cssText = scol(stage); d.dataset.act = "view"; d.dataset.v = stage; }
-  d.innerHTML = `<div class="t">${t == null ? "" : Number(t).toFixed(1) + "s"}</div><div><span class="w">${esc(WHO[who] || who)}</span>${cls === "plan" ? `<span class="m">${html}</span>` : html}</div>`;
-  const atBottom = f.scrollHeight - f.scrollTop - f.clientHeight < 40;
-  f.appendChild(d); if (atBottom) f.scrollTop = f.scrollHeight;
-}
-
-// ------------------------------------------------------------ 상호작용
-function setView(v, auto = false) {
-  if (auto && !state.follow) return;
-  if (!auto && state.running && v !== state.view) state.follow = false;
-  state.view = v; render();
-  if (!auto) window.scrollTo({ top: 0, behavior: "smooth" });
-}
-function bind() {
-  document.addEventListener("click", async (e) => {
-    const el = e.target.closest("[data-act]"); if (!el) return;
-    const act = el.dataset.act, v = el.dataset.v, s = state.setup;
-    if (act === "view") { if (v === "setup") state.follow = false; setView(v); }
-    else if (act === "follow") { state.follow = true; setView(latestStage(), true); }
-    else if (act === "mtrial") { state.ui.matchTrial = v; renderView(); }
-    else if (act === "rf") { state.ui.ruleFilter = v; renderView(); }
-    else if (act === "custom") { s.custom = v === "1"; renderView(); }
-    else if (act === "mode") { s.mode = v; renderView(); }
-    else if (act === "clear") { s.picked.clear(); renderView(); }
-    else if (act === "start") start();
-    else if (act === "replay") replay(v);
-    else if (act === "speed") { state.speed = Number(v); $$("#speed button").forEach(b => b.classList.toggle("on", b.dataset.v === v)); }
-    else if (act === "send" || act === "skip") submitAnswers(act === "skip");
-    else if (act === "pick") { pick(el.dataset.q, v); renderView(); }
-  });
-  document.addEventListener("change", (e) => {
-    const s = state.setup, t = e.target;
-    if (t.id === "f-patient") { pickPatient(t.value); renderView(); }
-    else if (t.id === "f-search") s.search = t.checked;
-    else if (t.dataset.trial) { t.checked ? s.picked.add(t.dataset.trial) : s.picked.delete(t.dataset.trial); renderView(); }
-  });
-  document.addEventListener("input", (e) => {
-    const t = e.target;
-    if (t.id === "f-custom") state.setup.customText = t.value;
-    else if (t.dataset.etc) state.draftEtc[t.dataset.etc] = t.value;
-    else if (t.dataset.q) { if (t.value.trim()) state.draft[t.dataset.q] = t.value; else delete state.draft[t.dataset.q];
-      const c = $("#view .compose b"); if (c && state.run && state.run.waiting) c.textContent = `${state.run.waiting.filter(q => answerOf(q, true) != null).length}/${state.run.waiting.length}개 답함`; }
-  });
-  document.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.dataset && e.target.dataset.q && !e.isComposing) { const ins = $$("#view input[data-q]"); const i = ins.indexOf(e.target);
-    if (i < ins.length - 1) ins[i + 1].focus(); else { const b = $("#view [data-act=send]"); if (b) b.focus(); } } });
-  // 프로파일 항목 ↔ 원문 근거 강조
-  document.addEventListener("mouseover", (e) => {
-    const f = e.target.closest && e.target.closest("[data-f]");
-    $$("#view mark.hot").forEach(m => m.classList.remove("hot"));
-    if (f) { const m = $(`#view mark[data-m="${f.dataset.f}"]`); if (m) { m.classList.add("hot"); const box = m.closest(".ptext");
-      if (box) { const top = m.offsetTop - box.offsetTop; if (top < box.scrollTop || top > box.scrollTop + box.clientHeight - 30) box.scrollTo({ top: top - 60, behavior: "smooth" }); } } }
-  });
-}
-function hint(t) { const h = $("#start-hint"); if (h) h.textContent = t; }
-function setRunState(t, c) { const el = $("#run-state"); el.textContent = t; el.className = "badge " + (c || ""); }
-
-async function start() {
-  const s = state.setup;
-  const body = { trial_ids: s.mode === "screen" ? [] : [...s.picked], screen: s.mode === "screen", allow_search: s.search };
-  if (s.custom) { body.custom_text = s.customText.trim(); if (!body.custom_text) return hint("환자 정보를 입력해 주세요."); }
-  else body.patient_id = s.patientId;
-  if (!body.screen && !body.trial_ids.length && !body.allow_search) return hint("후보 임상시험을 하나 이상 골라 주세요.");
-  hint("");
-  const r = await fetch("/api/runs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-  if (!r.ok) return hint((await r.json().catch(() => ({}))).detail || "실행 실패");
-  begin((await r.json()).run_id, { screen: body.screen });
-}
-async function replay(id) {
-  const r = await fetch(`/api/replays/${encodeURIComponent(id)}?speed=${state.speed}`, { method: "POST" });
-  if (!r.ok) { alertBar((await r.json().catch(() => ({}))).detail || "다시 보기 실패"); return; }
-  begin((await r.json()).run_id, { replay: id });
-}
-function alertBar(t) { const v = $("#view"); v.insertAdjacentHTML("afterbegin", `<div class="err">${esc(t)}</div>`); }
-function begin(runId, extra) {
-  if (state.es) state.es.close(); clearInterval(state.timer);
-  state.run = freshRun({ id: runId, ...extra }); state.running = true; state.follow = true; state.ui = { matchTrial: null, ruleFilter: "all" };
-  $("#feed").innerHTML = ""; $("#feed-count").textContent = "";
-  setRunState(extra.replay ? "다시 보기" : "실행 중", "accent");
-  $("#elapsed").hidden = false; state.run.t0 = Date.now();
-  state.timer = setInterval(() => $("#elapsed").textContent = Math.round((Date.now() - state.run.t0) / 1000) + "s", 500);
-  setView("trials", true); loadReplays();
-  state.es = new EventSource(`/api/runs/${runId}/events`);
-  state.es.onmessage = (m) => { try { handle(JSON.parse(m.data)); } catch (err) { console.error(err); } };
-}
-async function submitAnswers(skip) {
-  const r = state.run; if (!r || !r.waiting) return;
-  const answers = Object.fromEntries(r.waiting.map(q => [q.question_id, skip ? UNK : answerOf(q)]));
-  $$("#view [data-act=send], #view [data-act=skip]").forEach(b => b.disabled = true);
-  await fetch(`/api/runs/${r.id}/answers`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ answers }) });
-  setRunState("실행 중", "accent");
-}
-function latestStage() { const r = state.run; if (!r) return "setup";
-  let last = "trials"; for (const s of STAGES) if (r.stages[s.k] === "active") last = s.k; return r.lastFocus || last; }
-
-// ------------------------------------------------------------ 이벤트 처리
-function stage(k, st, focus = false) {
-  const r = state.run;
-  if (st === "active" && r.stages[k] === "done") { /* 재평가 등으로 다시 실행돼도 완료 표시는 유지 */ }
-  else r.stages[k] = st;
-  if (focus) { r.lastFocus = k; setView(k, true); }
-}
-function agent(k, st) { const a = state.run.agents[k]; if (!a) return; if (st === "active") a.n++; a.st = st; }
-function eligNow() { return Object.fromEntries(Object.entries(state.run.matches).filter(([, m]) => m.status === "done").map(([t, m]) => [t, m.match_status || m.eligibility])); }
-
-function handle(ev) {
-  const r = state.run;
-  if (ev.type === "status") {
-    if (ev.patient_id) {
-      r.patientId = ev.patient_id; r.patientText = ev.patient_text || ""; r.trialIds = ev.trial_ids || [];
-      if (!r.screen) r.candidates = r.trialIds;
-      feed(0, "pipeline", `환자 <b>${esc(ev.patient_id)}</b> · 시험 ${r.trialIds.length}개${ev.replay ? ` · 저장된 실행 ${esc(ev.replay)} 다시 보기` : ""}`, "patient");
-    } else feed(null, "pipeline", esc(ev.message));
-  }
-  else if (ev.type === "trace") onTrace(ev.record);
-  else if (ev.type === "questions") { r.waiting = ev.questions; state.draft = {}; state.draftEtc = {}; setRunState("답변 대기", "warn"); stage("qa", "active", true); }
-  else if (ev.type === "answers") { r.waiting = null; }
-  else if (ev.type === "result") onResult(ev);
-  else if (ev.type === "error") { r.error = ev.message; feed(null, "pipeline", `<span style="color:var(--bad)">오류: ${esc(ev.message)}</span>`); setRunState("오류", "bad"); }
-  else if (ev.type === "end") {
-    state.running = false; state.es && state.es.close(); clearInterval(state.timer);
-    if (!r.error) setRunState(r.replay ? "다시 보기 완료" : "완료", "ok");
-    for (const a of Object.values(r.agents)) if (a.st === "active") a.st = "done";
-    loadReplays();
-  }
-  render();
-}
-
-function onTrace(x) {
-  const r = state.run, a = x.agent, e = x.event;
-  if (a === "orchestrator") {
-    agent("orchestrator", "active");
-    if (e === "plan") feed(x.t, a, esc(x.message), null, "plan");
-    else if (e === "tool_call") feed(x.t, a, `도구 호출 <span class="chip">${esc(TOOL_KO[x.tool] || x.tool)}</span>${x.input && Object.keys(x.input).length ? ` <span class="chip">${esc(argText(x.input).slice(0, 120))}</span>` : ""}`, TOOL_STAGE[x.tool]);
-    else if (e === "tool_error") feed(x.t, a, `<span style="color:var(--bad)">도구 오류: ${esc(x.message)}</span>`);
-    else feed(x.t, a, esc(x.message || e));
-    return;
-  }
-  if (a === "pipeline") {
-    if (e === "start") stage("trials", "active");
-    if (e === "error") feed(x.t, a, `<span style="color:var(--bad)">${esc(x.message)}</span>`);
-    return;
-  }
-  if (a === "patient_profiler") {
-    if (e === "start") { agent(a, "active"); r.profiling = true; if (!r.qround) stage("patient", "active", true); feed(x.t, a, r.qround ? "답변을 반영해 환자 정보를 다시 추출하는 중" : "환자 원문에서 핵심 정보를 추출하는 중", "patient"); }
-    else { agent(a, "done"); r.profiling = false; if (x.profile) { r.profile = x.profile; r.profileRound = r.qround; } stage("patient", "done");
-      const miss = x.missing || []; feed(x.t, a, `추출 완료${miss.length ? ` · 누락·모호 ${miss.length}개` : ""}`, "patient"); }
-    return;
-  }
-  if (a === "screener") {
-    if (e === "start") { agent(a, "active"); r.screening_busy = true; stage("screen", "active", true); feed(x.t, a, `전체 ${x.pool}개 시험에서 후보 추림 중`, "screen"); }
-    else { agent(a, "done"); r.screening_busy = false; if (x.screening) r.screening = x.screening; if (x.selected) r.candidates = x.selected; stage("screen", "done");
-      feed(x.t, a, `${esc(x.message || "")}${x.selected ? ` <span class="chip">${esc(x.selected.join(", "))}</span>` : ""}`, "screen"); }
-    return;
-  }
-  if (a === "criteria_parser") {
-    const p = r.parsed[x.trial_id] ||= {};
-    if (e === "start") { agent(a, "active"); p.status = "parsing"; stage("trials", "active"); if (!r.candidates || !r.candidates.includes(x.trial_id)) r.candidates = [...(r.candidates || []), x.trial_id]; }
-    else { Object.assign(p, { status: "done", n_rules: x.n_rules, n_inc: x.n_inclusion, n_exc: x.n_exclusion, review: x.review || [] });
-      feed(x.t, a, `${esc(x.trial_id)} → 규칙 ${x.n_rules}개${x.n_inclusion != null ? ` (선정 ${x.n_inclusion} · 제외 ${x.n_exclusion})` : ""}`, "trials");
-      if (!Object.values(r.parsed).some(q => q.status === "parsing")) { agent(a, "done"); stage("trials", "done"); }
-      if (r.stages.screen === "idle") stage("screen", "skip"); }
-    return;
-  }
-  if (a === "matcher") {
-    const round = x.round ?? r.qround;
-    if (e === "start") {
-      agent(a, "active"); r.pendingMatch++;
-      const m = r.matches[x.trial_id] ||= { history: [] };
-      Object.assign(m, { status: "matching", round });
-      const rd = round && r.rounds.find(q => q.round === round); if (rd) rd.reeval.add(x.trial_id);
-      stage("match", "active", !r.qround);
-      if (!r.qround && !state.ui.matchTrial) state.ui.matchTrial = x.trial_id;
-      if (r.stages.screen === "idle") stage("screen", "skip");
-      feed(x.t, a, `${esc(x.trial_id)} 기준별 판정 중${round ? ` · 라운드 ${round} 재평가` : ""}`, "match");
-    } else {
-      r.pendingMatch = Math.max(0, r.pendingMatch - 1);
-      const m = r.matches[x.trial_id] ||= { history: [] };
-      const elig = x.eligibility || (x.message || "").split(":")[0];
-      Object.assign(m, { status: "done", round, eligibility: elig, match_status: x.match_status || null, summary: x.message,
-        evaluation_error: x.evaluation_error || null, matched_cohort: x.matched_cohort || null, assessments: x.assessments || null });
-      m.history.push({ round, elig: m.match_status || elig });
-      feed(x.t, a, `${esc(x.trial_id)} ${eligBadge(m.match_status || elig)}`, "match");
-      const rd = round && r.rounds.find(q => q.round === round); if (rd) rd.after[x.trial_id] = m.match_status || elig;
-      if (!r.pendingMatch) { agent(a, "done"); stage("match", "done"); stage("gaps", "done", !r.qround); }
-    }
-    return;
-  }
-  if (a === "question_generator") {
-    agent(a, "done"); r.agents[a].n++;
-    r.qround = x.round || r.qround + 1;
-    feed(x.t, a, `라운드 ${r.qround} · 질문 ${(x.questions || []).length}개`, "qa");
-    // 질문이 0개면 라운드를 만들지 않음 (물어볼 항목이 없다고 판단)
-    if (!(x.questions || []).length) { r.noQuestions = true; if (!r.rounds.length) stage("qa", "skip"); return; }
-    r.rounds.push({ round: r.qround, questions: x.questions, qa: null, before: eligNow(), after: {}, reeval: new Set() });
-    stage("qa", "active", true);
-    return;
-  }
-  if (a === "answerer") {
-    agent(a, "done"); r.agents[a].n++;
-    const rd = r.rounds.find(q => q.round === x.round) || r.rounds[r.rounds.length - 1];
-    if (rd) rd.qa = x.qa || [];
-    r.waiting = null;
-    feed(x.t, a, `답변 ${(x.qa || []).length}개 · 판정 보류 시험 재평가`, "qa");
-    return;
-  }
-  if (a === "recommender") {
-    if (e === "start") { agent(a, "active"); r.recBusy = true; stage("qa", r.rounds.length ? "done" : "skip");
-      if (r.stages.gaps === "idle") stage("gaps", "done"); stage("rec", "active", true); feed(x.t, a, `시험 ${x.n_trials}개 종합 · 추천 그룹 정리 중`, "rec"); }
-    else { agent(a, "done"); r.recBusy = false; feed(x.t, a, `표시 순서: ${esc(x.message)}`, "rec"); }
-    return;
-  }
-  if (a === "explainer") {
-    if (e === "start") { agent(a, "active"); r.reportBusy = true; feed(x.t, a, "근거 보고서 작성 중", "rec"); }
-    else { agent(a, "done"); r.reportBusy = false; agent("orchestrator", "done"); feed(x.t, a, "보고서 작성 완료", "rec"); }
-  }
-}
-
-function onResult(ev) {
-  const r = state.run, res = ev.result;
-  r.result = res; r.report = ev.report; r.matchNote = ev.match_note; r.resTrials = Object.fromEntries(Object.entries(ev.trials || {}).map(([k, t]) => [k, koTrial({ trial_id: k, ...t })]));
-  // 최종 결과로 빠진 단계 데이터 보완 (예전 기록이나 중간에 놓친 이벤트)
-  if (res.profile && !r.profile) r.profile = res.profile;
-  if (res.screening && !r.screening) { r.screening = res.screening; r.stages.screen = "done"; }
-  for (const [tid, m] of Object.entries(res.matches || {})) {
-    const cur = r.matches[tid] ||= { history: [] };
-    const st = m.match_status || m.eligibility;
-    const mv = (ev.match_views || {})[tid];
-    if (mv && (!cur.assessments || cur.status !== "done" || (cur.match_status || cur.eligibility) !== st))
-      Object.assign(cur, mv, { status: "done", summary: m.summary });
-  }
-  for (const s of STAGES) if (r.stages[s.k] === "active" || (r.stages[s.k] === "idle" && s.k !== "qa" && s.k !== "screen")) r.stages[s.k] = "done";
-  if (r.stages.qa === "idle") r.stages.qa = "skip";
-  if (r.stages.screen === "idle") r.stages.screen = "skip";
-  r.waiting = null; r.recBusy = r.reportBusy = false;
-  stage("rec", "done", true);
-}
-
-init();
-</script>
+  </section>
+</main>
 </body>
 </html>

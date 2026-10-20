@@ -1,0 +1,1437 @@
+[
+ {
+  "patient_id": "S-DEMO-LUNG-001-E2-biomarker",
+  "case_type": "biomarker",
+  "synthetic": true,
+  "split": "supplement",
+  "candidate_trials": [
+   "DEMO-LUNG-001"
+  ],
+  "text": "- The patient is 39 years old.\n- The patient is female.\n- ECOG performance status is 1.\n- Hemoglobin 11.2 g/dL.",
+  "masked_criteria": [
+   "Prior treatment with any EGFR-targeted antibody-drug conjugate"
+  ],
+  "masked_fact_ids": [
+   "H1"
+  ],
+  "hidden_facts": [
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item d08a9123.",
+    "core": false
+   }
+  ],
+  "oracle_facts": [
+   {
+    "fact_id": "V1",
+    "text": "The patient is 39 years old.",
+    "core": true
+   },
+   {
+    "fact_id": "V2",
+    "text": "The patient is female.",
+    "core": true
+   },
+   {
+    "fact_id": "V3",
+    "text": "ECOG performance status is 1.",
+    "core": false
+   },
+   {
+    "fact_id": "V4",
+    "text": "Hemoglobin 11.2 g/dL.",
+    "core": false
+   },
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item d08a9123.",
+    "core": false
+   }
+  ],
+  "clue_fact_ids": [],
+  "target_meta": [
+   {
+    "rule_key": "DEMO-LUNG-001:E2",
+    "kind": "exclusion",
+    "category": "treatment_history",
+    "structured": false
+   }
+  ],
+  "clinical_validity": "unverified_synthetic"
+ },
+ {
+  "patient_id": "S-NCT05127980-I4-cohort",
+  "case_type": "cohort",
+  "synthetic": true,
+  "split": "supplement",
+  "candidate_trials": [
+   "NCT05127980"
+  ],
+  "text": "- The patient is 38 years old.\n- The patient is female.",
+  "masked_criteria": [
+   "Confirmed primary EBV infection as confirmed by the treating clinician"
+  ],
+  "masked_fact_ids": [
+   "H1"
+  ],
+  "hidden_facts": [
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item 8ae3ebe5.",
+    "core": false
+   }
+  ],
+  "oracle_facts": [
+   {
+    "fact_id": "V1",
+    "text": "The patient is 38 years old.",
+    "core": true
+   },
+   {
+    "fact_id": "V2",
+    "text": "The patient is female.",
+    "core": true
+   },
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item 8ae3ebe5.",
+    "core": false
+   }
+  ],
+  "clue_fact_ids": [],
+  "target_meta": [
+   {
+    "rule_key": "NCT05127980:I4",
+    "kind": "inclusion",
+    "category": "diagnosis",
+    "structured": false
+   }
+  ],
+  "clinical_validity": "unverified_synthetic"
+ },
+ {
+  "patient_id": "S-NCT05127980-I6-cohort",
+  "case_type": "cohort",
+  "synthetic": true,
+  "split": "supplement",
+  "candidate_trials": [
+   "NCT05127980"
+  ],
+  "text": "- The patient is 38 years old.\n- The patient is female.",
+  "masked_criteria": [
+   "Compatible laboratory picture: lymphocyte count elevation, LUC cells, reactive lymphocytes in manual differential, elevated liver enzymes (not all features required)"
+  ],
+  "masked_fact_ids": [
+   "H1"
+  ],
+  "hidden_facts": [
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item d03de9bf.",
+    "core": false
+   }
+  ],
+  "oracle_facts": [
+   {
+    "fact_id": "V1",
+    "text": "The patient is 38 years old.",
+    "core": true
+   },
+   {
+    "fact_id": "V2",
+    "text": "The patient is female.",
+    "core": true
+   },
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item d03de9bf.",
+    "core": false
+   }
+  ],
+  "clue_fact_ids": [],
+  "target_meta": [
+   {
+    "rule_key": "NCT05127980:I6",
+    "kind": "inclusion",
+    "category": "lab",
+    "structured": false
+   }
+  ],
+  "clinical_validity": "unverified_synthetic"
+ },
+ {
+  "patient_id": "S-NCT05127980-I7-cohort",
+  "case_type": "cohort",
+  "synthetic": true,
+  "split": "supplement",
+  "candidate_trials": [
+   "NCT05127980"
+  ],
+  "text": "- The patient is 38 years old.\n- The patient is female.",
+  "masked_criteria": [
+   "Serology compatible with primary EBV infection: anti-EBNA IgG negative, anti-VCA IgG negative, anti-VCA IgM positive OR anti-EBNA IgG negative, anti-VCA IgG positive, anti-VCA IgM positive"
+  ],
+  "masked_fact_ids": [
+   "H1"
+  ],
+  "hidden_facts": [
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item c86ba7a8.",
+    "core": false
+   }
+  ],
+  "oracle_facts": [
+   {
+    "fact_id": "V1",
+    "text": "The patient is 38 years old.",
+    "core": true
+   },
+   {
+    "fact_id": "V2",
+    "text": "The patient is female.",
+    "core": true
+   },
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item c86ba7a8.",
+    "core": false
+   }
+  ],
+  "clue_fact_ids": [],
+  "target_meta": [
+   {
+    "rule_key": "NCT05127980:I7",
+    "kind": "inclusion",
+    "category": "biomarker",
+    "structured": false
+   }
+  ],
+  "clinical_validity": "unverified_synthetic"
+ },
+ {
+  "patient_id": "S-NCT05127980-E1-cohort",
+  "case_type": "cohort",
+  "synthetic": true,
+  "split": "supplement",
+  "candidate_trials": [
+   "NCT05127980"
+  ],
+  "text": "- The patient is 38 years old.\n- The patient is female.",
+  "masked_criteria": [
+   "Suspicion/diagnosis of IM as per judgement of the treating clinician (control group only); such individual may be eligible later for the IM group if primary EBV infection is confirmed subsequently"
+  ],
+  "masked_fact_ids": [
+   "H1"
+  ],
+  "hidden_facts": [
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item cfad3732.",
+    "core": false
+   }
+  ],
+  "oracle_facts": [
+   {
+    "fact_id": "V1",
+    "text": "The patient is 38 years old.",
+    "core": true
+   },
+   {
+    "fact_id": "V2",
+    "text": "The patient is female.",
+    "core": true
+   },
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item cfad3732.",
+    "core": false
+   }
+  ],
+  "clue_fact_ids": [],
+  "target_meta": [
+   {
+    "rule_key": "NCT05127980:E1",
+    "kind": "exclusion",
+    "category": "diagnosis",
+    "structured": false
+   }
+  ],
+  "clinical_validity": "unverified_synthetic"
+ },
+ {
+  "patient_id": "S-NCT06833073-I6-cohort",
+  "case_type": "cohort",
+  "synthetic": true,
+  "split": "supplement",
+  "candidate_trials": [
+   "NCT06833073"
+  ],
+  "text": "- The patient is 38 years old.\n- The patient is female.",
+  "masked_criteria": [
+   "Cohort B: Has CIS +/-papillary non-muscle invasive UC of the bladder"
+  ],
+  "masked_fact_ids": [
+   "H1"
+  ],
+  "hidden_facts": [
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item 21e65740.",
+    "core": false
+   }
+  ],
+  "oracle_facts": [
+   {
+    "fact_id": "V1",
+    "text": "The patient is 38 years old.",
+    "core": true
+   },
+   {
+    "fact_id": "V2",
+    "text": "The patient is female.",
+    "core": true
+   },
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item 21e65740.",
+    "core": false
+   }
+  ],
+  "clue_fact_ids": [],
+  "target_meta": [
+   {
+    "rule_key": "NCT06833073:I6",
+    "kind": "inclusion",
+    "category": "diagnosis",
+    "structured": false
+   }
+  ],
+  "clinical_validity": "unverified_synthetic"
+ },
+ {
+  "patient_id": "S-NCT06833073-I7-cohort",
+  "case_type": "cohort",
+  "synthetic": true,
+  "split": "supplement",
+  "candidate_trials": [
+   "NCT06833073"
+  ],
+  "text": "- The patient is 38 years old.\n- The patient is female.",
+  "masked_criteria": [
+   "Cohort B: Is ineligible for, or refusing, any IVESIC therapy"
+  ],
+  "masked_fact_ids": [
+   "H1"
+  ],
+  "hidden_facts": [
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item 192efc7b.",
+    "core": false
+   }
+  ],
+  "oracle_facts": [
+   {
+    "fact_id": "V1",
+    "text": "The patient is 38 years old.",
+    "core": true
+   },
+   {
+    "fact_id": "V2",
+    "text": "The patient is female.",
+    "core": true
+   },
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item 192efc7b.",
+    "core": false
+   }
+  ],
+  "clue_fact_ids": [],
+  "target_meta": [
+   {
+    "rule_key": "NCT06833073:I7",
+    "kind": "inclusion",
+    "category": "procedure",
+    "structured": false
+   }
+  ],
+  "clinical_validity": "unverified_synthetic"
+ },
+ {
+  "patient_id": "S-NCT06833073-I8-cohort",
+  "case_type": "cohort",
+  "synthetic": true,
+  "split": "supplement",
+  "candidate_trials": [
+   "NCT06833073"
+  ],
+  "text": "- The patient is 38 years old.\n- The patient is female.",
+  "masked_criteria": [
+   "Cohort B: Is either BCG-naïve (as defined above) or BCG-exposed but did not receive protocol-specified minimum dosing of BCG and experienced recurrence of high-risk NMIBC within 2 years of the last dose of BCG"
+  ],
+  "masked_fact_ids": [
+   "H1"
+  ],
+  "hidden_facts": [
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item ad16be92.",
+    "core": false
+   }
+  ],
+  "oracle_facts": [
+   {
+    "fact_id": "V1",
+    "text": "The patient is 38 years old.",
+    "core": true
+   },
+   {
+    "fact_id": "V2",
+    "text": "The patient is female.",
+    "core": true
+   },
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item ad16be92.",
+    "core": false
+   }
+  ],
+  "clue_fact_ids": [],
+  "target_meta": [
+   {
+    "rule_key": "NCT06833073:I8",
+    "kind": "inclusion",
+    "category": "treatment_history",
+    "structured": false
+   }
+  ],
+  "clinical_validity": "unverified_synthetic"
+ },
+ {
+  "patient_id": "S-NCT06833073-I9-cohort",
+  "case_type": "cohort",
+  "synthetic": true,
+  "split": "supplement",
+  "candidate_trials": [
+   "NCT06833073"
+  ],
+  "text": "- The patient is 38 years old.\n- The patient is female.",
+  "masked_criteria": [
+   "Cohort B: Human immunodeficiency virus (HIV)-infected individuals must have well controlled HIV on antiretroviral therapy (ART)"
+  ],
+  "masked_fact_ids": [
+   "H1"
+  ],
+  "hidden_facts": [
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item 2387f77b.",
+    "core": false
+   }
+  ],
+  "oracle_facts": [
+   {
+    "fact_id": "V1",
+    "text": "The patient is 38 years old.",
+    "core": true
+   },
+   {
+    "fact_id": "V2",
+    "text": "The patient is female.",
+    "core": true
+   },
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item 2387f77b.",
+    "core": false
+   }
+  ],
+  "clue_fact_ids": [],
+  "target_meta": [
+   {
+    "rule_key": "NCT06833073:I9",
+    "kind": "inclusion",
+    "category": "comorbidity",
+    "structured": false
+   }
+  ],
+  "clinical_validity": "unverified_synthetic"
+ },
+ {
+  "patient_id": "S-NCT06833073-E11-cohort",
+  "case_type": "cohort",
+  "synthetic": true,
+  "split": "supplement",
+  "candidate_trials": [
+   "NCT06833073"
+  ],
+  "text": "- The patient is 38 years old.\n- The patient is female.",
+  "masked_criteria": [
+   "Cohort A: Has a known history of HIV infection"
+  ],
+  "masked_fact_ids": [
+   "H1"
+  ],
+  "hidden_facts": [
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item f1283d6e.",
+    "core": false
+   }
+  ],
+  "oracle_facts": [
+   {
+    "fact_id": "V1",
+    "text": "The patient is 38 years old.",
+    "core": true
+   },
+   {
+    "fact_id": "V2",
+    "text": "The patient is female.",
+    "core": true
+   },
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item f1283d6e.",
+    "core": false
+   }
+  ],
+  "clue_fact_ids": [],
+  "target_meta": [
+   {
+    "rule_key": "NCT06833073:E11",
+    "kind": "exclusion",
+    "category": "comorbidity",
+    "structured": false
+   }
+  ],
+  "clinical_validity": "unverified_synthetic"
+ },
+ {
+  "patient_id": "S-NCT06833073-E12-cohort",
+  "case_type": "cohort",
+  "synthetic": true,
+  "split": "supplement",
+  "candidate_trials": [
+   "NCT06833073"
+  ],
+  "text": "- The patient is 38 years old.\n- The patient is female.",
+  "masked_criteria": [
+   "Cohort B: HIV-infected individuals with a history of Kaposi's sarcoma and/or Multicentric Castleman's Disease"
+  ],
+  "masked_fact_ids": [
+   "H1"
+  ],
+  "hidden_facts": [
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item 055aab04.",
+    "core": false
+   }
+  ],
+  "oracle_facts": [
+   {
+    "fact_id": "V1",
+    "text": "The patient is 38 years old.",
+    "core": true
+   },
+   {
+    "fact_id": "V2",
+    "text": "The patient is female.",
+    "core": true
+   },
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item 055aab04.",
+    "core": false
+   }
+  ],
+  "clue_fact_ids": [],
+  "target_meta": [
+   {
+    "rule_key": "NCT06833073:E12",
+    "kind": "exclusion",
+    "category": "comorbidity",
+    "structured": false
+   }
+  ],
+  "clinical_validity": "unverified_synthetic"
+ },
+ {
+  "patient_id": "S-NCT07369063-I9-biomarker",
+  "case_type": "biomarker",
+  "synthetic": true,
+  "split": "supplement",
+  "candidate_trials": [
+   "NCT07369063"
+  ],
+  "text": "- The patient is 13 years old.\n- The patient is female.",
+  "masked_criteria": [
+   "Positive TSI or TRAb. The presence of antibodies is diagnostic."
+  ],
+  "masked_fact_ids": [
+   "H1"
+  ],
+  "hidden_facts": [
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item 0f3d95b9.",
+    "core": false
+   }
+  ],
+  "oracle_facts": [
+   {
+    "fact_id": "V1",
+    "text": "The patient is 13 years old.",
+    "core": true
+   },
+   {
+    "fact_id": "V2",
+    "text": "The patient is female.",
+    "core": true
+   },
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item 0f3d95b9.",
+    "core": false
+   }
+  ],
+  "clue_fact_ids": [],
+  "target_meta": [
+   {
+    "rule_key": "NCT07369063:I9",
+    "kind": "inclusion",
+    "category": "biomarker",
+    "structured": false
+   }
+  ],
+  "clinical_validity": "unverified_synthetic"
+ },
+ {
+  "patient_id": "S-NCT07516951-I7-confirmed-NCT06908096",
+  "case_type": "confirmed",
+  "synthetic": true,
+  "split": "supplement",
+  "candidate_trials": [
+   "NCT07516951",
+   "NCT06908096"
+  ],
+  "text": "- The patient is 60 years old.\n- The patient is female.",
+  "masked_criteria": [
+   "The most recent HRCT ≤6 months prior to screening, reviewed by central reading, should be used to confirm the diagnosis."
+  ],
+  "masked_fact_ids": [
+   "H1"
+  ],
+  "hidden_facts": [
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item b9fdec3d.",
+    "core": false
+   }
+  ],
+  "oracle_facts": [
+   {
+    "fact_id": "V1",
+    "text": "The patient is 60 years old.",
+    "core": true
+   },
+   {
+    "fact_id": "V2",
+    "text": "The patient is female.",
+    "core": true
+   },
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item b9fdec3d.",
+    "core": false
+   }
+  ],
+  "clue_fact_ids": [],
+  "target_meta": [
+   {
+    "rule_key": "NCT07516951:I7",
+    "kind": "inclusion",
+    "category": "procedure",
+    "structured": false
+   }
+  ],
+  "setup_verified_fields": [
+   "age"
+  ],
+  "clinical_validity": "unverified_synthetic"
+ },
+ {
+  "patient_id": "S-NCT06294847-E13-confirmed-NCT06468397",
+  "case_type": "confirmed",
+  "synthetic": true,
+  "split": "supplement",
+  "candidate_trials": [
+   "NCT06294847",
+   "NCT06468397"
+  ],
+  "text": "- The patient is 38 years old.\n- The patient is female.",
+  "masked_criteria": [
+   "Patients with severe pancreatic disorders"
+  ],
+  "masked_fact_ids": [
+   "H1"
+  ],
+  "hidden_facts": [
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item 174f5105.",
+    "core": false
+   }
+  ],
+  "oracle_facts": [
+   {
+    "fact_id": "V1",
+    "text": "The patient is 38 years old.",
+    "core": true
+   },
+   {
+    "fact_id": "V2",
+    "text": "The patient is female.",
+    "core": true
+   },
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item 174f5105.",
+    "core": false
+   }
+  ],
+  "clue_fact_ids": [],
+  "target_meta": [
+   {
+    "rule_key": "NCT06294847:E13",
+    "kind": "exclusion",
+    "category": "diagnosis",
+    "structured": false
+   }
+  ],
+  "setup_verified_fields": [
+   "age"
+  ],
+  "clinical_validity": "unverified_synthetic"
+ },
+ {
+  "patient_id": "S-NCT06125405-E5-confirmed-NCT04063540",
+  "case_type": "confirmed",
+  "synthetic": true,
+  "split": "supplement",
+  "candidate_trials": [
+   "NCT06125405",
+   "NCT04063540"
+  ],
+  "text": "- The patient is 10 years old.\n- The patient is female.\n- Hemoglobin 11.2 g/dL.",
+  "masked_criteria": [
+   "Positive Hepatitis B virus serological indicators (Hepatitis B surface antigen or/and Hepatitis B virus e antigen or/and Hepatitis B core antibody)"
+  ],
+  "masked_fact_ids": [
+   "H1"
+  ],
+  "hidden_facts": [
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item f8950df5.",
+    "core": false
+   }
+  ],
+  "oracle_facts": [
+   {
+    "fact_id": "V1",
+    "text": "The patient is 10 years old.",
+    "core": true
+   },
+   {
+    "fact_id": "V2",
+    "text": "The patient is female.",
+    "core": true
+   },
+   {
+    "fact_id": "V3",
+    "text": "Hemoglobin 11.2 g/dL.",
+    "core": false
+   },
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item f8950df5.",
+    "core": false
+   }
+  ],
+  "clue_fact_ids": [],
+  "target_meta": [
+   {
+    "rule_key": "NCT06125405:E5",
+    "kind": "exclusion",
+    "category": "lab",
+    "structured": false
+   }
+  ],
+  "setup_verified_fields": [
+   "age"
+  ],
+  "clinical_validity": "unverified_synthetic"
+ },
+ {
+  "patient_id": "S-NCT07087314-I12-confirmed-NCT07040306",
+  "case_type": "confirmed",
+  "synthetic": true,
+  "split": "supplement",
+  "candidate_trials": [
+   "NCT07087314",
+   "NCT07040306"
+  ],
+  "text": "- The patient is 12 years old.\n- The patient is female.",
+  "masked_criteria": [
+   "No rituximab or obinutuzumab in prior 6 months."
+  ],
+  "masked_fact_ids": [
+   "H1"
+  ],
+  "hidden_facts": [
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item 87d77c4f.",
+    "core": false
+   }
+  ],
+  "oracle_facts": [
+   {
+    "fact_id": "V1",
+    "text": "The patient is 12 years old.",
+    "core": true
+   },
+   {
+    "fact_id": "V2",
+    "text": "The patient is female.",
+    "core": true
+   },
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item 87d77c4f.",
+    "core": false
+   }
+  ],
+  "clue_fact_ids": [],
+  "target_meta": [
+   {
+    "rule_key": "NCT07087314:I12",
+    "kind": "inclusion",
+    "category": "medication",
+    "structured": false
+   }
+  ],
+  "setup_verified_fields": [
+   "age"
+  ],
+  "clinical_validity": "unverified_synthetic"
+ },
+ {
+  "patient_id": "S-NCT07369063-I4-confirmed-NCT06756191",
+  "case_type": "confirmed",
+  "synthetic": true,
+  "split": "supplement",
+  "candidate_trials": [
+   "NCT07369063",
+   "NCT06756191"
+  ],
+  "text": "- The patient is 13 years old.\n- The patient is female.",
+  "masked_criteria": [
+   "All new pediatric participants aged 9-17 years with a new diagnosis of GD who will be started on methimazole, will be offered to participate at the time of diagnosis."
+  ],
+  "masked_fact_ids": [
+   "H1"
+  ],
+  "hidden_facts": [
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item 6956c150.",
+    "core": false
+   }
+  ],
+  "oracle_facts": [
+   {
+    "fact_id": "V1",
+    "text": "The patient is 13 years old.",
+    "core": true
+   },
+   {
+    "fact_id": "V2",
+    "text": "The patient is female.",
+    "core": true
+   },
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item 6956c150.",
+    "core": false
+   }
+  ],
+  "clue_fact_ids": [],
+  "target_meta": [
+   {
+    "rule_key": "NCT07369063:I4",
+    "kind": "inclusion",
+    "category": "diagnosis",
+    "structured": false
+   }
+  ],
+  "setup_verified_fields": [
+   "age"
+  ],
+  "clinical_validity": "unverified_synthetic"
+ },
+ {
+  "patient_id": "S-NCT06756191-I3-confirmed-NCT07369063",
+  "case_type": "confirmed",
+  "synthetic": true,
+  "split": "supplement",
+  "candidate_trials": [
+   "NCT06756191",
+   "NCT07369063"
+  ],
+  "text": "- The patient is 38 years old.\n- The patient is female.",
+  "masked_criteria": [
+   "Individuals with Probable or proved PM, as indicated by clinical and radiological findings"
+  ],
+  "masked_fact_ids": [
+   "H1"
+  ],
+  "hidden_facts": [
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item eee2d2e1.",
+    "core": false
+   }
+  ],
+  "oracle_facts": [
+   {
+    "fact_id": "V1",
+    "text": "The patient is 38 years old.",
+    "core": true
+   },
+   {
+    "fact_id": "V2",
+    "text": "The patient is female.",
+    "core": true
+   },
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item eee2d2e1.",
+    "core": false
+   }
+  ],
+  "clue_fact_ids": [],
+  "target_meta": [
+   {
+    "rule_key": "NCT06756191:I3",
+    "kind": "inclusion",
+    "category": "diagnosis",
+    "structured": false
+   }
+  ],
+  "setup_verified_fields": [
+   "age"
+  ],
+  "clinical_validity": "unverified_synthetic"
+ },
+ {
+  "patient_id": "S-NCT06833073-I3-confirmed-NCT07087314",
+  "case_type": "confirmed",
+  "synthetic": true,
+  "split": "supplement",
+  "candidate_trials": [
+   "NCT06833073",
+   "NCT07087314"
+  ],
+  "text": "- The patient is 38 years old.\n- The patient is female.",
+  "masked_criteria": [
+   "Is an individual whose most recent TURBT was performed within 12 weeks before randomization/allocation and showed BICR-confirmed high-risk NMIBC histology"
+  ],
+  "masked_fact_ids": [
+   "H1"
+  ],
+  "hidden_facts": [
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item 997570e0.",
+    "core": false
+   }
+  ],
+  "oracle_facts": [
+   {
+    "fact_id": "V1",
+    "text": "The patient is 38 years old.",
+    "core": true
+   },
+   {
+    "fact_id": "V2",
+    "text": "The patient is female.",
+    "core": true
+   },
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item 997570e0.",
+    "core": false
+   }
+  ],
+  "clue_fact_ids": [],
+  "target_meta": [
+   {
+    "rule_key": "NCT06833073:I3",
+    "kind": "inclusion",
+    "category": "procedure",
+    "structured": false
+   }
+  ],
+  "setup_verified_fields": [
+   "age"
+  ],
+  "clinical_validity": "unverified_synthetic"
+ },
+ {
+  "patient_id": "S-NCT06727604-E4-confirmed-NCT07516951",
+  "case_type": "confirmed",
+  "synthetic": true,
+  "split": "supplement",
+  "candidate_trials": [
+   "NCT06727604",
+   "NCT07516951"
+  ],
+  "text": "- The patient is 38 years old.\n- The patient is female.",
+  "masked_criteria": [
+   "Are expected to require immediate surgical intervention for TED and/or are planning corrective surgery/irradiation or medical therapy for TED during study participation."
+  ],
+  "masked_fact_ids": [
+   "H1"
+  ],
+  "hidden_facts": [
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item 84837faa.",
+    "core": false
+   }
+  ],
+  "oracle_facts": [
+   {
+    "fact_id": "V1",
+    "text": "The patient is 38 years old.",
+    "core": true
+   },
+   {
+    "fact_id": "V2",
+    "text": "The patient is female.",
+    "core": true
+   },
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item 84837faa.",
+    "core": false
+   }
+  ],
+  "clue_fact_ids": [],
+  "target_meta": [
+   {
+    "rule_key": "NCT06727604:E4",
+    "kind": "exclusion",
+    "category": "procedure",
+    "structured": false
+   }
+  ],
+  "setup_verified_fields": [
+   "age"
+  ],
+  "clinical_validity": "unverified_synthetic"
+ },
+ {
+  "patient_id": "S-NCT07369063-E7-confirmed-NCT06908096",
+  "case_type": "confirmed",
+  "synthetic": true,
+  "split": "supplement",
+  "candidate_trials": [
+   "NCT07369063",
+   "NCT06908096"
+  ],
+  "text": "- The patient is 13 years old.\n- The patient is female.",
+  "masked_criteria": [
+   "Diagnosis of Hashitoxicosis or thyrotoxicosis (both TSH receptor antibody (TRAb) and thyroid-stimulating immunoglobulin (TSI) levels are negative)"
+  ],
+  "masked_fact_ids": [
+   "H1"
+  ],
+  "hidden_facts": [
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item a7513e71.",
+    "core": false
+   }
+  ],
+  "oracle_facts": [
+   {
+    "fact_id": "V1",
+    "text": "The patient is 13 years old.",
+    "core": true
+   },
+   {
+    "fact_id": "V2",
+    "text": "The patient is female.",
+    "core": true
+   },
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item a7513e71.",
+    "core": false
+   }
+  ],
+  "clue_fact_ids": [],
+  "target_meta": [
+   {
+    "rule_key": "NCT07369063:E7",
+    "kind": "exclusion",
+    "category": "diagnosis",
+    "structured": false
+   }
+  ],
+  "setup_verified_fields": [
+   "age"
+  ],
+  "clinical_validity": "unverified_synthetic"
+ },
+ {
+  "patient_id": "S-NCT07516951-E5-confirmed-NCT06908096",
+  "case_type": "confirmed",
+  "synthetic": true,
+  "split": "supplement",
+  "candidate_trials": [
+   "NCT07516951",
+   "NCT06908096"
+  ],
+  "text": "- The patient is 60 years old.\n- The patient is female.",
+  "masked_criteria": [
+   "HRCT shows the presence of emphysema ≥20%."
+  ],
+  "masked_fact_ids": [
+   "H1"
+  ],
+  "hidden_facts": [
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item 51d382a7.",
+    "core": false
+   }
+  ],
+  "oracle_facts": [
+   {
+    "fact_id": "V1",
+    "text": "The patient is 60 years old.",
+    "core": true
+   },
+   {
+    "fact_id": "V2",
+    "text": "The patient is female.",
+    "core": true
+   },
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item 51d382a7.",
+    "core": false
+   }
+  ],
+  "clue_fact_ids": [],
+  "target_meta": [
+   {
+    "rule_key": "NCT07516951:E5",
+    "kind": "exclusion",
+    "category": "diagnosis",
+    "structured": false
+   }
+  ],
+  "setup_verified_fields": [
+   "age"
+  ],
+  "clinical_validity": "unverified_synthetic"
+ },
+ {
+  "patient_id": "S-NCT07679893-I7-confirmed-NCT06530004",
+  "case_type": "confirmed",
+  "synthetic": true,
+  "split": "supplement",
+  "candidate_trials": [
+   "NCT07679893",
+   "NCT06530004"
+  ],
+  "text": "- The patient is 20 years old.\n- The patient is female.",
+  "masked_criteria": [
+   "Women who can become pregnant must have a negative pregnancy test at screening."
+  ],
+  "masked_fact_ids": [
+   "H1"
+  ],
+  "hidden_facts": [
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item bfed5580.",
+    "core": false
+   }
+  ],
+  "oracle_facts": [
+   {
+    "fact_id": "V1",
+    "text": "The patient is 20 years old.",
+    "core": true
+   },
+   {
+    "fact_id": "V2",
+    "text": "The patient is female.",
+    "core": true
+   },
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item bfed5580.",
+    "core": false
+   }
+  ],
+  "clue_fact_ids": [],
+  "target_meta": [
+   {
+    "rule_key": "NCT07679893:I7",
+    "kind": "inclusion",
+    "category": "reproductive",
+    "structured": false
+   }
+  ],
+  "setup_verified_fields": [
+   "age"
+  ],
+  "clinical_validity": "unverified_synthetic"
+ },
+ {
+  "patient_id": "S-NCT06916494-E5-confirmed-NCT07516951",
+  "case_type": "confirmed",
+  "synthetic": true,
+  "split": "supplement",
+  "candidate_trials": [
+   "NCT06916494",
+   "NCT07516951"
+  ],
+  "text": "- The patient is 38 years old.\n- The patient is female.\n- ECOG performance status is 1.",
+  "masked_criteria": [
+   "Combined with malignant tumors of other organs"
+  ],
+  "masked_fact_ids": [
+   "H1"
+  ],
+  "hidden_facts": [
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item 6657cc99.",
+    "core": false
+   }
+  ],
+  "oracle_facts": [
+   {
+    "fact_id": "V1",
+    "text": "The patient is 38 years old.",
+    "core": true
+   },
+   {
+    "fact_id": "V2",
+    "text": "The patient is female.",
+    "core": true
+   },
+   {
+    "fact_id": "V3",
+    "text": "ECOG performance status is 1.",
+    "core": false
+   },
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item 6657cc99.",
+    "core": false
+   }
+  ],
+  "clue_fact_ids": [],
+  "target_meta": [
+   {
+    "rule_key": "NCT06916494:E5",
+    "kind": "exclusion",
+    "category": "comorbidity",
+    "structured": false
+   }
+  ],
+  "setup_verified_fields": [
+   "age"
+  ],
+  "clinical_validity": "unverified_synthetic"
+ },
+ {
+  "patient_id": "S-NCT06727604-E3-confirmed-NCT06908096",
+  "case_type": "confirmed",
+  "synthetic": true,
+  "split": "supplement",
+  "candidate_trials": [
+   "NCT06727604",
+   "NCT06908096"
+  ],
+  "text": "- The patient is 38 years old.\n- The patient is female.",
+  "masked_criteria": [
+   "Have moderate-to-severe active thyroid eye disease (TED)."
+  ],
+  "masked_fact_ids": [
+   "H1"
+  ],
+  "hidden_facts": [
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item a70c4475.",
+    "core": false
+   }
+  ],
+  "oracle_facts": [
+   {
+    "fact_id": "V1",
+    "text": "The patient is 38 years old.",
+    "core": true
+   },
+   {
+    "fact_id": "V2",
+    "text": "The patient is female.",
+    "core": true
+   },
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item a70c4475.",
+    "core": false
+   }
+  ],
+  "clue_fact_ids": [],
+  "target_meta": [
+   {
+    "rule_key": "NCT06727604:E3",
+    "kind": "exclusion",
+    "category": "diagnosis",
+    "structured": false
+   }
+  ],
+  "setup_verified_fields": [
+   "age"
+  ],
+  "clinical_validity": "unverified_synthetic"
+ },
+ {
+  "patient_id": "S-NCT06916494-E2-confirmed-NCT07087314",
+  "case_type": "confirmed",
+  "synthetic": true,
+  "split": "supplement",
+  "candidate_trials": [
+   "NCT06916494",
+   "NCT07087314"
+  ],
+  "text": "- The patient is 38 years old.\n- The patient is female.\n- ECOG performance status is 1.",
+  "masked_criteria": [
+   "Patients with severe cardiac, cerebral, hepatic, or renal disease"
+  ],
+  "masked_fact_ids": [
+   "H1"
+  ],
+  "hidden_facts": [
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item f39498f4.",
+    "core": false
+   }
+  ],
+  "oracle_facts": [
+   {
+    "fact_id": "V1",
+    "text": "The patient is 38 years old.",
+    "core": true
+   },
+   {
+    "fact_id": "V2",
+    "text": "The patient is female.",
+    "core": true
+   },
+   {
+    "fact_id": "V3",
+    "text": "ECOG performance status is 1.",
+    "core": false
+   },
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item f39498f4.",
+    "core": false
+   }
+  ],
+  "clue_fact_ids": [],
+  "target_meta": [
+   {
+    "rule_key": "NCT06916494:E2",
+    "kind": "exclusion",
+    "category": "comorbidity",
+    "structured": false
+   }
+  ],
+  "setup_verified_fields": [
+   "age"
+  ],
+  "clinical_validity": "unverified_synthetic"
+ },
+ {
+  "patient_id": "S-NCT06391359-E2-confirmed-NCT06468397",
+  "case_type": "confirmed",
+  "synthetic": true,
+  "split": "supplement",
+  "candidate_trials": [
+   "NCT06391359",
+   "NCT06468397"
+  ],
+  "text": "- The patient is 38 years old.\n- The patient is female.",
+  "masked_criteria": [
+   "Diagnosis of chronic pancreatitis"
+  ],
+  "masked_fact_ids": [
+   "H1"
+  ],
+  "hidden_facts": [
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item 6eded6ac.",
+    "core": false
+   }
+  ],
+  "oracle_facts": [
+   {
+    "fact_id": "V1",
+    "text": "The patient is 38 years old.",
+    "core": true
+   },
+   {
+    "fact_id": "V2",
+    "text": "The patient is female.",
+    "core": true
+   },
+   {
+    "fact_id": "H1",
+    "text": "Synthetic record item 6eded6ac.",
+    "core": false
+   }
+  ],
+  "clue_fact_ids": [],
+  "target_meta": [
+   {
+    "rule_key": "NCT06391359:E2",
+    "kind": "exclusion",
+    "category": "diagnosis",
+    "structured": false
+   }
+  ],
+  "setup_verified_fields": [
+   "age"
+  ],
+  "clinical_validity": "unverified_synthetic"
+ }
+]

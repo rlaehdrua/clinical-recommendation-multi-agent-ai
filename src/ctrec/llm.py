@@ -8,10 +8,11 @@
 
 from __future__ import annotations
 
+import contextlib
 import contextvars
 import logging
 import threading
-from typing import Any, TypeVar
+from typing import Any, Callable, TypeVar
 
 import anthropic
 from pydantic import BaseModel
@@ -57,17 +58,72 @@ def _record_usage(response) -> None:
             usage[key] = usage.get(key, 0) + (getattr(u, key, 0) or 0)
 
 
+class RunCancelled(RuntimeError):
+    """협력적 취소: 실행이 취소됐거나 시간 제한을 넘어 더 이상 API를 호출하지 않음 (args[0]: 'cancelled' / 'timeout')."""
+
+
+# 실행별 취소 확인 함수 (웹 실행이 설정). contextvars라 같은 실행의 하위 스레드(copy_context)에도 전달되고,
+# 다른 실행·CLI에는 영향이 없음. 설정하지 않으면 아무것도 하지 않음
+_guard_var: contextvars.ContextVar[Callable[[], str | None] | None] = contextvars.ContextVar("ctrec_guard", default=None)
+
+
+def set_guard(fn: Callable[[], str | None] | None) -> None:
+    _guard_var.set(fn)
+
+
+def guard() -> None:
+    """API 호출 직전 확인 지점. 취소·시간 초과면 RunCancelled (이미 보낸 호출은 중단하지 못함)."""
+    fn = _guard_var.get()
+    reason = fn() if fn is not None else None
+    if reason:
+        raise RunCancelled(reason)
+
+
 def usage_snapshot() -> dict[str, int]:
     with _usage_lock:
         return dict(_usage_var.get(None) or {})
 
 
+# 프로세스 전역 호출 관문 (call_guard가 실행 중에만 설정, 평소에는 None이라 기존 동작과 같음).
+# 컨텍스트를 넘기지 않은 스레드에서도 작동하도록 contextvar가 아니라 모듈 전역
+_gate: Callable[[Any], None] | None = None
+
+
 def client() -> anthropic.Anthropic:
     global _client
+    gate = _gate
+    if gate is not None:
+        gate(None)  # 기본 클라이언트 사용 (파일럿 배타 실행 중이면 차단)
     if _client is None:
         # 자격 증명: ANTHROPIC_API_KEY -> ANTHROPIC_AUTH_TOKEN -> `ant auth login` 프로필
         _client = anthropic.Anthropic(max_retries=4)
     return _client
+
+
+# 실행별 클라이언트 (예: 평가 실행의 계측 클라이언트). contextvars라 설정한 컨텍스트와 그 사본(copy_context로 넘긴
+# 하위 스레드)에만 보이고, 다른 실행·일반 웹 요청은 기존 기본 클라이언트(client())를 그대로 씀.
+# 주의: copy_context 없이 만든 스레드·run_in_executor는 컨텍스트를 물려받지 않아 기본 클라이언트로 감
+_client_var: contextvars.ContextVar[Any] = contextvars.ContextVar("ctrec_client", default=None)
+
+
+@contextlib.contextmanager
+def use_client(c):
+    """이 컨텍스트에서만 c로 호출. 끝나면(예외 포함) 이전 값으로 복구, 중첩 가능."""
+    token = _client_var.set(c)
+    try:
+        yield c
+    finally:
+        _client_var.reset(token)
+
+
+def current_client():
+    c = _client_var.get()
+    if c is None:
+        return client()
+    gate = _gate
+    if gate is not None:
+        gate(c)
+    return c
 
 
 # ---------------------------------------------------------------------------
@@ -120,6 +176,7 @@ def create(
     output_schema: dict[str, Any] | None = None,
 ):
     """Messages API 단일 호출. 거절 시 RefusalError."""
+    guard()
     output_config: dict[str, Any] = {"effort": effort}
     if output_schema is not None:
         output_config["format"] = {"type": "json_schema", "schema": output_schema}
@@ -137,11 +194,11 @@ def create(
 
     if config.USE_FALLBACKS:
         # 거절 카테고리에 따라 서버가 대체 모델로 재실행 (Claude API 전용 beta)
-        response = client().beta.messages.create(
+        response = current_client().beta.messages.create(
             betas=[FALLBACK_BETA], fallbacks="default", **kwargs
         )
     else:
-        response = client().messages.create(**kwargs)
+        response = current_client().messages.create(**kwargs)
     _record_usage(response)
 
     if response.stop_reason == "refusal":

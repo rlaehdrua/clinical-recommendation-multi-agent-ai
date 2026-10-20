@@ -184,7 +184,8 @@ class CriterionAssessment(BaseModel):
     cohort: str | None = None  # 특정 코호트 전용 기준이면 코호트 이름
     applicable: bool = True  # False = 조건부 기준의 대상이 아님(해당 없음 → 통과)
     # 근거 수준 (D2): 판정 근거가 어디서 왔는지, 이 기준에 필요한 근거 수준, 기록 확인이 필요한지
-    evidence_source: Literal["record", "self_report", "none"] = "none"
+    # unknown: 판정은 났으나 근거가 기록·답변 어디에서 왔는지 확인할 수 없음 (검증된 기록으로 인정하지 않음)
+    evidence_source: Literal["record", "self_report", "unknown", "none"] = "none"
     required_evidence: RequiredEvidence = "self_report_ok"
     # UNVERIFIED(아키텍처 §19 UNKNOWN_UNVERIFIED): 진료 기록이 필요한 기준을 환자 답변(자기 보고)만으로 판정할 수 없어
     # 판정 불가(passes=None)로 남기고 문서 확인을 요청. 답변이 가리킨 값은 self_reported_holds에 보존

@@ -23,7 +23,8 @@
    - 의미가 바뀐 규칙(조건·방향 오류) -> review: 자동 판정하지 않고 의사 확인 (UNSUPPORTED)
    - underspecified인데 원문은 구체적 -> 규칙 단위 재분류(reparsed_concrete), 원문이 정말 애매 -> vague_confirmed
      (반대로 underspecified가 아닌데 애매해 보이면 vague_suspected로 기록만 함. 켜면 시험이 ELIGIBLE이 될 수 없으므로)
-   - 규칙 엔진 필드가 원문과 다름 -> 필드를 비워 LLM이 원문으로 판정
+   - 규칙 엔진 필드가 원문과 다름 -> 필드(단위 포함)를 비워 LLM이 원문으로 판정.
+     단, 원문 범위('18-100 years')를 하한·상한 두 규칙으로 나눈 것이고 값·단위가 원문과 맞으면 지우지 않음
    - 누락된 기준 -> 원문 문장 그대로일 때만 규칙으로 추가
 """
 
@@ -37,7 +38,7 @@ from pydantic import BaseModel, Field
 
 from .. import config, evidence, llm
 from ..schemas import ParsedTrial, RequiredEvidence, Rule, RuleCategory, RuleMeta
-from .criteria_parser import _render_trial
+from .criteria_parser import _render_trial, demote_engine_fields
 
 SYSTEM = """당신은 임상시험 기준 파싱 결과를 원문과 대조하는 '파싱 검증 에이전트'입니다.
 다른 에이전트가 원문 선정(Inclusion)·제외(Exclusion) 기준을 원자 규칙으로 나눴습니다. 그중 오류 위험이 큰 규칙만 골라 드립니다.
@@ -52,7 +53,8 @@ SYSTEM = """당신은 임상시험 기준 파싱 결과를 원문과 대조하�
   false: 구체적인 질환·소견·약물·기간·수치가 적혀 있어 환자 정보만 있으면 판정 가능한 기준(예시가 붙은 연구자 판단 기준 포함).
   판정에 필요한 환자 정보가 부족할 것 같다는 이유로 true로 하지 않습니다.
 - category: 이 기준의 올바른 분류. consent_or_logistics는 동의·방문·순응 같은 절차·행정 기준에만 씁니다(임상적 상태는 해당 없음).
-- structured_ok: field/operator/value/unit이 원문과 같은 의미인가. 예: 원문 "ANC ≥ 1500/µL"인데 value가 1.5이고 unit이 없으면 false,
+- structured_ok: field/operator/value/unit이 원문과 같은 의미인가. same_sentence_rules는 같은 원문 문장을 나눈 다른 규칙입니다.
+  범위('18-100 years')를 하한·상한 두 규칙으로 나눈 것처럼 함께 보면 원문과 같은 뜻이면 true입니다. 예: 원문 "ANC ≥ 1500/µL"인데 value가 1.5이고 unit이 없으면 false,
   "lab:egfr"가 신장 기능(eGFR)인지 EGFR 유전자 변이인지 원문과 다르면 false. 구조화 필드가 없으면 true.
 - required_evidence: 이 기준을 판정할 때 필요한 근거.
   self_report_ok = 환자·보호자 답변으로 충분(나이, 복용 약, 과거 수술 등), clinical_record = 검사 결과지·병리 보고서 등 진료 기록이 필요.
@@ -198,8 +200,7 @@ def deterministic_check(parsed: ParsedTrial, trial: dict) -> dict[str, list[str]
                 bad = f"성별 값 '{r.value}'"
             if bad:
                 add(r.rule_id, bad + " -> LLM 판정으로 전환")
-                r.field = r.operator = r.value = None
-                r.structured_evaluable = False
+                demote_engine_fields(r)
         if _section_mismatch(r, inc, exc):
             add(r.rule_id, f"선정/제외 방향: {r.kind} 규칙인데 문장이 원문의 반대 절에만 있음")
         if r.cohort is not None and r.cohort not in parsed.cohorts:
@@ -227,7 +228,13 @@ def detect_risk(parsed: ParsedTrial, det: dict[str, list[str]],
     def add(rid: str, msg: str) -> None:
         risk.setdefault(rid, []).append(msg)
 
-    others = [{_key(r.text): r for r in p.rules} for p in other_runs or []]
+    # 같은 문장을 여러 규칙으로 나눈 경우(범위의 하한·상한 등)가 있으므로 문장마다 규칙 목록으로 비교
+    others: list[dict[str, list[Rule]]] = []
+    for p in other_runs or []:
+        by_text: dict[str, list[Rule]] = {}
+        for x in p.rules:
+            by_text.setdefault(_key(x.text), []).append(x)
+        others.append(by_text)
     for r in parsed.rules:
         if r.underspecified:
             add(r.rule_id, "underspecified (파서 한 번의 판단)")
@@ -241,13 +248,13 @@ def detect_risk(parsed: ParsedTrial, det: dict[str, list[str]],
             if msg.startswith(("선정/제외 방향", "코호트")):
                 add(r.rule_id, msg)
         mine = _attrs(r)
-        for i, run in enumerate(others, start=2):
-            alt = run.get(_key(r.text))
-            if alt is None:
+        for run in others:
+            alts = run.get(_key(r.text))
+            if not alts:
                 continue
-            diff = [k for k, v in _attrs(alt).items() if v != mine[k]]
-            if diff:
-                add(r.rule_id, f"다른 파싱 실행과 다름({', '.join(diff)})")
+            diffs = [[k for k, v in _attrs(alt).items() if v != mine[k]] for alt in alts]
+            if all(diffs):  # 같은 문장의 규칙 중 속성이 같은 것이 하나도 없음
+                add(r.rule_id, f"다른 파싱 실행과 다름({', '.join(min(diffs, key=len))})")
                 break
     return risk
 
@@ -256,14 +263,54 @@ def detect_risk(parsed: ParsedTrial, det: dict[str, list[str]],
 # 3) LLM 의미 검증 + 4) 적용
 # ---------------------------------------------------------------------------
 
-def _rule_view(r: Rule, reasons: list[str]) -> dict:
-    return {"rule_id": r.rule_id, "kind": r.kind, "text": r.text, "category": r.category,
+def _rule_view(r: Rule, reasons: list[str], rules: list[Rule] = ()) -> dict:
+    view = {"rule_id": r.rule_id, "kind": r.kind, "text": r.text, "category": r.category,
             "field": r.field, "operator": r.operator, "value": r.value, "unit": r.unit,
             "underspecified": r.underspecified, "cohort": r.cohort, "risk": reasons}
+    # 같은 원문 문장을 나눈 다른 규칙: 한쪽만 보고 '상한 누락' 등으로 오판하지 않도록 함께 보여 줌
+    same = [{"rule_id": o.rule_id, "field": o.field, "operator": o.operator, "value": o.value, "unit": o.unit}
+            for o in rules if o is not r and _norm(o.text) == _norm(r.text)]
+    if same:
+        view["same_sentence_rules"] = same
+    return view
+
+
+_RANGE_BOUNDS = re.compile(r"(\d[\d,]*(?:\.\d+)?)\s*(?:-|–|~|\bto\b)\s*(\d[\d,]*(?:\.\d+)?)", re.I)
+
+
+def _num(s: str | None) -> float | None:
+    try:
+        return float(str(s).replace(",", ""))
+    except ValueError:
+        return None
+
+
+def _range_partner(r: Rule, rules: list[Rule]) -> Rule | None:
+    """r이 원문 범위 'lo-hi'를 하한(>= lo)·상한(<= hi) 두 규칙으로 나눈 것 중 하나이고 값·단위가 원문과 맞으면 짝 규칙.
+
+    검증 LLM이 한쪽 규칙만 보고 '상한(하한) 누락'으로 판정해 올바른 필드를 지우는 것을 막습니다(코드로 확인될 때만).
+    """
+    if not r.field or not r.unit or r.operator not in (">=", "<="):
+        return None
+    lower = r.operator == ">="
+    value = _num(r.value)
+    unit = re.sub(r"\s+", "", r.unit.lower()).rstrip("s")
+    for m in _RANGE_BOUNDS.finditer(r.text):
+        lo, hi = _num(m.group(1)), _num(m.group(2))
+        if lo is None or hi is None or lo >= hi or value != (lo if lower else hi):
+            continue
+        if unit not in re.sub(r"\s+", "", r.text[m.end():].lower())[:20]:  # 단위가 범위 바로 뒤에 적혀 있어야 함
+            continue
+        want_op, want_value = ("<=", hi) if lower else (">=", lo)
+        for o in rules:
+            if (o is not r and _norm(o.text) == _norm(r.text) and o.field == r.field and o.unit == r.unit
+                    and o.operator == want_op and _num(o.value) == want_value):
+                return o
+    return None
 
 
 def _llm_validate(parsed: ParsedTrial, trial: dict, risk: dict[str, list[str]], gaps: list[str]) -> ValidationOutput:
-    rules = [_rule_view(r, risk[r.rule_id]) for r in parsed.rules if r.rule_id in risk]
+    rules = [_rule_view(r, risk[r.rule_id], parsed.rules) for r in parsed.rules if r.rule_id in risk]
     user = f"""{_render_trial(trial)}
 
 <rules_to_check>
@@ -319,9 +366,13 @@ def apply_checks(parsed: ParsedTrial, trial: dict, risk: dict[str, list[str]],
             meta[rid].underspecified_state = "vague_suspected"
             report.notes.append(f"{rid}: 원문이 애매할 수 있음(적용 안 함) - {c.note}")
         if r.field and not c.structured_ok:
-            report.changes.append(f"{rid}: 규칙 엔진 필드 제거 ({r.field} {r.operator} {r.value} {r.unit or ''}) - {c.note}")
-            r.field = r.operator = r.value = None
-            r.structured_evaluable = False
+            partner = _range_partner(r, parsed.rules)
+            if partner is not None:
+                report.notes.append(f"{rid}: 규칙 엔진 필드 유지 ({r.field} {r.operator} {r.value} {r.unit}) - 원문 범위를 나눈 "
+                                    f"규칙이고 반대쪽 경계는 {partner.rule_id}에 있음(검증 판단 미적용: {c.note})")
+            else:
+                report.changes.append(f"{rid}: 규칙 엔진 필드 제거 ({r.field} {r.operator} {r.value} {r.unit or ''}) - {c.note}")
+                demote_engine_fields(r)
         if c.category != r.category:
             if c.category == "consent_or_logistics":
                 pass  # 새로 '절차'로 바꾸면 미확인 기준이 적격을 막지 않게 되므로 받아들이지 않음

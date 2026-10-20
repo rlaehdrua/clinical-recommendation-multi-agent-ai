@@ -213,25 +213,29 @@ python -m ctrec run \
 python -m ctrec.web              # http://127.0.0.1:8000 (--port로 변경)
 ```
 
-화면 위쪽의 **단계 표시줄**(① 기준 입력 · ② 환자 정보 · 후보 추림 · ③ 추출·매칭 · ④ 부족 정보 · ⑤ 질문·재평가 · ⑥ 추천)에서 각 단계를 누르면 그 단계 전용 화면이 열립니다. 실행 중에는 진행 중인 단계로 화면이 자동으로 따라가며, 다른 단계를 누르면 따라가기가 멈춥니다(헤더의 "진행 따라가기"로 다시 켬).
+> **Phase 8: 웹의 실제 AI 분석은 기본 꺼짐입니다**(`CTREC_WEB_PAID_ENABLED=0`). API 키가 있어도 화면만 열리고 분석은 시작되지 않습니다. 켜는 조건은 `docs/web_deployment.md` 7절, 팀원용 실행 안내는 `docs/team_local_setup.md`, 현재 상태·한계·후속 작업은 `docs/team_handoff.md`를 보세요. CLI(`python -m ctrec run`)는 이 스위치 밖이므로 `.env`에 키가 있으면 실제 호출합니다.
 
-| 단계 화면 | 내용 |
+| 단계 | 내용 |
 |---|---|
-| 새 실행 | 환자 선택(사업단 10명, 합성 32명) 또는 직접 입력. 후보 시험은 기본적으로 **전체 시험에서 자동 추림**하며, "직접 선택"으로 바꾸면 질환별로 미리 정한 후보가 선택된 목록에서 고를 수 있습니다. 웹 UI는 항상 오케스트레이터(agent) 모드로 실행됩니다 |
-| ① 기준 입력 | 시험 풀을 카드로 보여 주고, 후보 시험은 테두리로 강조합니다. 기준 파싱이 끝난 시험에는 선정·제외 규칙 수를 막대로 표시하고, 추림에서 빠진 시험은 흐리게 사유와 함께 보여 줍니다 |
-| ② 환자 정보 | 왼쪽은 환자 원문, 오른쪽은 구조화 프로파일(나이·성별·ECOG·주 진단·병기, 진단·바이오마커·검사 수치·투약·치료력)입니다. 추출한 사실의 근거 인용을 원문에 형광으로 표시하고, 항목에 마우스를 올리면 해당 근거가 강조됩니다. 누락·모호 정보도 따로 보여 줍니다 |
-| 후보 추림 | 전체 시험 → 코드 확정 제외 → 에이전트 판단 → 후보 상한으로 줄어드는 과정을 깔때기 막대로 보여 주고, 선택된 후보(관련도)와 제외 사유를 나눠 보여 줍니다 |
-| ③ 추출·매칭 | 시험별 탭에서 기준 하나하나의 판정(통과 / 불충족 / 판정 불가 / 해당 없음)과 판정 방법(규칙 엔진 / LLM 추론)을 보여 줍니다. 항목을 펼치면 환자 원문 근거, 추론, 필요한 정보가 나옵니다. 판정 결과로 거를 수 있습니다 |
-| ④ 부족 정보 | 판정하지 못한 기준을 해소 방법별 세 칸(확인 질문 / 문서 확인 필요(UNVERIFIED) / 의료진 확인)으로 나눠 보여 줍니다 |
-| ⑤ 질문·재평가 | 질문 생성 에이전트의 질문과 환자 답변을 대화 형태로 보여 주고, 답변 반영 후 시험별 판정 변화(예: 추가 정보 필요 → 공개 기준 충족)를 표시합니다. 답변이 필요하면 이 화면에 입력칸이 뜨며, 다른 화면을 보고 있으면 아래에 알림이 뜹니다. "모두 모름"으로 넘어갈 수도 있습니다 |
-| ⑥ 추천 | **추천 그룹**의 시험을 표시 순서대로 보여 주고(맞는 점 / 확인할 점 / 다음 단계), 의료진 확인·문서 확인(UNVERIFIED) 항목, 표시 순서 기준, "공개 기준 사전 비교" 안내, 다른 후보, 제외된 시험, "추천 없음" 사유, 결과 설명 보고서, 토큰 사용량을 보여 줍니다 |
-| 오른쪽 열 | 에이전트 현황(실행 중·완료, 호출 횟수), 진행 로그(오케스트레이터의 계획과 도구 호출, 항목을 누르면 해당 단계로 이동), 저장된 실행 다시 보기 |
+| 소개·안내 | 서비스가 하는 일과 하지 않는 일(참여 자격 확정 아님), 사용 순서를 안내합니다 |
+| ① 환자 정보 입력 | 직접 입력(기본) 또는 예시 사례(가상 데이터) 선택. 도움이 되는 정보 안내, 개인 식별 정보 입력 금지 안내, 글자 수 표시(20,000자), 합성 예시 넣기. "입력 내용 확인"에서 내용을 확인한 뒤 분석을 시작합니다. 후보 시험은 기본 **전체 시험에서 자동 추림**이고 "고급 설정"에서 직접 고를 수 있습니다. 분석 중에는 입력을 바꿀 수 없습니다 |
+| ② 분석 진행 | 분석 준비 → 환자 정보 분석 → 임상시험 조건 검토 → 추가 질문 → 답변 반영 및 재분석 → 추천 결과 정리 → 완료. 각 단계는 **서버 이벤트로만** 바뀌며 진행률 숫자는 표시하지 않습니다. 오래 걸리면 안내, 연결이 끊기면 자동으로 다시 연결해 이어 받습니다. 에이전트 구성도·진행 기록은 접힌 "자세한 진행 기록(개발자용)"에 있습니다 |
+| 추가 질문 | 기존 LLM 질문 생성기가 만든 질문을 순서대로 표시합니다(예/아니요·숫자·날짜·자유 입력). 질문마다 "모름 · 확인 불가"를 고를 수 있고, 보내기 전에 답변을 확인·수정합니다. 보내기 실패 시 입력을 유지한 채 다시 보낼 수 있습니다 |
+| ③ 추천 결과 | 서버 공식 상태(공개 기준 충족·기록 확인 시 충족 가능·의료진 검토 필요·추가 정보 필요·공개 기준 불충족·평가 실패)와 설명, 시험별 **충족 / 불충족 / 정보 부족 / 추가 확인 필요** 조건, 조건별 근거 인용·근거 출처(환자 기록/답변/확인 불가)·판정 방식(규칙 엔진/AI 판정), ClinicalTrials.gov 원문 링크. AI가 쓴 문장은 "검증된 사실 아님"으로 표시합니다. "새 분석 시작"으로 처음으로 돌아갑니다 |
 
-- **저장된 실행 다시 보기**: `outputs/web/`에 저장된 실행을 API 호출 없이 원래 순서대로 재생합니다(1×·2×·4×, 이벤트 사이 대기는 최대 1.2초로 줄임). 발표 시연이나 화면 확인에 씁니다. 단계 화면용 데이터가 없는 예전 기록은 `result.json`으로 채우므로, 중간 라운드의 기준별 판정은 마지막 판정과 같을 때만 보입니다.
+자세한 사용 안내: `docs/web_user_guide.md`
+
+> **팀원 단계별 화면(4ea12d6)**: 단계 표시줄·단계 전용 화면·다시 보기로 개편한 화면은 Phase 9 통합에서 보류했습니다(CSP·CSRF·실행 소유권·환자 원문 전송 문제, `docs/team_handoff.md` 4절). 객관식 질문·한국어 번역·추천 카드 줄글 삭제는 현재 화면에 옮겼습니다. 원래 설명과 화면은 `git show 4ea12d6:README.md`, `git show 4ea12d6:src/ctrec/web/static/index.html`.
 
 - 서버는 이 컴퓨터(127.0.0.1)에서만 접속할 수 있습니다.
-- 실행 기록은 `outputs/web/<실행 ID>/`에 저장됩니다.
-- 서버 메모리에는 실행 상태를 최대 20개(`CTREC_WEB_MAX_RUNS`)까지만 두고, 끝난 실행은 2시간(`CTREC_WEB_RUN_TTL_S`, 초) 뒤 지웁니다. 진행 중인 실행이 한도만큼 있으면 새 실행은 429로 거절됩니다. 저장된 결과 파일은 지우지 않습니다.
+- **실행별 접근 권한**: 실행을 만든 브라우저만 그 실행의 진행 상황·질문·결과를 보고 답변·취소할 수 있습니다. 실행마다 새 소유권 토큰을 HttpOnly·SameSite=Strict 쿠키(경로: 그 실행의 API)로만 주고, 서버는 토큰의 해시만 보관합니다. 실행 ID만 알거나 다른 브라우저에서는 접근할 수 없습니다(없는 실행과 같은 404). 상태를 바꾸는 요청은 `X-CTREC-Request` 헤더와 Origin을 확인합니다(CSRF 방어). `CTREC_PASSWORD`(공용 비밀번호)와 함께 쓸 수 있으며, 같은 비밀번호를 쓰는 사람끼리도 실행은 분리됩니다. 이 방식은 사용자 계정 인증을 대신하지 않습니다(`docs/web_security.md`).
+- **HTTPS**: 이 컴퓨터(루프백) 밖에서 오는 평문 HTTP는 거절합니다(개발용 localhost는 그대로 동작). 운영은 HTTPS 프록시 뒤에서 `CTREC_REQUIRE_HTTPS=1`, `CTREC_COOKIE_SECURE=1`과 uvicorn `--proxy-headers --forwarded-allow-ips`(신뢰하는 프록시)로 실행합니다(`render.yaml`). 프록시 헤더는 신뢰한 프록시에서 온 것만 반영됩니다.
+- **개발자 진단(Decision Loop, 기본 off)**: 주소에 `?diagnostic=1`을 붙여 실행하면 다음 행동 계획(질문 후보·문서 요청·검토·종료 사유)을 접힌 "개발자 진단" 영역에 따로 보여 줍니다. 판정·질문·추천에는 쓰이지 않고 LLM을 더 부르지 않습니다(`docs/decision_loop.md`).
+- **저장**: 웹 실행은 기본적으로 디스크에 아무것도 저장하지 않습니다. 시연·디버깅에 필요하면 `CTREC_WEB_SAVE_OUTPUTS=1`로 켜며, 그때는 `outputs/web/<실행 ID>/`에 저장하고 `CTREC_WEB_OUTPUT_TTL_S`(기본 24시간)가 지나면 자동 삭제합니다. 이 정책 이전에 만들어진 폴더는 자동으로 지우지 않습니다.
+- **취소·제한**: 화면의 "분석 취소"로 멈출 수 있습니다(진행 중인 API 호출 1건은 끝까지 진행된 뒤 멈춤). 실행 전체 시간 제한 `CTREC_WEB_RUN_TIMEOUT_S`(기본 1시간), 답변 대기 `CTREC_WEB_ANSWER_TIMEOUT_S`(기본 30분, 넘으면 '모름'으로 진행). 같은 브라우저는 동시에 1개(`CTREC_WEB_MAX_ACTIVE_PER_CLIENT`), 시간당 20개(`CTREC_WEB_MAX_STARTS_PER_HOUR`)까지 시작할 수 있습니다.
+- **탭을 닫았다 다시 열면**: 같은 브라우저의 새 탭에 "진행 중인 분석 이어 보기" 버튼이 나옵니다(`GET /api/runs/active`, 진행 중 실행만, 누를 때만 이어 봄).
+- **배포**: 기본 `render.yaml`은 기록 모드(record, 비용 강제 차단 없음)·`CTREC_FALLBACKS=0`·워커 1개입니다. 비용 상한(enforce) 구성, 대체 모델을 끈 이유, 배포 사전 점검(`scripts/check_web_deployment.py`)은 `docs/web_deployment.md`, 비용 원장 운영(UNKNOWN 정산·백업·복구)은 `docs/web_budget_operations.md`를 보세요.
+- 서버 메모리에는 실행 상태를 최대 20개(`CTREC_WEB_MAX_RUNS`)까지만 두고, 끝난 실행은 2시간(`CTREC_WEB_RUN_TTL_S`, 초), 취소·오류·시간 초과로 끝난 실행은 2분(`CTREC_WEB_ENDED_TTL_S`) 뒤 지웁니다. 작업이 실제로 끝나지 않은 실행이 한도만큼 있으면 새 실행은 429로 거절됩니다.
 - 실행할 때마다 Claude API 비용이 발생합니다. Sonnet 기준 환자 1명당 약 $0.2–0.7입니다.
 
 ### 3.3 사업단 제공 환자 + 실제 ClinicalTrials.gov 시험
@@ -363,6 +367,7 @@ python eval/evaluate.py --labels data/labels/masked_labels.csv --outputs outputs
 | `compile_trials.py --unfreeze` | 잠긴 기준표(`data/parsed/FROZEN.json`)의 시험도 다시 컴파일해 덮어씀. 팀 검토 후에만 쓰고, 끝나면 `scripts/freeze_parsed.py`로 다시 잠급니다 | off |
 | `CTREC_LAZY_COMPILE=1` (환경변수) | 고정 저장소(`data/parsed/`)에 없는 시험을 그 자리에서 파싱합니다(검증 없음). 기본은 `COMPILATION_PENDING`(NOT_EVALUATED)으로 기록 (D8). `--search`·`--nct`로 새 시험을 시연할 때 씁니다 | 0 |
 | `CTREC_WRITE_REPORT=0` (환경변수) | 보고서(설명 에이전트) 생략. 평가 실험 비용 절감용 | 1 |
+| `--input-source` | 모든 환자의 최초 입력 출처를 지정 (`clinical_record` / `self_report` / `unknown`). 환자 파일의 `input_source`보다 우선합니다. 4.1 "최초 입력의 출처" 참고 | 파일 값, 없으면 unknown |
 | `--demo` / `CTREC_DEMO_MODE=1` | 가상 데모 시험(`"synthetic": true`)도 추천에 표시. 끄면 판정만 하고 추천에서 제외 (§67) | off |
 | `CTREC_HARD_FILTER_STATUS=0` (환경변수) | 후보 추림 전 확정 제외에서 모집 종료 시험을 빼지 않음. 모집 종료 시험의 적격성까지 평가해야 하는 벤치마크용 | 1 |
 | `--question-budget N` | 환자 1명당 전체 라운드 합산 최대 질문 수 (질문 예산 실험용). 라운드당 한도(`CTREC_MAX_QUESTIONS`, 기본 5)와 남은 예산 중 작은 값만큼 묻습니다 | 제한 없음 |
@@ -371,6 +376,23 @@ python eval/evaluate.py --labels data/labels/masked_labels.csv --outputs outputs
 | `--patient-id` | 여러 환자가 든 파일에서 한 명만 실행 (`run`) | |
 | `--workers N` | 환자 N명을 동시에 처리합니다. 로그에 환자 ID가 붙고 토큰 사용량은 환자별로 집계됩니다. `interactive` 답변 모드에서는 1로 고정됩니다. 시험별 병렬 처리(`CTREC_MAX_WORKERS`, 기본 4)와 곱해져 동시 API 호출 수가 정해지니, 429(rate limit) 오류가 잦으면 줄이세요 | 1 |
 | `--topic-map` | 환자 ID → 후보 시험 ID 목록 JSON. 환자 파일에 `candidate_trials`가 있으면 그것이 우선합니다 | |
+
+### 3.6 잠긴 기준표 검수·패치 (`scripts/review_store.py`)
+
+잠긴 기준표(`data/parsed/`, `FROZEN.json`)는 직접 고치지 않습니다. 규칙 단위 패치를 제안하고, 사람이 승인한 패치만 원본을 복사한 **후보 저장소**에 적용해 diff와 검사를 거칩니다. LLM·API를 쓰지 않습니다.
+
+```bash
+python scripts/review_store.py propose --out data/patches/<이름>.json          # 제안 생성 (모두 proposed, 승인 아님)
+python scripts/review_store.py status  --patches data/patches/<이름>.json --approvals data/patches/approvals.json
+python scripts/review_store.py decide  --patches ... --approvals ... --patch-id <ID> --decision approved --reviewer <이름>
+python scripts/review_store.py apply   --patches ... --approvals ... --candidate outputs/candidate_store/<이름>
+python scripts/review_store.py check   --store outputs/candidate_store/<이름>   # 후보 파일 해시·로드·필드·무결성 검사
+```
+
+- 패치 종류: 지워진 규칙 엔진 필드 복구(`restore_engine_fields`, 원문 범위·짝 규칙·CT.gov 구조화 값이 모두 맞을 때만 제안), 단위만 남은 규칙의 단위 정리(`clear_orphan_unit`, 다른 필드를 만들지 않음), 원문이 의심스러운 기준의 의사 확인 표시(`flag_review`, 값은 고치지 않고 자동 판정에서 뺌).
+- 적용은 원본이 `FROZEN.json`과 같을 때만, 승인된 패치만, 기존 값이 맞을 때만 합니다. 하나라도 거부되면 아무것도 쓰지 않습니다. 후보 파일의 해시는 `CANDIDATE.json`에 기록되어, 적용 뒤 손으로 고친 후보는 `check`와 이어서 적용할 때 거부됩니다.
+- **승인 기록은 인증이 아니라 감사 기록입니다.** `--reviewer`에 적은 이름은 확인하지 않습니다. 승인은 패치 내용의 해시에 묶여 있어 승인 뒤 패치를 고치면 `stale`(무효)이 되고, 마지막 결정이 유효합니다. 누가 승인했는지는 승인 파일의 git 이력과 코드 리뷰(PR)로 확인합니다.
+- 후보를 공식 기준표로 바꾸는 일(`data/parsed/` 교체 후 `scripts/freeze_parsed.py --note`로 다시 잠금)은 팀 승인 후 사람이 합니다. 다시 잠그기 전에 `apply`가 출력한 규칙 단위 diff와 `check`, 전체 오프라인 테스트를 확인하세요(잠금은 그 시점의 파일을 그대로 잠급니다).
 
 ---
 
@@ -392,7 +414,20 @@ python eval/evaluate.py --labels data/labels/masked_labels.csv --outputs outputs
 - 단일 환자: `{"patient_id": "...", "text": "자유 서술 프로파일"}`
 - 그 밖의 JSON은 모든 필드를 텍스트로 바꿔 처리합니다.
 
-다음 필드는 평가·시뮬레이션용 메타데이터라서 파이프라인(환자 정보 이해 에이전트)에는 **전달되지 않습니다**: `hidden_details`(시뮬레이터 전용), `design_note`, `candidate_trials`, `base_topic`, `synthetic`, `labels`.
+다음 필드는 평가·시뮬레이션용 메타데이터라서 파이프라인(환자 정보 이해 에이전트)에는 **전달되지 않습니다**: `hidden_details`(시뮬레이터 전용), `design_note`, `candidate_trials`, `base_topic`, `synthetic`, `labels`, `input_source`.
+
+**최초 입력의 출처 (`input_source`, 아키텍처 §18–19)**: 환자 원문이 진료 기록인지 환자 본인의 진술인지는 문자열만으로 알 수 없어서, 입력을 넘기는 쪽이 밝힙니다. 이 값은 **선언이지 검증 결과가 아닙니다**(문서 검증 상태 `DOCUMENT_VERIFIED`와 다름).
+
+| 값 | 뜻 | 진료 기록이 필요한 기준(진단·바이오마커·검사 수치 등)을 원문 근거로 판정할 때 |
+|---|---|---|
+| `clinical_record` | 의료진이 작성한 기록이나 신뢰할 수 있는 임상 자료라는 근거가 있음 | 판정 확정 (`evidence_source=record`) |
+| `self_report` | 환자·보호자 본인의 진술 | UNVERIFIED (답변상 값 보존, 문서 확인 요청) |
+| `unknown` (기본값) | 출처를 밝히지 않음 | UNVERIFIED (기록으로 인정하지 않음) |
+
+- 지정 방법: JSON 환자마다 `"input_source": "clinical_record"` 필드, 또는 실행 시 `--input-source`(모든 환자에 적용, 파일 값보다 우선). `.txt` 입력과 웹 화면에 직접 입력한 텍스트는 `unknown`입니다.
+- 확인 질문 답변은 최초 입력의 출처와 관계없이 `self_report`입니다. 근거가 원문·답변 어디에서도 확인되지 않으면 `unknown`입니다.
+- 근거가 있을 때만 `clinical_record`로 지정합니다(팀 결정, 2026-10-12). 현재 저장소의 환자 데이터(사업단 가상 증례, 합성 환자, 정보 가리기 평가셋)는 모두 가상 데이터라 출처를 지정하지 않으며 `unknown`으로 실행됩니다. 이 때문에 이전 실행보다 UNVERIFIED가 늘고 ELIGIBLE이 줄 수 있습니다.
+- 결과 파일 `result.json`의 `input_source`에 실행에 쓴 값이 남습니다.
 
 **정답 라벨 (`data/labels/synthetic_labels.csv`)**: `patient_id,trial_id,label,label_text_only,rationale`
 - `label`: 전체 기록(`hidden_details`) 기준 정답. ELIGIBLE 또는 INELIGIBLE입니다.
@@ -516,7 +551,7 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 │   ├── screen_budget.py        # 후보 수 실험 (D3, 추림 recall@k)
 │   └── question_policy_sweep.py # 라운드당 질문 정책 비교 (D4)
 ├── eval/evaluate.py            # 매칭 정확성 평가
-├── tests/                      # API 없이 도는 단위 테스트 (test_offline, test_recommender, test_reliability, test_masked_benchmark, test_screening, test_safety, test_stage05, test_decisions, test_stage0)
+├── tests/                      # API 없이 도는 단위 테스트 (test_offline, test_recommender, test_reliability, test_masked_benchmark, test_screening, test_safety, test_stage05, test_decisions, test_stage0, test_evidence_source)
 └── data/
     ├── trials/                 # 시험 프로토콜 (CT.gov 캐시 + 가상 데모)
     ├── parsed/                 # 사전 컴파일한 기준 고정 저장소 (git 포함, 환자 평가 때 이것만 사용, FROZEN.json으로 잠금)
@@ -560,6 +595,19 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 
 수정할 때마다 무엇을 왜 바꿨는지 여기에 기록합니다. 최신 항목이 위에 옵니다.
 
+### 2026-10-20 — 팀 저장소 main(d4e46cf, Phase 0~9) 병합
+
+배경: 팀 저장소에 올라온 30개 커밋(사실 저장소, 증분 재평가, Decision Loop, LLM 파일럿 체계, 웹 보안·비용 통제)을 바로 위 "가상 데모 시험 제외" 변경과 합쳤습니다.
+
+| # | 변경 | 파일 |
+|---|---|---|
+| 1 | **충돌 해결**: 웹 실행 시작은 팀의 검사(CSRF·실제 호출 허가·비용 설정 확인)를 그대로 두고, 시험 풀만 `screen_pool()`로 고름. 변경 이력은 양쪽 항목 모두 유지 | `web/app.py`, `README.md` |
+| 2 | **웹 테스트 하네스**: 하네스가 가상 시험 `DEMO-LUNG-001`을 평가 대상으로 쓰므로 데모 모드를 켬. 데모 모드가 아닐 때 시험 목록 25개·가상 시험 없음·`SYN-DEMO` 환자 숨김을 확인하는 테스트 추가 | `tests/web_harness.py`, `tests/test_web_integration.py` |
+
+- 테스트: 깨끗한 작업 트리에서 오프라인 테스트 957개 통과. Edge E2E(`test_web_browser.py`)는 이 환경에 브라우저 드라이버가 없어 건너뜀.
+- 참고: 저장소 루트에 `outputs/` 폴더가 있으면 파일럿 테스트 5개(`test_llm_pilot*`, `test_pilot_process`)가 "결과 폴더를 만들지 않음" 검사에서 실패합니다. 테스트 전에 폴더를 옮기거나 깨끗한 작업 트리에서 실행하세요.
+- `docs/team_handoff.md`의 "ClinicalTrials.gov 시험 26개 + 데모 시험 1개"는 실제로는 CT.gov 25개 + 데모 1개(합계 26)입니다.
+
 ### 2026-10-15 — 가상 데모 시험을 후보 풀에서 제외
 
 배경: 후보 추림 풀 26개 중 1개(`DEMO-LUNG-001`)가 파이프라인 확인용으로 직접 만든 가상 시험이었습니다. 추천에서는 이미 빠졌지만 후보 추림·화면 목록에는 실제 시험처럼 들어가 있었습니다.
@@ -572,6 +620,22 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 
 - 테스트: 오프라인 테스트 121개 통과(후보 풀 테스트 1개 추가). 웹 목록 함수로 시험 25개·가상 시험 없음·`SYN-DEMO` 환자 숨김 확인.
 - 평가 영향: (C) 후보 추림 평가에서 `SYN-DEMO-A/B`의 `DEMO-LUNG-001` 라벨은 데모 모드가 아니면 시험이 풀에 없어 예측 없음이 되고, 다른 환자의 `DEMO-LUNG-001` 자동 라벨(부적격)도 예측 없음이 됩니다. 이 두 환자를 평가하려면 `--demo`를 붙입니다. 저장된 파일(`data/trials/`, `data/parsed/`, 라벨)은 바꾸지 않았습니다.
+
+### 2026-10-15 — 팀원 커밋 4ea12d6 통합 (Phase 9, 병합 커밋 전)
+
+배경: origin/main의 팀원 커밋(객관식 질문, 한국어화, 단계별 화면, 다시 보기)을 보안·비용 구조가 들어간 작업 브랜치와 합쳤습니다. 기능별 판단과 근거는 `docs/team_handoff.md` 4절에 있습니다.
+
+| # | 변경 | 판단 |
+|---|---|---|
+| 1 | 객관식 질문(스키마·생성 규칙·자동 답변) | 유지. 현재 화면(`app.js`)에 객관식 입력을 새로 만들고, 서버가 선택지 밖 답을 거절(400, 질문은 대기 유지) |
+| 2 | 에이전트·규칙 엔진·확정 제외 문구 한국어화 | 유지. 규칙 엔진 검사 수치 설명은 단위 환산 값으로 합침 (판정 불변) |
+| 3 | 시험 번역 파일 `data/i18n/trials_ko.json`, `/api/ko` | 유지. 원문 일치 시에만 번역, 원문 함께 표시 |
+| 4 | 추천 카드 줄글 삭제 | 유지 (현재 화면의 "AI 요약" 줄글 제거) |
+| 5 | trace 단계 데이터(프로필·추림·기준별 판정) | 서버 trace에는 유지, 웹 SSE에서는 제외 (환자 원문 인용·오류 원문) |
+| 6 | 단계별 화면 전체·토스 디자인 | 보류: 외부 CDN·인라인 스크립트·인라인 style(CSP), CSRF 헤더 없음, 환자 원문 SSE 의존 |
+| 7 | 저장된 실행 다시 보기 | 비활성화: 소유권·CSRF 없음, 환자 원문 전송, 저장(기본 꺼짐) 의존 |
+
+- 테스트: `tests/test_team_integration.py`(통합), Edge `test_choice_questions_and_korean_titles`. 실제 유료 호출 0회.
 
 ### 2026-10-14 — 추천 카드의 줄글 설명 삭제
 
@@ -636,6 +700,25 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 
 - 테스트: 오프라인 테스트 115개 통과. 브라우저에서 저장된 실행 2건(질문 2개 / 질문 0개)을 재생해 각 단계 화면을 확인했고, 375px 폭에서 가로 스크롤이 없는 것을 확인했습니다.
 - 확인하지 못한 것: 실제 LLM 실행(API 비용)은 하지 않았습니다. 자동 추림 깔때기와 답변 입력 화면은 저장 기록에 해당 데이터가 없어 가짜 이벤트로 확인했습니다.
+
+### 2026-10-12 — 잠긴 기준표 검수·패치 체계 (Phase 0-4)
+
+- `src/ctrec/store_patch.py`, `scripts/review_store.py` 추가 (3.6 참고). 원본 `data/parsed/`와 `FROZEN.json`은 변경하지 않음.
+- 검수 대상 제안 `data/patches/frozen-review-2026-10-12.json` (10개, 모두 proposed, **승인 없음**): 나이 하한 복구 2개(NCT06878144 I1 `age >= 18`, NCT07679893 I1 `age >= 40`), 단위만 남은 규칙의 단위 정리 7개(NCT07516951 I5·I8·I10·I11·E5·E12, NCT07679893 E26), NCT06125405 E4(`혈소판 < 100 x10^12/L`) 의사 확인 표시 1개(값은 고치지 않음).
+- E4 표시를 승인하면 E4는 규칙 엔진·LLM이 자동 판정하지 않고 의사 확인 항목이 되어 시험이 '공개 기준 충족'이 될 수 없습니다. NCT06125405는 E14(underspecified) 때문에 이미 '의료진 검토 필요' 상태입니다.
+- 테스트: `tests/test_store_patch.py` 22개 (원본 불변, 승인 없는 패치 거부, 후보에만 적용, 거부 조건, 중복 방지, diff, 후보 파일 해시 검사, E4 표시의 Matcher·Session 경로 효과)
+
+### 2026-10-12 — 근거 출처 판별 수정 (Phase 0-1): 확인되지 않은 출처를 진료 기록으로 보지 않음
+
+| # | 변경 | 파일 | 이유 |
+|---|---|---|---|
+| 1 | 근거를 기록·답변 어디에서도 확인할 수 없으면 `record` 대신 `unknown` (진료 기록이 필요한 기준이면 UNVERIFIED, 답변 값으로 꾸미지 않음) | `matcher.py`, `schemas.py` | 출처 불명 근거가 기록으로 처리되어 UNVERIFIED를 우회할 수 있었음 |
+| 2 | 규칙 엔진의 나이·성별·ECOG와 LLM의 `ecog: 1` 같은 필드 참조도 값이 원문·답변 어디에 적혀 있는지 확인 | `matcher.py` | 답변으로만 얻은 ECOG가 무조건 기록으로 처리되었음 |
+| 3 | 최초 입력의 출처 `input_source` 추가(기본 `unknown`), 환자 파일 필드와 `--input-source`로 지정 (4.1 참고) | `pipeline.py`, `evidence.py`, `cli.py`, `web/app.py` | 최초 입력을 문자열이라는 이유로 진료 기록으로 간주하고 있었음 |
+
+- 팀 결정: 기본값은 `unknown`, 환자 데이터 파일은 일괄 수정하지 않음, 근거가 있을 때만 `clinical_record` 지정, `clinical_record` 선언과 문서 검증(`DOCUMENT_VERIFIED`)은 구분.
+- 테스트: 오프라인 133개 통과 (`tests/test_evidence_source.py` 18개 추가. `test_decisions.py`의 공용 도우미는 입력을 진료 기록으로 선언하도록 설정만 바꿈, 검증 내용은 그대로)
+- 평가 영향: 출처를 지정하지 않은 벤치마크 실행에서는 진료 기록이 필요한 기준이 UNVERIFIED가 되어 ELIGIBLE이 크게 줄 수 있습니다(LLM을 흉내 낸 오프라인 비교에서 26개 시험 중 19개가 '공개 기준 충족' → '추가 정보 필요'). `scripts/budget_sweep.py`, `scripts/question_policy_sweep.py`는 `--input-source`를 넘기지 않으므로 항상 `unknown`으로 실행됩니다. 기준선(1%p)은 같은 출처 설정으로 측정한 값끼리 비교해야 합니다.
 
 ### 2026-10-12 — 팀 결정 반영: 합성 벤치마크 표기, 애매한 기준 검토 후 기준표 잠금, 기준선 1%p 조건
 

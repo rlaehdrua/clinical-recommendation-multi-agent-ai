@@ -120,6 +120,9 @@ def _add_common(p: argparse.ArgumentParser) -> None:
     p.add_argument("--quiet", action="store_true")
     p.add_argument("--workers", type=int, default=1,
                    help="동시에 처리할 환자 수 (batch 또는 여러 환자 파일). interactive 답변 모드에서는 1로 고정")
+    p.add_argument("--input-source", choices=["clinical_record", "self_report", "unknown"], default=None,
+                   help="환자 원문의 출처를 모든 환자에 지정 (환자 파일의 input_source보다 우선). "
+                        "지정하지 않고 파일에도 없으면 unknown: 진료 기록이 필요한 기준은 UNVERIFIED")
     p.add_argument("--demo", action="store_true",
                    help="데모 모드: 가상 데모 시험(DEMO-LUNG-001 등)도 추천에 표시 (기본은 판정만 하고 추천에서 제외)")
 
@@ -155,6 +158,9 @@ def main(argv: list[str] | None = None) -> None:
     else:
         cases = [c for p in sorted(Path(args.patients_dir).iterdir())
                  if p.suffix.lower() in (".json", ".txt") for c in load_patients(p)]
+    if args.input_source:
+        for c in cases:
+            c.input_source = args.input_source
     answerer = _answerer(args.answers, cases)
 
     topic_map = json.loads(Path(args.topic_map).read_text(encoding="utf-8")) if args.topic_map else {}
