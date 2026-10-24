@@ -256,23 +256,40 @@ def _e4_candidate(store, proposals, tmp_path) -> Path:
     return out
 
 
-SRC = "Clinical summary: patient record reviewed."
+# 기준별 합성 근거 (Phase 10-E9에서 변경). 이전에는 모든 기준에 같은 일반 문장("Clinical summary: patient record
+# reviewed.")을 인용했는데, 근거 직접성 검증(evidence_directness.py)은 기준과 무관한 일반 인용으로 확정하지 않으므로
+# (예: I1 'frequent relapses'에 재발 언급이 없음) 대조군이 CRITERIA_MATCH가 될 수 없었음. 테스트가 보호하는 동작
+# (원본 기준표는 CRITERIA_MATCH, E4 검토 표시만으로 CRITERIA_MATCH가 막힘)은 그대로이고, 근거만 기준마다 그 조건을
+# 직접 진술하는 합성 기록으로 바꿈: 선정 기준은 "Record: <기준>", 제외 기준은 "Record: no <기준>".
+def _statement(kind: str, text: str) -> str:
+    return f"Record: {text}" if kind == "inclusion" else f"Record: no {text}"
+
+
+def _frozen_rules() -> dict:
+    trial = json.loads((config.TRIALS_DIR / "NCT06125405.json").read_text(encoding="utf-8"))
+    return {r.rule_id: r for r in trial_store.load(trial).rules}  # Frozen Store는 읽기만
+
+
+SRC = "\n".join(_statement(r.kind, r.text) for r in _frozen_rules().values())
 
 
 def _mock_llm(monkeypatch):
-    """LLM 대역: 요청받은 모든 규칙을 선정 충족·제외 비해당으로, 원문에 있는 인용과 함께 판정.
+    """LLM 대역: 요청받은 모든 규칙을 선정 충족·제외 비해당으로, 그 기준을 직접 진술하는 원문 인용과 함께 판정.
     요청받지 않았어도 E4에 '해당 안 됨'을 항상 덧붙여, 검토 표시 규칙이 LLM 답으로 판정되지 않는지 확인."""
     from ctrec.agents import matcher
     from ctrec.schemas import LLMAssessment, MatcherOutput
 
+    frozen = _frozen_rules()
+
     def fake(model, system, user, **k):
         rules = json.loads(user.split("<rules_to_assess>")[1].split("</rules_to_assess>")[0])
-        answers = [(r["rule_id"], "yes" if r["kind"] == "inclusion" else "no") for r in rules]
-        if "E4" not in {rid for rid, _ in answers}:
-            answers.append(("E4", "no"))
+        answers = [(r["rule_id"], "yes" if r["kind"] == "inclusion" else "no", _statement(r["kind"], r["text"]))
+                   for r in rules]
+        if "E4" not in {rid for rid, _, _ in answers}:
+            answers.append(("E4", "no", _statement("exclusion", frozen["E4"].text)))
         return MatcherOutput(assessments=[
             LLMAssessment(rule_id=rid, applicable=True, holds=holds, evidence_type="explicit", confidence="high",
-                          evidence=SRC, reasoning="mock", missing_info=None) for rid, holds in answers])
+                          evidence=quote, reasoning="mock", missing_info=None) for rid, holds, quote in answers])
     monkeypatch.setattr(matcher.llm, "structured", fake)
 
 
