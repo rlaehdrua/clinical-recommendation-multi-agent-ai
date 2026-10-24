@@ -51,7 +51,7 @@
 | 항목 | 값 |
 |---|---|
 | 기준선 커밋 (이전 정책) | 64d471b - 정책 버전 `matcher-baseline` |
-| 정책 변경 커밋 | (후속 문서 커밋에서 기입) - 정책 버전 `evidence-directness-v1` |
+| 정책 변경 커밋 | b3609ed78225c54b3c0ef580ff6956676dda6c9a (b3609ed) - 정책 버전 `evidence-directness-v1`. 이 해시는 바로 다음 문서 전용 커밋에서 기록함 |
 | 변경된 보호 파일 | `src/ctrec/agents/matcher.py` |
 | 기대값을 바꾼 기존 테스트 | `tests/test_evidence_directness.py` 3건 / `tests/test_store_patch.py`는 가짜 LLM 근거만 기준별 합성 근거로 바꿈(기대값 유지) |
 | 승인자 / 날짜 | 프로젝트 사용자(Phase 10-E9 조건부 로컬 커밋 승인) / 2026-10-24 |
