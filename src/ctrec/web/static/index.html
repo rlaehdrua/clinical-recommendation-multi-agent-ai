@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>임상시험 탐색 도우미</title>
-<!-- 모든 자원은 같은 서버에서 (CSP: script-src·style-src 'self'). 외부 라이브러리: static/VENDOR.md -->
+<title>나에게 맞는 임상시험 찾기</title>
+<!-- 모든 자원은 같은 서버에서 (CSP: script-src·style-src·font-src 'self'). 외부 라이브러리: static/VENDOR.md -->
 <link rel="stylesheet" href="/static/app.css">
 <script src="/static/marked.min.js" defer></script>
 <script src="/static/purify.min.js" defer></script>
@@ -13,80 +13,78 @@
 </head>
 <body>
 <a class="skip" href="#input-panel">본문으로 건너뛰기</a>
-<header>
-  <h1>임상시험 탐색 도우미</h1>
-  <span class="badge" id="run-state" role="status" aria-live="polite" aria-label="분석 상태">대기 중</span>
-  <span class="badge" id="elapsed" hidden aria-label="경과 시간">0초</span>
-  <span class="badge" id="model" title="분석에 쓰는 AI 모델">모델 -</span>
-  <nav id="pages" aria-label="화면 전환">
-    <button class="on" data-page="run" aria-current="page" type="button">입력·진행</button>
-    <button data-page="result" disabled type="button">추천 결과</button>
-  </nav>
+<div class="app">
+<header class="top">
+  <div class="bar">
+    <h1 class="brand">나에게 맞는 임상시험 찾기</h1>
+    <span class="badge" id="run-state" role="status" aria-live="polite" aria-label="분석 상태">대기 중</span>
+  </div>
+  <div class="meta">
+    <span class="badge" id="elapsed" hidden aria-label="경과 시간">0초</span>
+    <span class="badge" id="model" title="분석에 쓰는 AI 모델">모델 -</span>
+    <nav id="pages" aria-label="화면 전환">
+      <button class="on" data-page="run" aria-current="page" type="button">입력·진행</button>
+      <button data-page="result" disabled type="button">추천 결과</button>
+    </nav>
+  </div>
 </header>
-<div class="disclaimer" id="disclaimer"></div>
+<details class="disclaimer"><summary>⚠️ 참고용 정보 · 진단·치료 권고 아님</summary><p class="m0 mb6" id="disclaimer"></p></details>
 
 <main id="page-run">
   <!-- 실제 AI 분석이 꺼진 서버 (관리자 설정): 입력해도 분석하지 않음 -->
   <div class="note warn" id="analysis-off" role="status" hidden><b>이 서버에서는 실제 AI 분석이 꺼져 있습니다.</b>
     분석을 시작해도 실행되지 않으며, 입력한 환자 정보는 외부로 보내지 않습니다. 관리자에게 문의하세요.</div>
-  <!-- 1. 소개·안내 -->
-  <section class="panel" id="intro" aria-labelledby="intro-h">
-    <h2 id="intro-h">이 서비스는 무엇을 하나요?</h2>
-    <div class="body stack">
-      <p class="m0">입력한 환자 정보를 공개된 임상시험의 선정·제외 기준과 비교해, 검토해 볼 만한 임상시험과 그 근거를 정리합니다.
-        <b>임상시험 참여 자격을 확정하지 않습니다.</b> 실제 참여 가능 여부는 연구기관의 스크리닝과 연구자 판단으로 정해집니다.</p>
-      <ol class="howto">
-        <li><b>환자 정보 입력</b> — 진단, 치료 이력, 검사 결과 등을 자유롭게 적습니다.</li>
-        <li><b>분석</b> — AI가 정보를 정리하고 임상시험 기준과 비교합니다. 단계마다 진행 상황이 표시됩니다.</li>
-        <li><b>추가 질문</b> — 판단에 필요한 정보가 부족하면 질문이 나옵니다. 모르는 항목은 "모름 · 확인 불가"로 답할 수 있습니다.</li>
-        <li><b>결과 확인</b> — 시험별 매칭 상태와, 충족·불충족·정보 부족·추가 확인이 필요한 조건을 근거와 함께 봅니다.</li>
-      </ol>
-    </div>
+
+  <!-- 1. 소개 -->
+  <section class="intro" id="intro" aria-labelledby="intro-h">
+    <p class="eyebrow">임상시험 찾기</p>
+    <h2 id="intro-h" class="title">환자 정보로<br>검토해 볼 임상시험을 찾아요</h2>
+    <ol class="howto" aria-label="진행 순서">
+      <li><span class="n">1</span><b>정보 입력</b><span>진단·치료·검사</span></li>
+      <li><span class="n">2</span><b>AI 분석</b><span>기준별 비교</span></li>
+      <li><span class="n">3</span><b>추가 질문</b><span>부족한 정보만</span></li>
+      <li><span class="n">4</span><b>결과 확인</b><span>조건별 근거</span></li>
+    </ol>
+    <div class="note soft"><b>참여 확정 아님</b> · 최종 판단은 연구기관이 해요</div>
   </section>
 
   <!-- 2. 환자 정보 입력 -->
   <section class="panel" id="input-panel" aria-labelledby="input-h" tabindex="-1">
-    <h2 id="input-h">① 환자 정보 입력</h2>
+    <h2 id="input-h">환자 정보</h2>
     <div class="body stack">
       <div class="tabs" role="tablist" aria-label="입력 방식">
         <button id="to-custom" role="tab" aria-selected="true" aria-controls="custom-wrap" type="button">직접 입력</button>
-        <button id="to-list" role="tab" aria-selected="false" aria-controls="preview-wrap" type="button">예시 사례 선택 (가상 데이터)</button>
+        <button id="to-list" role="tab" aria-selected="false" aria-controls="preview-wrap" type="button">예시 사례 고르기 (가상 데이터)</button>
       </div>
-      <div class="note warn" id="privacy-note"><b>개인 식별 정보를 입력하지 마세요.</b>
-        이름, 주민등록번호, 연락처, 주소, 병원 등록번호처럼 사람을 알아볼 수 있는 정보는 빼고 적어 주세요.
-        입력 내용은 이 브라우저에 저장하지 않으며, 서버의 결과 파일 저장은 기본으로 꺼져 있습니다.</div>
+      <p class="lock" id="privacy-note"><span class="ico lock-ico" aria-hidden="true"></span><span><b>이름·연락처·주민번호·병원 번호는 빼고 적어 주세요</b> · 입력 내용은 저장하지 않아요</span></p>
       <div id="custom-wrap" role="tabpanel" aria-labelledby="to-custom">
-        <div class="cols">
-          <div>
-            <label class="field" for="custom">환자 상태 설명</label>
-            <textarea id="custom" aria-describedby="custom-tips char-count privacy-note" maxlength="20000"
-              placeholder="예) 58세 남성, 비소세포폐암 4기, EGFR 검사 결과 미확인, ECOG 1, 백금 기반 항암 2주기 후 진행 ..."></textarea>
-            <div class="counter" id="char-count" aria-live="polite">0 / 20,000자</div>
-          </div>
-          <div class="hint" id="custom-tips">
-            <b class="strong">이런 정보가 있으면 도움이 됩니다</b>
-            <ul class="tips">
-              <li>나이, 성별</li>
-              <li>진단명, 병기(예: 4기, T2N0M0)</li>
-              <li>유전자·바이오마커 검사 결과(예: EGFR, ALK, PD-L1)</li>
-              <li>받은 치료와 반응(수술, 항암, 방사선 등)</li>
-              <li>최근 검사 수치와 날짜(혈액, 신장·간 기능 등)</li>
-              <li>전신 상태(ECOG), 동반 질환, 복용 중인 약</li>
-            </ul>
-            <div class="row mt8">
-              <button class="link" id="fill-example" type="button">합성 예시 넣기 (실제 환자 아님)</button>
-              <button class="link" id="clear-input" type="button">입력 지우기</button>
-            </div>
-          </div>
+        <label class="field" for="custom">환자 상태 설명</label>
+        <textarea id="custom" aria-describedby="custom-tips char-count privacy-note" maxlength="20000"
+          placeholder="예) 58세 남성, 비소세포폐암 4기, EGFR 검사 결과 미확인, ECOG 1, 백금 기반 항암 2주기 후 진행 ..."></textarea>
+        <div class="counter" id="char-count" aria-live="polite">0 / 20,000자</div>
+        <details class="tipbox" id="custom-tips">
+          <summary>이런 정보가 있으면 정확해요</summary>
+          <ul class="tips">
+            <li>나이, 성별</li>
+            <li>진단명, 병기(예: 4기, T2N0M0)</li>
+            <li>유전자·바이오마커 검사 결과(예: EGFR, ALK, PD-L1)</li>
+            <li>받은 치료와 반응(수술, 항암, 방사선 등)</li>
+            <li>최근 검사 수치와 날짜(혈액, 신장·간 기능 등)</li>
+            <li>전신 상태(ECOG), 동반 질환, 복용 중인 약</li>
+          </ul>
+        </details>
+        <div class="row mt8">
+          <button class="link" id="fill-example" type="button">합성 예시 넣기</button>
+          <button class="link" id="clear-input" type="button">입력 지우기</button>
         </div>
       </div>
       <div id="preview-wrap" role="tabpanel" aria-labelledby="to-list" hidden>
-        <label class="field" for="patient">예시 사례 (챌린지 제공·합성 데이터, 실제 환자 아님)</label>
+        <label class="field" for="patient">예시 사례 · 합성 데이터 (실제 환자 아님)</label>
         <select id="patient"></select>
-        <div class="preview mt8" id="preview" aria-live="polite" aria-label="예시 사례 내용"></div>
+        <div class="case mt8" id="preview" aria-live="polite" aria-label="예시 사례 내용"></div>
       </div>
       <details class="adv" id="advanced">
-        <summary>고급 설정: 비교할 임상시험 <span class="hint" id="trial-count"></span></summary>
+        <summary>비교할 임상시험 설정 <span class="hint" id="trial-count"></span></summary>
         <div class="stack mt8">
           <fieldset class="cand-mode">
             <legend>후보 임상시험 선택 방식</legend>
@@ -98,69 +96,85 @@
           <label class="hint inline-check"><input type="checkbox" id="search"> 후보가 모두 맞지 않거나 모집이 끝났으면 ClinicalTrials.gov에서 추가 검색 허용</label>
         </div>
       </details>
-      <div class="row"><button class="btn" id="review" type="button">입력 내용 확인</button></div>
+      <button class="btn block" id="review" type="button">입력 내용 확인</button>
       <div class="err" id="input-error" role="alert"></div>
       <!-- 입력 내용 확인 -->
       <div class="note info" id="review-panel" hidden role="region" aria-labelledby="review-h">
-        <b id="review-h">이 내용으로 분석할까요?</b>
+        <b id="review-h">이 내용으로 찾을까요?</b>
         <div class="hint mt4 mb6" id="review-meta"></div>
         <div class="preview" id="review-text" aria-label="분석할 입력 내용"></div>
-        <div class="row mt10">
-          <button class="btn" id="start" type="button">이 내용으로 분석 시작</button>
-          <button class="btn ghost" id="edit" type="button">수정하기</button>
+        <div class="stack mt10">
+          <button class="btn block" id="start" type="button">분석 시작</button>
+          <button class="btn ghost block" id="edit" type="button">수정하기</button>
         </div>
       </div>
       <div class="err" id="start-hint" role="alert"></div>
       <!-- 탭을 닫았다 다시 연 경우: 같은 브라우저의 진행 중 분석 -->
       <div class="note info" id="active-note" hidden role="region" aria-labelledby="active-h">
-        <b id="active-h">이 브라우저에서 진행 중인 분석이 있습니다.</b>
-        <div class="hint mt4">이전 탭을 닫았어도 분석은 서버에서 계속됩니다. 이어 보거나, 이어 본 뒤 취소할 수 있습니다. 입력 원문은 보안상 다시 표시하지 않습니다.</div>
+        <b id="active-h">이 브라우저에서 진행 중인 분석이 있어요.</b>
+        <div class="hint mt4">이전 탭을 닫았어도 분석은 서버에서 계속돼요. 이어 보거나, 이어 본 뒤 취소할 수 있어요. 입력 원문은 보안상 다시 표시하지 않아요.</div>
         <div class="row mt10"><button class="btn" id="resume-active" type="button">진행 중인 분석 이어 보기</button></div>
       </div>
     </div>
   </section>
 
-  <!-- 3. 분석 진행 -->
+  <!-- 3. 분석 진행 (추가 질문은 이 화면의 #qslot에 한 번에 하나씩) -->
   <section class="panel" id="progress-panel" aria-labelledby="progress-h" hidden>
-    <h2 id="progress-h" tabindex="-1">② 분석 진행 <button class="btn danger" id="cancel" type="button" hidden>분석 취소</button></h2>
+    <h2 id="progress-h" tabindex="-1">찾고 있어요 <button class="btn danger sm" id="cancel" type="button" hidden>분석 취소</button></h2>
     <div class="body stack">
-      <ol class="stages" id="stages" aria-label="분석 단계"></ol>
-      <div class="note info" id="stage-note" role="status" aria-live="polite">분석을 준비하고 있습니다.</div>
-      <div class="note warn" id="wait-note" hidden role="status">응답을 기다리고 있습니다. AI 분석은 한 단계에 수십 초 이상 걸릴 수 있으며, 화면을 닫지 않아도 서버에서 계속 진행됩니다.</div>
-      <div class="note bad" id="conn-note" hidden role="alert"></div>
-      <div class="note" id="end-note" hidden role="status" tabindex="-1"></div>
       <div id="qslot"></div>
-      <div>
-        <h3 class="h3">검토 중인 임상시험</h3>
-        <div id="cards"><div class="empty">아직 검토를 시작한 임상시험이 없습니다.</div></div>
-      </div>
-      <details class="dev" id="devlog">
-        <summary>자세한 진행 기록 (개발자용)</summary>
-        <div class="stack mt8">
-          <svg id="graph" viewBox="0 0 720 330" role="img" aria-label="에이전트 구성도"></svg>
-          <div class="steps" id="steps"></div>
-          <div id="feed"><div class="empty">진행 기록이 여기에 표시됩니다.</div></div>
-          <div class="hint" id="feed-count"></div>
+      <div class="run-detail stack">
+        <ol class="stages" id="stages" aria-label="분석 단계"></ol>
+        <div class="note info" id="stage-note" role="status" aria-live="polite">분석 준비 중</div>
+        <p class="eta">보통 3~5분 · 중간에 질문이 나오면 답해 주세요</p>
+        <div class="note warn" id="wait-note" hidden role="status">AI 응답 기다리는 중 · 화면을 닫아도 서버에서 계속돼요</div>
+        <div class="note bad" id="conn-note" hidden role="alert"></div>
+        <div class="note" id="end-note" hidden role="status" tabindex="-1"></div>
+        <div>
+          <h3 class="h3">살펴보는 임상시험</h3>
+          <div id="cards"><div class="empty">아직 검토를 시작한 임상시험이 없습니다.</div></div>
         </div>
-      </details>
-      <!-- 개발자용 진단 (주소에 ?diagnostic=1일 때만): 판정·질문·추천에 쓰이지 않음 -->
-      <details class="panel" id="decision-panel" hidden>
-        <summary><b>개발자 진단 · Decision Loop</b> <span class="hint">판정·질문·추천에 쓰이지 않는 참고 정보</span></summary>
-        <div class="body" id="decision-body"></div>
-      </details>
+        <details class="dev" id="devlog">
+          <summary>자세한 진행 기록 (개발자용)</summary>
+          <div class="stack mt8">
+            <svg id="graph" viewBox="0 0 720 330" role="img" aria-label="에이전트 구성도"></svg>
+            <div class="steps" id="steps"></div>
+            <div id="feed"><div class="empty">진행 기록이 여기에 표시됩니다.</div></div>
+            <div class="hint" id="feed-count"></div>
+          </div>
+        </details>
+        <!-- 개발자용 진단 (주소에 ?diagnostic=1일 때만): 판정·질문·추천에 쓰이지 않음 -->
+        <details class="panel" id="decision-panel" hidden>
+          <summary><b>개발자 진단 · Decision Loop</b> <span class="hint">판정·질문·추천에 쓰이지 않는 참고 정보</span></summary>
+          <div class="body" id="decision-body"></div>
+        </details>
+      </div>
     </div>
   </section>
 </main>
 
-<!-- 4. 추천 결과 -->
+<!-- 4. 추천 결과 목록 -->
 <main id="page-result" hidden>
-  <section class="panel" aria-labelledby="result-h">
-    <h2 id="result-h" tabindex="-1">③ 추천 결과 <span class="usage" id="usage"></span></h2>
-    <div class="body stack">
+  <section aria-labelledby="result-h">
+    <h2 id="result-h" class="sr-only" tabindex="-1">추천 결과 <span class="usage" id="usage"></span></h2>
+    <div class="stack">
       <div id="final"><div class="empty">분석이 끝나면 결과가 표시됩니다.</div></div>
-      <div class="row"><button class="btn" id="new-run" type="button">새 분석 시작</button></div>
+      <button class="btn ghost block" id="new-run" type="button">처음부터 다시 찾기</button>
     </div>
   </section>
 </main>
+
+<!-- 5. 임상시험 상세와 내 조건 -->
+<main id="page-detail" hidden>
+  <button class="back" id="detail-back" type="button"><span class="ico chev" aria-hidden="true"></span>결과 목록</button>
+  <div id="detail" class="stack"></div>
+</main>
+
+<!-- 6. 담당 의사에게 보여줄 요약 -->
+<main id="page-summary" hidden>
+  <button class="back" id="summary-back" type="button"><span class="ico chev" aria-hidden="true"></span>결과 목록</button>
+  <div id="summary" class="stack"></div>
+</main>
+</div>
 </body>
 </html>
