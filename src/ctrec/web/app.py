@@ -538,8 +538,11 @@ def list_patients() -> list[dict]:
     # 가상 데모 시험만 후보로 둔 환자(SYN-DEMO-*)는 데모 모드에서만 보임
     all_trials = _load_trials()
     demo = set(all_trials) - set(screen_pool(all_trials))
+    # 예시 사례 한국어 번역 (표시 전용, data/i18n/patients_ko.json): 번역 당시 원문과 지금 원문이 같을 때만. 분석은 원문으로
+    ko = json.loads(_PATIENTS_KO_FILE.read_text(encoding="utf-8")) if _PATIENTS_KO_FILE.exists() else {}
+    tr = lambda c: (ko.get(c.patient_id) or {}).get("text_ko") if (ko.get(c.patient_id) or {}).get("text_en") == c.raw_text else None
     return [
-        {"patient_id": c.patient_id, "group": group, "text": c.raw_text,
+        {"patient_id": c.patient_id, "group": group, "text": c.raw_text, "text_ko": tr(c),
          "candidate_trials": c.candidate_trials or [], "has_hidden": bool(c.hidden_details)}
         for c, group in _load_cases().values()
         if not (c.candidate_trials and set(c.candidate_trials) <= demo)
@@ -583,6 +586,7 @@ def _purge_outputs_periodically() -> None:
 
 # 화면 표시용 한국어 번역 (팀원 커밋 4ea12d6에서 가져옴). 판정에는 쓰지 않음: 화면이 원문(en)과 같을 때만 번역을 보여 줌
 _KO_FILE = config.DATA_DIR / "i18n" / "trials_ko.json"
+_PATIENTS_KO_FILE = config.DATA_DIR / "i18n" / "patients_ko.json"
 
 
 @app.get("/api/ko")

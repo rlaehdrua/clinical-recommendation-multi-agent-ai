@@ -82,6 +82,7 @@
         <label class="field" for="patient">예시 사례 · 합성 데이터 (실제 환자 아님)</label>
         <select id="patient"></select>
         <div class="preview mt8" id="preview" aria-live="polite" aria-label="예시 사례 내용"></div>
+        <details class="raw" id="preview-orig" hidden><summary>영어 원문 보기 · 분석은 원문으로 해요</summary><div class="rawtext" lang="en"></div></details>
       </div>
       <details class="adv" id="advanced">
         <summary>비교할 임상시험 설정 <span class="hint" id="trial-count"></span></summary>
@@ -103,6 +104,7 @@
         <b id="review-h">이 내용으로 찾을까요?</b>
         <div class="hint mt4 mb6" id="review-meta"></div>
         <div class="preview" id="review-text" aria-label="분석할 입력 내용"></div>
+        <details class="raw" id="review-orig" hidden><summary>영어 원문 보기 · 분석은 원문으로 해요</summary><div class="rawtext" lang="en"></div></details>
         <div class="stack mt10">
           <button class="btn block" id="start" type="button">분석 시작</button>
           <button class="btn ghost block" id="edit" type="button">수정하기</button>

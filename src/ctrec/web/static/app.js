@@ -118,7 +118,7 @@ async function init() {
   const groups = {};
   for (const p of state.patients) (groups[p.group] ||= []).push(p);
   $("#patient").innerHTML = Object.entries(groups).map(([g, ps]) =>
-    `<optgroup label="${esc(g)} (가상 데이터)">${ps.map(p => `<option value="${esc(p.patient_id)}">${esc(p.patient_id)} · ${esc(p.text.slice(0, 48))}…</option>`).join("")}</optgroup>`).join("");
+    `<optgroup label="${esc(g)} (가상 데이터)">${ps.map(p => `<option value="${esc(p.patient_id)}">${esc(p.patient_id)} · ${esc(shownText(p).slice(0, 40))}…</option>`).join("")}</optgroup>`).join("");
   $("#trials").innerHTML = state.trials.map(t => `<label class="trial-opt"><input type="checkbox" value="${esc(t.trial_id)}">
     <span><span class="tid">${esc(t.trial_id)}</span> ${statusBadge(t.overall_status)}${t.synthetic ? ' <span class="badge">가상 시험</span>' : ""}
     <span class="ttl"${koTitle(t.trial_id, t.title) !== t.title ? ` title="${esc(t.title)}"` : ""}>${esc(koTitle(t.trial_id, t.title))}</span></span></label>`).join("");
@@ -158,11 +158,18 @@ function fillExample() {
   // 합성 예시 (실제 환자 아님): 예시 사례 중 하나의 원문을 그대로 넣음
   const p = state.patients.find(x => x.patient_id === $("#patient").value) || state.patients[0];
   if (!p) return;
-  $("#custom").value = p.text; onTextInput(); $("#custom").focus();
+  $("#custom").value = shownText(p); onTextInput(); $("#custom").focus();  // 직접 입력에 넣으면 보이는 한국어 그대로 분석
+}
+// 예시 사례는 한국어 번역(표시 전용)이 있으면 번역을 보여 줌. 사례를 골라 분석하면 서버는 원문을 씀
+const shownText = (p) => p.text_ko || p.text;
+function showOrig(sel, p) {
+  const box = $(sel); if (!box) return;
+  box.hidden = !(p && p.text_ko);
+  if (p && p.text_ko) box.querySelector(".rawtext").textContent = p.text;
 }
 function onPatient() {
   const p = state.patients.find(x => x.patient_id === $("#patient").value); if (!p) return;
-  $("#preview").textContent = p.text;
+  $("#preview").textContent = shownText(p); showOrig("#preview-orig", p);
   document.querySelectorAll("#trials input").forEach(i => { i.checked = p.candidate_trials.includes(i.value); });
   const list = $("#trials"); [...list.children].sort((x, y) => y.querySelector("input").checked - x.querySelector("input").checked).forEach(el => list.appendChild(el));
   list.scrollTop = 0; countTrials(); $("#review-panel").hidden = true;
@@ -204,10 +211,12 @@ function review() {
     if (state.custom) { $("#custom").setAttribute("aria-invalid", "true"); $("#custom").focus(); } else $("#patient").focus();
     return;
   }
-  const text = body.custom_text ?? (state.patients.find(p => p.patient_id === body.patient_id) || {}).text ?? "";
+  const pick = state.patients.find(p => p.patient_id === body.patient_id) || {};
+  const text = body.custom_text ?? shownText(pick) ?? "";
   $("#review-meta").textContent = `${state.custom ? "직접 입력" : "예시 사례 " + body.patient_id} · ${text.length.toLocaleString()}자 · `
     + (body.screen ? "전체 시험에서 자동 추림" : `직접 선택한 시험 ${body.trial_ids.length}개`) + (body.allow_search ? " · 추가 검색 허용" : "");
   $("#review-text").textContent = text.length > 600 ? text.slice(0, 600) + " …" : text;
+  showOrig("#review-orig", body.custom_text == null ? pick : null);
   $("#review-panel").hidden = false; $("#start").focus();
 }
 function lockInput(on) {
