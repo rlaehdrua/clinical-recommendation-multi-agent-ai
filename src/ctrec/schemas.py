@@ -54,6 +54,9 @@ class Rule(BaseModel):
 
 
 RequiredEvidence = Literal["self_report_ok", "clinical_record"]
+# 확정 판정 근거의 직접성 (evidence_directness.py가 계산). none = 확정 판정 없음
+EvidenceDirectness = Literal["direct", "unchecked", "structured", "hedged", "indirect", "conflicting", "question_only",
+                             "unlocated", "unlinked", "object_mismatch", "time_unverified", "none"]
 
 
 class RuleMeta(BaseModel):
@@ -192,6 +195,12 @@ class CriterionAssessment(BaseModel):
     needs_verification: bool = False
     self_reported_holds: Holds | None = None
     self_reported_applicable: bool = True  # 답변상 '해당 없음'이었으면 False
+    # 근거 직접성 (코드 검증, evidence_directness.py). 출처(evidence_source)·검증 상태(사실 저장소)와 별개:
+    # 인용이 기록에 있어도(record) 기준의 조건을 직접 말하지 않으면 확정하지 않음. 기존 저장 결과에는 없으므로 기본값으로 읽힘
+    evidence_directness: EvidenceDirectness = "none"
+    validation_flags: list[str] = []  # 코드 검증이 판정을 보류한 이유 코드 (예: hedged_quote, indirect_evidence)
+    # 코드 검증 전 LLM의 원래 판정 {holds, applicable, evidence_type, confidence}. 규칙 엔진 판정·기존 결과는 None
+    llm_judgment: dict | None = None
 
 
 class TrialMatch(BaseModel):

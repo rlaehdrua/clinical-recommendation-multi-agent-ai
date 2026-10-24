@@ -17,8 +17,8 @@ from __future__ import annotations
 import json
 import re
 
-from .. import config, evidence, llm
-from ..schemas import (CriterionAssessment, LLMAssessment, MatcherOutput, ParsedTrial, PatientProfile, Rule,
+from .. import config, evidence, evidence_directness, llm
+from ..schemas import (CriterionAssessment, LLMAssessment, MatcherOutput, ParsedTrial, PatientProfile, QAPair, Rule,
                        RuleMeta, TrialMatch)
 from ..tools import rule_engine
 from .criteria_parser import rules_json
@@ -214,6 +214,51 @@ def _enforce_quote(a: LLMAssessment, source_text: str | None,
     })
 
 
+_DIRECTNESS_REASON = {
+    "unlocated": "인용 위치를 원문 줄 단위로 확인할 수 없음",
+    "question_only": "인용이 확인 질문 문장에만 있고 환자 답변·기록에는 없음",
+    "unlinked": "짧은 답변이 질문·대상 기준과 연결된 기록을 확인할 수 없음",
+    "hedged": "인용한 근거에 추측·불확실·모름 표현이 있음",
+    "indirect": "인용한 근거가 기준의 조건을 직접 말하지 않음(간접 추론)",
+    "object_mismatch": "근거의 대상(물질·시술 등)이 기준의 대상과 일치하는지 확인할 수 없음",
+    "time_unverified": "근거의 날짜가 기준의 기간 조건 안인지 확인할 수 없음",
+    "conflicting": "같은 대상에 대해 원문 기록이 서로 상충함",
+}
+
+
+def _enforce_directness(a: LLMAssessment, rule: Rule, source_text: str | None,
+                        profile: PatientProfile | None = None, *, trial_id: str | None = None,
+                        reference_date: str | None = None,
+                        qa_log: list[QAPair] | None = None) -> tuple[LLMAssessment, evidence_directness.Check]:
+    """확정 판정(yes/no, 해당 없음)의 근거가 이 기준에 직접 대응하는지 코드로 확인 (evidence_directness.py).
+
+    _enforce_quote 다음에 실행합니다(인용이 원문에 있는 판정만 남은 상태). 출처가 진료 기록이어도 근거가 간접 추론·추측·
+    다른 대상·기간 밖이거나 기록끼리 상충하면 판정 불가(unknown)로 되돌리고, 불충족으로 바꾸지 않습니다.
+    qa_log가 없으면 짧은 답변(예/아니요)은 근거로 쓰지 않습니다(질문·대상 기준 연결을 확인할 수 없음).
+    """
+    if a.applicable and a.holds == "unknown":
+        return a, evidence_directness.Check("none")
+    if source_text is not None and not evidence_in_source(a.evidence, source_text) \
+            and _profile_field_ref_ok(a.evidence, profile):
+        c = evidence_directness.check_structured(rule.text, a.evidence)
+    else:
+        c = evidence_directness.check(rule.text, a.evidence, source_text, holds=a.holds, applicable=a.applicable,
+                                      category=rule.category, time_window_days=rule.time_window_days,
+                                      reference_date=reference_date,
+                                      key=f"{trial_id}:{rule.rule_id}" if trial_id else None, qa_log=qa_log)
+    if c.ok:
+        return a, c
+    label = "해당 없음" if not a.applicable else a.holds
+    need = ("상충하는 기록을 진료 기록·담당 의료진으로 확인" if c.directness == "conflicting"
+            else f"기준에 직접 대응하는 확인 필요: {rule.text[:120]}")
+    return a.model_copy(update={
+        "applicable": True,
+        "holds": "unknown",
+        "reasoning": f"[코드 검증: {_DIRECTNESS_REASON[c.directness]} - 모델 판정 '{label}' 보류] {a.reasoning}",
+        "missing_info": need,
+    }), c
+
+
 def _meta(parsed: ParsedTrial, rule: Rule) -> RuleMeta:
     """사전 컴파일 메타. 없으면(즉석 파싱 등) 유형별 고정 규칙으로 근거 수준만 정함."""
     m = parsed.rule_meta.get(rule.rule_id)
@@ -344,9 +389,11 @@ brief_summary: {trial.get('brief_summary', '')[:3000]}
 
 def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
                 reference_date: str | None = None, source_text: str | None = None,
-                input_source: str = "unknown") -> TrialMatch:
+                input_source: str = "unknown", qa_log: list[QAPair] | None = None) -> TrialMatch:
     """source_text: 환자 원문(확인 질문 답변 포함). 주어지면 LLM 판정의 인용 근거를 원문과 대조합니다.
-    input_source: 최초 입력의 선언된 출처(evidence.InputSource). 밝히지 않으면 unknown(진료 기록으로 보지 않음)."""
+    input_source: 최초 입력의 선언된 출처(evidence.InputSource). 밝히지 않으면 unknown(진료 기록으로 보지 않음).
+    qa_log: 확인 질문 기록(질문 ID·대상 기준·답변). 주어지면 짧은 답변(예/아니요)을 그 질문의 대상 기준에 한해 근거로 씀.
+            없으면(현재 Session 기본) 짧은 답변은 근거로 쓰지 않음."""
     ref = reference_date or config.reference_date()
     by_id = {r.rule_id: r for r in parsed.rules}
     results: dict[str, CriterionAssessment] = {}
@@ -358,6 +405,8 @@ def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
             continue
         res = rule_engine.evaluate(rule, profile)
         if res is not None:
+            if res.passes is not None:
+                res.evidence_directness = "structured"
             results[rule.rule_id] = res
 
     # LLM 판정: 응답에서 빠진 rule_id만 골라 다시 요청 (전체 재평가 없이 누락분만)
@@ -374,7 +423,18 @@ def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
             # 화이트리스트: 이번에 요청하지 않은 rule_id(지어낸 ID 포함)나 중복 응답은 버림
             if rule is None or a.rule_id not in asked or a.rule_id in results:
                 continue
-            a = _enforce_quote(_enforce_evidence(a), source_text, profile)
+            judged = {"holds": a.holds, "applicable": a.applicable, "evidence_type": a.evidence_type,
+                      "confidence": a.confidence}
+            flags: list[str] = []
+            checked = _enforce_evidence(a)
+            if checked is not a:
+                flags.append("not_applicable_without_explicit" if not a.applicable else f"{a.evidence_type}_not_confirmable")
+            quoted = _enforce_quote(checked, source_text, profile)
+            if quoted is not checked:
+                flags.append("quote_not_in_source")
+            a, direct = _enforce_directness(quoted, rule, source_text, profile, trial_id=parsed.trial_id,
+                                            reference_date=ref, qa_log=qa_log)
+            flags += direct.flags
             results[a.rule_id] = CriterionAssessment(
                 rule_id=a.rule_id,
                 kind=rule.kind,
@@ -391,6 +451,11 @@ def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
                 category=rule.category,
                 underspecified=rule.underspecified,
                 cohort=rule.cohort,
+                evidence_directness=direct.directness,
+                validation_flags=flags,
+                llm_judgment=judged,
+                # 상충 기록: 다시 묻지 않고 기록 확인(UNVERIFIED -> 문서 확인 요청)으로. 답변 값으로 꾸미지 않음
+                needs_verification=direct.directness == "conflicting",
             )
         pending = [r for r in pending if r.rule_id not in results]
 
