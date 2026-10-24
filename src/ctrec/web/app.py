@@ -540,9 +540,10 @@ def list_patients() -> list[dict]:
     demo = set(all_trials) - set(screen_pool(all_trials))
     # 예시 사례 한국어 번역 (표시 전용, data/i18n/patients_ko.json): 번역 당시 원문과 지금 원문이 같을 때만. 분석은 원문으로
     ko = json.loads(_PATIENTS_KO_FILE.read_text(encoding="utf-8")) if _PATIENTS_KO_FILE.exists() else {}
-    tr = lambda c: (ko.get(c.patient_id) or {}).get("text_ko") if (ko.get(c.patient_id) or {}).get("text_en") == c.raw_text else None
+    # text_ko: 전체 번역, summary_ko: 핵심 요약 [[항목, 내용], ...]
+    tr = lambda c, key: (ko.get(c.patient_id) or {}).get(key) if (ko.get(c.patient_id) or {}).get("text_en") == c.raw_text else None
     return [
-        {"patient_id": c.patient_id, "group": group, "text": c.raw_text, "text_ko": tr(c),
+        {"patient_id": c.patient_id, "group": group, "text": c.raw_text, "text_ko": tr(c, "text_ko"), "summary_ko": tr(c, "summary_ko"),
          "candidate_trials": c.candidate_trials or [], "has_hidden": bool(c.hidden_details)}
         for c, group in _load_cases().values()
         if not (c.candidate_trials and set(c.candidate_trials) <= demo)

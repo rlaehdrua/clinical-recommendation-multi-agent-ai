@@ -1,162 +1,1328 @@
 {
  "S001": {
   "text_en": "A 54-year-old man with a history of chronic alcohol use presents with severe epigastric pain radiating to the back, nausea, and vomiting. Labs reveal markedly elevated serum lipase and amylase.",
-  "text_ko": "만성 음주력이 있는 54세 남성이 등으로 뻗치는 심한 명치 통증, 구역, 구토로 내원했다. 혈액검사에서 혈청 리파아제(lipase)와 아밀라아제(amylase)가 크게 상승해 있다."
+  "text_ko": "만성 음주력이 있는 54세 남성이 등으로 뻗치는 심한 명치 통증, 구역, 구토로 내원했다. 혈액검사에서 혈청 리파아제(lipase)와 아밀라아제(amylase)가 크게 상승해 있다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "54세 남성"
+   ],
+   [
+    "내원 사유",
+    "등으로 뻗치는 심한 명치 통증 · 구역 · 구토"
+   ],
+   [
+    "주요 검사",
+    "리파아제·아밀라아제 크게 상승"
+   ],
+   [
+    "생활 습관",
+    "만성 음주"
+   ]
+  ]
  },
  "S002": {
   "text_en": "A 29-year-old woman presents with intermittent palpitations, heat intolerance, and unintentional weight loss. Physical exam reveals a fine tremor, tachycardia, and a diffusely enlarged, non-tender thyroid gland.",
-  "text_ko": "29세 여성이 간헐적인 두근거림, 더위를 못 견딤, 의도하지 않은 체중 감소로 내원했다. 진찰에서 미세한 떨림, 빠른맥, 압통 없이 전체적으로 커진 갑상선이 확인된다."
+  "text_ko": "29세 여성이 간헐적인 두근거림, 더위를 못 견딤, 의도하지 않은 체중 감소로 내원했다. 진찰에서 미세한 떨림, 빠른맥, 압통 없이 전체적으로 커진 갑상선이 확인된다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "29세 여성"
+   ],
+   [
+    "내원 사유",
+    "간헐적 두근거림 · 더위 못 견딤 · 의도치 않은 체중 감소"
+   ],
+   [
+    "진찰",
+    "미세한 떨림 · 빠른맥 · 압통 없는 미만성 갑상선 비대"
+   ]
+  ]
  },
  "S003": {
   "text_en": "A 7-year-old boy with a 3-week history of periorbital edema and frothy urine. Urinalysis shows heavy proteinuria without hematuria, and serum albumin is low.",
-  "text_ko": "3주 전부터 눈 주위 부종과 거품뇨가 있는 7세 남아. 소변검사에서 혈뇨 없이 심한 단백뇨가 보이고 혈청 알부민이 낮다."
+  "text_ko": "3주 전부터 눈 주위 부종과 거품뇨가 있는 7세 남아. 소변검사에서 혈뇨 없이 심한 단백뇨가 보이고 혈청 알부민이 낮다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "7세 남아"
+   ],
+   [
+    "내원 사유",
+    "3주 전부터 눈 주위 부종 · 거품뇨"
+   ],
+   [
+    "주요 검사",
+    "혈뇨 없는 심한 단백뇨 · 낮은 혈청 알부민"
+   ]
+  ]
  },
  "S004": {
   "text_en": "A 68-year-old man with a long smoking history presents with painless gross hematuria. CT urography reveals a mass in the bladder wall.",
-  "text_ko": "오랜 흡연력이 있는 68세 남성이 통증 없는 육안적 혈뇨로 내원했다. CT 요로조영술에서 방광벽에 종괴가 보인다."
+  "text_ko": "오랜 흡연력이 있는 68세 남성이 통증 없는 육안적 혈뇨로 내원했다. CT 요로조영술에서 방광벽에 종괴가 보인다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "68세 남성"
+   ],
+   [
+    "내원 사유",
+    "통증 없는 육안적 혈뇨"
+   ],
+   [
+    "영상·조직",
+    "CT 요로조영술: 방광벽 종괴"
+   ],
+   [
+    "생활 습관",
+    "오랜 흡연력"
+   ]
+  ]
  },
  "S005": {
   "text_en": "A 34-year-old woman presents with recurrent episodes of severe unilateral throbbing headache preceded by visual scotomata, accompanied by photophobia, nausea, and phonophobia.",
-  "text_ko": "34세 여성이 시야 암점(scotoma)이 먼저 나타난 뒤 한쪽으로 심하게 욱신거리는 두통이 반복되며, 빛 과민, 구역, 소리 과민이 동반된다."
+  "text_ko": "34세 여성이 시야 암점(scotoma)이 먼저 나타난 뒤 한쪽으로 심하게 욱신거리는 두통이 반복되며, 빛 과민, 구역, 소리 과민이 동반된다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "34세 여성"
+   ],
+   [
+    "내원 사유",
+    "반복되는 한쪽 욱신거리는 심한 두통"
+   ],
+   [
+    "동반 증상",
+    "두통 전 시야 암점 · 빛·소리 과민 · 구역"
+   ]
+  ]
  },
  "S006": {
   "text_en": "A 45-year-old man with poorly controlled type 2 diabetes presents with fever, facial pain, black necrotic eschar on the nasal mucosa, and periorbital swelling.",
-  "text_ko": "조절되지 않는 제2형 당뇨병이 있는 45세 남성이 발열, 얼굴 통증, 코 점막의 검은 괴사성 딱지(eschar), 눈 주위 부종으로 내원했다."
+  "text_ko": "조절되지 않는 제2형 당뇨병이 있는 45세 남성이 발열, 얼굴 통증, 코 점막의 검은 괴사성 딱지(eschar), 눈 주위 부종으로 내원했다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "45세 남성"
+   ],
+   [
+    "내원 사유",
+    "발열 · 얼굴 통증 · 눈 주위 부종"
+   ],
+   [
+    "진찰",
+    "코 점막의 검은 괴사성 딱지"
+   ],
+   [
+    "동반 질환",
+    "조절 안 되는 제2형 당뇨병"
+   ]
+  ]
  },
  "S007": {
   "text_en": "A 3-month-old infant with projectile non-bilious vomiting after feeding, visible peristalsis, and a palpable olive-shaped mass in the epigastrium. Labs show hypochloremic, hypokalemic metabolic alkalosis.",
-  "text_ko": "생후 3개월 영아가 수유 후 담즙이 섞이지 않은 분출성 구토를 하고, 눈에 보이는 연동운동과 명치 부위에 올리브 모양 덩이가 만져진다. 혈액검사에서 저염소혈증·저칼륨혈증 대사성 알칼리증이 보인다."
+  "text_ko": "생후 3개월 영아가 수유 후 담즙이 섞이지 않은 분출성 구토를 하고, 눈에 보이는 연동운동과 명치 부위에 올리브 모양 덩이가 만져진다. 혈액검사에서 저염소혈증·저칼륨혈증 대사성 알칼리증이 보인다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "생후 3개월 영아"
+   ],
+   [
+    "내원 사유",
+    "수유 후 담즙 없는 분출성 구토"
+   ],
+   [
+    "진찰",
+    "눈에 보이는 연동운동 · 명치의 올리브 모양 덩이"
+   ],
+   [
+    "주요 검사",
+    "저염소혈증·저칼륨혈증 대사성 알칼리증"
+   ]
+  ]
  },
  "S008": {
   "text_en": "A 60-year-old woman presents with progressive dyspnea, dry cough, and clubbing of the fingers. Chest CT reveals bilateral basal reticular opacities with honeycombing.",
-  "text_ko": "60세 여성이 점점 심해지는 호흡곤란, 마른기침, 손가락 곤봉증으로 내원했다. 흉부 CT에서 양쪽 폐 아래쪽에 그물 모양 음영과 벌집 모양 변화(honeycombing)가 보인다."
+  "text_ko": "60세 여성이 점점 심해지는 호흡곤란, 마른기침, 손가락 곤봉증으로 내원했다. 흉부 CT에서 양쪽 폐 아래쪽에 그물 모양 음영과 벌집 모양 변화(honeycombing)가 보인다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "60세 여성"
+   ],
+   [
+    "내원 사유",
+    "진행하는 호흡곤란 · 마른기침 · 손가락 곤봉증"
+   ],
+   [
+    "영상·조직",
+    "흉부 CT: 양쪽 아래 폐 그물 음영 · 벌집 모양 변화"
+   ]
+  ]
  },
  "S009": {
   "text_en": "A 19-year-old male presents with fever, sore throat, fatigue, and posterior cervical lymphadenopathy. Physical exam reveals splenomegaly, and a monospot test is positive.",
-  "text_ko": "19세 남성이 발열, 인후통, 피로, 뒷목 림프절 비대로 내원했다. 진찰에서 비장 비대가 있고 모노스팟(monospot) 검사가 양성이다."
+  "text_ko": "19세 남성이 발열, 인후통, 피로, 뒷목 림프절 비대로 내원했다. 진찰에서 비장 비대가 있고 모노스팟(monospot) 검사가 양성이다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "19세 남성"
+   ],
+   [
+    "내원 사유",
+    "발열 · 인후통 · 피로 · 뒷목 림프절 비대"
+   ],
+   [
+    "진찰",
+    "비장 비대"
+   ],
+   [
+    "주요 검사",
+    "모노스팟 양성"
+   ]
+  ]
  },
  "S010": {
   "text_en": "A 73-year-old man with sudden onset of a painless, curtain-like loss of vision in the right eye, preceded by flashes of light and floaters.",
-  "text_ko": "73세 남성이 번쩍이는 빛과 날파리증(비문증)이 먼저 나타난 뒤 오른쪽 눈에 통증 없이 커튼이 드리우듯 시야가 갑자기 가려졌다."
+  "text_ko": "73세 남성이 번쩍이는 빛과 날파리증(비문증)이 먼저 나타난 뒤 오른쪽 눈에 통증 없이 커튼이 드리우듯 시야가 갑자기 가려졌다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "73세 남성"
+   ],
+   [
+    "내원 사유",
+    "오른쪽 눈에 통증 없이 커튼처럼 시야가 갑자기 가려짐"
+   ],
+   [
+    "동반 증상",
+    "먼저 번쩍임 · 날파리증"
+   ]
+  ]
  },
  "SYN-S001-01": {
   "text_en": "A 46-year-old woman is seen in the pancreas clinic on 2026-09-24, seven weeks after her second hospitalization for acute pancreatitis. Episodes occurred on 2025-11-14 and 2026-08-03; both were mild, interstitial edematous pancreatitis on contrast CT, with lipase above 10x the upper limit of normal, no organ failure, and discharge within 4 days. Work-up was unrevealing: two transabdominal ultrasounds and an MRCP showed no gallstones, sludge, ductal dilation or pancreas divisum; triglycerides 142 mg/dL, calcium 9.3 mg/dL, IgG4 normal; she takes no pancreatitis-associated drugs, drinks about 2 units of alcohol per week and does not smoke. Endoscopic ultrasound on 2026-09-10 showed a normal gallbladder without microlithiasis or sludge, a normal common bile duct, no features of chronic pancreatitis and no pancreatic mass. She is now asymptomatic and eating a normal diet, has never received formal dietary counselling, has her gallbladder in situ, and was assessed by a surgeon as fit for laparoscopic cholecystectomy (ASA II). Comorbidities are limited to hypothyroidism on levothyroxine; BMI 26.8 kg/m2, HbA1c 5.4% (2026-09), no corticosteroid use, no history of cancer, and a urine pregnancy test was negative; she is not breastfeeding.",
-  "text_ko": "46세 여성이 급성 췌장염으로 두 번째 입원한 지 7주 뒤인 2026-09-24에 췌장 클리닉을 방문했다. 발작은 2025-11-14와 2026-08-03에 있었고, 두 번 모두 조영 CT에서 경증 간질성 부종성 췌장염이었으며 리파아제가 정상 상한의 10배를 넘었고, 장기부전은 없었으며 4일 이내에 퇴원했다. 원인 검사에서는 특이 소견이 없었다: 복부 초음파 2회와 MRCP에서 담석, 담즙 찌꺼기(sludge), 췌관 확장, 췌장 분할(pancreas divisum)이 없었고, 중성지방 142 mg/dL, 칼슘 9.3 mg/dL, IgG4 정상이었다. 췌장염과 관련된 약은 복용하지 않으며, 음주는 주 2단위 정도이고 흡연하지 않는다. 2026-09-10 내시경 초음파에서 미세 담석이나 담즙 찌꺼기 없는 정상 담낭, 정상 총담관이 확인되었고, 만성 췌장염 소견이나 췌장 종괴는 없었다. 현재 증상 없이 일반식을 먹고 있으며, 정식 식이 상담을 받은 적은 없다. 담낭은 남아 있고, 외과의는 복강경 담낭절제술이 가능한 상태(ASA II)로 평가했다. 동반 질환은 레보티록신(levothyroxine)을 복용 중인 갑상선기능저하증뿐이며, BMI 26.8 kg/m2, HbA1c 5.4% (2026-09), 스테로이드 사용 없음, 암 병력 없음, 소변 임신검사 음성이고 수유 중이 아니다."
+  "text_ko": "46세 여성이 급성 췌장염으로 두 번째 입원한 지 7주 뒤인 2026-09-24에 췌장 클리닉을 방문했다. 발작은 2025-11-14와 2026-08-03에 있었고, 두 번 모두 조영 CT에서 경증 간질성 부종성 췌장염이었으며 리파아제가 정상 상한의 10배를 넘었고, 장기부전은 없었으며 4일 이내에 퇴원했다. 원인 검사에서는 특이 소견이 없었다: 복부 초음파 2회와 MRCP에서 담석, 담즙 찌꺼기(sludge), 췌관 확장, 췌장 분할(pancreas divisum)이 없었고, 중성지방 142 mg/dL, 칼슘 9.3 mg/dL, IgG4 정상이었다. 췌장염과 관련된 약은 복용하지 않으며, 음주는 주 2단위 정도이고 흡연하지 않는다. 2026-09-10 내시경 초음파에서 미세 담석이나 담즙 찌꺼기 없는 정상 담낭, 정상 총담관이 확인되었고, 만성 췌장염 소견이나 췌장 종괴는 없었다. 현재 증상 없이 일반식을 먹고 있으며, 정식 식이 상담을 받은 적은 없다. 담낭은 남아 있고, 외과의는 복강경 담낭절제술이 가능한 상태(ASA II)로 평가했다. 동반 질환은 레보티록신(levothyroxine)을 복용 중인 갑상선기능저하증뿐이며, BMI 26.8 kg/m2, HbA1c 5.4% (2026-09), 스테로이드 사용 없음, 암 병력 없음, 소변 임신검사 음성이고 수유 중이 아니다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "46세 여성"
+   ],
+   [
+    "진단",
+    "재발성 급성 췌장염 (경증·간질성 부종성, 원인 불명)"
+   ],
+   [
+    "경과",
+    "발작 2회: 2025-11-14 · 2026-08-03 · 장기부전 없음 · 4일 이내 퇴원"
+   ],
+   [
+    "원인 검사",
+    "초음파 2회·MRCP·내시경 초음파(2026-09-10) 정상 · 담석·찌꺼기 없음"
+   ],
+   [
+    "주요 검사",
+    "중성지방 142 mg/dL · 칼슘 9.3 mg/dL · IgG4 정상 · HbA1c 5.4%"
+   ],
+   [
+    "현재 상태",
+    "증상 없음 · 일반식 · 담낭 있음 · 복강경 담낭절제술 가능(ASA II)"
+   ],
+   [
+    "동반 질환",
+    "갑상선기능저하증 (레보티록신)"
+   ],
+   [
+    "생활 습관",
+    "음주 주 2단위 · 비흡연 · BMI 26.8"
+   ],
+   [
+    "기타",
+    "식이 상담 받은 적 없음 · 스테로이드 없음 · 암 병력 없음 · 임신 음성 · 수유 안 함"
+   ]
+  ]
  },
  "SYN-S001-02": {
   "text_en": "A 58-year-old man with long-standing heavy alcohol use (about 10 units per day for more than 15 years; last drink 2026-09-24) was admitted on 2026-09-25 with severe epigastric pain radiating to the back and repeated vomiting. Lipase on admission was 3,850 U/L (ULN 60) and amylase 1,420 U/L; this is his first known episode of pancreatitis. Abdominal ultrasound showed no gallstones and a normal common bile duct; triglycerides were 210 mg/dL and calcium 8.6 mg/dL. On admission he met SIRS criteria (heart rate 122, respiratory rate 26, WBC 18.4 x10^9/L), BUN was 34 mg/dL and CRP 285 mg/L at 48 hours; creatinine peaked at 1.6 mg/dL and normalized within 36 hours with fluids, and he has not required vasopressors or ventilatory support. Contrast-enhanced CT on 2026-09-28 (hospital day 4) showed necrotizing pancreatitis with non-enhancement of approximately 40% of the pancreatic body and tail and an acute necrotic collection, without pancreatic calcifications. He remains in hospital on IV fluids and opioid analgesia, total bilirubin is 1.0 mg/dL, and he is afebrile. Comorbidities: hypertension on amlodipine; BMI 24 kg/m2; no diabetes (HbA1c 5.6%).",
-  "text_ko": "오랜 기간 과음해 온 58세 남성(15년 넘게 하루 약 10단위, 마지막 음주 2026-09-24)이 등으로 뻗치는 심한 명치 통증과 반복되는 구토로 2026-09-25에 입원했다. 입원 시 리파아제 3,850 U/L (정상 상한 60), 아밀라아제 1,420 U/L였고, 알려진 첫 췌장염 발작이다. 복부 초음파에서 담석은 없고 총담관은 정상이었으며, 중성지방 210 mg/dL, 칼슘 8.6 mg/dL였다. 입원 시 SIRS 기준을 충족했고(심박수 122, 호흡수 26, 백혈구 18.4 x10^9/L), 48시간째 BUN 34 mg/dL, CRP 285 mg/L였다. 크레아티닌은 최고 1.6 mg/dL까지 올랐다가 수액 치료로 36시간 안에 정상화되었고, 승압제나 인공호흡 보조는 필요하지 않았다. 2026-09-28(입원 4일째) 조영 증강 CT에서 췌장 체부와 미부의 약 40%가 조영되지 않는 괴사성 췌장염과 급성 괴사성 액체 저류가 보였으며, 췌장 석회화는 없었다. 현재 정맥 수액과 마약성 진통제로 입원 치료 중이며, 총 빌리루빈 1.0 mg/dL이고 열은 없다. 동반 질환: 암로디핀(amlodipine)을 복용 중인 고혈압, BMI 24 kg/m2, 당뇨병 없음(HbA1c 5.6%)."
+  "text_ko": "오랜 기간 과음해 온 58세 남성(15년 넘게 하루 약 10단위, 마지막 음주 2026-09-24)이 등으로 뻗치는 심한 명치 통증과 반복되는 구토로 2026-09-25에 입원했다. 입원 시 리파아제 3,850 U/L (정상 상한 60), 아밀라아제 1,420 U/L였고, 알려진 첫 췌장염 발작이다. 복부 초음파에서 담석은 없고 총담관은 정상이었으며, 중성지방 210 mg/dL, 칼슘 8.6 mg/dL였다. 입원 시 SIRS 기준을 충족했고(심박수 122, 호흡수 26, 백혈구 18.4 x10^9/L), 48시간째 BUN 34 mg/dL, CRP 285 mg/L였다. 크레아티닌은 최고 1.6 mg/dL까지 올랐다가 수액 치료로 36시간 안에 정상화되었고, 승압제나 인공호흡 보조는 필요하지 않았다. 2026-09-28(입원 4일째) 조영 증강 CT에서 췌장 체부와 미부의 약 40%가 조영되지 않는 괴사성 췌장염과 급성 괴사성 액체 저류가 보였으며, 췌장 석회화는 없었다. 현재 정맥 수액과 마약성 진통제로 입원 치료 중이며, 총 빌리루빈 1.0 mg/dL이고 열은 없다. 동반 질환: 암로디핀(amlodipine)을 복용 중인 고혈압, BMI 24 kg/m2, 당뇨병 없음(HbA1c 5.6%).",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "58세 남성"
+   ],
+   [
+    "진단",
+    "알코올성 급성 괴사성 췌장염 (첫 발작)"
+   ],
+   [
+    "입원",
+    "2026-09-25 · 현재 입원 중 (정맥 수액·마약성 진통제)"
+   ],
+   [
+    "주요 검사",
+    "리파아제 3,850 U/L · 아밀라아제 1,420 U/L · BUN 34 · CRP 285 mg/L (48시간)"
+   ],
+   [
+    "중증도",
+    "SIRS 충족 (심박 122·호흡 26·백혈구 18.4) · 크레아티닌 최고 1.6 → 36시간 내 정상화 · 승압제·인공호흡 없음"
+   ],
+   [
+    "영상·조직",
+    "CT(2026-09-28): 췌장 체부·미부 약 40% 괴사 · 급성 괴사성 저류 · 석회화 없음"
+   ],
+   [
+    "동반 질환",
+    "고혈압 (암로디핀) · 당뇨 없음 (HbA1c 5.6%)"
+   ],
+   [
+    "생활 습관",
+    "15년 이상 하루 약 10단위 음주 · 마지막 음주 2026-09-24"
+   ]
+  ]
  },
  "SYN-S001-03": {
   "text_en": "A 41-year-old woman with poorly controlled type 2 diabetes was admitted on 2026-09-26 with acute epigastric pain radiating to the back, nausea and vomiting; lipase was 2,960 U/L (ULN 60) and serum triglycerides 2,150 mg/dL, and hypertriglyceridemia-induced acute pancreatitis was diagnosed. This is her first episode, and she needed supplemental oxygen on arrival. She has persistent SIRS (heart rate 118, respiratory rate 24, WBC 17.8 x10^9/L) and hematocrit rose from 44% to 48%; BUN was 31 mg/dL, chest X-ray showed a left pleural effusion (BISAP 3), and CRP was 262 mg/L at 48 hours. She is being treated with IV fluids, an insulin infusion and IV opioids. Contrast-enhanced CT of the abdomen was obtained on 2026-09-28. On hospital day 4 (2026-09-29) the team documents no clinically meaningful improvement since admission and does not expect discharge within the next several days. Gastroenterology considers her suitable for an EUS-guided procedure. Blood pressure and creatinine (0.9 mg/dL) have remained normal; a serum hCG was negative.",
-  "text_ko": "조절되지 않는 제2형 당뇨병이 있는 41세 여성이 등으로 뻗치는 급성 명치 통증, 구역, 구토로 2026-09-26에 입원했다. 리파아제 2,960 U/L (정상 상한 60), 혈청 중성지방 2,150 mg/dL로 고중성지방혈증에 의한 급성 췌장염으로 진단되었다. 첫 발작이며, 도착 시 산소 보충이 필요했다. SIRS가 지속되고 있으며(심박수 118, 호흡수 24, 백혈구 17.8 x10^9/L), 헤마토크릿이 44%에서 48%로 올랐다. BUN 31 mg/dL, 흉부 X선에서 왼쪽 흉막삼출이 보였고(BISAP 3), 48시간째 CRP는 262 mg/L였다. 정맥 수액, 인슐린 지속 주입, 정맥 마약성 진통제로 치료 중이다. 2026-09-28에 복부 조영 증강 CT를 촬영했다. 입원 4일째(2026-09-29) 의료진은 입원 후 임상적으로 의미 있는 호전이 없고 며칠 안에 퇴원할 것으로 보지 않는다고 기록했다. 소화기내과는 내시경 초음파(EUS) 유도 시술이 가능한 상태로 판단했다. 혈압과 크레아티닌(0.9 mg/dL)은 정상으로 유지되었고, 혈청 hCG는 음성이었다."
+  "text_ko": "조절되지 않는 제2형 당뇨병이 있는 41세 여성이 등으로 뻗치는 급성 명치 통증, 구역, 구토로 2026-09-26에 입원했다. 리파아제 2,960 U/L (정상 상한 60), 혈청 중성지방 2,150 mg/dL로 고중성지방혈증에 의한 급성 췌장염으로 진단되었다. 첫 발작이며, 도착 시 산소 보충이 필요했다. SIRS가 지속되고 있으며(심박수 118, 호흡수 24, 백혈구 17.8 x10^9/L), 헤마토크릿이 44%에서 48%로 올랐다. BUN 31 mg/dL, 흉부 X선에서 왼쪽 흉막삼출이 보였고(BISAP 3), 48시간째 CRP는 262 mg/L였다. 정맥 수액, 인슐린 지속 주입, 정맥 마약성 진통제로 치료 중이다. 2026-09-28에 복부 조영 증강 CT를 촬영했다. 입원 4일째(2026-09-29) 의료진은 입원 후 임상적으로 의미 있는 호전이 없고 며칠 안에 퇴원할 것으로 보지 않는다고 기록했다. 소화기내과는 내시경 초음파(EUS) 유도 시술이 가능한 상태로 판단했다. 혈압과 크레아티닌(0.9 mg/dL)은 정상으로 유지되었고, 혈청 hCG는 음성이었다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "41세 여성"
+   ],
+   [
+    "진단",
+    "고중성지방혈증성 급성 췌장염 (첫 발작)"
+   ],
+   [
+    "입원",
+    "2026-09-26 · 입원 4일째 호전 없음 · 며칠 내 퇴원 예상 안 함"
+   ],
+   [
+    "주요 검사",
+    "리파아제 2,960 U/L · 중성지방 2,150 mg/dL · BUN 31 · CRP 262 mg/L · 크레아티닌 0.9"
+   ],
+   [
+    "중증도",
+    "SIRS 지속 · 헤마토크릿 44→48% · 왼쪽 흉막삼출 · BISAP 3 · 도착 시 산소 필요"
+   ],
+   [
+    "현재 치료",
+    "정맥 수액 · 인슐린 지속 주입 · 정맥 마약성 진통제"
+   ],
+   [
+    "동반 질환",
+    "조절 안 되는 제2형 당뇨병"
+   ],
+   [
+    "기타",
+    "조영 CT 2026-09-28 · EUS 유도 시술 가능 · 혈압 정상 · hCG 음성"
+   ]
+  ]
  },
  "SYN-S002-01": {
   "text_en": "A 34-year-old woman with Graves' disease is referred on 2026-09-22 for persistent hyperthyroidism. Graves' disease was first diagnosed in 2022 (TRAb positive) and treated with methimazole for 18 months, reaching remission; the drug was stopped in January 2024. She relapsed in May 2026 with palpitations, heat intolerance and 5 kg weight loss, and methimazole was restarted at 20 mg/day and increased to 30 mg/day in July 2026. Despite adherence, labs on 2026-09-15 show TSH <0.01 mIU/L, free T4 2.6 ng/dL (0.8-1.8), free T3 7.9 pg/mL (2.3-4.2) and TRAb 14.2 IU/L (<1.75); CBC and liver tests are normal. She has never had radioactive iodine or thyroid surgery. On exam there is a diffuse goiter and fine tremor; she has no signs of thyroid eye disease (no proptosis, lid retraction or diplopia; clinical activity score 0). She has no other autoimmune disease, no history of cancer or other serious illness, and takes only methimazole and propranolol 20 mg three times daily. She is not pregnant (negative hCG) and uses an oral progestin-only contraceptive.",
-  "text_ko": "그레이브스병이 있는 34세 여성이 지속되는 갑상선기능항진증으로 2026-09-22에 의뢰되었다. 그레이브스병은 2022년 처음 진단되었고(TRAb 양성) 메티마졸(methimazole)로 18개월 치료해 관해에 이르렀으며, 2024년 1월에 약을 끊었다. 2026년 5월 두근거림, 더위를 못 견딤, 5 kg 체중 감소로 재발해 메티마졸을 하루 20 mg으로 다시 시작했고 2026년 7월 하루 30 mg으로 늘렸다. 약을 잘 복용했는데도 2026-09-15 검사에서 TSH <0.01 mIU/L, 유리 T4 2.6 ng/dL (0.8-1.8), 유리 T3 7.9 pg/mL (2.3-4.2), TRAb 14.2 IU/L (<1.75)이며, 일반혈액검사와 간기능은 정상이다. 방사성 요오드 치료나 갑상선 수술을 받은 적은 없다. 진찰에서 미만성 갑상선종과 미세한 떨림이 있고, 갑상선 눈병증 징후는 없다(안구 돌출, 눈꺼풀 뒤당김, 복시 없음, 임상 활동 점수 0). 다른 자가면역질환, 암이나 다른 중증 질환 병력은 없으며, 메티마졸과 프로프라놀롤(propranolol) 20 mg 하루 3회만 복용한다. 임신 중이 아니며(hCG 음성) 프로게스틴 단일 경구 피임약을 쓰고 있다."
+  "text_ko": "그레이브스병이 있는 34세 여성이 지속되는 갑상선기능항진증으로 2026-09-22에 의뢰되었다. 그레이브스병은 2022년 처음 진단되었고(TRAb 양성) 메티마졸(methimazole)로 18개월 치료해 관해에 이르렀으며, 2024년 1월에 약을 끊었다. 2026년 5월 두근거림, 더위를 못 견딤, 5 kg 체중 감소로 재발해 메티마졸을 하루 20 mg으로 다시 시작했고 2026년 7월 하루 30 mg으로 늘렸다. 약을 잘 복용했는데도 2026-09-15 검사에서 TSH <0.01 mIU/L, 유리 T4 2.6 ng/dL (0.8-1.8), 유리 T3 7.9 pg/mL (2.3-4.2), TRAb 14.2 IU/L (<1.75)이며, 일반혈액검사와 간기능은 정상이다. 방사성 요오드 치료나 갑상선 수술을 받은 적은 없다. 진찰에서 미만성 갑상선종과 미세한 떨림이 있고, 갑상선 눈병증 징후는 없다(안구 돌출, 눈꺼풀 뒤당김, 복시 없음, 임상 활동 점수 0). 다른 자가면역질환, 암이나 다른 중증 질환 병력은 없으며, 메티마졸과 프로프라놀롤(propranolol) 20 mg 하루 3회만 복용한다. 임신 중이 아니며(hCG 음성) 프로게스틴 단일 경구 피임약을 쓰고 있다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "34세 여성"
+   ],
+   [
+    "진단",
+    "재발한 그레이브스병 (2022년 진단 · 2026-05 재발)"
+   ],
+   [
+    "치료 이력",
+    "메티마졸 18개월 → 관해 · 2024-01 중단 · 방사성 요오드·수술 없음"
+   ],
+   [
+    "현재 치료",
+    "메티마졸 30 mg/일 (2026-07~) · 프로프라놀롤 20 mg 하루 3회"
+   ],
+   [
+    "주요 검사",
+    "2026-09-15: TSH <0.01 · 유리 T4 2.6 · 유리 T3 7.9 · TRAb 14.2 · 혈액·간기능 정상"
+   ],
+   [
+    "진찰",
+    "미만성 갑상선종 · 미세한 떨림 · 갑상선 눈병증 없음 (CAS 0)"
+   ],
+   [
+    "기타",
+    "다른 자가면역질환·암 없음 · 임신 아님 · 프로게스틴 단일 피임약"
+   ]
+  ]
  },
  "SYN-S002-02": {
   "text_en": "A 15-year-old girl was seen on 2026-09-18 with 3 months of palpitations, heat intolerance, 4 kg unintentional weight loss and declining school performance. Exam showed tachycardia (HR 124), a fine tremor and a diffusely enlarged, non-tender goiter, without proptosis. Labs on 2026-09-18: TSH <0.01 mIU/L, free T4 3.8 ng/dL (0.9-1.7), total T4 19.5 ug/dL, total T3 312 ng/dL, and TRAb 9.6 IU/L (positive); she was newly diagnosed with Graves' disease and methimazole is being started. She has focal epilepsy diagnosed at age 11 and has been maintained on carbamazepine 400 mg twice daily, with no seizures in 2 years. 25-hydroxyvitamin D was 22 ng/mL and albumin-corrected calcium 9.7 mg/dL; renal and liver function are normal. A urine pregnancy test was negative.",
-  "text_ko": "15세 여아가 3개월 동안의 두근거림, 더위를 못 견딤, 의도하지 않은 4 kg 체중 감소, 학업 성적 저하로 2026-09-18에 진료를 받았다. 진찰에서 빠른맥(심박수 124), 미세한 떨림, 압통 없이 전체적으로 커진 갑상선종이 있었고 안구 돌출은 없었다. 2026-09-18 검사: TSH <0.01 mIU/L, 유리 T4 3.8 ng/dL (0.9-1.7), 총 T4 19.5 ug/dL, 총 T3 312 ng/dL, TRAb 9.6 IU/L (양성)로 그레이브스병이 새로 진단되어 메티마졸을 시작하고 있다. 11세에 진단된 국소 뇌전증이 있어 카르바마제핀(carbamazepine) 400 mg 하루 2회로 유지 중이며, 2년간 발작이 없었다. 25-하이드록시비타민 D 22 ng/mL, 알부민 보정 칼슘 9.7 mg/dL이고, 신기능과 간기능은 정상이다. 소변 임신검사는 음성이었다."
+  "text_ko": "15세 여아가 3개월 동안의 두근거림, 더위를 못 견딤, 의도하지 않은 4 kg 체중 감소, 학업 성적 저하로 2026-09-18에 진료를 받았다. 진찰에서 빠른맥(심박수 124), 미세한 떨림, 압통 없이 전체적으로 커진 갑상선종이 있었고 안구 돌출은 없었다. 2026-09-18 검사: TSH <0.01 mIU/L, 유리 T4 3.8 ng/dL (0.9-1.7), 총 T4 19.5 ug/dL, 총 T3 312 ng/dL, TRAb 9.6 IU/L (양성)로 그레이브스병이 새로 진단되어 메티마졸을 시작하고 있다. 11세에 진단된 국소 뇌전증이 있어 카르바마제핀(carbamazepine) 400 mg 하루 2회로 유지 중이며, 2년간 발작이 없었다. 25-하이드록시비타민 D 22 ng/mL, 알부민 보정 칼슘 9.7 mg/dL이고, 신기능과 간기능은 정상이다. 소변 임신검사는 음성이었다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "15세 여아"
+   ],
+   [
+    "진단",
+    "새로 진단된 그레이브스병 (2026-09-18) · 메티마졸 시작"
+   ],
+   [
+    "증상",
+    "3개월 두근거림 · 더위 못 견딤 · 체중 4 kg 감소 · 학업 저하"
+   ],
+   [
+    "진찰",
+    "심박 124 · 미세한 떨림 · 미만성 갑상선종 · 안구 돌출 없음"
+   ],
+   [
+    "주요 검사",
+    "TSH <0.01 · 유리 T4 3.8 · 총 T4 19.5 · 총 T3 312 · TRAb 9.6 (양성) · 비타민 D 22 · 칼슘 9.7"
+   ],
+   [
+    "동반 질환",
+    "국소 뇌전증 (11세 진단) · 카르바마제핀 400 mg 하루 2회 · 2년간 발작 없음"
+   ],
+   [
+    "기타",
+    "신기능·간기능 정상 · 임신 음성"
+   ]
+  ]
  },
  "SYN-S002-03": {
   "text_en": "A 13-year-old boy presents on 2026-09-21 with 2 months of palpitations, heat intolerance, increased appetite with 3 kg weight loss and difficulty sleeping. Exam shows heart rate 118, a fine tremor, warm moist skin and a diffusely enlarged, non-tender thyroid; there is no proptosis. Labs on 2026-09-21: TSH <0.01 mIU/L, free T4 4.1 ng/dL (0.9-1.7), total T4 21.0 ug/dL (5.0-11.0) and total T3 355 ng/dL (80-200). Graves' disease is suspected and the pediatric endocrinologist plans to start methimazole. He has no prior medical history, takes no regular medications, and has normal growth.",
-  "text_ko": "13세 남아가 2개월 동안의 두근거림, 더위를 못 견딤, 식욕 증가와 3 kg 체중 감소, 수면 곤란으로 2026-09-21에 내원했다. 진찰에서 심박수 118, 미세한 떨림, 따뜻하고 촉촉한 피부, 압통 없이 전체적으로 커진 갑상선이 있으며 안구 돌출은 없다. 2026-09-21 검사: TSH <0.01 mIU/L, 유리 T4 4.1 ng/dL (0.9-1.7), 총 T4 21.0 ug/dL (5.0-11.0), 총 T3 355 ng/dL (80-200). 그레이브스병이 의심되어 소아내분비 전문의가 메티마졸을 시작할 계획이다. 과거 병력은 없고 정기 복용약도 없으며, 성장은 정상이다."
+  "text_ko": "13세 남아가 2개월 동안의 두근거림, 더위를 못 견딤, 식욕 증가와 3 kg 체중 감소, 수면 곤란으로 2026-09-21에 내원했다. 진찰에서 심박수 118, 미세한 떨림, 따뜻하고 촉촉한 피부, 압통 없이 전체적으로 커진 갑상선이 있으며 안구 돌출은 없다. 2026-09-21 검사: TSH <0.01 mIU/L, 유리 T4 4.1 ng/dL (0.9-1.7), 총 T4 21.0 ug/dL (5.0-11.0), 총 T3 355 ng/dL (80-200). 그레이브스병이 의심되어 소아내분비 전문의가 메티마졸을 시작할 계획이다. 과거 병력은 없고 정기 복용약도 없으며, 성장은 정상이다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "13세 남아"
+   ],
+   [
+    "진단",
+    "그레이브스병 의심 · 메티마졸 시작 예정"
+   ],
+   [
+    "증상",
+    "2개월 두근거림 · 더위 못 견딤 · 식욕 증가에도 3 kg 감소 · 수면 곤란"
+   ],
+   [
+    "진찰",
+    "심박 118 · 미세한 떨림 · 따뜻하고 촉촉한 피부 · 미만성 갑상선 비대 · 안구 돌출 없음"
+   ],
+   [
+    "주요 검사",
+    "2026-09-21: TSH <0.01 · 유리 T4 4.1 · 총 T4 21.0 · 총 T3 355"
+   ],
+   [
+    "기타",
+    "과거 병력·복용약 없음 · 성장 정상"
+   ]
+  ]
  },
  "SYN-S003-01": {
   "text_en": "A 9-year-old girl (height 132 cm) with idiopathic nephrotic syndrome diagnosed in March 2024 that responded to prednisolone within 9 days, followed by relapses in February 2025, June 2025 (during taper), November 2025 (10 days after stopping steroids) and July 2026 (during alternate-day taper), consistent with steroid-dependent disease. Her only treatment has been repeated prednisolone courses; she has never received levamisole, calcineurin inhibitors, mycophenolate, cyclophosphamide, rituximab or any anti-CD38 antibody, and has never taken part in a clinical trial. After the July 2026 relapse she re-entered remission on 2026-07-24 and morning dipsticks have been negative every day since; she is now on prednisolone 15 mg on alternate days. Labs on 2026-09-24: creatinine 0.42 mg/dL (bedside Schwartz eGFR about 130 mL/min/1.73m2), UPCR 0.08 g/g, WBC 7.8 x10^9/L, ANC 4.1 x10^9/L, Hb 12.6 g/dL, platelets 285 x10^9/L, ALT 18 U/L, total bilirubin 0.4 mg/dL, INR 1.0, C3 normal, ANA negative, no microscopic hematuria. Screening HBsAg, HBeAg, anti-HBc, anti-HCV and HIV antibody are negative, EBV and CMV PCR are negative and an interferon-gamma release assay is negative. She has no other medical conditions, no current infection, no family history of kidney disease, and her last vaccine was an inactivated influenza shot in October 2025 with no surgery in the past year.",
-  "text_ko": "9세 여아(키 132 cm)로, 2024년 3월 진단된 특발성 신증후군이 프레드니솔론(prednisolone)에 9일 안에 반응했으나 이후 2025년 2월, 2025년 6월(감량 중), 2025년 11월(스테로이드 중단 10일 후), 2026년 7월(격일 감량 중)에 재발해 스테로이드 의존성 질환에 해당한다. 치료는 반복된 프레드니솔론 투여뿐이었으며, 레바미솔(levamisole), 칼시뉴린 억제제, 마이코페놀레이트(mycophenolate), 사이클로포스파마이드(cyclophosphamide), 리툭시맙(rituximab), 항CD38 항체를 받은 적이 없고 임상시험에 참여한 적도 없다. 2026년 7월 재발 후 2026-07-24에 다시 관해에 들어갔고 이후 매일 아침 소변 시험지 검사가 음성이며, 현재 프레드니솔론 15 mg을 격일로 복용 중이다. 2026-09-24 검사: 크레아티닌 0.42 mg/dL (침상 Schwartz eGFR 약 130 mL/min/1.73m2), UPCR 0.08 g/g, 백혈구 7.8 x10^9/L, ANC 4.1 x10^9/L, 혈색소 12.6 g/dL, 혈소판 285 x10^9/L, ALT 18 U/L, 총 빌리루빈 0.4 mg/dL, INR 1.0, C3 정상, ANA 음성, 현미경적 혈뇨 없음. 선별 검사에서 HBsAg, HBeAg, anti-HBc, anti-HCV, HIV 항체가 음성이고, EBV·CMV PCR 음성, 인터페론 감마 분비 검사(IGRA) 음성이다. 다른 질환이나 현재 감염은 없고, 신장질환 가족력도 없다. 마지막 예방접종은 2025년 10월 불활성화 인플루엔자 백신이며, 최근 1년 내 수술은 없다."
+  "text_ko": "9세 여아(키 132 cm)로, 2024년 3월 진단된 특발성 신증후군이 프레드니솔론(prednisolone)에 9일 안에 반응했으나 이후 2025년 2월, 2025년 6월(감량 중), 2025년 11월(스테로이드 중단 10일 후), 2026년 7월(격일 감량 중)에 재발해 스테로이드 의존성 질환에 해당한다. 치료는 반복된 프레드니솔론 투여뿐이었으며, 레바미솔(levamisole), 칼시뉴린 억제제, 마이코페놀레이트(mycophenolate), 사이클로포스파마이드(cyclophosphamide), 리툭시맙(rituximab), 항CD38 항체를 받은 적이 없고 임상시험에 참여한 적도 없다. 2026년 7월 재발 후 2026-07-24에 다시 관해에 들어갔고 이후 매일 아침 소변 시험지 검사가 음성이며, 현재 프레드니솔론 15 mg을 격일로 복용 중이다. 2026-09-24 검사: 크레아티닌 0.42 mg/dL (침상 Schwartz eGFR 약 130 mL/min/1.73m2), UPCR 0.08 g/g, 백혈구 7.8 x10^9/L, ANC 4.1 x10^9/L, 혈색소 12.6 g/dL, 혈소판 285 x10^9/L, ALT 18 U/L, 총 빌리루빈 0.4 mg/dL, INR 1.0, C3 정상, ANA 음성, 현미경적 혈뇨 없음. 선별 검사에서 HBsAg, HBeAg, anti-HBc, anti-HCV, HIV 항체가 음성이고, EBV·CMV PCR 음성, 인터페론 감마 분비 검사(IGRA) 음성이다. 다른 질환이나 현재 감염은 없고, 신장질환 가족력도 없다. 마지막 예방접종은 2025년 10월 불활성화 인플루엔자 백신이며, 최근 1년 내 수술은 없다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "9세 여아 (키 132 cm)"
+   ],
+   [
+    "진단",
+    "스테로이드 의존성 특발성 신증후군 (2024-03 진단)"
+   ],
+   [
+    "경과",
+    "재발 4회: 2025-02 · 2025-06 · 2025-11 · 2026-07 · 2026-07-24부터 관해"
+   ],
+   [
+    "치료 이력",
+    "프레드니솔론만 · 레바미솔·칼시뉴린 억제제·MMF·사이클로포스파마이드·리툭시맙·항CD38 없음 · 임상시험 참여 없음"
+   ],
+   [
+    "현재 치료",
+    "프레드니솔론 15 mg 격일"
+   ],
+   [
+    "주요 검사",
+    "2026-09-24: 크레아티닌 0.42 · eGFR 약 130 · UPCR 0.08 · ANC 4.1 · 혈색소 12.6 · 혈소판 285 · ALT 18 · 빌리루빈 0.4"
+   ],
+   [
+    "감염 검사",
+    "B·C형 간염·HIV 음성 · EBV·CMV PCR 음성 · IGRA 음성"
+   ],
+   [
+    "기타",
+    "다른 질환·감염 없음 · 신장질환 가족력 없음 · 마지막 백신 2025-10 인플루엔자 · 1년 내 수술 없음"
+   ]
+  ]
  },
  "SYN-S003-02": {
   "text_en": "A 13-year-old boy (height 158 cm) with idiopathic steroid-sensitive nephrotic syndrome since 2021 that became steroid-dependent; he was treated with tacrolimus from 2022 until it was stopped in December 2024. In remission he received his first-ever course of rituximab (375 mg/m2, two doses on 2025-05-12 and 2025-05-19) and remained relapse-free until relapses in March 2026 and June 2026, both steroid-responsive. Mycophenolate mofetil 600 mg/m2 twice daily was started on 2026-06-20 and continues, and prednisolone was tapered off on 2026-09-01. He has been in remission since 2026-06-28 with negative morning dipsticks, and his rituximab course and 16 months of follow-up since then are fully documented in the clinic records. Labs on 2026-09-22: creatinine 0.62 mg/dL (bedside Schwartz eGFR about 105 mL/min/1.73m2), UPCR 0.10 g/g, WBC 6.9 x10^9/L, ANC 3.6 x10^9/L, Hb 13.8 g/dL, platelets 262 x10^9/L, ALT 22 U/L, total bilirubin 0.5 mg/dL, INR 1.0, CD19 B cells recovered. HBsAg, anti-HBc, anti-HCV and HIV antibody are negative, C3 is normal, ANA is negative, and he has no hematuria, no current infection, no other medical conditions (no immunodeficiency, malignancy or other autoimmune disease), and no family history of kidney disease.",
-  "text_ko": "13세 남아(키 158 cm)로, 2021년부터 특발성 스테로이드 반응성 신증후군이 있었고 이후 스테로이드 의존성이 되었다. 2022년부터 타크로리무스(tacrolimus)로 치료하다가 2024년 12월에 중단했다. 관해 상태에서 처음으로 리툭시맙 치료(375 mg/m2, 2025-05-12와 2025-05-19 두 차례)를 받았고, 2026년 3월과 2026년 6월 재발 전까지 재발이 없었으며 두 재발 모두 스테로이드에 반응했다. 2026-06-20부터 마이코페놀레이트 모페틸(mycophenolate mofetil) 600 mg/m2 하루 2회를 시작해 계속 복용 중이며, 프레드니솔론은 2026-09-01에 감량 후 중단했다. 2026-06-28부터 관해 상태이며 아침 소변 시험지 검사가 음성이고, 리툭시맙 치료와 그 후 16개월 추적 경과는 진료 기록에 모두 남아 있다. 2026-09-22 검사: 크레아티닌 0.62 mg/dL (침상 Schwartz eGFR 약 105 mL/min/1.73m2), UPCR 0.10 g/g, 백혈구 6.9 x10^9/L, ANC 3.6 x10^9/L, 혈색소 13.8 g/dL, 혈소판 262 x10^9/L, ALT 22 U/L, 총 빌리루빈 0.5 mg/dL, INR 1.0, CD19 B세포 회복됨. HBsAg, anti-HBc, anti-HCV, HIV 항체는 음성, C3 정상, ANA 음성이며, 혈뇨, 현재 감염, 다른 질환(면역결핍, 악성종양, 다른 자가면역질환)이 없고 신장질환 가족력도 없다."
+  "text_ko": "13세 남아(키 158 cm)로, 2021년부터 특발성 스테로이드 반응성 신증후군이 있었고 이후 스테로이드 의존성이 되었다. 2022년부터 타크로리무스(tacrolimus)로 치료하다가 2024년 12월에 중단했다. 관해 상태에서 처음으로 리툭시맙 치료(375 mg/m2, 2025-05-12와 2025-05-19 두 차례)를 받았고, 2026년 3월과 2026년 6월 재발 전까지 재발이 없었으며 두 재발 모두 스테로이드에 반응했다. 2026-06-20부터 마이코페놀레이트 모페틸(mycophenolate mofetil) 600 mg/m2 하루 2회를 시작해 계속 복용 중이며, 프레드니솔론은 2026-09-01에 감량 후 중단했다. 2026-06-28부터 관해 상태이며 아침 소변 시험지 검사가 음성이고, 리툭시맙 치료와 그 후 16개월 추적 경과는 진료 기록에 모두 남아 있다. 2026-09-22 검사: 크레아티닌 0.62 mg/dL (침상 Schwartz eGFR 약 105 mL/min/1.73m2), UPCR 0.10 g/g, 백혈구 6.9 x10^9/L, ANC 3.6 x10^9/L, 혈색소 13.8 g/dL, 혈소판 262 x10^9/L, ALT 22 U/L, 총 빌리루빈 0.5 mg/dL, INR 1.0, CD19 B세포 회복됨. HBsAg, anti-HBc, anti-HCV, HIV 항체는 음성, C3 정상, ANA 음성이며, 혈뇨, 현재 감염, 다른 질환(면역결핍, 악성종양, 다른 자가면역질환)이 없고 신장질환 가족력도 없다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "13세 남아 (키 158 cm)"
+   ],
+   [
+    "진단",
+    "스테로이드 의존성 특발성 신증후군 (2021년~)"
+   ],
+   [
+    "치료 이력",
+    "타크로리무스 2022~2024-12 · 리툭시맙 1회 코스 (2025-05-12·05-19)"
+   ],
+   [
+    "경과",
+    "재발 2026-03 · 2026-06 (스테로이드 반응) · 2026-06-28부터 관해"
+   ],
+   [
+    "현재 치료",
+    "MMF 600 mg/m2 하루 2회 (2026-06-20~) · 프레드니솔론 2026-09-01 중단"
+   ],
+   [
+    "주요 검사",
+    "2026-09-22: 크레아티닌 0.62 · eGFR 약 105 · UPCR 0.10 · ANC 3.6 · 혈색소 13.8 · 혈소판 262 · ALT 22 · CD19 B세포 회복"
+   ],
+   [
+    "감염 검사",
+    "B·C형 간염·HIV 음성"
+   ],
+   [
+    "기타",
+    "혈뇨·감염·다른 질환 없음 · 신장질환 가족력 없음 · 리툭시맙 이후 16개월 기록 있음"
+   ]
+  ]
  },
  "SYN-S003-03": {
   "text_en": "A 5-year-old boy with idiopathic nephrotic syndrome first diagnosed in August 2025 at age 4, which went into remission within 10 days of daily prednisolone. He relapsed in December 2025, again on 2026-03-05 and again on 2026-06-20, each time after an upper respiratory infection and each time responding to prednisolone within 1 to 2 weeks, consistent with frequently relapsing disease. His only treatment has been prednisolone; he has never received levamisole, calcineurin inhibitors, mycophenolate, cyclophosphamide or rituximab and has never been in a clinical trial. He has been in remission since 2026-07-01 with negative morning dipsticks every day, and prednisolone was stopped on 2026-09-10. Urinalysis on 2026-09-25 showed no protein and no blood, UPCR 0.06 g/g. He has no other medical problems, no current infection, and his parents report no family history of kidney disease.",
-  "text_ko": "5세 남아로, 4세이던 2025년 8월에 특발성 신증후군이 처음 진단되었고 매일 프레드니솔론을 복용해 10일 안에 관해되었다. 2025년 12월, 2026-03-05, 2026-06-20에 다시 재발했는데, 매번 상기도 감염 뒤에 생겼고 매번 1~2주 안에 프레드니솔론에 반응해 빈번 재발형 질환에 해당한다. 치료는 프레드니솔론뿐이었으며, 레바미솔, 칼시뉴린 억제제, 마이코페놀레이트, 사이클로포스파마이드, 리툭시맙을 받은 적이 없고 임상시험에 참여한 적도 없다. 2026-07-01부터 관해 상태로 매일 아침 소변 시험지 검사가 음성이며, 프레드니솔론은 2026-09-10에 중단했다. 2026-09-25 소변검사에서 단백과 혈액이 없었고 UPCR 0.06 g/g였다. 다른 질환이나 현재 감염은 없으며, 부모는 신장질환 가족력이 없다고 했다."
+  "text_ko": "5세 남아로, 4세이던 2025년 8월에 특발성 신증후군이 처음 진단되었고 매일 프레드니솔론을 복용해 10일 안에 관해되었다. 2025년 12월, 2026-03-05, 2026-06-20에 다시 재발했는데, 매번 상기도 감염 뒤에 생겼고 매번 1~2주 안에 프레드니솔론에 반응해 빈번 재발형 질환에 해당한다. 치료는 프레드니솔론뿐이었으며, 레바미솔, 칼시뉴린 억제제, 마이코페놀레이트, 사이클로포스파마이드, 리툭시맙을 받은 적이 없고 임상시험에 참여한 적도 없다. 2026-07-01부터 관해 상태로 매일 아침 소변 시험지 검사가 음성이며, 프레드니솔론은 2026-09-10에 중단했다. 2026-09-25 소변검사에서 단백과 혈액이 없었고 UPCR 0.06 g/g였다. 다른 질환이나 현재 감염은 없으며, 부모는 신장질환 가족력이 없다고 했다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "5세 남아"
+   ],
+   [
+    "진단",
+    "빈번 재발형 특발성 신증후군 (2025-08 진단)"
+   ],
+   [
+    "경과",
+    "재발 3회: 2025-12 · 2026-03-05 · 2026-06-20 (매번 감기 후) · 2026-07-01부터 관해"
+   ],
+   [
+    "치료 이력",
+    "프레드니솔론만 (2026-09-10 중단) · 다른 면역억제제·임상시험 없음"
+   ],
+   [
+    "주요 검사",
+    "2026-09-25 소변: 단백·혈액 없음 · UPCR 0.06"
+   ],
+   [
+    "기타",
+    "다른 질환·감염 없음 · 신장질환 가족력 없음"
+   ]
+  ]
  },
  "SYN-S004-01": {
   "text_en": "A 68-year-old man with a 45 pack-year smoking history (quit June 2026) presented with painless gross hematuria; CT urography on 2026-07-02 showed a 3 cm papillary mass on the right lateral bladder wall with normal upper tracts and no lymphadenopathy or metastases. TURBT on 2026-07-21 showed high-grade papillary urothelial carcinoma invading the lamina propria (pT1) with associated carcinoma in situ, and detrusor muscle was present and not involved. Re-resection on 2026-08-25 found no residual papillary tumor but persistent CIS, detrusor again uninvolved, and prostatic urethral biopsies were negative. He has never received BCG, intravesical chemotherapy, systemic anticancer therapy or any cancer vaccine, and BCG induction is being planned. He has hypertension on amlodipine and hyperlipidemia on atorvastatin, has no history of myocardial infarction, other cancer, autoimmune disease, immunodeficiency, HIV or tuberculosis, and takes no steroids. Creatinine is 1.02 mg/dL (eGFR 74 mL/min/1.73m2), he tolerated iodinated contrast without reaction, and he is fully active (ECOG 0).",
-  "text_ko": "흡연력 45갑년(2026년 6월 금연)인 68세 남성이 통증 없는 육안적 혈뇨로 내원했다. 2026-07-02 CT 요로조영술에서 방광 오른쪽 옆벽에 3 cm 유두상 종괴가 보였고, 상부 요로는 정상이며 림프절 비대나 전이는 없었다. 2026-07-21 경요도 방광종양 절제술(TURBT)에서 점막고유층을 침범한 고등급 유두상 요로상피암(pT1)과 동반 상피내암(CIS)이 확인되었고, 배뇨근은 검체에 포함되었으나 침범되지 않았다. 2026-08-25 재절제술에서 남은 유두상 종양은 없었으나 상피내암이 지속되었고, 배뇨근은 역시 침범되지 않았으며, 전립선 요도 생검은 음성이었다. BCG, 방광 내 항암치료, 전신 항암치료, 암 백신을 받은 적이 없으며, BCG 유도 치료를 계획 중이다. 암로디핀을 복용 중인 고혈압과 아토르바스타틴(atorvastatin)을 복용 중인 고지혈증이 있고, 심근경색, 다른 암, 자가면역질환, 면역결핍, HIV, 결핵 병력은 없으며 스테로이드는 복용하지 않는다. 크레아티닌 1.02 mg/dL (eGFR 74 mL/min/1.73m2)이고, 요오드 조영제에 부작용 없이 견뎠으며, 활동에 제한이 없다(ECOG 0)."
+  "text_ko": "흡연력 45갑년(2026년 6월 금연)인 68세 남성이 통증 없는 육안적 혈뇨로 내원했다. 2026-07-02 CT 요로조영술에서 방광 오른쪽 옆벽에 3 cm 유두상 종괴가 보였고, 상부 요로는 정상이며 림프절 비대나 전이는 없었다. 2026-07-21 경요도 방광종양 절제술(TURBT)에서 점막고유층을 침범한 고등급 유두상 요로상피암(pT1)과 동반 상피내암(CIS)이 확인되었고, 배뇨근은 검체에 포함되었으나 침범되지 않았다. 2026-08-25 재절제술에서 남은 유두상 종양은 없었으나 상피내암이 지속되었고, 배뇨근은 역시 침범되지 않았으며, 전립선 요도 생검은 음성이었다. BCG, 방광 내 항암치료, 전신 항암치료, 암 백신을 받은 적이 없으며, BCG 유도 치료를 계획 중이다. 암로디핀을 복용 중인 고혈압과 아토르바스타틴(atorvastatin)을 복용 중인 고지혈증이 있고, 심근경색, 다른 암, 자가면역질환, 면역결핍, HIV, 결핵 병력은 없으며 스테로이드는 복용하지 않는다. 크레아티닌 1.02 mg/dL (eGFR 74 mL/min/1.73m2)이고, 요오드 조영제에 부작용 없이 견뎠으며, 활동에 제한이 없다(ECOG 0).",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "68세 남성"
+   ],
+   [
+    "진단",
+    "고등급 비근침윤성 방광암 (pT1 + 상피내암)"
+   ],
+   [
+    "내원 사유",
+    "통증 없는 육안적 혈뇨"
+   ],
+   [
+    "영상·조직",
+    "CT(2026-07-02): 3 cm 유두상 종괴 · 전이 없음 · TURBT(07-21) pT1+CIS · 재절제(08-25) CIS 지속 · 배뇨근 침범 없음"
+   ],
+   [
+    "치료 이력",
+    "BCG·방광 내/전신 항암·암 백신 없음 · BCG 유도 치료 계획 중"
+   ],
+   [
+    "동반 질환",
+    "고혈압 (암로디핀) · 고지혈증 (아토르바스타틴)"
+   ],
+   [
+    "주요 검사",
+    "크레아티닌 1.02 · eGFR 74 · ECOG 0"
+   ],
+   [
+    "생활 습관",
+    "흡연 45갑년 (2026-06 금연)"
+   ],
+   [
+    "기타",
+    "심근경색·다른 암·자가면역·면역결핍·HIV·결핵 없음 · 스테로이드 없음 · 조영제 문제 없음"
+   ]
+  ]
  },
  "SYN-S004-02": {
   "text_en": "A 74-year-old woman and former smoker (30 pack-years) presented in July 2026 with painless gross hematuria, and CT urography showed a 2.5 cm papillary bladder lesion with clear upper tracts and no nodal or distant disease. TURBT on 2026-08-12 showed high-grade non-invasive papillary urothelial carcinoma (pTa) without carcinoma in situ, with uninvolved detrusor muscle in the specimen. She has never received BCG or other intravesical or systemic cancer treatment. She has had seropositive rheumatoid arthritis since 2019, controlled on methotrexate 15 mg weekly plus continuous prednisone 7.5 mg daily, which her rheumatologist has not been able to taper. Other history includes hypothyroidism on levothyroxine; creatinine 0.84 mg/dL (eGFR 70 mL/min/1.73m2), no contrast allergy, and ECOG 1 because of joint stiffness.",
-  "text_ko": "흡연력 30갑년인 과거 흡연자 74세 여성이 2026년 7월 통증 없는 육안적 혈뇨로 내원했고, CT 요로조영술에서 2.5 cm 유두상 방광 병변이 보였으며 상부 요로는 깨끗하고 림프절이나 원격 전이는 없었다. 2026-08-12 경요도 방광종양 절제술(TURBT)에서 상피내암 없는 고등급 비침습성 유두상 요로상피암(pTa)이 확인되었고, 검체의 배뇨근은 침범되지 않았다. BCG나 다른 방광 내 또는 전신 항암치료를 받은 적이 없다. 2019년부터 혈청 양성 류마티스관절염이 있으며, 메토트렉세이트(methotrexate) 주 15 mg과 프레드니손(prednisone) 하루 7.5 mg 지속 복용으로 조절 중이고, 류마티스내과 의사는 스테로이드를 줄이지 못하고 있다. 그 밖에 레보티록신을 복용 중인 갑상선기능저하증이 있으며, 크레아티닌 0.84 mg/dL (eGFR 70 mL/min/1.73m2), 조영제 알레르기 없음, 관절 뻣뻣함 때문에 ECOG 1이다."
+  "text_ko": "흡연력 30갑년인 과거 흡연자 74세 여성이 2026년 7월 통증 없는 육안적 혈뇨로 내원했고, CT 요로조영술에서 2.5 cm 유두상 방광 병변이 보였으며 상부 요로는 깨끗하고 림프절이나 원격 전이는 없었다. 2026-08-12 경요도 방광종양 절제술(TURBT)에서 상피내암 없는 고등급 비침습성 유두상 요로상피암(pTa)이 확인되었고, 검체의 배뇨근은 침범되지 않았다. BCG나 다른 방광 내 또는 전신 항암치료를 받은 적이 없다. 2019년부터 혈청 양성 류마티스관절염이 있으며, 메토트렉세이트(methotrexate) 주 15 mg과 프레드니손(prednisone) 하루 7.5 mg 지속 복용으로 조절 중이고, 류마티스내과 의사는 스테로이드를 줄이지 못하고 있다. 그 밖에 레보티록신을 복용 중인 갑상선기능저하증이 있으며, 크레아티닌 0.84 mg/dL (eGFR 70 mL/min/1.73m2), 조영제 알레르기 없음, 관절 뻣뻣함 때문에 ECOG 1이다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "74세 여성"
+   ],
+   [
+    "진단",
+    "고등급 비침습성 유두상 방광암 (pTa, 상피내암 없음)"
+   ],
+   [
+    "영상·조직",
+    "CT: 2.5 cm 유두상 병변 · 전이 없음 · TURBT 2026-08-12"
+   ],
+   [
+    "치료 이력",
+    "BCG·방광 내/전신 항암 없음"
+   ],
+   [
+    "동반 질환",
+    "혈청 양성 류마티스관절염 (2019~) · 갑상선기능저하증"
+   ],
+   [
+    "현재 치료",
+    "메토트렉세이트 주 15 mg · 프레드니손 하루 7.5 mg 지속 (감량 못 함) · 레보티록신"
+   ],
+   [
+    "주요 검사",
+    "크레아티닌 0.84 · eGFR 70 · ECOG 1 (관절 뻣뻣함)"
+   ],
+   [
+    "생활 습관",
+    "과거 흡연 30갑년"
+   ],
+   [
+    "기타",
+    "조영제 알레르기 없음"
+   ]
+  ]
  },
  "SYN-S004-03": {
   "text_en": "A 63-year-old man with a 35 pack-year smoking history presented with painless gross hematuria, and TURBT on 2026-06-10 showed high-grade urothelial carcinoma invading the muscularis propria. Staging pelvic MRI showed a 4.3 cm left lateral wall tumor with perivesical fat stranding (cT3a) and no enlarged lymph nodes, and CT of the chest and abdomen on 2026-06-18 showed no metastases. He received two cycles of neoadjuvant gemcitabine-cisplatin starting on 2026-07-20 and 2026-08-10, and restaging contrast-enhanced MRI was done on 2026-09-08. He has never received immune checkpoint inhibitors or targeted therapy. He has well-controlled type 2 diabetes on metformin and no heart, liver, kidney, neurologic or psychiatric disease; creatinine is 0.95 mg/dL (eGFR 86 mL/min/1.73m2), albumin 3.9 g/dL, BMI 24 kg/m2. He has no current infection and no history of any other cancer.",
-  "text_ko": "흡연력 35갑년인 63세 남성이 통증 없는 육안적 혈뇨로 내원했고, 2026-06-10 경요도 방광종양 절제술(TURBT)에서 고유근층을 침범한 고등급 요로상피암이 확인되었다. 병기 결정 골반 MRI에서 방광 왼쪽 옆벽에 방광 주위 지방 침윤 소견(cT3a)을 동반한 4.3 cm 종양이 보였고 커진 림프절은 없었으며, 2026-06-18 흉부·복부 CT에서 전이는 없었다. 2026-07-20과 2026-08-10에 시작한 선행 젬시타빈-시스플라틴(gemcitabine-cisplatin) 2주기를 받았고, 2026-09-08에 재병기 조영 증강 MRI를 시행했다. 면역관문억제제나 표적치료를 받은 적은 없다. 메트포르민(metformin)으로 잘 조절되는 제2형 당뇨병이 있고, 심장·간·신장·신경·정신 질환은 없다. 크레아티닌 0.95 mg/dL (eGFR 86 mL/min/1.73m2), 알부민 3.9 g/dL, BMI 24 kg/m2이며, 현재 감염이나 다른 암 병력은 없다."
+  "text_ko": "흡연력 35갑년인 63세 남성이 통증 없는 육안적 혈뇨로 내원했고, 2026-06-10 경요도 방광종양 절제술(TURBT)에서 고유근층을 침범한 고등급 요로상피암이 확인되었다. 병기 결정 골반 MRI에서 방광 왼쪽 옆벽에 방광 주위 지방 침윤 소견(cT3a)을 동반한 4.3 cm 종양이 보였고 커진 림프절은 없었으며, 2026-06-18 흉부·복부 CT에서 전이는 없었다. 2026-07-20과 2026-08-10에 시작한 선행 젬시타빈-시스플라틴(gemcitabine-cisplatin) 2주기를 받았고, 2026-09-08에 재병기 조영 증강 MRI를 시행했다. 면역관문억제제나 표적치료를 받은 적은 없다. 메트포르민(metformin)으로 잘 조절되는 제2형 당뇨병이 있고, 심장·간·신장·신경·정신 질환은 없다. 크레아티닌 0.95 mg/dL (eGFR 86 mL/min/1.73m2), 알부민 3.9 g/dL, BMI 24 kg/m2이며, 현재 감염이나 다른 암 병력은 없다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "63세 남성"
+   ],
+   [
+    "진단",
+    "근침윤성 방광암 (cT3a, 림프절·전이 없음)"
+   ],
+   [
+    "영상·조직",
+    "TURBT(2026-06-10) 고유근층 침범 · MRI 4.3 cm 종양 · CT(06-18) 전이 없음 · 재병기 MRI 2026-09-08"
+   ],
+   [
+    "치료 이력",
+    "선행 젬시타빈-시스플라틴 2주기 (2026-07-20 · 08-10) · 면역관문억제제·표적치료 없음"
+   ],
+   [
+    "동반 질환",
+    "제2형 당뇨병 (메트포르민, 잘 조절)"
+   ],
+   [
+    "주요 검사",
+    "크레아티닌 0.95 · eGFR 86 · 알부민 3.9 · BMI 24"
+   ],
+   [
+    "생활 습관",
+    "흡연 35갑년"
+   ],
+   [
+    "기타",
+    "심장·간·신장·신경·정신 질환 없음 · 감염·다른 암 없음"
+   ]
+  ]
  },
  "SYN-S005-01": {
   "text_en": "A 31-year-old woman with a 9-year history of migraine with typical visual aura (ICHD-3 diagnosis confirmed by a neurologist in 2025) reports 2-4 attacks per month preceded by scintillating scotomata, with at least 2 aura attacks in each of July, August and September 2026. She has never taken any migraine preventive medication and treats attacks with sumatriptan 50 mg and naproxen about 4 days per month; she takes no other medications, has no known drug allergies, and has no other headache disorder. Contraception has been a levonorgestrel intrauterine device since March 2024; she is not breastfeeding and a urine hCG on 2026-09-22 was negative. Labs on 2026-09-22: potassium 4.2 mmol/L, creatinine 0.68 mg/dL (estimated creatinine clearance 118 mL/min), ALT 18 U/L, AST 21 U/L, bilirubin 0.5 mg/dL. Neurological examination and blood pressure (112/70 mmHg) are normal, and she has no cardiovascular, renal or psychiatric history. She works full-time and is seeking a preventive option.",
-  "text_ko": "9년 전부터 전형적인 시각 조짐을 동반한 편두통이 있는 31세 여성(2025년 신경과 전문의가 ICHD-3 기준으로 진단 확인)으로, 반짝이는 암점이 먼저 나타나는 발작이 한 달에 2~4회 있으며 2026년 7월, 8월, 9월에 각각 조짐 발작이 2회 이상 있었다. 편두통 예방약을 복용한 적은 없고, 발작 시 수마트립탄(sumatriptan) 50 mg과 나프록센(naproxen)을 한 달에 약 4일 사용한다. 다른 약은 복용하지 않으며, 알려진 약물 알레르기와 다른 두통 질환은 없다. 2024년 3월부터 레보노르게스트렐(levonorgestrel) 자궁 내 장치로 피임 중이며, 수유 중이 아니고 2026-09-22 소변 hCG는 음성이었다. 2026-09-22 검사: 칼륨 4.2 mmol/L, 크레아티닌 0.68 mg/dL (추정 크레아티닌 청소율 118 mL/min), ALT 18 U/L, AST 21 U/L, 빌리루빈 0.5 mg/dL. 신경학적 진찰과 혈압(112/70 mmHg)은 정상이고, 심혈관·신장·정신 질환 병력은 없다. 전일제로 일하고 있으며 예방 치료를 찾고 있다."
+  "text_ko": "9년 전부터 전형적인 시각 조짐을 동반한 편두통이 있는 31세 여성(2025년 신경과 전문의가 ICHD-3 기준으로 진단 확인)으로, 반짝이는 암점이 먼저 나타나는 발작이 한 달에 2~4회 있으며 2026년 7월, 8월, 9월에 각각 조짐 발작이 2회 이상 있었다. 편두통 예방약을 복용한 적은 없고, 발작 시 수마트립탄(sumatriptan) 50 mg과 나프록센(naproxen)을 한 달에 약 4일 사용한다. 다른 약은 복용하지 않으며, 알려진 약물 알레르기와 다른 두통 질환은 없다. 2024년 3월부터 레보노르게스트렐(levonorgestrel) 자궁 내 장치로 피임 중이며, 수유 중이 아니고 2026-09-22 소변 hCG는 음성이었다. 2026-09-22 검사: 칼륨 4.2 mmol/L, 크레아티닌 0.68 mg/dL (추정 크레아티닌 청소율 118 mL/min), ALT 18 U/L, AST 21 U/L, 빌리루빈 0.5 mg/dL. 신경학적 진찰과 혈압(112/70 mmHg)은 정상이고, 심혈관·신장·정신 질환 병력은 없다. 전일제로 일하고 있으며 예방 치료를 찾고 있다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "31세 여성"
+   ],
+   [
+    "진단",
+    "전형적 시각 조짐 편두통 (9년, 2025년 ICHD-3 확인)"
+   ],
+   [
+    "증상",
+    "월 2~4회 발작 · 2026-07·08·09 각각 조짐 발작 2회 이상"
+   ],
+   [
+    "치료 이력",
+    "예방약 복용한 적 없음 · 발작 시 수마트립탄 50 mg·나프록센 (월 약 4일)"
+   ],
+   [
+    "주요 검사",
+    "2026-09-22: 칼륨 4.2 · 크레아티닌 0.68 · CrCl 118 · ALT 18 · AST 21 · 빌리루빈 0.5 · 혈압 112/70"
+   ],
+   [
+    "기타",
+    "레보노르게스트렐 자궁 내 장치 (2024-03~) · 수유 안 함 · hCG 음성 · 다른 두통·심혈관·신장·정신 질환 없음 · 약물 알레르기 없음"
+   ]
+  ]
  },
  "SYN-S005-02": {
   "text_en": "A 58-year-old man has had migraine with visual and sensory aura since his twenties, currently with about 3 aura attacks and 6 headache days per month over the past 3 months. He previously failed topiramate 100 mg/day (2023, stopped for paresthesias and word-finding difficulty) and propranolol 80 mg/day (2024, no reduction in attack frequency after 4 months). Since February 2026 he has taken candesartan 16 mg daily as migraine prevention, which he continues today with partial benefit. He uses rizatriptan 10 mg for attacks about 4 days per month. Labs on 2026-09-15 showed potassium 4.5 mmol/L, creatinine 1.0 mg/dL (eGFR 82 mL/min/1.73 m2) and normal liver enzymes. He has no cardiovascular disease other than well-controlled blood pressure on candesartan and no other headache disorder.",
-  "text_ko": "58세 남성이 20대부터 시각·감각 조짐을 동반한 편두통이 있었고, 최근 3개월간 한 달에 약 3회의 조짐 발작과 6일의 두통일이 있다. 이전에 토피라메이트(topiramate) 하루 100 mg(2023년, 손발 저림과 단어 찾기 어려움으로 중단)과 프로프라놀롤 하루 80 mg(2024년, 4개월 후에도 발작 빈도 감소 없음)에 실패했다. 2026년 2월부터 편두통 예방을 위해 칸데사르탄(candesartan) 하루 16 mg을 복용 중이며, 일부 효과가 있어 지금도 계속하고 있다. 발작 시 리자트립탄(rizatriptan) 10 mg을 한 달에 약 4일 사용한다. 2026-09-15 검사에서 칼륨 4.5 mmol/L, 크레아티닌 1.0 mg/dL (eGFR 82 mL/min/1.73 m2), 간효소 정상이었다. 칸데사르탄으로 잘 조절되는 혈압 외에 심혈관 질환은 없고, 다른 두통 질환도 없다."
+  "text_ko": "58세 남성이 20대부터 시각·감각 조짐을 동반한 편두통이 있었고, 최근 3개월간 한 달에 약 3회의 조짐 발작과 6일의 두통일이 있다. 이전에 토피라메이트(topiramate) 하루 100 mg(2023년, 손발 저림과 단어 찾기 어려움으로 중단)과 프로프라놀롤 하루 80 mg(2024년, 4개월 후에도 발작 빈도 감소 없음)에 실패했다. 2026년 2월부터 편두통 예방을 위해 칸데사르탄(candesartan) 하루 16 mg을 복용 중이며, 일부 효과가 있어 지금도 계속하고 있다. 발작 시 리자트립탄(rizatriptan) 10 mg을 한 달에 약 4일 사용한다. 2026-09-15 검사에서 칼륨 4.5 mmol/L, 크레아티닌 1.0 mg/dL (eGFR 82 mL/min/1.73 m2), 간효소 정상이었다. 칸데사르탄으로 잘 조절되는 혈압 외에 심혈관 질환은 없고, 다른 두통 질환도 없다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "58세 남성"
+   ],
+   [
+    "진단",
+    "시각·감각 조짐 편두통 (20대부터)"
+   ],
+   [
+    "증상",
+    "최근 3개월 월 약 3회 조짐 발작 · 두통 월 6일"
+   ],
+   [
+    "치료 이력",
+    "토피라메이트 100 mg (2023, 부작용으로 중단) · 프로프라놀롤 80 mg (2024, 효과 없음)"
+   ],
+   [
+    "현재 치료",
+    "칸데사르탄 16 mg/일 (2026-02~, 일부 효과) · 발작 시 리자트립탄 10 mg (월 약 4일)"
+   ],
+   [
+    "주요 검사",
+    "2026-09-15: 칼륨 4.5 · 크레아티닌 1.0 · eGFR 82 · 간효소 정상"
+   ],
+   [
+    "기타",
+    "혈압 잘 조절 · 다른 심혈관 질환·두통 질환 없음"
+   ]
+  ]
  },
  "SYN-S005-03": {
   "text_en": "A 44-year-old woman with migraine with aura since adolescence (ICHD-3 diagnosis) reports recurrent attacks of unilateral throbbing headache preceded by zigzag visual disturbances lasting 20-30 minutes, with photophobia and nausea. Over July through September 2026 she has had 2-3 aura attacks per month and about 7 migraine days per month. Her preventive history includes topiramate in 2024, stopped after 3 months because of paresthesias and cognitive slowing, and later propranolol. She treats attacks with eletriptan 40 mg and ibuprofen and has no other headache disorder. She has no significant medical history apart from migraine and works as an accountant.",
-  "text_ko": "청소년기부터 조짐 편두통이 있는 44세 여성(ICHD-3 진단)으로, 20~30분간 지그재그 모양의 시각 이상이 먼저 나타난 뒤 한쪽으로 욱신거리는 두통이 반복되며 빛 과민과 구역이 동반된다. 2026년 7월부터 9월까지 한 달에 2~3회의 조짐 발작과 약 7일의 편두통일이 있었다. 예방 치료로는 2024년 토피라메이트를 썼으나 손발 저림과 인지 저하로 3개월 후 중단했고, 이후 프로프라놀롤을 썼다. 발작 시 엘레트립탄(eletriptan) 40 mg과 이부프로펜(ibuprofen)을 사용하며, 다른 두통 질환은 없다. 편두통 외에 특별한 병력은 없고 회계사로 일한다."
+  "text_ko": "청소년기부터 조짐 편두통이 있는 44세 여성(ICHD-3 진단)으로, 20~30분간 지그재그 모양의 시각 이상이 먼저 나타난 뒤 한쪽으로 욱신거리는 두통이 반복되며 빛 과민과 구역이 동반된다. 2026년 7월부터 9월까지 한 달에 2~3회의 조짐 발작과 약 7일의 편두통일이 있었다. 예방 치료로는 2024년 토피라메이트를 썼으나 손발 저림과 인지 저하로 3개월 후 중단했고, 이후 프로프라놀롤을 썼다. 발작 시 엘레트립탄(eletriptan) 40 mg과 이부프로펜(ibuprofen)을 사용하며, 다른 두통 질환은 없다. 편두통 외에 특별한 병력은 없고 회계사로 일한다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "44세 여성"
+   ],
+   [
+    "진단",
+    "조짐 편두통 (청소년기부터, ICHD-3)"
+   ],
+   [
+    "증상",
+    "20~30분 지그재그 시각 이상 후 한쪽 두통 · 빛 과민 · 구역 · 2026-07~09 월 2~3회 조짐 발작 · 월 약 7일"
+   ],
+   [
+    "치료 이력",
+    "토피라메이트 (2024, 3개월 후 부작용으로 중단) · 이후 프로프라놀롤"
+   ],
+   [
+    "현재 치료",
+    "발작 시 엘레트립탄 40 mg·이부프로펜"
+   ],
+   [
+    "기타",
+    "다른 두통 질환·특별한 병력 없음 · 회계사"
+   ]
+  ]
  },
  "SYN-S006-01": {
   "text_en": "A 52-year-old man with poorly controlled type 2 diabetes (HbA1c 12.4% on 2026-09-12) and no history of cancer was admitted on 2026-09-20 with diabetic ketoacidosis, fever, productive cough and right pleuritic chest pain. Chest CT on 2026-09-22 showed a right upper lobe consolidation with a reversed halo sign and early cavitation; sinus CT and nasal endoscopy were normal. Transbronchial biopsy on 2026-09-25 showed broad, ribbon-like pauci-septate hyphae invading lung tissue, and culture grew Rhizopus arrhizus, establishing proven pulmonary mucormycosis. Liposomal amphotericin B 5 mg/kg/day was started on 2026-09-26 (day 4 today); he has no known drug allergies. Labs on 2026-09-28: AST 42 U/L, ALT 51 U/L (ULN 40), alkaline phosphatase 110 U/L, total bilirubin 0.9 mg/dL; echocardiogram showed EF 60%. He has only mild streaky hemoptysis, is on 4 L/min nasal cannula oxygen without mechanical support, and has no history of myocardial infarction or stroke.",
-  "text_ko": "조절되지 않는 제2형 당뇨병(2026-09-12 HbA1c 12.4%)이 있고 암 병력이 없는 52세 남성이 당뇨병성 케톤산증, 발열, 가래 섞인 기침, 오른쪽 흉막성 가슴 통증으로 2026-09-20에 입원했다. 2026-09-22 흉부 CT에서 오른쪽 상엽에 역달무리 징후(reversed halo sign)와 초기 공동을 동반한 경화가 보였고, 부비동 CT와 코 내시경은 정상이었다. 2026-09-25 경기관지 생검에서 폐 조직을 침범한 넓은 리본 모양의 격벽이 드문 균사가 보였고, 배양에서 Rhizopus arrhizus가 자라 폐 털곰팡이증(mucormycosis)이 확진되었다. 2026-09-26부터 리포좀 암포테리신 B(liposomal amphotericin B) 하루 5 mg/kg을 투여 중이며(오늘 4일째), 알려진 약물 알레르기는 없다. 2026-09-28 검사: AST 42 U/L, ALT 51 U/L (정상 상한 40), 알칼리성 인산분해효소 110 U/L, 총 빌리루빈 0.9 mg/dL이고, 심장초음파에서 박출률 60%였다. 피 섞인 가래는 약간만 있고, 기계 환기 없이 코 삽입관으로 산소 4 L/min을 쓰고 있으며, 심근경색이나 뇌졸중 병력은 없다."
+  "text_ko": "조절되지 않는 제2형 당뇨병(2026-09-12 HbA1c 12.4%)이 있고 암 병력이 없는 52세 남성이 당뇨병성 케톤산증, 발열, 가래 섞인 기침, 오른쪽 흉막성 가슴 통증으로 2026-09-20에 입원했다. 2026-09-22 흉부 CT에서 오른쪽 상엽에 역달무리 징후(reversed halo sign)와 초기 공동을 동반한 경화가 보였고, 부비동 CT와 코 내시경은 정상이었다. 2026-09-25 경기관지 생검에서 폐 조직을 침범한 넓은 리본 모양의 격벽이 드문 균사가 보였고, 배양에서 Rhizopus arrhizus가 자라 폐 털곰팡이증(mucormycosis)이 확진되었다. 2026-09-26부터 리포좀 암포테리신 B(liposomal amphotericin B) 하루 5 mg/kg을 투여 중이며(오늘 4일째), 알려진 약물 알레르기는 없다. 2026-09-28 검사: AST 42 U/L, ALT 51 U/L (정상 상한 40), 알칼리성 인산분해효소 110 U/L, 총 빌리루빈 0.9 mg/dL이고, 심장초음파에서 박출률 60%였다. 피 섞인 가래는 약간만 있고, 기계 환기 없이 코 삽입관으로 산소 4 L/min을 쓰고 있으며, 심근경색이나 뇌졸중 병력은 없다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "52세 남성"
+   ],
+   [
+    "진단",
+    "확진된 폐 털곰팡이증 (Rhizopus arrhizus)"
+   ],
+   [
+    "입원",
+    "2026-09-20 당뇨병성 케톤산증 · 발열 · 기침 · 오른쪽 흉통"
+   ],
+   [
+    "영상·조직",
+    "CT(2026-09-22): 오른쪽 상엽 경화 · 역달무리 징후 · 공동 · 생검(09-25) 균사 확인 · 부비동 정상"
+   ],
+   [
+    "현재 치료",
+    "리포좀 암포테리신 B 5 mg/kg/일 (2026-09-26~, 4일째) · 산소 4 L/min"
+   ],
+   [
+    "주요 검사",
+    "2026-09-28: AST 42 · ALT 51 · ALP 110 · 빌리루빈 0.9 · 박출률 60%"
+   ],
+   [
+    "동반 질환",
+    "조절 안 되는 제2형 당뇨병 (HbA1c 12.4%)"
+   ],
+   [
+    "기타",
+    "암 병력 없음 · 약물 알레르기 없음 · 기계 환기 없음 · 심근경색·뇌졸중 없음 · 가벼운 혈담"
+   ]
+  ]
  },
  "SYN-S006-02": {
   "text_en": "A 57-year-old man with diffuse large B-cell lymphoma diagnosed in May 2026, now after cycle 4 of R-CHOP (last dose 2026-09-05), and steroid-induced hyperglycemia presented on 2026-09-18 with fever, left facial pain and swelling, a black eschar on the left middle turbinate and left periorbital edema with ptosis. MRI on 2026-09-19 showed left maxillary and ethmoid sinusitis with orbital extension but no intracranial involvement. Endoscopic debridement on 2026-09-20 showed broad aseptate hyphae with angioinvasion, and culture grew Rhizopus oryzae, confirming rhino-orbital mucormycosis. Chest CT on 2026-09-19 was normal with no pulmonary nodules or consolidation. He is receiving liposomal amphotericin B 5 mg/kg/day since 2026-09-19 and has agreed to further endoscopy, biopsies and blood draws as part of his care. Labs on 2026-09-27: ANC 1.9 x10^9/L, creatinine 1.1 mg/dL, normal liver enzymes.",
-  "text_ko": "2026년 5월 미만성 거대 B세포 림프종으로 진단되어 현재 R-CHOP 4주기(마지막 투여 2026-09-05)를 마쳤고 스테로이드로 인한 고혈당이 있는 57세 남성이, 발열, 왼쪽 얼굴 통증과 부종, 왼쪽 중비갑개의 검은 괴사성 딱지, 눈꺼풀 처짐을 동반한 왼쪽 눈 주위 부종으로 2026-09-18에 내원했다. 2026-09-19 MRI에서 안와로 번진 왼쪽 상악동·사골동 부비동염이 보였으나 두개 내 침범은 없었다. 2026-09-20 내시경 괴사 조직 제거술에서 혈관을 침범한 넓은 무격벽 균사가 보였고, 배양에서 Rhizopus oryzae가 자라 코-안와 털곰팡이증이 확진되었다. 2026-09-19 흉부 CT는 정상으로 폐 결절이나 경화가 없었다. 2026-09-19부터 리포좀 암포테리신 B 하루 5 mg/kg을 투여 중이며, 치료 과정에서 추가 내시경, 생검, 채혈에 동의했다. 2026-09-27 검사: ANC 1.9 x10^9/L, 크레아티닌 1.1 mg/dL, 간효소 정상."
+  "text_ko": "2026년 5월 미만성 거대 B세포 림프종으로 진단되어 현재 R-CHOP 4주기(마지막 투여 2026-09-05)를 마쳤고 스테로이드로 인한 고혈당이 있는 57세 남성이, 발열, 왼쪽 얼굴 통증과 부종, 왼쪽 중비갑개의 검은 괴사성 딱지, 눈꺼풀 처짐을 동반한 왼쪽 눈 주위 부종으로 2026-09-18에 내원했다. 2026-09-19 MRI에서 안와로 번진 왼쪽 상악동·사골동 부비동염이 보였으나 두개 내 침범은 없었다. 2026-09-20 내시경 괴사 조직 제거술에서 혈관을 침범한 넓은 무격벽 균사가 보였고, 배양에서 Rhizopus oryzae가 자라 코-안와 털곰팡이증이 확진되었다. 2026-09-19 흉부 CT는 정상으로 폐 결절이나 경화가 없었다. 2026-09-19부터 리포좀 암포테리신 B 하루 5 mg/kg을 투여 중이며, 치료 과정에서 추가 내시경, 생검, 채혈에 동의했다. 2026-09-27 검사: ANC 1.9 x10^9/L, 크레아티닌 1.1 mg/dL, 간효소 정상.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "57세 남성"
+   ],
+   [
+    "진단",
+    "확진된 코-안와 털곰팡이증 (Rhizopus oryzae)"
+   ],
+   [
+    "동반 질환",
+    "미만성 거대 B세포 림프종 (2026-05) · R-CHOP 4주기 (마지막 2026-09-05) · 스테로이드성 고혈당"
+   ],
+   [
+    "증상",
+    "2026-09-18 발열 · 왼쪽 얼굴 통증·부종 · 코 검은 딱지 · 눈 주위 부종 · 눈꺼풀 처짐"
+   ],
+   [
+    "영상·조직",
+    "MRI(09-19): 안와 침범 부비동염 · 두개 내 침범 없음 · 흉부 CT 정상 · 괴사 조직 제거(09-20)"
+   ],
+   [
+    "현재 치료",
+    "리포좀 암포테리신 B 5 mg/kg/일 (2026-09-19~)"
+   ],
+   [
+    "주요 검사",
+    "2026-09-27: ANC 1.9 · 크레아티닌 1.1 · 간효소 정상"
+   ],
+   [
+    "기타",
+    "추가 내시경·생검·채혈 동의"
+   ]
+  ]
  },
  "SYN-S006-03": {
   "text_en": "A 63-year-old man with acute myeloid leukemia who underwent matched unrelated donor allogeneic stem cell transplantation in June 2026 is being treated for grade II gut graft-versus-host disease with prednisone and has been on posaconazole prophylaxis. He developed fever, cough and mild blood-streaked sputum on 2026-09-21. Chest CT on 2026-09-23 showed multiple nodules in the left lower lobe, one with a reversed halo sign, and bronchoalveolar lavage on 2026-09-24 had a negative galactomannan with Mucorales PCR positive, consistent with probable breakthrough pulmonary mucormycosis; sinus CT was normal. Liposomal amphotericin B was started, and he has agreed to bronchoscopy, biopsies and blood tests as needed for his care. He is on 2 L/min nasal cannula oxygen. Other medications include tacrolimus, acyclovir and trimethoprim-sulfamethoxazole.",
-  "text_ko": "급성 골수성 백혈병으로 2026년 6월 비혈연 일치 공여자 동종 조혈모세포이식을 받은 63세 남성이 2등급 장 이식편대숙주병으로 프레드니손 치료 중이며, 포사코나졸(posaconazole) 예방 투여를 받아 왔다. 2026-09-21에 발열, 기침, 피가 약간 섞인 가래가 생겼다. 2026-09-23 흉부 CT에서 왼쪽 하엽에 여러 개의 결절이 있었고 그중 하나에 역달무리 징후가 있었으며, 2026-09-24 기관지폐포 세척액 검사에서 갈락토만난(galactomannan)은 음성, 털곰팡이목(Mucorales) PCR은 양성으로, 예방 투여 중 발생한 폐 털곰팡이증 가능성이 높다(probable). 부비동 CT는 정상이었다. 리포좀 암포테리신 B를 시작했고, 치료에 필요한 기관지 내시경, 생검, 혈액검사에 동의했다. 코 삽입관으로 산소 2 L/min을 쓰고 있다. 그 밖의 복용약은 타크로리무스, 아시클로버(acyclovir), 트리메토프림-설파메톡사졸(trimethoprim-sulfamethoxazole)이다."
+  "text_ko": "급성 골수성 백혈병으로 2026년 6월 비혈연 일치 공여자 동종 조혈모세포이식을 받은 63세 남성이 2등급 장 이식편대숙주병으로 프레드니손 치료 중이며, 포사코나졸(posaconazole) 예방 투여를 받아 왔다. 2026-09-21에 발열, 기침, 피가 약간 섞인 가래가 생겼다. 2026-09-23 흉부 CT에서 왼쪽 하엽에 여러 개의 결절이 있었고 그중 하나에 역달무리 징후가 있었으며, 2026-09-24 기관지폐포 세척액 검사에서 갈락토만난(galactomannan)은 음성, 털곰팡이목(Mucorales) PCR은 양성으로, 예방 투여 중 발생한 폐 털곰팡이증 가능성이 높다(probable). 부비동 CT는 정상이었다. 리포좀 암포테리신 B를 시작했고, 치료에 필요한 기관지 내시경, 생검, 혈액검사에 동의했다. 코 삽입관으로 산소 2 L/min을 쓰고 있다. 그 밖의 복용약은 타크로리무스, 아시클로버(acyclovir), 트리메토프림-설파메톡사졸(trimethoprim-sulfamethoxazole)이다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "63세 남성"
+   ],
+   [
+    "진단",
+    "폐 털곰팡이증 가능성 높음 (예방 투여 중 발생)"
+   ],
+   [
+    "동반 질환",
+    "급성 골수성 백혈병 · 동종 조혈모세포이식 (2026-06) · 2등급 장 이식편대숙주병"
+   ],
+   [
+    "증상",
+    "2026-09-21 발열 · 기침 · 피 섞인 가래"
+   ],
+   [
+    "영상·조직",
+    "CT(09-23): 왼쪽 하엽 결절 여러 개 · 역달무리 징후 · BAL(09-24) 갈락토만난 음성 · Mucorales PCR 양성 · 부비동 정상"
+   ],
+   [
+    "현재 치료",
+    "리포좀 암포테리신 B · 산소 2 L/min · 프레드니손 · 타크로리무스 · 아시클로버 · TMP-SMX · 이전 포사코나졸 예방"
+   ],
+   [
+    "기타",
+    "기관지 내시경·생검·혈액검사 동의"
+   ]
+  ]
  },
  "SYN-S007-01": {
   "text_en": "An 11-week-old (78 days) girl born at term is admitted with 6 days of worsening projectile non-bilious vomiting after every feed and a 250 g weight loss from her last clinic weight (current weight 4.6 kg). On examination she is mildly dehydrated, afebrile (36.8 C), with visible gastric peristalsis and a palpable olive in the epigastrium. Admission labs on 2026-09-27 show Na 134 mmol/L, Cl 91 mmol/L, K 3.3 mmol/L, HCO3 31 mmol/L and glucose 84 mg/dL; blood gas pH 7.49. Abdominal ultrasound on 2026-09-27 showed a pyloric muscle thickness of 4.6 mm and channel length of 18 mm, confirming hypertrophic pyloric stenosis. She was seen by pediatric surgery the same day and is being rehydrated with IV fluids on the general pediatric ward, with pyloromyotomy planned for 2026-09-30 once electrolytes normalize. She has no other medical problems, no signs of infection, and takes no medications.",
-  "text_ko": "만삭으로 태어난 생후 11주(78일) 여아가 6일 동안 매 수유 후 점점 심해지는 담즙 없는 분출성 구토와 지난 외래 체중보다 250 g 줄어든 체중(현재 4.6 kg)으로 입원했다. 진찰에서 경도의 탈수가 있고 열은 없으며(36.8 C), 눈에 보이는 위 연동운동과 명치 부위에 올리브 모양 덩이가 만져진다. 2026-09-27 입원 검사: Na 134 mmol/L, Cl 91 mmol/L, K 3.3 mmol/L, HCO3 31 mmol/L, 포도당 84 mg/dL, 혈액가스 pH 7.49. 2026-09-27 복부 초음파에서 유문근 두께 4.6 mm, 유문관 길이 18 mm로 비후성 유문협착증이 확진되었다. 같은 날 소아외과 진료를 받았고, 일반 소아 병동에서 정맥 수액으로 수분을 보충하고 있으며, 전해질이 정상화되면 2026-09-30에 유문근절개술을 할 계획이다. 다른 질환이나 감염 징후는 없고 복용약도 없다."
+  "text_ko": "만삭으로 태어난 생후 11주(78일) 여아가 6일 동안 매 수유 후 점점 심해지는 담즙 없는 분출성 구토와 지난 외래 체중보다 250 g 줄어든 체중(현재 4.6 kg)으로 입원했다. 진찰에서 경도의 탈수가 있고 열은 없으며(36.8 C), 눈에 보이는 위 연동운동과 명치 부위에 올리브 모양 덩이가 만져진다. 2026-09-27 입원 검사: Na 134 mmol/L, Cl 91 mmol/L, K 3.3 mmol/L, HCO3 31 mmol/L, 포도당 84 mg/dL, 혈액가스 pH 7.49. 2026-09-27 복부 초음파에서 유문근 두께 4.6 mm, 유문관 길이 18 mm로 비후성 유문협착증이 확진되었다. 같은 날 소아외과 진료를 받았고, 일반 소아 병동에서 정맥 수액으로 수분을 보충하고 있으며, 전해질이 정상화되면 2026-09-30에 유문근절개술을 할 계획이다. 다른 질환이나 감염 징후는 없고 복용약도 없다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "생후 78일 여아 (만삭 출생)"
+   ],
+   [
+    "진단",
+    "비후성 유문협착증 (초음파 확진)"
+   ],
+   [
+    "증상",
+    "6일간 매 수유 후 담즙 없는 분출성 구토 · 체중 250 g 감소 (현재 4.6 kg)"
+   ],
+   [
+    "진찰",
+    "경도 탈수 · 열 없음 (36.8 C) · 위 연동운동 · 명치 올리브 덩이"
+   ],
+   [
+    "주요 검사",
+    "2026-09-27: Na 134 · Cl 91 · K 3.3 · HCO3 31 · 포도당 84 · pH 7.49"
+   ],
+   [
+    "영상·조직",
+    "초음파: 유문근 4.6 mm · 유문관 18 mm"
+   ],
+   [
+    "계획",
+    "일반 소아 병동 수액 치료 · 2026-09-30 유문근절개술"
+   ],
+   [
+    "기타",
+    "다른 질환·감염 징후·복용약 없음"
+   ]
+  ]
  },
  "SYN-S007-02": {
   "text_en": "A 6-week-old term boy presents on 2026-09-20 after 9 days of projectile non-bilious vomiting, lethargy and markedly reduced wet diapers; he weighs 3.9 kg, 400 g below his birth weight of 4.3 kg. On arrival he was hypothermic (35.2 C), severely dehydrated with a capillary refill of 4 seconds, and a firm olive-shaped mass was palpable in the epigastrium. Initial labs showed Cl 78 mmol/L, K 2.6 mmol/L, HCO3 41 mmol/L, blood gas pH 7.58, and point-of-care glucose 36 mg/dL that recurred at 41 mg/dL despite a dextrose bolus. Abdominal ultrasound the same day showed pyloric muscle thickness 5.2 mm and channel length 21 mm, confirming hypertrophic pyloric stenosis, and pediatric surgery was consulted. Because of the hypothermia, recurrent hypoglycemia and severe electrolyte derangement he was admitted to the pediatric intensive care unit for active warming, dextrose infusion and graded electrolyte correction. Pyloromyotomy is planned once he is metabolically corrected; he has no other known medical conditions.",
-  "text_ko": "만삭으로 태어난 생후 6주 남아가 9일 동안의 담즙 없는 분출성 구토, 처짐, 젖은 기저귀 수의 뚜렷한 감소로 2026-09-20에 내원했다. 체중은 3.9 kg으로 출생 체중 4.3 kg보다 400 g 적다. 도착 시 저체온(35.2 C)이었고 모세혈관 재충혈 시간 4초의 심한 탈수 상태였으며, 명치 부위에 단단한 올리브 모양 덩이가 만져졌다. 첫 검사에서 Cl 78 mmol/L, K 2.6 mmol/L, HCO3 41 mmol/L, 혈액가스 pH 7.58이었고, 현장 혈당 36 mg/dL로 포도당을 정맥 주사한 뒤에도 41 mg/dL로 다시 떨어졌다. 같은 날 복부 초음파에서 유문근 두께 5.2 mm, 유문관 길이 21 mm로 비후성 유문협착증이 확진되어 소아외과에 의뢰했다. 저체온, 반복되는 저혈당, 심한 전해질 이상 때문에 소아 중환자실에 입원해 적극적인 보온, 포도당 지속 주입, 단계적 전해질 교정을 받고 있다. 대사 이상이 교정되면 유문근절개술을 할 계획이며, 알려진 다른 질환은 없다."
+  "text_ko": "만삭으로 태어난 생후 6주 남아가 9일 동안의 담즙 없는 분출성 구토, 처짐, 젖은 기저귀 수의 뚜렷한 감소로 2026-09-20에 내원했다. 체중은 3.9 kg으로 출생 체중 4.3 kg보다 400 g 적다. 도착 시 저체온(35.2 C)이었고 모세혈관 재충혈 시간 4초의 심한 탈수 상태였으며, 명치 부위에 단단한 올리브 모양 덩이가 만져졌다. 첫 검사에서 Cl 78 mmol/L, K 2.6 mmol/L, HCO3 41 mmol/L, 혈액가스 pH 7.58이었고, 현장 혈당 36 mg/dL로 포도당을 정맥 주사한 뒤에도 41 mg/dL로 다시 떨어졌다. 같은 날 복부 초음파에서 유문근 두께 5.2 mm, 유문관 길이 21 mm로 비후성 유문협착증이 확진되어 소아외과에 의뢰했다. 저체온, 반복되는 저혈당, 심한 전해질 이상 때문에 소아 중환자실에 입원해 적극적인 보온, 포도당 지속 주입, 단계적 전해질 교정을 받고 있다. 대사 이상이 교정되면 유문근절개술을 할 계획이며, 알려진 다른 질환은 없다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "생후 6주 남아 (만삭 출생)"
+   ],
+   [
+    "진단",
+    "비후성 유문협착증 (초음파 확진)"
+   ],
+   [
+    "증상",
+    "9일간 분출성 구토 · 처짐 · 소변량 감소 · 체중 3.9 kg (출생 4.3 kg)"
+   ],
+   [
+    "중증도",
+    "저체온 35.2 C · 심한 탈수 (CRT 4초) · 반복 저혈당 (36→41 mg/dL) · 소아 중환자실 입원"
+   ],
+   [
+    "주요 검사",
+    "Cl 78 · K 2.6 · HCO3 41 · pH 7.58"
+   ],
+   [
+    "영상·조직",
+    "초음파: 유문근 5.2 mm · 유문관 21 mm"
+   ],
+   [
+    "계획",
+    "보온 · 포도당 주입 · 전해질 교정 후 유문근절개술"
+   ]
+  ]
  },
  "SYN-S007-03": {
   "text_en": "A 5-week-old first-born boy, delivered at 39 weeks, is brought in on 2026-09-28 with 4 days of forceful non-bilious vomiting shortly after each bottle feed and persistent hunger after vomiting. His weight is 4.1 kg, down from 4.3 kg one week ago. On examination there is visible left-to-right gastric peristalsis after a test feed and a possible olive-shaped mass in the right upper quadrant. Venous blood gas shows pH 7.47 with Cl 94 mmol/L, K 3.4 mmol/L and HCO3 30 mmol/L. An abdominal ultrasound was obtained and he was admitted for IV fluid rehydration while further management is arranged.",
-  "text_ko": "39주에 태어난 첫째 아이인 생후 5주 남아가 4일 동안 분유를 먹을 때마다 곧바로 담즙 없는 구토를 세게 하고 토한 뒤에도 계속 배고파해서 2026-09-28에 내원했다. 체중은 4.1 kg으로 1주 전 4.3 kg에서 줄었다. 진찰에서 시험 수유 후 왼쪽에서 오른쪽으로 움직이는 위 연동운동이 보이고, 오른쪽 위 배에 올리브 모양 덩이가 만져지는 듯하다. 정맥 혈액가스에서 pH 7.47, Cl 94 mmol/L, K 3.4 mmol/L, HCO3 30 mmol/L이다. 복부 초음파를 촬영했고, 이후 치료 계획을 정하는 동안 정맥 수액 보충을 위해 입원했다."
+  "text_ko": "39주에 태어난 첫째 아이인 생후 5주 남아가 4일 동안 분유를 먹을 때마다 곧바로 담즙 없는 구토를 세게 하고 토한 뒤에도 계속 배고파해서 2026-09-28에 내원했다. 체중은 4.1 kg으로 1주 전 4.3 kg에서 줄었다. 진찰에서 시험 수유 후 왼쪽에서 오른쪽으로 움직이는 위 연동운동이 보이고, 오른쪽 위 배에 올리브 모양 덩이가 만져지는 듯하다. 정맥 혈액가스에서 pH 7.47, Cl 94 mmol/L, K 3.4 mmol/L, HCO3 30 mmol/L이다. 복부 초음파를 촬영했고, 이후 치료 계획을 정하는 동안 정맥 수액 보충을 위해 입원했다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "생후 5주 남아 (39주 출생, 첫째)"
+   ],
+   [
+    "증상",
+    "4일간 수유 직후 담즙 없는 강한 구토 · 토한 뒤에도 배고파함 · 체중 4.3 → 4.1 kg"
+   ],
+   [
+    "진찰",
+    "시험 수유 후 위 연동운동 · 오른쪽 위 배에 올리브 덩이 의심"
+   ],
+   [
+    "주요 검사",
+    "정맥 혈액가스: pH 7.47 · Cl 94 · K 3.4 · HCO3 30"
+   ],
+   [
+    "계획",
+    "복부 초음파 시행 · 정맥 수액 위해 입원"
+   ]
+  ]
  },
  "SYN-S008-01": {
   "text_en": "A 74-year-old man with idiopathic pulmonary fibrosis diagnosed in 2017-11 by multidisciplinary discussion (definite UIP pattern on HRCT, negative ANA, RF, anti-CCP and myositis panel) presents for routine follow-up of slowly progressive exertional dyspnea and dry cough with finger clubbing. He has taken pirfenidone 801 mg three times daily at a stable dose since 2018-03 and has never been treated with nintedanib, corticosteroids or immunosuppressants. Pulmonary function tests on 2026-09-08 show FVC 2.62 L (70% predicted), FEV1/FVC 0.83, and DLCO 47% predicted; resting SpO2 is 95% on room air, and HRCT on 2026-08-20 shows stable basal-predominant honeycombing without emphysema. He is a former smoker (15 pack-years) who quit in 2009, weighs 79 kg, and has no history of asthma, cancer, heart disease or coeliac disease. Labs on 2026-09-08 show normal AST, ALT, bilirubin and alkaline phosphatase, with creatinine 1.0 mg/dL (eGFR 74 mL/min/1.73m2). His only other medications are atorvastatin 20 mg and omeprazole 20 mg; he has had no respiratory infections or hospitalizations in the past year, no known drug allergies, and is not being considered for lung transplantation.",
-  "text_ko": "2017-11에 다학제 논의로 특발성 폐섬유증이 진단된 74세 남성(HRCT에서 확실한 UIP 양상, ANA·RF·anti-CCP·근염 항체 검사 음성)이 천천히 진행하는 운동 시 호흡곤란, 마른기침, 손가락 곤봉증으로 정기 추적 진료를 받으러 왔다. 2018-03부터 피르페니돈(pirfenidone) 801 mg 하루 3회를 같은 용량으로 복용 중이며, 닌테다닙(nintedanib), 스테로이드, 면역억제제 치료를 받은 적은 없다. 2026-09-08 폐기능검사에서 FVC 2.62 L (예측치의 70%), FEV1/FVC 0.83, DLCO 예측치의 47%이고, 실내 공기에서 안정 시 SpO2 95%이며, 2026-08-20 HRCT에서 폐기종 없이 아래쪽 위주의 벌집 모양 변화가 안정적이다. 과거 흡연자(15갑년)로 2009년에 끊었고, 체중 79 kg이며, 천식, 암, 심장병, 셀리악병 병력은 없다. 2026-09-08 검사에서 AST, ALT, 빌리루빈, 알칼리성 인산분해효소가 정상이고 크레아티닌 1.0 mg/dL (eGFR 74 mL/min/1.73m2)이다. 그 밖의 복용약은 아토르바스타틴 20 mg과 오메프라졸(omeprazole) 20 mg뿐이며, 최근 1년간 호흡기 감염이나 입원이 없고, 알려진 약물 알레르기가 없으며, 폐이식 대상으로 검토되고 있지 않다."
+  "text_ko": "2017-11에 다학제 논의로 특발성 폐섬유증이 진단된 74세 남성(HRCT에서 확실한 UIP 양상, ANA·RF·anti-CCP·근염 항체 검사 음성)이 천천히 진행하는 운동 시 호흡곤란, 마른기침, 손가락 곤봉증으로 정기 추적 진료를 받으러 왔다. 2018-03부터 피르페니돈(pirfenidone) 801 mg 하루 3회를 같은 용량으로 복용 중이며, 닌테다닙(nintedanib), 스테로이드, 면역억제제 치료를 받은 적은 없다. 2026-09-08 폐기능검사에서 FVC 2.62 L (예측치의 70%), FEV1/FVC 0.83, DLCO 예측치의 47%이고, 실내 공기에서 안정 시 SpO2 95%이며, 2026-08-20 HRCT에서 폐기종 없이 아래쪽 위주의 벌집 모양 변화가 안정적이다. 과거 흡연자(15갑년)로 2009년에 끊었고, 체중 79 kg이며, 천식, 암, 심장병, 셀리악병 병력은 없다. 2026-09-08 검사에서 AST, ALT, 빌리루빈, 알칼리성 인산분해효소가 정상이고 크레아티닌 1.0 mg/dL (eGFR 74 mL/min/1.73m2)이다. 그 밖의 복용약은 아토르바스타틴 20 mg과 오메프라졸(omeprazole) 20 mg뿐이며, 최근 1년간 호흡기 감염이나 입원이 없고, 알려진 약물 알레르기가 없으며, 폐이식 대상으로 검토되고 있지 않다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "74세 남성"
+   ],
+   [
+    "진단",
+    "특발성 폐섬유증 (2017-11, 확실한 UIP)"
+   ],
+   [
+    "증상",
+    "천천히 진행하는 운동 시 호흡곤란 · 마른기침 · 손가락 곤봉증"
+   ],
+   [
+    "현재 치료",
+    "피르페니돈 801 mg 하루 3회 (2018-03~, 같은 용량) · 아토르바스타틴 · 오메프라졸"
+   ],
+   [
+    "치료 이력",
+    "닌테다닙·스테로이드·면역억제제 없음"
+   ],
+   [
+    "주요 검사",
+    "2026-09-08: FVC 2.62 L (70%) · FEV1/FVC 0.83 · DLCO 47% · SpO2 95% · 간기능 정상 · 크레아티닌 1.0 · eGFR 74"
+   ],
+   [
+    "영상·조직",
+    "HRCT(2026-08-20): 아래쪽 벌집 모양 안정 · 폐기종 없음"
+   ],
+   [
+    "생활 습관",
+    "과거 흡연 15갑년 (2009 금연) · 체중 79 kg"
+   ],
+   [
+    "기타",
+    "천식·암·심장병·셀리악병 없음 · 1년간 감염·입원 없음 · 약물 알레르기 없음 · 폐이식 검토 안 함"
+   ]
+  ]
  },
  "SYN-S008-02": {
   "text_en": "A 61-year-old woman presents with 14 months of progressive exertional dyspnea, dry cough and finger clubbing; IPF was diagnosed in 2026-02 by multidisciplinary discussion based on a UIP pattern on HRCT with negative ANA, ENA, RF, anti-CCP and myositis antibodies and no environmental exposures. She smoked one pack per day for 30 years and quit on 2026-03-01 after the diagnosis. Repeat HRCT on 2026-07-14 shows basal subpleural reticulation with honeycombing and only trace centrilobular emphysema (<5% of lung volume). Pulmonary function tests on 2026-09-10 show FVC 64% predicted, FEV1/FVC 0.81 and hemoglobin-corrected DLCO 41% predicted; resting SpO2 is 94% on room air, and she weighs 63 kg. She has not started any antifibrotic therapy and has never received corticosteroids or immunosuppressants. Labs on 2026-09-10 show normal liver enzymes and bilirubin and eGFR 88 mL/min/1.73m2; she is postmenopausal (last menses 2019). She has no history of asthma, cancer, heart disease or coeliac disease, no respiratory infection or exacerbation in the past 6 months, no known drug allergies, and is not listed for lung transplantation.",
-  "text_ko": "61세 여성이 14개월 동안 진행한 운동 시 호흡곤란, 마른기침, 손가락 곤봉증으로 내원했다. 2026-02에 HRCT의 UIP 양상을 바탕으로 다학제 논의에서 특발성 폐섬유증(IPF)으로 진단되었으며, ANA, ENA, RF, anti-CCP, 근염 항체는 음성이고 환경 노출은 없었다. 30년간 하루 1갑을 피웠고 진단 후 2026-03-01에 끊었다. 2026-07-14 추적 HRCT에서 아래쪽 흉막하 그물 음영과 벌집 모양 변화가 있고, 소엽 중심성 폐기종은 아주 적다(폐 부피의 5% 미만). 2026-09-10 폐기능검사에서 FVC 예측치의 64%, FEV1/FVC 0.81, 혈색소 보정 DLCO 예측치의 41%이고, 실내 공기에서 안정 시 SpO2 94%이며 체중은 63 kg이다. 항섬유화 치료는 아직 시작하지 않았고, 스테로이드나 면역억제제를 받은 적이 없다. 2026-09-10 검사에서 간효소와 빌리루빈이 정상이고 eGFR 88 mL/min/1.73m2이며, 폐경 상태다(마지막 월경 2019년). 천식, 암, 심장병, 셀리악병 병력이 없고, 최근 6개월간 호흡기 감염이나 급성 악화가 없으며, 알려진 약물 알레르기가 없고, 폐이식 대기자 명단에 올라 있지 않다."
+  "text_ko": "61세 여성이 14개월 동안 진행한 운동 시 호흡곤란, 마른기침, 손가락 곤봉증으로 내원했다. 2026-02에 HRCT의 UIP 양상을 바탕으로 다학제 논의에서 특발성 폐섬유증(IPF)으로 진단되었으며, ANA, ENA, RF, anti-CCP, 근염 항체는 음성이고 환경 노출은 없었다. 30년간 하루 1갑을 피웠고 진단 후 2026-03-01에 끊었다. 2026-07-14 추적 HRCT에서 아래쪽 흉막하 그물 음영과 벌집 모양 변화가 있고, 소엽 중심성 폐기종은 아주 적다(폐 부피의 5% 미만). 2026-09-10 폐기능검사에서 FVC 예측치의 64%, FEV1/FVC 0.81, 혈색소 보정 DLCO 예측치의 41%이고, 실내 공기에서 안정 시 SpO2 94%이며 체중은 63 kg이다. 항섬유화 치료는 아직 시작하지 않았고, 스테로이드나 면역억제제를 받은 적이 없다. 2026-09-10 검사에서 간효소와 빌리루빈이 정상이고 eGFR 88 mL/min/1.73m2이며, 폐경 상태다(마지막 월경 2019년). 천식, 암, 심장병, 셀리악병 병력이 없고, 최근 6개월간 호흡기 감염이나 급성 악화가 없으며, 알려진 약물 알레르기가 없고, 폐이식 대기자 명단에 올라 있지 않다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "61세 여성 (폐경)"
+   ],
+   [
+    "진단",
+    "특발성 폐섬유증 (2026-02, UIP · 자가항체 음성)"
+   ],
+   [
+    "증상",
+    "14개월 진행한 운동 시 호흡곤란 · 마른기침 · 손가락 곤봉증"
+   ],
+   [
+    "치료 이력",
+    "항섬유화 치료 시작 안 함 · 스테로이드·면역억제제 없음"
+   ],
+   [
+    "주요 검사",
+    "2026-09-10: FVC 64% · FEV1/FVC 0.81 · DLCO 41% · SpO2 94% · 간기능 정상 · eGFR 88"
+   ],
+   [
+    "영상·조직",
+    "HRCT(2026-07-14): 흉막하 그물 음영·벌집 모양 · 폐기종 5% 미만"
+   ],
+   [
+    "생활 습관",
+    "흡연 30년 하루 1갑 (2026-03-01 금연) · 체중 63 kg"
+   ],
+   [
+    "기타",
+    "천식·암·심장병·셀리악병 없음 · 6개월간 감염·악화 없음 · 약물 알레르기 없음 · 폐이식 대기 아님"
+   ]
+  ]
  },
  "SYN-S008-03": {
   "text_en": "A 69-year-old man was diagnosed with idiopathic pulmonary fibrosis in 2025-10 after a multidisciplinary review of HRCT showing a UIP pattern, with negative connective tissue disease serologies. He reports 2 years of progressive exertional dyspnea and dry cough, and examination shows finger clubbing and bibasilar velcro crackles. He started pirfenidone in 2025-11 and has been on a stable dose of 801 mg three times daily since 2026-01; he has never taken corticosteroids, immunosuppressants or nintedanib. Spirometry on 2026-09-15 shows FVC 3.05 L (66% predicted), and resting SpO2 is 93% on room air; he weighs 86 kg. Liver enzymes and bilirubin are normal and eGFR is 69 mL/min/1.73m2 on 2026-09-15. Comorbidities are well-controlled hypertension on amlodipine; he has no history of asthma, cancer, coeliac disease or heart disease, no respiratory infections or hospitalizations in the past year, no drug allergies, and is not being evaluated for transplantation.",
-  "text_ko": "69세 남성이 2025-10에 HRCT의 UIP 양상에 대한 다학제 검토 후 특발성 폐섬유증으로 진단되었고, 결합조직질환 혈청 검사는 음성이었다. 2년 동안 진행한 운동 시 호흡곤란과 마른기침이 있으며, 진찰에서 손가락 곤봉증과 양쪽 폐 아래쪽의 벨크로 수포음이 들린다. 2025-11에 피르페니돈을 시작했고 2026-01부터 801 mg 하루 3회를 같은 용량으로 복용 중이며, 스테로이드, 면역억제제, 닌테다닙을 복용한 적은 없다. 2026-09-15 폐활량검사에서 FVC 3.05 L (예측치의 66%)이고, 실내 공기에서 안정 시 SpO2 93%이며, 체중은 86 kg이다. 2026-09-15 간효소와 빌리루빈은 정상이고 eGFR 69 mL/min/1.73m2이다. 동반 질환은 암로디핀으로 잘 조절되는 고혈압이며, 천식, 암, 셀리악병, 심장병 병력이 없고, 최근 1년간 호흡기 감염이나 입원이 없으며, 약물 알레르기가 없고, 이식 평가를 받고 있지 않다."
+  "text_ko": "69세 남성이 2025-10에 HRCT의 UIP 양상에 대한 다학제 검토 후 특발성 폐섬유증으로 진단되었고, 결합조직질환 혈청 검사는 음성이었다. 2년 동안 진행한 운동 시 호흡곤란과 마른기침이 있으며, 진찰에서 손가락 곤봉증과 양쪽 폐 아래쪽의 벨크로 수포음이 들린다. 2025-11에 피르페니돈을 시작했고 2026-01부터 801 mg 하루 3회를 같은 용량으로 복용 중이며, 스테로이드, 면역억제제, 닌테다닙을 복용한 적은 없다. 2026-09-15 폐활량검사에서 FVC 3.05 L (예측치의 66%)이고, 실내 공기에서 안정 시 SpO2 93%이며, 체중은 86 kg이다. 2026-09-15 간효소와 빌리루빈은 정상이고 eGFR 69 mL/min/1.73m2이다. 동반 질환은 암로디핀으로 잘 조절되는 고혈압이며, 천식, 암, 셀리악병, 심장병 병력이 없고, 최근 1년간 호흡기 감염이나 입원이 없으며, 약물 알레르기가 없고, 이식 평가를 받고 있지 않다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "69세 남성"
+   ],
+   [
+    "진단",
+    "특발성 폐섬유증 (2025-10, UIP · 결합조직질환 음성)"
+   ],
+   [
+    "증상",
+    "2년 진행한 운동 시 호흡곤란 · 마른기침 · 곤봉증 · 벨크로 수포음"
+   ],
+   [
+    "현재 치료",
+    "피르페니돈 801 mg 하루 3회 (2025-11 시작, 2026-01부터 같은 용량) · 암로디핀"
+   ],
+   [
+    "치료 이력",
+    "스테로이드·면역억제제·닌테다닙 없음"
+   ],
+   [
+    "주요 검사",
+    "2026-09-15: FVC 3.05 L (66%) · SpO2 93% · 간기능 정상 · eGFR 69"
+   ],
+   [
+    "동반 질환",
+    "고혈압 (잘 조절)"
+   ],
+   [
+    "기타",
+    "체중 86 kg · 천식·암·셀리악병·심장병 없음 · 1년간 감염·입원 없음 · 약물 알레르기 없음 · 이식 평가 안 함"
+   ]
+  ]
  },
  "SYN-S009-01": {
   "text_en": "A 20-year-old female university student presents on 2026-09-28 with 4 days of fever (38.7 C in clinic), severe sore throat, headache and marked fatigue that began on 2026-09-25. Exam shows exudative tonsillitis, tender posterior cervical lymphadenopathy and a spleen tip palpable 2 cm below the costal margin. Labs on 2026-09-28: WBC 13.8 x10^3/uL with 62% lymphocytes (18% reactive/atypical), absolute neutrophil count 3,100/uL, hemoglobin 13.2 g/dL, platelets 148,000/uL, ALT 96 U/L, AST 74 U/L, creatinine 0.72 mg/dL (weight 58 kg); urine hCG negative. Monospot is positive and EBV serology shows VCA IgM positive, VCA IgG positive and EBNA IgG negative; HIV antigen/antibody and CMV IgM are negative. She has never had a mononucleosis-like illness before, has no chronic medical conditions or autoimmune disease, and has received no corticosteroids. Current medications are acetaminophen and ibuprofen as needed plus a combined oral contraceptive pill; she is not breastfeeding.",
-  "text_ko": "20세 여자 대학생이 2026-09-25에 시작된 4일간의 발열(진료 시 38.7 C), 심한 인후통, 두통, 뚜렷한 피로로 2026-09-28에 내원했다. 진찰에서 삼출성 편도염, 압통 있는 뒷목 림프절 비대가 있고, 비장 끝이 갈비뼈 아래 2 cm에서 만져진다. 2026-09-28 검사: 백혈구 13.8 x10^3/uL (림프구 62%, 반응성·비정형 림프구 18%), 절대 호중구 수 3,100/uL, 혈색소 13.2 g/dL, 혈소판 148,000/uL, ALT 96 U/L, AST 74 U/L, 크레아티닌 0.72 mg/dL (체중 58 kg), 소변 hCG 음성. 모노스팟 양성이고 EBV 혈청검사에서 VCA IgM 양성, VCA IgG 양성, EBNA IgG 음성이며, HIV 항원/항체와 CMV IgM은 음성이다. 이전에 단핵구증 같은 병을 앓은 적이 없고, 만성 질환이나 자가면역질환이 없으며, 스테로이드를 받은 적이 없다. 현재 필요할 때 아세트아미노펜(acetaminophen)과 이부프로펜을 쓰고, 복합 경구 피임약을 복용 중이며, 수유 중이 아니다."
+  "text_ko": "20세 여자 대학생이 2026-09-25에 시작된 4일간의 발열(진료 시 38.7 C), 심한 인후통, 두통, 뚜렷한 피로로 2026-09-28에 내원했다. 진찰에서 삼출성 편도염, 압통 있는 뒷목 림프절 비대가 있고, 비장 끝이 갈비뼈 아래 2 cm에서 만져진다. 2026-09-28 검사: 백혈구 13.8 x10^3/uL (림프구 62%, 반응성·비정형 림프구 18%), 절대 호중구 수 3,100/uL, 혈색소 13.2 g/dL, 혈소판 148,000/uL, ALT 96 U/L, AST 74 U/L, 크레아티닌 0.72 mg/dL (체중 58 kg), 소변 hCG 음성. 모노스팟 양성이고 EBV 혈청검사에서 VCA IgM 양성, VCA IgG 양성, EBNA IgG 음성이며, HIV 항원/항체와 CMV IgM은 음성이다. 이전에 단핵구증 같은 병을 앓은 적이 없고, 만성 질환이나 자가면역질환이 없으며, 스테로이드를 받은 적이 없다. 현재 필요할 때 아세트아미노펜(acetaminophen)과 이부프로펜을 쓰고, 복합 경구 피임약을 복용 중이며, 수유 중이 아니다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "20세 여성 (대학생)"
+   ],
+   [
+    "진단",
+    "EBV 감염성 단핵구증 (첫 감염 양상)"
+   ],
+   [
+    "증상",
+    "2026-09-25부터 발열 38.7 C · 심한 인후통 · 두통 · 피로"
+   ],
+   [
+    "진찰",
+    "삼출성 편도염 · 뒷목 림프절 비대 · 비장 2 cm 촉지"
+   ],
+   [
+    "주요 검사",
+    "백혈구 13.8 (림프구 62%, 비정형 18%) · ANC 3,100 · 혈색소 13.2 · 혈소판 148,000 · ALT 96 · AST 74 · 크레아티닌 0.72"
+   ],
+   [
+    "감염 검사",
+    "모노스팟 양성 · VCA IgM·IgG 양성 · EBNA IgG 음성 · HIV·CMV IgM 음성"
+   ],
+   [
+    "현재 치료",
+    "아세트아미노펜·이부프로펜 필요 시 · 복합 경구 피임약"
+   ],
+   [
+    "기타",
+    "과거 단핵구증 없음 · 만성·자가면역 질환 없음 · 스테로이드 없음 · hCG 음성 · 수유 안 함 · 체중 58 kg"
+   ]
+  ]
  },
  "SYN-S009-02": {
   "text_en": "A 26-year-old man presents on 2026-09-28 with 5 days of fever, sore throat and malaise that started on 2026-09-24; temperature today is 38.9 C. Exam shows enlarged tonsils with exudate, bilateral posterior cervical lymphadenopathy and splenomegaly on ultrasound (15 cm). His past history is notable for autoimmune (Hashimoto) thyroiditis with positive anti-TPO antibodies diagnosed in 2023, well controlled on levothyroxine 75 mcg daily (TSH 2.1 mIU/L in 2026-06); he has never had a mononucleosis-like illness and has never taken corticosteroids or other immunosuppressants. Labs on 2026-09-28: WBC 11.2 x10^3/uL with 58% lymphocytes including many reactive lymphocytes, ANC 2,400/uL, hemoglobin 14.6 g/dL, platelets 162,000/uL, ALT 142 U/L, creatinine 0.95 mg/dL (weight 78 kg). Monospot is positive and EBV serology shows VCA IgM positive with VCA IgG and EBNA IgG both negative; HIV antigen/antibody and CMV IgM are negative. Apart from levothyroxine he takes only acetaminophen.",
-  "text_ko": "26세 남성이 2026-09-24에 시작된 5일간의 발열, 인후통, 전신 쇠약감으로 2026-09-28에 내원했고, 오늘 체온은 38.9 C다. 진찰에서 삼출물이 있는 커진 편도와 양쪽 뒷목 림프절 비대가 있고, 초음파에서 비장 비대(15 cm)가 보인다. 과거력으로 2023년 진단된 항TPO 항체 양성 자가면역(하시모토) 갑상선염이 있으며, 레보티록신 하루 75 mcg으로 잘 조절되고 있다(2026-06 TSH 2.1 mIU/L). 단핵구증 같은 병을 앓은 적이 없고, 스테로이드나 다른 면역억제제를 복용한 적이 없다. 2026-09-28 검사: 백혈구 11.2 x10^3/uL (림프구 58%, 반응성 림프구 다수), ANC 2,400/uL, 혈색소 14.6 g/dL, 혈소판 162,000/uL, ALT 142 U/L, 크레아티닌 0.95 mg/dL (체중 78 kg). 모노스팟 양성이고 EBV 혈청검사에서 VCA IgM 양성, VCA IgG와 EBNA IgG는 모두 음성이며, HIV 항원/항체와 CMV IgM은 음성이다. 레보티록신 외에는 아세트아미노펜만 복용한다."
+  "text_ko": "26세 남성이 2026-09-24에 시작된 5일간의 발열, 인후통, 전신 쇠약감으로 2026-09-28에 내원했고, 오늘 체온은 38.9 C다. 진찰에서 삼출물이 있는 커진 편도와 양쪽 뒷목 림프절 비대가 있고, 초음파에서 비장 비대(15 cm)가 보인다. 과거력으로 2023년 진단된 항TPO 항체 양성 자가면역(하시모토) 갑상선염이 있으며, 레보티록신 하루 75 mcg으로 잘 조절되고 있다(2026-06 TSH 2.1 mIU/L). 단핵구증 같은 병을 앓은 적이 없고, 스테로이드나 다른 면역억제제를 복용한 적이 없다. 2026-09-28 검사: 백혈구 11.2 x10^3/uL (림프구 58%, 반응성 림프구 다수), ANC 2,400/uL, 혈색소 14.6 g/dL, 혈소판 162,000/uL, ALT 142 U/L, 크레아티닌 0.95 mg/dL (체중 78 kg). 모노스팟 양성이고 EBV 혈청검사에서 VCA IgM 양성, VCA IgG와 EBNA IgG는 모두 음성이며, HIV 항원/항체와 CMV IgM은 음성이다. 레보티록신 외에는 아세트아미노펜만 복용한다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "26세 남성"
+   ],
+   [
+    "진단",
+    "EBV 감염성 단핵구증 (첫 감염 양상)"
+   ],
+   [
+    "증상",
+    "2026-09-24부터 발열 (오늘 38.9 C) · 인후통 · 쇠약감"
+   ],
+   [
+    "진찰",
+    "삼출성 편도 비대 · 양쪽 뒷목 림프절 비대 · 비장 비대 15 cm"
+   ],
+   [
+    "주요 검사",
+    "백혈구 11.2 (림프구 58%) · ANC 2,400 · 혈색소 14.6 · 혈소판 162,000 · ALT 142 · 크레아티닌 0.95"
+   ],
+   [
+    "감염 검사",
+    "모노스팟 양성 · VCA IgM 양성 · VCA IgG·EBNA IgG 음성 · HIV·CMV IgM 음성"
+   ],
+   [
+    "동반 질환",
+    "하시모토 갑상선염 (2023, 항TPO 양성) · 레보티록신 75 mcg · TSH 2.1"
+   ],
+   [
+    "기타",
+    "과거 단핵구증 없음 · 스테로이드·면역억제제 없음 · 아세트아미노펜만 추가 복용 · 체중 78 kg"
+   ]
+  ]
  },
  "SYN-S009-03": {
   "text_en": "A 31-year-old woman presents on 2026-09-28 with sore throat, fever to 38.4 C, headache and profound fatigue that began on 2026-09-19. Exam shows pharyngeal erythema with tonsillar exudate, prominent posterior cervical lymphadenopathy and a palpable spleen tip. Labs on 2026-09-28: WBC 12.6 x10^3/uL with absolute lymphocytosis (7.9 x10^3/uL) and 22% reactive lymphocytes on manual differential, hemoglobin 12.8 g/dL, platelets 171,000/uL, ALT 118 U/L, AST 90 U/L. A monospot test is positive and EBV VCA IgM is positive; the remainder of the EBV antibody panel was still pending at the time of this note. Her treating clinician considers this infectious mononucleosis.",
-  "text_ko": "31세 여성이 2026-09-19에 시작된 인후통, 38.4 C까지의 발열, 두통, 극심한 피로로 2026-09-28에 내원했다. 진찰에서 편도 삼출물을 동반한 인두 발적, 뚜렷한 뒷목 림프절 비대가 있고 비장 끝이 만져진다. 2026-09-28 검사: 백혈구 12.6 x10^3/uL로 절대 림프구 증가(7.9 x10^3/uL)가 있고 수기 감별에서 반응성 림프구 22%, 혈색소 12.8 g/dL, 혈소판 171,000/uL, ALT 118 U/L, AST 90 U/L. 모노스팟 검사 양성이고 EBV VCA IgM 양성이며, 나머지 EBV 항체 검사는 이 기록 작성 시점에 아직 결과 대기 중이었다. 담당 의사는 감염성 단핵구증으로 보고 있다."
+  "text_ko": "31세 여성이 2026-09-19에 시작된 인후통, 38.4 C까지의 발열, 두통, 극심한 피로로 2026-09-28에 내원했다. 진찰에서 편도 삼출물을 동반한 인두 발적, 뚜렷한 뒷목 림프절 비대가 있고 비장 끝이 만져진다. 2026-09-28 검사: 백혈구 12.6 x10^3/uL로 절대 림프구 증가(7.9 x10^3/uL)가 있고 수기 감별에서 반응성 림프구 22%, 혈색소 12.8 g/dL, 혈소판 171,000/uL, ALT 118 U/L, AST 90 U/L. 모노스팟 검사 양성이고 EBV VCA IgM 양성이며, 나머지 EBV 항체 검사는 이 기록 작성 시점에 아직 결과 대기 중이었다. 담당 의사는 감염성 단핵구증으로 보고 있다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "31세 여성"
+   ],
+   [
+    "진단",
+    "감염성 단핵구증 (담당의 판단)"
+   ],
+   [
+    "증상",
+    "2026-09-19부터 인후통 · 발열 38.4 C · 두통 · 극심한 피로"
+   ],
+   [
+    "진찰",
+    "편도 삼출물 · 뒷목 림프절 비대 · 비장 끝 촉지"
+   ],
+   [
+    "주요 검사",
+    "백혈구 12.6 · 림프구 7.9 (반응성 22%) · 혈색소 12.8 · 혈소판 171,000 · ALT 118 · AST 90"
+   ],
+   [
+    "감염 검사",
+    "모노스팟 양성 · EBV VCA IgM 양성 · 나머지 EBV 항체 결과 대기"
+   ]
+  ]
  },
  "SYN-S010-01": {
   "text_en": "A 68-year-old man presents on 2026-09-28 with flashes and floaters in the right eye beginning on 2026-09-25, followed on 2026-09-26 by a painless curtain spreading from below and loss of central vision. He had uncomplicated right cataract surgery with a posterior-chamber IOL in 2025-03 and has never had retinal surgery. Dilated exam of the right eye shows a macula-off rhegmatogenous retinal detachment involving the superotemporal, inferotemporal and inferonasal quadrants, caused by a horseshoe tear at 10 o'clock and a second horseshoe tear at 7 o'clock; there is no vitreous hemorrhage, no proliferative vitreoretinopathy and no other retinal disease, and right visual acuity is counting fingers. The left eye is phakic with visual acuity 20/25 and a normal fundus. He is scheduled for right pars plana vitrectomy with SF6 gas tamponade on 2026-09-30. His history is otherwise limited to hypertension and hyperlipidemia treated with amlodipine and atorvastatin, with no gastrointestinal, hepatobiliary, gallbladder or pancreatic disease and no known drug or food intolerances.",
-  "text_ko": "68세 남성이 2026-09-25부터 오른쪽 눈에 번쩍임과 날파리증이 생겼고, 2026-09-26부터 아래쪽에서 퍼지는 통증 없는 커튼 모양 그림자와 중심 시력 저하가 이어져 2026-09-28에 내원했다. 2025-03에 오른쪽 눈에 후방 인공수정체(IOL)를 넣는 합병증 없는 백내장 수술을 받았고, 망막 수술을 받은 적은 없다. 오른쪽 눈의 산동 검사에서 위귀쪽, 아래귀쪽, 아래코쪽 사분역을 침범한 황반 박리(macula-off) 열공망막박리가 있으며, 원인은 10시 방향 말굽 모양 열공과 7시 방향의 두 번째 말굽 모양 열공이다. 유리체 출혈, 증식유리체망막병증, 다른 망막 질환은 없고, 오른쪽 시력은 안전수지(counting fingers)다. 왼쪽 눈은 수정체가 있으며(유수정체) 시력 20/25, 안저는 정상이다. 2026-09-30에 SF6 가스 충전을 동반한 오른쪽 경평면부 유리체절제술이 예정되어 있다. 그 밖의 병력은 암로디핀과 아토르바스타틴으로 치료 중인 고혈압과 고지혈증뿐이며, 소화기·간담도·담낭·췌장 질환이 없고, 알려진 약물이나 음식 불내성도 없다."
+  "text_ko": "68세 남성이 2026-09-25부터 오른쪽 눈에 번쩍임과 날파리증이 생겼고, 2026-09-26부터 아래쪽에서 퍼지는 통증 없는 커튼 모양 그림자와 중심 시력 저하가 이어져 2026-09-28에 내원했다. 2025-03에 오른쪽 눈에 후방 인공수정체(IOL)를 넣는 합병증 없는 백내장 수술을 받았고, 망막 수술을 받은 적은 없다. 오른쪽 눈의 산동 검사에서 위귀쪽, 아래귀쪽, 아래코쪽 사분역을 침범한 황반 박리(macula-off) 열공망막박리가 있으며, 원인은 10시 방향 말굽 모양 열공과 7시 방향의 두 번째 말굽 모양 열공이다. 유리체 출혈, 증식유리체망막병증, 다른 망막 질환은 없고, 오른쪽 시력은 안전수지(counting fingers)다. 왼쪽 눈은 수정체가 있으며(유수정체) 시력 20/25, 안저는 정상이다. 2026-09-30에 SF6 가스 충전을 동반한 오른쪽 경평면부 유리체절제술이 예정되어 있다. 그 밖의 병력은 암로디핀과 아토르바스타틴으로 치료 중인 고혈압과 고지혈증뿐이며, 소화기·간담도·담낭·췌장 질환이 없고, 알려진 약물이나 음식 불내성도 없다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "68세 남성"
+   ],
+   [
+    "진단",
+    "오른쪽 눈 황반 박리 열공망막박리 (말굽 열공 2개: 10시·7시)"
+   ],
+   [
+    "증상",
+    "2026-09-25 번쩍임·날파리증 → 09-26 아래쪽 커튼 그림자 · 중심 시력 저하"
+   ],
+   [
+    "진찰",
+    "오른쪽 시력 안전수지 · 유리체 출혈·증식유리체망막병증 없음 · 왼쪽 시력 20/25 정상"
+   ],
+   [
+    "치료 이력",
+    "2025-03 오른쪽 백내장 수술 (인공수정체) · 망막 수술 없음"
+   ],
+   [
+    "계획",
+    "2026-09-30 오른쪽 유리체절제술 + SF6 가스"
+   ],
+   [
+    "동반 질환",
+    "고혈압·고지혈증 (암로디핀·아토르바스타틴)"
+   ],
+   [
+    "기타",
+    "소화기·간담도·췌장 질환 없음 · 약물·음식 불내성 없음"
+   ]
+  ]
  },
  "SYN-S010-02": {
   "text_en": "A 58-year-old postmenopausal woman with high myopia (about -5.0 D spherical equivalent in both eyes) presents on 2026-09-28 with 2 days of flashes, new floaters and a shadow in the inferior visual field of the left eye. Left visual acuity is 6/9 and both lenses are clear (phakic). Dilated fundus exam of the left eye shows a macula-on rhegmatogenous retinal detachment in the superonasal quadrant from a single horseshoe tear at 1 o'clock, with no vitreous hemorrhage, no signs of proliferative vitreoretinopathy and a clear view of the retina. The right eye has visual acuity 6/6 and no retinal breaks. Pneumatic retinopexy with SF6 gas and laser photocoagulation is planned for the next day, and she confirms that she can maintain the required head positioning at home. She has well-controlled hypertension on lisinopril and no other ocular history.",
-  "text_ko": "양쪽 눈에 고도 근시(구면대응치 약 -5.0 D)가 있는 58세 폐경 여성이 2일 동안 왼쪽 눈에 번쩍임, 새로 생긴 날파리증, 아래쪽 시야의 그림자가 있어 2026-09-28에 내원했다. 왼쪽 시력은 6/9이고, 양쪽 수정체는 맑다(유수정체). 왼쪽 눈 산동 안저검사에서 1시 방향의 말굽 모양 열공 1개로 인한 위코쪽 사분역의 황반 부착(macula-on) 열공망막박리가 있으며, 유리체 출혈이나 증식유리체망막병증 징후가 없고 망막이 잘 보인다. 오른쪽 눈은 시력 6/6이고 망막 열공이 없다. 다음 날 SF6 가스와 레이저 광응고술을 이용한 공기망막유착술이 계획되어 있으며, 집에서 필요한 머리 자세를 유지할 수 있다고 확인했다. 리시노프릴(lisinopril)로 잘 조절되는 고혈압이 있고, 다른 안과 병력은 없다."
+  "text_ko": "양쪽 눈에 고도 근시(구면대응치 약 -5.0 D)가 있는 58세 폐경 여성이 2일 동안 왼쪽 눈에 번쩍임, 새로 생긴 날파리증, 아래쪽 시야의 그림자가 있어 2026-09-28에 내원했다. 왼쪽 시력은 6/9이고, 양쪽 수정체는 맑다(유수정체). 왼쪽 눈 산동 안저검사에서 1시 방향의 말굽 모양 열공 1개로 인한 위코쪽 사분역의 황반 부착(macula-on) 열공망막박리가 있으며, 유리체 출혈이나 증식유리체망막병증 징후가 없고 망막이 잘 보인다. 오른쪽 눈은 시력 6/6이고 망막 열공이 없다. 다음 날 SF6 가스와 레이저 광응고술을 이용한 공기망막유착술이 계획되어 있으며, 집에서 필요한 머리 자세를 유지할 수 있다고 확인했다. 리시노프릴(lisinopril)로 잘 조절되는 고혈압이 있고, 다른 안과 병력은 없다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "58세 여성 (폐경)"
+   ],
+   [
+    "진단",
+    "왼쪽 눈 황반 부착 열공망막박리 (1시 말굽 열공 1개)"
+   ],
+   [
+    "증상",
+    "2일간 번쩍임 · 새 날파리증 · 아래쪽 시야 그림자"
+   ],
+   [
+    "진찰",
+    "왼쪽 시력 6/9 · 유수정체 · 유리체 출혈·증식유리체망막병증 없음 · 오른쪽 6/6 정상"
+   ],
+   [
+    "계획",
+    "다음 날 공기망막유착술 (SF6 가스 + 레이저) · 집에서 머리 자세 유지 가능"
+   ],
+   [
+    "동반 질환",
+    "고혈압 (리시노프릴) · 고도 근시 (약 -5.0 D)"
+   ]
+  ]
  },
  "SYN-S010-03": {
   "text_en": "A 74-year-old woman presents on 2026-09-29 with flashes of light and floaters in the right eye that began on 2026-09-26, followed on 2026-09-27 by a dark curtain descending from above and blurred central vision. She had bilateral cataract surgery with posterior-chamber IOLs in 2025 (right eye 2025-02, left eye 2025-05). Examination of the right eye shows a bullous macula-off rhegmatogenous retinal detachment involving the superotemporal and superonasal quadrants, caused by two horseshoe tears at 10:30 and 1:30 o'clock; there is no vitreous hemorrhage and no clinical sign of proliferative vitreoretinopathy, and right visual acuity is hand motions. Left visual acuity is 6/7.5. She has hypertension controlled on losartan (BP 132/78 mmHg) and takes an aluminum/magnesium hydroxide antacid daily for reflux symptoms. She is being evaluated for surgical repair.",
-  "text_ko": "74세 여성이 2026-09-26부터 오른쪽 눈에 번쩍이는 빛과 날파리증이 생겼고, 2026-09-27부터 위쪽에서 내려오는 어두운 커튼 모양 그림자와 중심 시야 흐림이 이어져 2026-09-29에 내원했다. 2025년에 양쪽 눈에 후방 인공수정체를 넣는 백내장 수술을 받았다(오른쪽 2025-02, 왼쪽 2025-05). 오른쪽 눈 검사에서 위귀쪽과 위코쪽 사분역을 침범한 수포성 황반 박리(macula-off) 열공망막박리가 있으며, 원인은 10시 30분과 1시 30분 방향의 말굽 모양 열공 2개다. 유리체 출혈과 증식유리체망막병증의 임상 징후는 없으며, 오른쪽 시력은 안전수동(hand motions)이다. 왼쪽 시력은 6/7.5다. 로사르탄(losartan)으로 조절되는 고혈압이 있고(혈압 132/78 mmHg), 역류 증상 때문에 수산화알루미늄·마그네슘 제산제를 매일 복용한다. 수술적 치료를 검토 중이다."
+  "text_ko": "74세 여성이 2026-09-26부터 오른쪽 눈에 번쩍이는 빛과 날파리증이 생겼고, 2026-09-27부터 위쪽에서 내려오는 어두운 커튼 모양 그림자와 중심 시야 흐림이 이어져 2026-09-29에 내원했다. 2025년에 양쪽 눈에 후방 인공수정체를 넣는 백내장 수술을 받았다(오른쪽 2025-02, 왼쪽 2025-05). 오른쪽 눈 검사에서 위귀쪽과 위코쪽 사분역을 침범한 수포성 황반 박리(macula-off) 열공망막박리가 있으며, 원인은 10시 30분과 1시 30분 방향의 말굽 모양 열공 2개다. 유리체 출혈과 증식유리체망막병증의 임상 징후는 없으며, 오른쪽 시력은 안전수동(hand motions)이다. 왼쪽 시력은 6/7.5다. 로사르탄(losartan)으로 조절되는 고혈압이 있고(혈압 132/78 mmHg), 역류 증상 때문에 수산화알루미늄·마그네슘 제산제를 매일 복용한다. 수술적 치료를 검토 중이다.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "74세 여성"
+   ],
+   [
+    "진단",
+    "오른쪽 눈 수포성 황반 박리 열공망막박리 (말굽 열공 2개: 10시 30분·1시 30분)"
+   ],
+   [
+    "증상",
+    "2026-09-26 번쩍임·날파리증 → 09-27 위쪽 어두운 커튼 · 중심 시야 흐림"
+   ],
+   [
+    "진찰",
+    "오른쪽 시력 안전수동 · 유리체 출혈·증식유리체망막병증 없음 · 왼쪽 6/7.5"
+   ],
+   [
+    "치료 이력",
+    "2025년 양쪽 백내장 수술 (인공수정체)"
+   ],
+   [
+    "동반 질환",
+    "고혈압 (로사르탄, 132/78) · 역류 증상 (수산화알루미늄·마그네슘 제산제 매일)"
+   ],
+   [
+    "계획",
+    "수술 검토 중"
+   ]
+  ]
+ },
+ "SYN-DEMO-A": {
+  "text_en": "62세 여성. 2023-03 폐 선암(adenocarcinoma) stage IVA 진단, 조직검사에서 EGFR exon 19 deletion 확인. 1차로 osimertinib 80mg 복용했으나 2026-07 CT에서 폐 병변 증가 및 간 전이 신규 발생(RECIST 기준 진행, 측정 가능 병변 있음). 2026-07 뇌 MRI 전이 없음. ECOG 1. 2026-09-10 혈액검사: ANC 2.8 x10^9/L, PLT 185 x10^9/L, Hb 11.2 g/dL, total bilirubin 0.6 mg/dL (ULN 1.2). 고혈압으로 amlodipine 복용 중. 간질성 폐질환 병력 없음. B형/C형 간염 음성(2023).",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "62세 여성"
+   ],
+   [
+    "진단",
+    "폐 선암 IVA기 (2023-03) · EGFR exon 19 결실"
+   ],
+   [
+    "치료 이력",
+    "1차 오시머티닙 80 mg"
+   ],
+   [
+    "경과",
+    "2026-07 CT: 폐 병변 증가 · 새 간 전이 (RECIST 진행, 측정 가능 병변 있음) · 뇌 MRI 전이 없음"
+   ],
+   [
+    "주요 검사",
+    "2026-09-10: ANC 2.8 · 혈소판 185 · 혈색소 11.2 · 총 빌리루빈 0.6 (ULN 1.2) · ECOG 1"
+   ],
+   [
+    "동반 질환",
+    "고혈압 (암로디핀)"
+   ],
+   [
+    "기타",
+    "간질성 폐질환 없음 · B·C형 간염 음성 (2023)"
+   ]
+  ]
+ },
+ "SYN-DEMO-B": {
+  "text_en": "55세 남성. 비소세포폐암(선암) stage IV, EGFR L858R 변이. osimertinib 치료 중 2026-06 진행. 2026-06 뇌 MRI에서 새로 발견된 무증상 뇌전이 2개, 아직 치료하지 않음. ECOG 1. 2026-09-01 검사: ANC 3.1 x10^9/L, PLT 142 x10^9/L, Hb 12.5 g/dL.",
+  "summary_ko": [
+   [
+    "나이·성별",
+    "55세 남성"
+   ],
+   [
+    "진단",
+    "비소세포폐암 (선암) IV기 · EGFR L858R"
+   ],
+   [
+    "경과",
+    "오시머티닙 치료 중 2026-06 진행 · 뇌 MRI 새 무증상 뇌전이 2개 (미치료)"
+   ],
+   [
+    "주요 검사",
+    "2026-09-01: ANC 3.1 · 혈소판 142 · 혈색소 12.5 · ECOG 1"
+   ]
+  ]
  }
 }

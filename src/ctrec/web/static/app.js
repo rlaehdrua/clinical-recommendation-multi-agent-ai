@@ -118,7 +118,7 @@ async function init() {
   const groups = {};
   for (const p of state.patients) (groups[p.group] ||= []).push(p);
   $("#patient").innerHTML = Object.entries(groups).map(([g, ps]) =>
-    `<optgroup label="${esc(g)} (가상 데이터)">${ps.map(p => `<option value="${esc(p.patient_id)}">${esc(p.patient_id)} · ${esc(shownText(p).slice(0, 40))}…</option>`).join("")}</optgroup>`).join("");
+    `<optgroup label="${esc(g)} (가상 데이터)">${ps.map(p => `<option value="${esc(p.patient_id)}">${esc(p.patient_id)} · ${esc(caseLabel(p))}</option>`).join("")}</optgroup>`).join("");
   $("#trials").innerHTML = state.trials.map(t => `<label class="trial-opt"><input type="checkbox" value="${esc(t.trial_id)}">
     <span><span class="tid">${esc(t.trial_id)}</span> ${statusBadge(t.overall_status)}${t.synthetic ? ' <span class="badge">가상 시험</span>' : ""}
     <span class="ttl"${koTitle(t.trial_id, t.title) !== t.title ? ` title="${esc(t.title)}"` : ""}>${esc(koTitle(t.trial_id, t.title))}</span></span></label>`).join("");
@@ -160,16 +160,26 @@ function fillExample() {
   if (!p) return;
   $("#custom").value = shownText(p); onTextInput(); $("#custom").focus();  // 직접 입력에 넣으면 보이는 한국어 그대로 분석
 }
-// 예시 사례는 한국어 번역(표시 전용)이 있으면 번역을 보여 줌. 사례를 골라 분석하면 서버는 원문을 씀
+// 예시 사례: 핵심 요약(항목: 내용)을 먼저 보여 주고, 전체 번역·원문은 접어 둠 (표시 전용, data/i18n/patients_ko.json).
+// 사례를 골라 분석하면 서버는 원문을 씀
 const shownText = (p) => p.text_ko || p.text;
-function showOrig(sel, p) {
-  const box = $(sel); if (!box) return;
-  box.hidden = !(p && p.text_ko);
-  if (p && p.text_ko) box.querySelector(".rawtext").textContent = p.text;
+function caseLabel(p) {
+  const row = (k) => ((p.summary_ko || []).find(([l]) => l === k) || [])[1];
+  const who = row("나이·성별"), what = row("진단") || row("내원 사유");
+  return who ? [who, what].filter(Boolean).join(" · ").slice(0, 46) : shownText(p).slice(0, 40) + "…";
+}
+function caseHtml(p) {
+  if (!p || !p.text) return "";
+  const rows = p.summary_ko || [];
+  const fold = (title, text, en) => `<details class="raw"><summary>${esc(title)}</summary><div class="rawtext"${en ? ' lang="en"' : ""}>${esc(text)}</div></details>`;
+  if (!rows.length) return `<div class="preview">${esc(shownText(p))}</div>` + (p.text_ko ? fold("영어 원문 보기 · 분석은 원문으로 해요", p.text, true) : "");
+  return `<div class="kv case-kv">${rows.map(([k, v]) => `<div><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join("")}</div>`
+    + (p.text_ko ? fold("전체 내용 보기 (한국어 번역)", p.text_ko) + fold("영어 원문 보기 · 분석은 원문으로 해요", p.text, true)
+      : fold("원문 보기 · 분석은 원문으로 해요", p.text));
 }
 function onPatient() {
   const p = state.patients.find(x => x.patient_id === $("#patient").value); if (!p) return;
-  $("#preview").textContent = shownText(p); showOrig("#preview-orig", p);
+  $("#preview").innerHTML = caseHtml(p);
   document.querySelectorAll("#trials input").forEach(i => { i.checked = p.candidate_trials.includes(i.value); });
   const list = $("#trials"); [...list.children].sort((x, y) => y.querySelector("input").checked - x.querySelector("input").checked).forEach(el => list.appendChild(el));
   list.scrollTop = 0; countTrials(); $("#review-panel").hidden = true;
@@ -215,8 +225,8 @@ function review() {
   const text = body.custom_text ?? shownText(pick) ?? "";
   $("#review-meta").textContent = `${state.custom ? "직접 입력" : "예시 사례 " + body.patient_id} · ${text.length.toLocaleString()}자 · `
     + (body.screen ? "전체 시험에서 자동 추림" : `직접 선택한 시험 ${body.trial_ids.length}개`) + (body.allow_search ? " · 추가 검색 허용" : "");
-  $("#review-text").textContent = text.length > 600 ? text.slice(0, 600) + " …" : text;
-  showOrig("#review-orig", body.custom_text == null ? pick : null);
+  if (body.custom_text == null) { $("#review-text").className = "case"; $("#review-text").innerHTML = caseHtml(pick); }
+  else { $("#review-text").className = "preview"; $("#review-text").textContent = text.length > 600 ? text.slice(0, 600) + " …" : text; }
   $("#review-panel").hidden = false; $("#start").focus();
 }
 function lockInput(on) {
