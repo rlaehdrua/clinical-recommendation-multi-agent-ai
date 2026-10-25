@@ -92,9 +92,18 @@ def test_display_payload_consistent_and_judgments_unchanged(client):
         assert (t["exclusion"] is None) == (tid in rec_ids)
         if tid in excluded:
             assert t["exclusion"] in ("not_evaluated", "closed", "demo", "mismatch", "unknown")
-    # 표시 정보는 판정·추천을 바꾸지 않음: 오류가 없는 결과는 화면용 사본도 원본과 같음
+    # 표시 정보는 판정·추천을 바꾸지 않음: 오류가 없는 결과는 화면용 사본도 원본과 같음 - 단 판정 불가 기준의 일반 문구
+    # missing_info만 원문 기준 문장으로 보여 줌 (P14, display_missing_info). 그 밖의 필드는 모두 같아야 함
     again = display.redact_errors(copy.deepcopy(res))
-    assert again["matches"] == res["matches"] and again["recommendation"] == res["recommendation"]
+    assert again["recommendation"] == res["recommendation"] and set(again["matches"]) == set(res["matches"])
+    for tid, m in res["matches"].items():
+        strip = lambda x: {**x, "assessments": [{k: v for k, v in a.items() if k != "missing_info"} for a in x["assessments"]],
+                           "other_cohort_assessments": [{k: v for k, v in a.items() if k != "missing_info"}
+                                                        for a in x.get("other_cohort_assessments") or []]}
+        assert strip(again["matches"][tid]) == strip(m)
+        for a, b in zip(m["assessments"], again["matches"][tid]["assessments"]):
+            assert b["missing_info"] == display.display_missing_info(a)["missing_info"]
+            assert b["missing_info"] == a["missing_info"] or b["missing_info"].endswith(a["criterion_text"][:300])
 
 
 def test_error_detail_never_sent_to_browser(monkeypatch, tmp_path):

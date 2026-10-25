@@ -22,7 +22,8 @@ push·배포·유료 API 호출·IR/계약 승인·Frozen Store 수정·다른 w
 |---|---|---|
 | `web/static/{index.html,app.css,app.js}`, `tests/test_web_browser.py`, README | e49c2c8 (원형) | 질문 중 취소 버튼, 대비 WCAG AA, '맞지 않음'에도 판정 주체 표시, 브라우저 테스트 갱신 |
 | `src/ctrec/config.py`, `src/ctrec/tools/ctgov.py` | P14 (C) | 검색 결과 저장 경로 분리 `CTGOV_CACHE_DIR = data/cache/ctgov` |
-| `src/ctrec/agents/matcher.py` (보호 파일) | P14 (B) | 일반 문구 missing_info -> 원문 기준 문장 (+13줄) |
+| ~~`src/ctrec/agents/matcher.py`~~ | P14 (B) b35cae8 -> **되돌림** b9ccf29 | 감사에서 질문 생성기 입력이 바뀌는 것이 확인되어 되돌림 (6.1절). matcher는 b35cae8 이전과 같음 |
+| `src/ctrec/web/display.py` | P14 (B, 표시 전용) | 화면으로 보내는 결과 사본에서만 일반 문구 missing_info -> 원문 기준 문장 |
 | `tests/outputs_guard.py`(신규), `tests/test_llm_pilot.py`, `tests/test_llm_pilot_exec.py`, `tests/test_pilot_process.py` | P14 (격리) | outputs 쓰기 검사를 '수집 시점과 같음'으로 |
 | `tests/test_p14_backend_followups.py` (신규 14개), 이 보고서 | P14 | |
 
@@ -56,11 +57,45 @@ P11 기준선 18건 실패가 모두 해소됨.
 
 ## 6. missing_info (B)
 
+**최종 방식 (6.1절 감사 후):** 판정 객체의 missing_info는 바꾸지 않고, 화면으로 보내는 결과 사본(`display.redact_errors`)에서만 바꿈.
+
 생성 위치: LLM 출력(`LLMAssessment.missing_info`), 코드가 판정을 되돌릴 때 `a.missing_info or "확인 필요: <LLM 설명>"`, 직접성 검사
 `"기준에 직접 대응하는 확인 필요: <기준>"`, 근거 수준 정책, qa_guard·평가기 고정 문구, 판정 누락 시 기준 원문.
 '필요: 확인 필요'는 하네스 대역 값이 그대로 화면에 간 것. 실제 모델도 일반 문구를 낼 수 있어, 판정 불가 기준의 missing_info가 비었거나 일반 문구
 (확인 필요·정보 부족·unknown 등)뿐이면 `이 기준을 확인할 정보 (원문): <기준 문장>`으로 바꿈. 구체적인 문구는 그대로, 확정된 기준은 건드리지 않음,
 새 의료 요구사항·LLM 호출 없음, API·스키마 그대로. **해결**.
+
+### 6.1 최종 승인 전 감사와 수정
+
+- 감사(b35cae8): 판정·근거·직접성 차이는 0건이었으나, 바뀐 missing_info가 `matcher.compact()`·`compact_json()`을 거쳐
+  질문 생성기 프롬프트와 오케스트레이터 도구 결과에 들어가 **LLM 입력이 바뀜**(156회 중 151회) -> 승인 보류
+- 수정: `git revert b35cae8`(새 커밋 b9ccf29, matcher를 b35cae8 이전과 바이트 단위로 같게) + `web/display.py`에 `display_missing_info`를 추가해
+  `redact_errors`(웹 result 이벤트용 사본을 만드는 기존 함수)에서만 적용. `web/app.py`·정적 파일·API 스키마 변경 없음
+
+| 소비 경로 | 읽는 값 | 수정 후 |
+|---|---|---|
+| 질문 생성기 프롬프트 (`compact_json`), 오케스트레이터 도구 결과 (`compact`), 정보 확보 계획, question_eval | Session의 `TrialMatch` | 원래 값 (b35cae8 이전과 같음) |
+| result.json(`Session.save`), Inspector, incremental·fact_view | `Session.result()` / 판정 객체 | 원래 값 |
+| 웹 화면 (SSE result 이벤트 -> app.js `필요: ${a.missing_info}`) | `display.redact_errors(session.result())` 사본 | 일반 문구만 원문 기준 문장 |
+
+차등 검사 (잠긴 시험 26개 x 6회 = 156회, 같은 무작위 LLM 판정·근거·missing_info, 스크립트 `scratchpad/p14/dump_internal.py`):
+
+| 비교 | 판정 결과 전체 | missing_info 제외 판정 | compact_json | 질문 생성기 프롬프트 원문 | 확보 계획 |
+|---|---|---|---|---|---|
+| b35cae8 이전(2bf9ce4) vs 수정 후 | 0 | 0 | 0 | **0** | 0 |
+| b35cae8 이전 vs b35cae8(e8a6928) | 154 | 0 | 151 | 151 | 0 |
+
+화면 사본: 154회에서 missing_info만 달라짐(그 밖의 필드 차이 0), 화면에 남은 일반 문구 0, 문구는 b35cae8이 만들던 것과 같음.
+실제 브라우저(Edge): NCT04063540 상세 화면 '정보 부족' 13개 - 수정 전 "필요: 확인 필요" 13 -> 수정 후 "필요: 이 기준을 확인할 정보 (원문): …" 13.
+
+테스트 조정 (단언 삭제 없음): P14 missing_info 테스트 3개는 '판정 객체·compact는 원래 값, 화면 사본만 원문 기준'으로 바꾸고 1개 추가
+(화면 사본은 missing_info 외 모든 필드가 원본과 같음). `test_web_quality`의 '화면 사본 == 원본' 단언은 'missing_info 외 모든 필드가 같고,
+missing_info는 원래 값이거나 그 기준의 원문 문장'으로 정밀화.
+
+수정 후 회귀 (b9ccf29 + display 수정, 통과 / 실패 / 건너뜀): legacy **1725 / 0 / 6** (+1 화면 사본 테스트; 첫 실행에서
+`test_web_metering::test_runs_metered_separately_and_fully` 1건이 실패 - 동시 실행 2개의 단계별 계량에 recommender가 빠짐, 단독 26회·재실행 전체 통과,
+계약 모드 두 실행 통과, 수정 코드는 계량 경로 밖 -> 부하 중 타이밍 문제로 분류), ContractSession + contract 1719 / 6 / 6, 기존 Session + contract 1721 / 4 / 6
+(정책 차이 동일), 실제 브라우저 기본 32 / 32, ContractSession 31 / 32 (기존 옵트인 차이).
 
 ## 7. CT.gov 저장 정책과 환경 오염 (C)
 

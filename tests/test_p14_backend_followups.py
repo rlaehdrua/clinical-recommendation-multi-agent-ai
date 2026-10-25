@@ -3,7 +3,8 @@
 A. NCT04063540이 답한 뒤에도 '정보 부족 13개': 웹 테스트 대역(web_harness.FakeLLM)이 모든 기준을 항상 unknown(missing_info="확인 필요")으로
    돌려주고, 질문도 대상 기준이 없는(target=[]) "EGFR 검사 결과를 아시나요?" 하나뿐이라 생기는 테스트 한계(대역 고정 출력).
    실제 웹 경로는 답변 뒤 다시 매칭하고, 기준을 겨냥한 검증 가능한 답은 반영함 (P12) - 아래 웹 수준 테스트로 확인
-B. 상세 화면의 '필요: 확인 필요': 같은 대역 값. 실제 경로에서도 비었거나 일반 문구뿐인 missing_info는 원문 기준 문장으로 바꿈 (새 요구사항 없음)
+B. 상세 화면의 '필요: 확인 필요': 같은 대역 값. 화면으로 보내는 결과 사본(web/display.py)에서만, 비었거나 일반 문구뿐인 missing_info를
+   원문 기준 문장으로 보여 줌 (새 요구사항 없음). 판정 객체·질문 생성기 입력(compact)·확보 계획은 원래 값 그대로 (b35cae8 되돌림, 감사 결과)
 C. 웹 검색 결과가 data/trials에 저장되어 시험 목록·잠긴 기준표 검사가 바뀌던 문제: 검색 결과는 data/cache/ctgov로 분리
 """
 
@@ -21,6 +22,7 @@ from ctrec import config, qa_guard
 from ctrec.agents import matcher
 from ctrec.schemas import ClarifyingQuestion, LLMAssessment, MatcherOutput, QuestionSet
 from ctrec.tools import ctgov
+from ctrec.web import display
 from test_offline import _profile, _rule
 from test_stage05 import _trial
 
@@ -91,20 +93,37 @@ def _match(monkeypatch, missing, holds="unknown", evidence="근거 없음"):
                                source_text="34세 여성. 임신 여부 기록 없음.").assessments[0]
 
 
+def _shown(a):
+    """화면으로 가는 사본의 기준 (web: display.redact_errors(session.result()))."""
+    res = {"matches": {"T": {"eligibility": "UNCERTAIN", "assessments": [a.model_dump()], "other_cohort_assessments": []}}}
+    return display.redact_errors(res)["matches"]["T"]["assessments"][0]
+
+
 @pytest.mark.parametrize("generic", ["확인 필요", "", None, "정보 부족", "unknown", "확인 필요."])
 def test_generic_missing_info_shows_original_criterion(monkeypatch, generic):
     a = _match(monkeypatch, generic)
-    assert a.passes is None and a.missing_info == "이 기준을 확인할 정보 (원문): Pregnant or lactating patient"
+    assert a.passes is None and a.missing_info == generic  # 판정 객체(내부 소비자 입력)는 모델 값 그대로
+    assert matcher.compact(matcher.match_trial(_profile(), _trial(RULE), {"brief_summary": ""}, reference_date="2026-10-25",
+                                               source_text="34세 여성. 임신 여부 기록 없음."))["unknown"][0]["missing_info"] == generic
+    assert _shown(a)["missing_info"] == "이 기준을 확인할 정보 (원문): Pregnant or lactating patient"  # 화면 사본만
 
 
 def test_specific_missing_info_is_kept(monkeypatch):
     a = _match(monkeypatch, "현재 임신·수유 여부")
-    assert a.missing_info == "현재 임신·수유 여부"
+    assert a.missing_info == "현재 임신·수유 여부" and _shown(a)["missing_info"] == "현재 임신·수유 여부"
 
 
 def test_decided_criteria_are_unchanged(monkeypatch):
     a = _match(monkeypatch, None, holds="no", evidence="임신 여부 기록 없음")  # 근거가 부재 진술이 아님 -> 보류
     assert a.passes is None and a.missing_info and "확인 필요" != a.missing_info
+    decided = a.model_copy(update={"passes": True, "holds": "no", "missing_info": "확인 필요"})
+    assert _shown(decided) == decided.model_dump()  # 판정된 기준은 화면 사본도 그대로
+
+
+def test_display_copy_changes_only_missing_info(monkeypatch):
+    a = _match(monkeypatch, "확인 필요")
+    shown, raw = _shown(a), a.model_dump()
+    assert {k: v for k, v in shown.items() if k != "missing_info"} == {k: v for k, v in raw.items() if k != "missing_info"}
 
 
 # ============================================================ A. 웹 경로 재평가 (NCT04063540)

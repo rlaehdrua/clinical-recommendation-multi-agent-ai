@@ -76,10 +76,26 @@ def _error_type(err: str | None) -> str:
     return head if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", head) else "Error"
 
 
+# 무엇을 확인해야 하는지 말하지 않는 missing_info 문구 (모델 출력·대역에서 그대로 오던 값). 화면에 '필요: 확인 필요'로 보였음 (P14)
+GENERIC_MISSING = {"", "확인 필요", "확인필요", "확인이 필요함", "확인 필요함", "정보 필요", "추가 정보 필요", "정보 부족", "추가 확인 필요",
+                   "unknown", "none", "n/a", "-", "없음", "미상"}
+
+
+def display_missing_info(a: dict) -> dict:
+    """화면용 기준 사본: 판정 불가 기준의 missing_info가 비었거나 일반 문구뿐이면 원문 기준 문장을 보여 줌.
+
+    표시 전용 - 판정 객체(Session.matches)·result.json·질문 생성기 입력(matcher.compact)·확보 계획은 원래 값 그대로.
+    새 요구사항을 만들지 않고 기준 원문만 씀. 구체적인 문구와 판정된 기준은 그대로."""
+    if a.get("passes") is not None or str(a.get("missing_info") or "").strip(" .").lower() not in GENERIC_MISSING:
+        return a
+    return {**a, "missing_info": f"이 기준을 확인할 정보 (원문): {str(a.get('criterion_text') or '')[:300]}"}
+
+
 def redact_errors(result: dict) -> dict:
     """화면으로 보내는 결과 사본에서 평가 오류 원문(예외 repr - 요청 내용이 섞일 수 있음)을 오류 종류로 바꿈.
+    판정 불가 기준의 일반 문구 missing_info는 원문 기준 문장으로 보여 줌 (display_missing_info, 사본만).
 
-    판정(eligibility·match_status·기준별 판정)은 그대로. 서버 Session의 값은 바꾸지 않음 (사본만)."""
+    판정(eligibility·match_status·기준별 판정·근거·직접성)은 그대로. 서버 Session의 값은 바꾸지 않음 (사본만)."""
     out = dict(result)
     matches = {}
     failed = {}
@@ -88,6 +104,8 @@ def redact_errors(result: dict) -> dict:
             kind = _error_type(m["evaluation_error"])
             failed[tid] = kind
             m = {**m, "evaluation_error": kind, "summary": f"NOT_EVALUATED: 평가 실패로 판정하지 못함(부적격 아님) - {kind}"}
+        m = {**m, **{k: [display_missing_info(a) for a in m[k]] for k in ("assessments", "other_cohort_assessments")
+                     if isinstance(m.get(k), list)}}
         matches[tid] = m
     out["matches"] = matches
     # 단계별 실패 기록(repr)도 종류만
