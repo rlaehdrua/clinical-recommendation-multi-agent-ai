@@ -9,12 +9,14 @@ from __future__ import annotations
 
 import contextvars
 import json
+import re
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from . import DISCLAIMER, acquisition, config, evidence, fact_compare, incremental, llm, profile_facts, trial_store
+from . import (DISCLAIMER, acquisition, config, evidence, evidence_directness, fact_compare, incremental, llm,
+               profile_facts, trial_store)
 from .agents import criteria_parser, explainer, matcher, patient_profiler, question_generator, recommender, screener
 from .agents.answerers import Answerer
 from .fact_changes import take_snapshot
@@ -218,9 +220,26 @@ class Session:
         return failed
 
     # ----------------------------------------------------------- 단계 ②+③b
+    def _profiler_text(self) -> str:
+        """프로필 추출 입력: 이 세션의 판정용이 아닌 문답(의사 참고용·목적 불명)은 뺌 (P14 D4 후속).
+
+        참고용 답에서 다시 추출한 나이·성별·ECOG·검사 수치가 규칙 엔진·LLM 판정의 프로필 근거가 되지 않게 함.
+        원문(raw_text)은 그대로 두어 인용 검증·화면 표시·문답 기록은 바뀌지 않음. 참고용 문답이 없으면 입력도 같음.
+        """
+        initial, answers = evidence.split_source(self.case.raw_text)
+        drop = [p for p in self.qa_log if p.session_id == self.session_id
+                and evidence_directness.declared_purpose(p) != "eligibility"]
+        if not (answers and drop):
+            return self.case.raw_text
+        for p in drop:
+            answers = answers.replace(f"\nQ: {p.question}\nA: {p.answer}", "", 1)
+        # 판정용 문답이 하나도 남지 않은 라운드 머리말은 뺌
+        answers = re.sub(r"\n\n\[추가 확인 정보 - 라운드 \d+\](?=\n\n\[|$)", "", answers)
+        return initial + answers
+
     def profile_patient(self) -> PatientProfile:
         self.tracer.log("patient_profiler", "start", patient_id=self.case.patient_id)
-        self.profile = patient_profiler.profile_patient(self.case.patient_id, self.case.raw_text,
+        self.profile = patient_profiler.profile_patient(self.case.patient_id, self._profiler_text(),
                                                         reference_date=self.reference_date)
         # 팀원 화면용 trace에 프로필 전체(원문 인용 포함)를 실음. 웹은 SSE로 보낼 때 이 필드를 뺌(web/app._client_record)
         self.tracer.log("patient_profiler", "done", missing=self.profile.missing_or_ambiguous,
