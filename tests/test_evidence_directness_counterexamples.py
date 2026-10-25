@@ -240,7 +240,8 @@ SURG_Q = "45세 남성." + _qa("수술 받은 적 있나요?", "예")
 
 
 def _log(answer="예", target="T1:R1", qid="Q1", question="수술 받은 적 있나요?"):
-    return [QAPair(round=1, question_id=qid, question=question, answer=answer, target=[target])]
+    # Session이 만드는 기록처럼 목적을 밝힘 (P14 D4: 목적을 밝히지 않은 기록은 판정 근거가 아님)
+    return [QAPair(round=1, question_id=qid, question=question, answer=answer, target=[target], purpose="eligibility")]
 
 
 def test_short_answer_needs_question_target_link(monkeypatch):

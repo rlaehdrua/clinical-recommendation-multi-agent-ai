@@ -229,12 +229,14 @@ _DIRECTNESS_REASON = {
 def _enforce_directness(a: LLMAssessment, rule: Rule, source_text: str | None,
                         profile: PatientProfile | None = None, *, trial_id: str | None = None,
                         reference_date: str | None = None,
-                        qa_log: list[QAPair] | None = None) -> tuple[LLMAssessment, evidence_directness.Check]:
+                        qa_log: list[QAPair] | None = None, qa: list[QAPair] | None = None,
+                        session_id: str | None = None) -> tuple[LLMAssessment, evidence_directness.Check]:
     """확정 판정(yes/no, 해당 없음)의 근거가 이 기준에 직접 대응하는지 코드로 확인 (evidence_directness.py).
 
     _enforce_quote 다음에 실행합니다(인용이 원문에 있는 판정만 남은 상태). 출처가 진료 기록이어도 근거가 간접 추론·추측·
     다른 대상·기간 밖이거나 기록끼리 상충하면 판정 불가(unknown)로 되돌리고, 불충족으로 바꾸지 않습니다.
     qa_log가 없으면 짧은 답변(예/아니요)은 근거로 쓰지 않습니다(질문·대상 기준 연결을 확인할 수 없음).
+    qa(세션 문답 전체)는 답변 줄의 질문 목적 확인에만 씀: 의사 참고용·목적 불명 질문의 답은 근거가 아님 (P14 D4).
     """
     if a.applicable and a.holds == "unknown":
         return a, evidence_directness.Check("none")
@@ -245,7 +247,8 @@ def _enforce_directness(a: LLMAssessment, rule: Rule, source_text: str | None,
         c = evidence_directness.check(rule.text, a.evidence, source_text, holds=a.holds, applicable=a.applicable,
                                       category=rule.category, time_window_days=rule.time_window_days,
                                       reference_date=reference_date,
-                                      key=f"{trial_id}:{rule.rule_id}" if trial_id else None, qa_log=qa_log)
+                                      key=f"{trial_id}:{rule.rule_id}" if trial_id else None, qa_log=qa_log,
+                                      qa=qa, session_id=session_id)
     if c.ok:
         return a, c
     label = "해당 없음" if not a.applicable else a.holds
@@ -411,6 +414,13 @@ def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
         if res is not None:
             if res.passes is not None:
                 res.evidence_directness = "structured"
+                quote = res.evidence.split(' - "', 1)[-1].rstrip('"') if ' - "' in res.evidence else ""
+                why = quote and evidence_directness.reference_answer_only(quote, source_text, qa, session_id)
+                if why:  # P14 D4: 의사 참고용·목적 불명 질문의 답에만 있는 수치는 판정 근거가 아님
+                    res = res.model_copy(update={
+                        "holds": "unknown", "passes": None, "confidence": "low", "evidence_directness": "unlinked",
+                        "validation_flags": [why], "missing_info": rule.text,
+                        "reasoning": f"[코드 검증: 판정용이 아닌 확인 질문의 답 - 규칙 엔진 판정 보류] {res.reasoning}"})
             results[rule.rule_id] = res
 
     # LLM 판정: 응답에서 빠진 rule_id만 골라 다시 요청 (전체 재평가 없이 누락분만)
@@ -438,7 +448,7 @@ def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
             if quoted is not checked:
                 flags.append("quote_not_in_source")
             a, direct = _enforce_directness(quoted, rule, source_text, profile, trial_id=parsed.trial_id,
-                                            reference_date=ref, qa_log=qa_log)
+                                            reference_date=ref, qa_log=qa_log, qa=qa, session_id=session_id)
             flags += direct.flags
             # 인용 검증·짧은 답변 연결에서 되돌려진 확정 판정: 이 기준을 겨냥한 예/아니요 답으로 코드가 검증할 수 있을 때만 인정
             lost = (checked is llm_a and llm_a.applicable and llm_a.holds in ("yes", "no") and a.holds == "unknown"

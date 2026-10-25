@@ -40,7 +40,8 @@ def _s005_03() -> str:
 
 
 def _qa(question: str, answer: str, base: str = "44세 여성.", key: str = "T:I4"):
-    qa = [QAPair(round=1, question_id="Q1", question=question, answer=answer, target=[key], session_id=SID)]
+    qa = [QAPair(round=1, question_id="Q1", question=question, answer=answer, target=[key], session_id=SID,
+                 purpose="eligibility")]
     return f"{base}\n\n[추가 확인 정보 - 라운드 1]\nQ: {question}\nA: {answer}", qa
 
 
@@ -60,7 +61,8 @@ REPRO_Q = "폐경이 되었거나, 임신 가능성이 없는 상태인가요? �
 ])
 def test_handoff_repro(answer, applicable, directness, flags):
     key = "NCT04063540:I4"
-    qa = [QAPair(round=1, question_id="Q2", question=REPRO_Q, answer=answer, target=[key], session_id=SID)]
+    qa = [QAPair(round=1, question_id="Q2", question=REPRO_Q, answer=answer, target=[key], session_id=SID,
+                 purpose="eligibility")]
     src = f"{_s005_03()}\n\n[추가 확인 정보 - 라운드 1]\nQ: {REPRO_Q}\nA: {answer}"
     c = ed.check(_i4(), answer, src, holds="yes", applicable=applicable, key=key, qa_log=qa, session_id=SID,
                  reference_date="2026-10-25")

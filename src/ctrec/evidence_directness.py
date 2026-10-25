@@ -357,7 +357,57 @@ def eligibility_answers(key: str | None, qa_log) -> list:
     (판정을 바꾸지 않는 참고 정보 수집용). 세션 필터는 호출 쪽(check의 session_id)이 먼저 적용."""
     if not (key and qa_log):
         return []
-    return [p for p in qa_log if key in (p.target or []) and getattr(p, "purpose", "eligibility") == "eligibility"]
+    return [p for p in qa_log if key in (p.target or []) and declared_purpose(p) == "eligibility"]
+
+
+def declared_purpose(p) -> str:
+    """문답 기록이 밝힌 질문 목적 (P14 D4). 목적을 밝히지 않은 기록(purpose 필드가 없던 과거 기록 등)은 unknown:
+    QAPair의 기본값 'eligibility'로 판정 근거가 되지 않게 함. 운영 경로(Session·ContractSession·Decision Loop)는 항상 밝힘."""
+    fields = getattr(p, "model_fields_set", None)
+    if fields is not None and "purpose" not in fields:
+        return "unknown"
+    return getattr(p, "purpose", None) or "unknown"
+
+
+def answer_purpose(seg: Segment, qa) -> str:
+    """확인 질문 라운드의 답변 줄이 어떤 목적의 질문에 대한 답인가: eligibility / physician_reference / unknown (P14 D4).
+
+    qa(이 세션의 문답 기록)에서 라운드·질문 문장·답이 같은 기록을 찾음. 의사 참고용 기록이 하나라도 맞으면 참고용,
+    맞는 기록이 없거나 목적을 밝히지 않은 기록뿐이면 unknown. 둘 다 판정 근거가 아님.
+    """
+    if seg.question is None:
+        return "unknown"
+    found = {declared_purpose(p) for p in qa if _norm(p.question) == seg.question.body and _norm(p.answer) == seg.body
+             and getattr(p, "round", None) == seg.round}
+    if "physician_reference" in found:
+        return "physician_reference"
+    return "eligibility" if found == {"eligibility"} else "unknown"
+
+
+def _purpose_problem(seg: Segment, purpose_qa) -> str | None:
+    """판정 근거로 쓸 수 없는 답변 줄이면 그 이유. purpose_qa가 없으면(문답 기록을 넘기지 않은 호출) 검사하지 않음.
+    처음 입력의 "A:" 줄(라운드 머리말 밖)은 확인 질문 답변이 아니라 기록이므로 검사하지 않음."""
+    if purpose_qa is None or seg.role != "answer" or seg.round is None:
+        return None
+    purpose = answer_purpose(seg, purpose_qa)
+    if purpose == "eligibility":
+        return None
+    return "physician_reference_answer" if purpose == "physician_reference" else "answer_purpose_unknown"
+
+
+def reference_answer_only(evidence_text: str, source_text: str | None, qa, session_id: str | None = None) -> str | None:
+    """근거 인용이 원문에서 판정용이 아닌 확인 질문 답변(의사 참고용·목적 불명)에만 있으면 그 이유 (P14 D4).
+    규칙 엔진 판정(검사 수치 인용 등)처럼 check()를 거치지 않는 근거에 씀. 위치를 못 찾으면 None(다른 검사가 맡음)."""
+    if source_text is None or qa is None:
+        return None
+    if session_id is not None:
+        qa = [p for p in qa if getattr(p, "session_id", None) == session_id]
+    found, hits = locate(evidence_text, source_text)
+    hits = [h for h in hits if h.seg.role in ("record", "answer")]
+    if not (found and hits):
+        return None
+    reasons = [_purpose_problem(h.seg, qa) for h in hits]
+    return reasons[0] if all(reasons) else None
 
 
 def answers_revised(key: str | None, qa_log) -> bool:
@@ -390,7 +440,7 @@ class _Evidence:
     answer: bool = False  # 확인 질문 라운드 머리말 아래 답변 줄에서 온 근거 (처음 입력의 "A:" 줄은 아님)
 
 
-def _evidence_units(hits: list[Hit], key: str | None, qa_log) -> tuple[list[_Evidence], list[str]]:
+def _evidence_units(hits: list[Hit], key: str | None, qa_log, purpose_qa=None) -> tuple[list[_Evidence], list[str]]:
     units, problems = [], []
     seen = set()
     for h in hits:
@@ -401,6 +451,12 @@ def _evidence_units(hits: list[Hit], key: str | None, qa_log) -> tuple[list[_Evi
         if ident in seen:
             continue
         seen.add(ident)
+        # D4: 판정용(eligibility) 질문의 답만 근거. 짧은 답은 아래 연결 검사(_linked)가 같은 목적 조건으로 막으므로
+        # (answer_not_linked) 긴 답에만 적용
+        problem = None if _short(body) else _purpose_problem(h.seg, purpose_qa)
+        if problem:
+            problems.append(problem)
+            continue
         if h.seg.role == "answer" and non_answer(body):  # "답변하지 않겠습니다"의 '않'을 부재 진술로 읽지 않음
             q = h.seg.question.body if h.seg.question else ""
             units.append(_Evidence(body, body, body, "uncertain", q, non_answer=True))
@@ -561,24 +617,31 @@ def _answer_within(u: "_Evidence", days: int) -> bool:
 def check(criterion_text: str, evidence_text: str, source_text: str | None, *, holds: str = "yes",
           applicable: bool = True, category: str = "other", time_window_days: int | None = None,
           reference_date: str | None = None, key: str | None = None, qa_log=None,
-          session_id: str | None = None) -> Check:
+          session_id: str | None = None, qa=None) -> Check:
     """확정 판정 근거의 필요조건 검사. 인용이 원문에 있다는 것은 _enforce_quote가 이미 확인했다고 가정.
 
     key: "<trial_id>:<rule_id>" (짧은 답변 연결 확인용), qa_log: Session.qa_log (없으면 짧은 답변은 근거로 쓰지 않음)
     session_id: 주면 그 세션에서 만든 qa_log 기록만 씀(다른 환자·세션 기록 혼입 방지, session_id 없는 기록도 제외)
+    qa: 이 세션의 문답 전체(의사 참고용 포함, Session.match가 넘김). 확인 질문 답변 줄의 질문 목적을 정하는 데만 씀:
+        판정용(eligibility)이 아닌 질문의 답은 짧든 길든 근거에서 뺌 (P14 D4). qa가 없으면 qa_log로 정하고,
+        둘 다 없으면(문답 기록을 넘기지 않는 호출) 목적을 검사하지 않음.
     """
     if source_text is None:
         return Check("unchecked", ["no_source_text"])
-    if qa_log and session_id is not None:
-        qa_log = [p for p in qa_log if getattr(p, "session_id", None) == session_id]
+    purpose_qa = qa if qa is not None else qa_log
+    if session_id is not None:
+        if qa_log:
+            qa_log = [p for p in qa_log if getattr(p, "session_id", None) == session_id]
+        if purpose_qa is not None:
+            purpose_qa = [p for p in purpose_qa if getattr(p, "session_id", None) == session_id]
     found, hits = locate(evidence_text, source_text)
     if not found:
         return Check("unlocated", ["quote_not_located"])
     if not any(h.seg.role in ("record", "answer") for h in hits):
         return Check("question_only", ["quote_only_in_question"])
-    units, problems = _evidence_units(hits, key, qa_log)
+    units, problems = _evidence_units(hits, key, qa_log, purpose_qa)
     if not units:
-        return Check("unlinked", problems or ["quote_not_located"])
+        return Check("unlinked", list(dict.fromkeys(problems)) or ["quote_not_located"])
     concept = next((k for k in CONCEPTS if k.criterion.search(criterion_text)), None)
     cname = concept.name if concept else None
     _, segs = parse_source(source_text)

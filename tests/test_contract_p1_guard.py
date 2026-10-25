@@ -105,8 +105,11 @@ def test_long_free_text_answer_any_target_or_purpose_is_blocked(monkeypatch, tar
     q, ans = "최근 수술 후 문제가 있었나요?", "아니요, 수술 후 문제는 전혀 없었어요"
     text, log = session_text("45세 여성.", [[(q, ans, target)]], purpose=purpose)
     before, after = _judge(monkeypatch, RULES["SURG"], text, log, "no", "수술 후 문제는 전혀 없었어요")
-    assert before.assessments[0].passes is (None if MATCHER_GUARDED else True)  # 경계 전에는 확정
-    assert after.assessments[0].passes is None and FLAG in after.assessments[0].validation_flags
+    # 경계 전에는 확정. 단 의사 참고용 답은 P14 D4부터 matcher(근거 직접성 검사)가 먼저 막음 (경계 전에도 판정 불가)
+    assert before.assessments[0].passes is (None if MATCHER_GUARDED or purpose == "physician_reference" else True)
+    assert after.assessments[0].passes is None
+    want = "physician_reference_answer" if purpose == "physician_reference" else FLAG
+    assert want in after.assessments[0].validation_flags
 
 
 def test_other_session_answer_is_blocked(monkeypatch):
