@@ -1,4 +1,8 @@
-# ctrec: 인터랙티브 임상시험 추천 멀티 에이전트 시스템
+<p align="center"><img src="src/ctrec/web/static/logo.svg" width="72" alt="Trialog 로고"></p>
+
+# Trialog: 대화로 찾는 임상시험 추천 멀티 에이전트 시스템
+
+**Trialog**는 *Trial*(임상시험)과 *Dialog*(대화)를 합친 이름입니다. 기준을 대조해 판정하고, 모자란 정보는 환자에게 되물어 채운다는 시스템의 동작을 이름에 담았습니다. 로고는 말풍선(대화) 안의 체크 표시(기준 충족 판정)입니다. 코드 패키지 이름은 그대로 `ctrec`입니다.
 
 **Healthcare Agentic AI Challenge 2026** 제출용 코드입니다. 주제는 *Interactive Clinical Trial Recommendation*입니다.
 
@@ -594,6 +598,21 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 ## 10. 변경 이력
 
 수정할 때마다 무엇을 왜 바꿨는지 여기에 기록합니다. 최신 항목이 위에 옵니다.
+
+### 2026-10-25 — 프로젝트 이름을 Trialog로 정하고 로고 추가, 입력 화면 정리
+
+배경: 화면 제목이 "나에게 맞는 임상시험 찾기"라는 설명문뿐이라 발표·제출물에서 부를 이름이 없었습니다. *Trial* + *Dialog* = **Trialog**로 정하고 로고를 만들었습니다.
+
+| # | 변경 | 파일 |
+|---|---|---|
+| 1 | **로고**: 파란 말풍선(대화) 안에 흰 체크(기준 충족 판정), 32×32 SVG. 화면 강조색(`#3182f6`)을 그대로 써서 밝은·어두운 화면 모두 같은 색 | `web/static/logo.svg` |
+| 2 | **화면 상단**: 로고 + "Trialog" + 보조 문구 "대화로 찾는 임상시험". 380px 이하 좁은 화면에서는 보조 문구를 숨김. 탭 제목은 "Trialog · 나에게 맞는 임상시험 찾기", 파비콘도 로고 | `index.html`, `app.css` |
+| 3 | `/static/logo.svg`를 정적 파일 허용 목록에 추가(`image/svg+xml`). CSP는 그대로(`img-src 'self'`) | `web/app.py` |
+| 4 | README 제목·이름 설명·로고 | `README.md` |
+| 5 | **면책 고지 들여쓰기**: "⚠️ 참고용 정보" 토글을 펼치면 나오는 고지 본문을 토글 제목 글자 위치에 맞춰 한 단계 들여씀(상하위 구분) | `app.css` |
+| 6 | **'입력 내용 확인' 단계 삭제**: 환자를 고르거나 내용을 입력하면 바로 "분석 시작" 버튼으로 시작. 확인 상자(`#review-panel`)와 "수정하기" 버튼을 없애고, 빈 입력·20,000자 초과 같은 입력 오류는 "분석 시작"을 누를 때 버튼 아래에 표시(입력 칸으로 포커스). 브라우저 테스트·사용 안내도 같은 흐름으로 수정 | `index.html`, `app.js`, `tests/test_web_browser.py`, `docs/web_user_guide.md` |
+
+- 코드 패키지·명령 이름(`ctrec`)은 바꾸지 않았습니다.
 
 ### 2026-10-24 — 확인 질문에 답한 기준이 '정보 부족'으로 남지 않게 (매칭)
 

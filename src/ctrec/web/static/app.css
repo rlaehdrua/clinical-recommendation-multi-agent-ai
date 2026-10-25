@@ -1,4 +1,4 @@
-/* 나에게 맞는 임상시험 찾기 화면 스타일. 토스 디자인 언어 참고(브랜드 요소는 쓰지 않음):
+/* Trialog(나에게 맞는 임상시험 찾기) 화면 스타일. 토스 디자인 언어 참고(브랜드 요소는 쓰지 않음):
    파란색 하나만 강조, 회색 단계로 위계, 테두리 대신 면 색, 크고 굵은 제목, 한 화면에 한 가지 일.
    CSP style-src·font-src 'self': 인라인 style 속성·<style>·외부 글꼴을 쓰지 않음 (Pretendard는 설치된 경우에만 사용) */
 :root {
@@ -41,7 +41,11 @@ a { color: var(--accent); text-decoration: none; font-weight: 600; } a:hover { c
 /* 상단 */
 header.top { padding: 14px 20px 10px; background: var(--bg); position: sticky; top: 0; z-index: 5; }
 header.top .bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.brand { font-size: 17px; font-weight: 700; margin: 0; }
+.brand { display: flex; align-items: center; gap: 8px; margin: 0; min-width: 0; font-size: 17px; font-weight: 700; }
+.brand .logo { width: 28px; height: 28px; flex-shrink: 0; }
+.brand .word { font-size: 20px; font-weight: 800; letter-spacing: -.03em; }
+.brand .tag { min-width: 0; font-size: 13px; font-weight: 600; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 380px) { .brand .tag { display: none; } }
 header.top .meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
 #pages { margin-left: auto; display: flex; gap: 2px; background: var(--line); padding: 3px; border-radius: 10px; }
 #pages button { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 8px; cursor: pointer; min-height: 30px; }
@@ -49,6 +53,7 @@ header.top .meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap
 #pages button:disabled { cursor: not-allowed; opacity: .5; }
 .disclaimer { margin: 0 20px; font-size: 13px; line-height: 1.5; color: var(--muted); }
 .disclaimer > summary { min-height: 32px; font-weight: 600; color: var(--body); }
+.disclaimer > p { padding-left: 1.45em; }  /* 고지 본문은 토글 제목(⚠️ 뒤 글자)에 맞춰 한 단계 들여씀 */
 main { padding: 12px 20px 40px; display: flex; flex-direction: column; gap: 12px; }
 
 /* 공통 */

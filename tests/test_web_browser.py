@@ -117,7 +117,7 @@ def _assert_clean(page):
 
 
 def _fill_and_start(page, base, path="", text=h.SYN_TEXT, trials=h.TRIAL_IDS):
-    """직접 입력 -> 고급 설정에서 시험 직접 선택 -> 입력 내용 확인 -> 분석 시작."""
+    """직접 입력 -> 고급 설정에서 시험 직접 선택 -> 분석 시작 (확인 단계 없음)."""
     page.goto(base + path)
     page.wait_for_selector("#patient option", state="attached")
     page.click("#to-custom")
@@ -126,8 +126,6 @@ def _fill_and_start(page, base, path="", text=h.SYN_TEXT, trials=h.TRIAL_IDS):
     page.check('input[name="cand-mode"][value="given"]')
     page.evaluate("ids => { document.querySelectorAll('#trials input').forEach(i => i.checked = ids.includes(i.value));"
                   " document.querySelector('#trials').dispatchEvent(new Event('change')); }", trials)
-    page.click("#review")
-    page.wait_for_selector("#review-panel", state="visible")
     page.click("#start")
 
 
@@ -182,7 +180,7 @@ def test_full_journey_with_evidence(server):
         _fill_and_start(page, base)
         page.wait_for_selector("#qslot .q", timeout=20000)
         # 분석 중 입력 변경 방지, 진행 단계는 서버 이벤트로만
-        assert page.is_disabled("#custom") and page.is_disabled("#review")
+        assert page.is_disabled("#custom") and page.is_disabled("#start")
         assert _stage(page, "profile") == "done" and _stage(page, "criteria") == "done" and _stage(page, "questions") == "active"
         assert page.inner_text("#run-state") == "답변 대기"
         assert "%" not in page.inner_text("#progress-panel")  # 임의 진행률 없음
@@ -530,26 +528,24 @@ def test_input_errors_and_duplicate_submit(server):
         page.on("request", lambda r: posts.append(r.url) if r.method == "POST" and r.url.endswith("/api/runs") else None)
         page.goto(base)
         page.wait_for_selector("#patient option", state="attached")
-        page.click("#review")  # 빈 입력: 화면에서 막음
-        assert page.inner_text("#input-error") == "환자 정보를 입력하세요." and page.is_hidden("#review-panel")
+        page.click("#start")  # 빈 입력: 화면에서 막음
+        assert page.inner_text("#input-error") == "환자 정보를 입력하세요." and not posts
         page.fill("#custom", "x" * 30000)  # 한도(서버 MAX_TEXT_CHARS와 같은 20,000자)를 넘는 입력은 화면에서 막음
         n = len(page.input_value("#custom"))
         if n > 20000:
-            page.click("#review")
-            assert "20,000자 이하" in page.inner_text("#input-error") and page.is_hidden("#review-panel")
+            page.click("#start")
+            assert "20,000자 이하" in page.inner_text("#input-error") and not posts
         else:
             assert n == 20000 and "20,000 / 20,000" in page.inner_text("#char-count")
         # 서버가 거절하면 서버의 문자열 메시지를 그대로 보여 줌
         page.route("**/api/runs", lambda route: route.fulfill(status=429, content_type="application/json",
                                                               body=json.dumps({"detail": "이 브라우저에서 진행 중인 실행이 있습니다."})))
         page.fill("#custom", h.SYN_TEXT)
-        page.click("#review")
         page.click("#start")
         _wait_js(page, "() => document.querySelector('#start-hint').textContent.includes('진행 중인 실행')")
         assert not page.is_disabled("#custom")
         page.unroute("**/api/runs")
         # 중복 제출: 빠르게 두 번 눌러도 실행 요청은 한 번
-        page.click("#review")
         page.evaluate("() => { document.querySelector('#start').click(); document.querySelector('#start').click(); }")
         page.wait_for_selector("#qslot .q", timeout=20000)
         assert sum(1 for u in posts if u.endswith("/api/runs")) == 2  # 거절된 1회 + 실제 1회
@@ -821,9 +817,7 @@ def test_keyboard_only_journey(server):
         assert page.evaluate("() => document.activeElement.className") == "skip"  # 본문 건너뛰기 링크가 처음
         _tab_to(page, "#custom")
         page.keyboard.type(h.SYN_TEXT)
-        _tab_to(page, "#review")
-        page.keyboard.press("Enter")
-        assert page.evaluate("() => document.activeElement.id") == "start"  # 확인 단계로 포커스 이동
+        _tab_to(page, "#start")
         page.keyboard.press("Enter")
         page.wait_for_selector("#qslot input[data-q='Q1']", timeout=30000)
         assert page.evaluate("() => document.activeElement.id") == "q-h"  # 질문 제목으로 포커스
@@ -860,11 +854,9 @@ def test_responsive_contrast_and_names_each_screen(make_server, ctx):
         page.goto(base)
         page.wait_for_selector("#patient option", state="attached")
         _check_screen(page, "초기 입력")
-        page.click("#review")
+        page.click("#start")
         _check_screen(page, "입력 오류")
         page.fill("#custom", h.SYN_TEXT)
-        page.click("#review")
-        _check_screen(page, "입력 확인")
         page.click("#start")
         page.wait_for_selector("#qslot input[data-q='Q2']", timeout=30000)
         _check_screen(page, "분석 진행·질문")
@@ -969,7 +961,6 @@ def test_tab_closed_and_returned(server):
         assert page.evaluate("sessionStorage.length") == 0 and "보안상" in page.inner_text("#active-note")
         page.click("#to-custom")
         page.fill("#custom", h.SYN_TEXT)
-        page.click("#review")
         page.click("#start")
         _wait_js(page, "() => document.querySelector('#start-hint').textContent.includes('진행 중인 실행')")
         assert page.is_visible("#active-note")
@@ -1009,8 +1000,6 @@ def test_operational_timings(make_server):
         _wait_js(page, "() => document.querySelector('#run-state').textContent === '취소됨'", None, 15000)
         t["cancel_after_inflight_call_s"] = time.perf_counter() - s
         # 2) 정상 흐름
-        page.click("#review")
-        page.wait_for_selector("#review-panel", state="visible")
         s = time.perf_counter()
         page.click("#start")
         _wait_js(page, "() => !!sessionStorage.getItem('ctrec-run-id') && document.querySelector('#run-state').textContent === '분석 중'")
