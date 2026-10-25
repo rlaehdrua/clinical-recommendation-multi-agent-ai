@@ -165,7 +165,8 @@ _DISJUNCTION = re.compile(r"거나|또는|혹은|\b(?:or|either)\b", re.I)  # '/
 _PLANNED = re.compile(r"예정|계획|하려고|할\s*것|\b(?:scheduled|planned|planning|will|plans?\s+to)\b", re.I)
 # 기준 원문이 가임 대상 집단을 정하는가 ("women of childbearing potential ..."). "Pregnant or lactating"처럼 모든 환자에게
 # 적용되는 기준은 폐경 등으로 '해당 없음'이 되지 않음 ('폐경 -> 임신·수유 아님'은 임상 추론, Phase 10-E9)
-_POPULATION_CLAUSE = re.compile(r"child-?bearing|wocbp|potential|able\s+to\s+(?:become|get)\s+pregnant|가임|임신\s*가능", re.I)
+_POPULATION_CLAUSE = re.compile(r"child-?bearing|wocbp|potential|(?:able\s+to|can|could|may)\s+(?:become|get)\s+pregnant|"
+                                r"가임|임신\s*가능", re.I)
 _PARENT = {o.name: o.parent for c in CONCEPTS for o in c.objects}
 
 

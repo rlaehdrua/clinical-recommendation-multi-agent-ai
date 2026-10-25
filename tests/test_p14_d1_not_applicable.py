@@ -193,7 +193,8 @@ def test_population_less_criterion_cannot_be_not_applicable(criterion):
 
 
 @pytest.mark.parametrize("criterion", [WOCBP, "Females of reproductive potential must have a negative pregnancy test",
-                                       "가임 여성은 피임해야 함", "I4"])
+                                       "가임 여성은 피임해야 함", "I4",
+                                       "Women who can become pregnant must use an approved birth control method"])
 def test_population_criteria_still_accept_population_fact(criterion):
     criterion = _i4() if criterion == "I4" else criterion
     assert _na(criterion, "postmenopausal since 2015", "62-year-old woman, postmenopausal since 2015.").ok
