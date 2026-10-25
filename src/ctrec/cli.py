@@ -11,8 +11,12 @@ from __future__ import annotations
 import argparse
 import contextvars
 import json
+import os
+import re
 import sys
+import uuid
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
 from pathlib import Path
 
 from . import DISCLAIMER, config, llm
@@ -77,15 +81,108 @@ def _candidates(case: PatientCase, trials: dict[str, dict], topic_map: dict, mod
     return {t: trials[t] for t in ids if t in trials}
 
 
+# --fact-store-dir를 값 없이 주면 실행 폴더 안 facts/ (Decision Loop Inspector가 읽는 위치)
+FACTS_IN_RUN_DIR = "<run_dir>/facts"
+
+
+def _fact_store_dir(args, out_dir: Path) -> Path | None:
+    v = getattr(args, "fact_store_dir", None)
+    if v is None:
+        return None
+    return out_dir / "facts" if v == FACTS_IN_RUN_DIR else Path(v)
+
+
+# 환자 ID는 출력 폴더·사실 파일 이름이 됨: 사실 저장소(FactStore)와 같은 규칙 + '..' 금지 (경로 구분자·절대 경로 불가)
+_SAFE_PATIENT_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.\-]*$")
+
+
+class RecordConflict(Exception):
+    """실행 기록 사전 검증 실패 (아무 파일도 쓰기 전에 실행을 거부)."""
+
+
+def _inside(path: Path, root: Path) -> bool:
+    try:
+        path.resolve().relative_to(root.resolve())
+        return True
+    except ValueError:
+        return False
+
+
+def _check_records(case: PatientCase, args, index: int) -> None:
+    """실행 전 사전 검증. 이전 실행의 사실 파일이 이번 실행 기록처럼 읽히거나(Decision Loop Inspector는 실행 폴더의
+    facts/<환자>.json을 이번 실행 기록으로 읽음), 기존 파일을 덮어쓰거나, 실행 폴더 밖으로 이어질 수 있으면 거부.
+    기존 파일은 읽기만 하고 지우거나 옮기지 않음. 오류 메시지에는 환자 ID 원문·링크 대상 경로를 넣지 않음."""
+    pid = case.patient_id
+    who = f"환자 #{index + 1}"
+    if not isinstance(pid, str) or not _SAFE_PATIENT_ID.match(pid) or ".." in pid:
+        raise RecordConflict(f"{who}: 환자 ID를 출력 폴더 이름으로 안전하게 쓸 수 없는 형식입니다 "
+                             "(영문·숫자로 시작하고 영문·숫자·_ . -만, '..' 불가).")
+    root = Path(args.out)
+    out_dir = root / pid
+    if os.path.lexists(out_dir) and not _inside(out_dir, root):
+        raise RecordConflict(f"{who}: 실행 폴더가 --out 밖을 가리킵니다 (링크·정션). 새 --out 경로를 지정하세요.")
+    run_facts = out_dir / "facts"
+    if os.path.lexists(run_facts) and run_facts.resolve() != out_dir.resolve() / "facts":
+        raise RecordConflict(f"{who}: 실행 폴더의 facts가 다른 위치를 가리킵니다 (링크·정션). 새 --out 경로를 지정하세요.")
+    if os.path.lexists(run_facts / f"{pid}.json"):
+        raise RecordConflict(f"{who}: --out {root}의 실행 폴더에 이전 실행의 사실 파일(facts/)이 있어 이번 실행 기록과 "
+                             "섞일 수 있습니다. 기존 파일은 그대로 두었습니다. 새 --out 경로를 지정하세요.")
+    fact_dir = _fact_store_dir(args, out_dir)
+    if fact_dir is not None and fact_dir.resolve() != (out_dir / "facts").resolve():
+        for protected in (config.DATA_DIR, config.ROOT / "src"):
+            if _inside(fact_dir, protected):
+                raise RecordConflict(f"{who}: --fact-store-dir를 데이터·소스 폴더 안으로 지정할 수 없습니다.")
+        if os.path.lexists(fact_dir / f"{pid}.json"):
+            raise RecordConflict(f"{who}: --fact-store-dir {fact_dir}에 이 환자의 사실 파일이 이미 있습니다. "
+                                 "덮어쓰지 않습니다. 다른 경로를 지정하세요.")
+
+
+def _write_run_meta(out_dir: Path, session: Session, args, fact_dir: Path | None, run_id: str) -> None:
+    """실행 메타데이터 (Decision Loop Inspector 입력 계약의 run_meta.json). 환자 정보·경로 원문은 넣지 않음.
+
+    설정값과 실제 사실을 나눔:
+    - llm_backend: 이 실행이 지나간 경로(CLI -> SDK 클라이언트 경로)일 뿐 실제 API 호출을 뜻하지 않음 ("real"이 아님).
+      테스트·오프라인 대역으로 바꿔 실행해도 같은 값이므로, 실제 호출 여부는 아래 관찰 기록으로만 판단
+    - llm_calls_observed: 사용량이 기록된 응답이 있었으면 true. 없으면 null(확인 못 함 - false나 0으로 단정하지 않음)
+    - synthetic: CLI는 입력이 합성 환자인지 알 수 없음(환자 파일의 synthetic 표시는 파이프라인에 넘어오지 않음) -> null
+    - requested_model: 설정값. called_models: 이 경로는 응답의 모델 이름을 기록하지 않으므로 "UNKNOWN"
+    """
+    calls = session.usage.get("calls")
+    calls = calls if isinstance(calls, int) and not isinstance(calls, bool) else None
+    meta = {
+        "format_version": 1, "written_by": "ctrec.cli", "run_id": run_id,
+        "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "llm_backend": "cli_sdk_path", "llm_calls_observed": True if calls else None,
+        "synthetic": None, "mode": args.mode, "candidates": args.candidates,
+        "requested_model": config.MODEL, "called_models": "UNKNOWN",
+        "llm_responses_with_usage": calls,
+        "records": {
+            # 이번 실행에서 사실 저장을 켰는지와 위치 (run_dir = 실행 폴더의 facts/, external = 다른 폴더, null = 저장 안 함)
+            "fact_store": None if fact_dir is None else
+            ("run_dir" if fact_dir.resolve() == (out_dir / "facts").resolve() else "external"),
+            "decision_diagnostic": session.decision_loop == "diagnostic",
+            "dependency_diagnostic": session.dependency_diagnostic,
+        },
+    }
+    (out_dir / "run_meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=1), encoding="utf-8")
+
+
 def _run_case(case: PatientCase, trials: dict[str, dict], args, answerer) -> Session:
     out_dir = Path(args.out) / case.patient_id
+    run_id = f"R-{uuid.uuid4().hex[:12]}"
     tracer = Tracer(out_dir / "trace.jsonl", verbose=not args.quiet,
                     label=case.patient_id if args.workers > 1 else "")
-    session = Session(
+    fact_dir = _fact_store_dir(args, out_dir)
+    from .contract_session import session_class  # CTREC_SESSION=contract -> ContractSession (기본: 기존 Session)
+    session = session_class()(
         case=case, trials=trials, answerer=answerer, tracer=tracer,
         max_rounds=args.max_rounds, allow_search=args.search, question_budget=args.question_budget,
         screen_trials=args.candidates == "screen" and len(trials) > args.max_candidates,
         max_candidates=args.max_candidates,
+        # 진단·사실 기록은 옵션을 준 실행에만 (기본 동작 그대로: 저장 안 함, 진단 꺼짐)
+        fact_store_dir=fact_dir,
+        decision_loop="diagnostic" if getattr(args, "decision_diagnostic", False) else "off",
+        dependency_diagnostic=bool(getattr(args, "dependency_diagnostic", False)),
     )
     llm.reset_usage()
     tracer.log("pipeline", "start", message=f"mode={args.mode} model={config.MODEL} trials={len(trials)}")
@@ -94,6 +191,7 @@ def _run_case(case: PatientCase, trials: dict[str, dict], args, answerer) -> Ses
     else:
         session.run_fixed()
     session.save(out_dir)
+    _write_run_meta(out_dir, session, args, fact_dir, run_id)
     u = session.usage
     tracer.log("pipeline", "saved", message=(
         f"{out_dir} | calls={u.get('calls', 0)} in={u.get('input_tokens', 0)} out={u.get('output_tokens', 0)} "
@@ -123,6 +221,13 @@ def _add_common(p: argparse.ArgumentParser) -> None:
     p.add_argument("--input-source", choices=["clinical_record", "self_report", "unknown"], default=None,
                    help="환자 원문의 출처를 모든 환자에 지정 (환자 파일의 input_source보다 우선). "
                         "지정하지 않고 파일에도 없으면 unknown: 진료 기록이 필요한 기준은 UNVERIFIED")
+    p.add_argument("--fact-store-dir", nargs="?", const=FACTS_IN_RUN_DIR, default=None,
+                   help="환자 사실 저장소를 파일로 저장 (기본: 저장 안 함). 값 없이 주면 실행 폴더의 facts/, "
+                        "경로를 주면 그 폴더. 파일에 환자 원문 인용이 들어가므로 보관·공유에 주의")
+    p.add_argument("--decision-diagnostic", action="store_true",
+                   help="Decision Loop 진단을 result.json에 기록 (판정·질문·추천에는 쓰지 않음, 기본 꺼짐)")
+    p.add_argument("--dependency-diagnostic", action="store_true",
+                   help="의존 그래프·부분 재평가 진단을 result.json에 기록 (판정·질문·추천에는 쓰지 않음, 기본 꺼짐)")
     p.add_argument("--demo", action="store_true",
                    help="데모 모드: 가상 데모 시험(DEMO-LUNG-001 등)도 추천에 표시 (기본은 판정만 하고 추천에서 제외)")
 
@@ -161,6 +266,14 @@ def main(argv: list[str] | None = None) -> None:
     if args.input_source:
         for c in cases:
             c.input_source = args.input_source
+    try:
+        for i, c in enumerate(cases):
+            _check_records(c, args, i)
+        ids = [c.patient_id for c in cases]
+        if args.fact_store_dir is not None and len(ids) != len(set(ids)):  # 같은 실행 안에서 사실 파일을 서로 덮어씀
+            raise RecordConflict("같은 환자 ID가 여러 번 있어 사실 파일이 서로 덮어써집니다. 환자 ID를 확인하세요.")
+    except RecordConflict as e:
+        sys.exit(f"실행하지 않았습니다: {e}")
     answerer = _answerer(args.answers, cases)
 
     topic_map = json.loads(Path(args.topic_map).read_text(encoding="utf-8")) if args.topic_map else {}
