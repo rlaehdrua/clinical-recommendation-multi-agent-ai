@@ -585,12 +585,12 @@ function showQuestions(qs) {
     const id = esc(q.question_id);
     const desc = `qwhy-${id} qerr-${id}` + (FORMAT[q.answer_type] && FORMAT[q.answer_type][0] ? ` qfmt-${id}` : "");
     const unk = `<label class="unk"><input type="checkbox" data-unknown="${id}"> 모름 · 확인 불가</label>`;
-    if (q.answer_type === "yes_no") return `<fieldset class="opts" aria-describedby="${desc}"><legend class="sr-only">질문 ${n} 답변</legend>
+    if (q.answer_type === "yes_no") return `<fieldset class="opts" aria-describedby="qt-${id} ${desc}"><legend class="sr-only">질문 ${n} 답변</legend>
         <label><input type="radio" name="yn-${id}" value="예" data-yn="${id}"> 예</label><label><input type="radio" name="yn-${id}" value="아니요" data-yn="${id}"> 아니요</label>${unk}</fieldset>`;
     const opts = choiceOptions(q);
     if (opts) {  // 객관식 (팀원 4ea12d6 질문 형식): 선택지 문구가 곧 보낼 값. 입력 값에는 번호만 두고 문구는 글자로만 표시
       const multi = q.answer_type === "multi_choice";
-      return `<fieldset class="opts" aria-describedby="${desc}"><legend class="sr-only">질문 ${n} 답변${multi ? " (여러 개 선택 가능)" : ""}</legend>
+      return `<fieldset class="opts" aria-describedby="qt-${id} ${desc}"><legend class="sr-only">질문 ${n} 답변${multi ? " (여러 개 선택 가능)" : ""}</legend>
         ${multi ? '<div class="fmt">해당하는 것을 모두 고르세요.</div>' : ""}
         ${opts.map((o, k) => `<label><input type="${multi ? "checkbox" : "radio"}" name="ch-${id}" value="${k}" ${multi ? "data-mc" : "data-ch"}="${id}"> ${esc(o)}</label>`).join("")}
         ${opts.some(isEtc) ? `<input type="text" data-etc="${id}" maxlength="${MAX_ANSWER}" aria-label="질문 ${n}의 기타 내용" placeholder="기타를 골랐다면 내용을 적어 주세요" autocomplete="off" disabled>` : ""}

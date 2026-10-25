@@ -1179,6 +1179,14 @@ def test_choice_questions_and_korean_titles(make_server):
                  ko["NCT04063540"]["title"])
         _fill_and_start(page, base)
         page.wait_for_selector("#qslot .q", timeout=20000)
+        # 답하는 칸(예/아니요·객관식 묶음, 글자 입력란)은 질문 문장과 연결 -> 스크린리더가 '질문 n 답변'만 읽지 않음
+        described = page.evaluate("""() => [...document.querySelectorAll('#qslot .q')].map(q => {
+          const box = q.querySelector('fieldset[aria-describedby]') || q.querySelector('input[data-q]');
+          return [q.dataset.qid, (box.getAttribute('aria-describedby') || '').split(' ')
+            .map(i => document.getElementById(i)).filter(Boolean).map(e => e.textContent).join(' ')]; })""")
+        assert len(described) == 5
+        for qid, text in described:
+            assert f"합성 질문 {qid}" in text, (qid, text)
         page.check("input[data-yn='Q1'][value='아니요']")
         _goto_q(page, "Q2")
         assert page.is_disabled("input[data-etc='Q2']")
