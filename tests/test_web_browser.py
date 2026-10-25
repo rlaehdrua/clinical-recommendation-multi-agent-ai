@@ -137,6 +137,34 @@ def _answer(page, value=h.SYN_ANSWER, qid="Q1"):
     page.click("#confirm-send")
 
 
+def _goto_q(page, qid):
+    """추가 질문은 한 화면에 하나씩: '다음'을 눌러 그 질문까지 이동."""
+    for _ in range(20):
+        if page.is_visible(f"#qslot .q[data-qid='{qid}']"):
+            return
+        page.click("#qnext")
+    raise AssertionError(f"질문까지 이동하지 못함: {qid}")
+
+
+def _to_send(page):
+    """마지막 질문까지 '다음'으로 이동한 뒤 '답변 확인'."""
+    for _ in range(20):
+        if page.is_visible("#send"):
+            page.click("#send")
+            return
+        page.click("#qnext")
+    raise AssertionError("답변 확인 버튼까지 이동하지 못함")
+
+
+def _open_trial(page, tid):
+    """결과 목록에서 시험의 '자세히 보기' -> 상세 화면 글자 (제외 시험은 접힌 목록 안에 있어 먼저 펼침)."""
+    _open_details(page)
+    page.click(f"#final [data-detail='{tid}']")
+    page.wait_for_selector("#page-detail:not([hidden])")
+    _open_details(page, "#detail")  # 접어 둔 '확인된 조건 더 보기'까지
+    return page.inner_text("#detail")
+
+
 def _stage(page, key):
     return page.get_attribute(f"#stage-{key}", "data-state")
 
@@ -174,7 +202,8 @@ def test_full_journey_with_evidence(server):
         page.on("console", lambda m: console.append(m.text))
         page.goto(base)
         page.wait_for_selector("#patient option", state="attached")
-        assert page.locator("#trials input").count() == 26
+        n_trials = page.evaluate("async () => (await (await fetch('/api/trials')).json()).length")
+        assert n_trials >= 2 and page.locator("#trials input").count() == n_trials  # 시험마다 선택 칸 (시험 수는 data/trials에 따라 다름)
         assert page.is_visible("#intro") and page.is_visible("#privacy-note")
         assert page.get_attribute("#to-custom", "aria-selected") == "true"
         _fill_and_start(page, base)
@@ -187,15 +216,17 @@ def test_full_journey_with_evidence(server):
         _answer(page)
         page.wait_for_selector("#final .rec", timeout=30000)
         final = page.inner_text("#final")
-        assert "NCT04063540" in final and "추가 정보 필요" in final and "의사 확인 필요" in final
-        assert "참여 자격을 확정하지 않습니다" in final
-        assert page.locator("#final a[href='https://clinicaltrials.gov/study/NCT04063540']").count() >= 1
-        rel = page.get_attribute("#final a[href='https://clinicaltrials.gov/study/NCT04063540']", "rel")
+        assert "NCT04063540" in final and "추가 정보 필요" in final and "담당 의사와 프로토콜 대조" in final
+        assert "참여 확정 아님" in final and "질문 1개 반영" in final  # 답변을 반영한 재평가 결과
+        # 조건별 근거(상세 화면): 서버 판정 필드로만 묶음 (정보 부족 / 연구진 판단), AI 판정 표시
+        detail = _open_trial(page, "NCT04063540")
+        for v in ("정보 부족", "연구진 판단", "규칙으로 계산"):
+            assert v in detail, v
+        link = "#detail a[href='https://clinicaltrials.gov/study/NCT04063540']"
+        assert page.locator(link).count() == 1
+        rel = page.get_attribute(link, "rel")
         assert "noopener" in rel and "noreferrer" in rel
-        # 조건별 근거: 서버 판정 필드로만 묶음 (정보 부족 / 추가 확인), AI 판정 표시
-        page.click("#final .rec details.more > summary")
-        detail = page.inner_text("#final .rec details.more")
-        assert "정보가 부족한 조건" in detail and "AI 판정 · 검증된 사실 아님" in detail
+        page.click("#detail-back")
         _wait_end(page)
         for k in ("prep", "profile", "criteria", "questions", "reanalysis", "recommend", "done"):
             assert _stage(page, k) == "done", k
@@ -444,9 +475,9 @@ def test_no_recommendation(make_server):
         _fill_and_start(page, base)
         page.wait_for_selector("#page-result:not([hidden])", timeout=30000)
         final = page.inner_text("#final")
-        assert page.locator("#final .rec").count() == 0
-        assert page.locator("#final .callout").count() == 1 or "추천할 임상시험이 없습니다" in final
-        assert "공개 기준 불충족" in final or "제외" in final
+        assert page.locator("#final .rec.top").count() == 0  # 추천 카드 없음 (제외된 시험은 접힌 목록에만)
+        assert page.locator("#final .callout").count() == 1 and "지금 추천할 임상시험이 없어요" in final
+        assert "지금 조건과 맞지 않는 연구 2건 보기" in final and "맞지 않는 조건이 있는 시험 2개" in final
         browser.close()
     assert errors == [], errors
 
@@ -498,16 +529,18 @@ def test_long_and_special_text_render_safely(make_server, viewport):
         assert XSS in page.inner_text("#cards")  # 긴 제목도 글자로만
         assert _no_hscroll(page)
         page.check("#qslot input[data-yn='Q1'][value='예']")
+        _goto_q(page, "Q2")
         page.fill("#qslot input[data-q='Q2']", "1.1 mg/dL")
-        page.click("#send")
+        _to_send(page)
         page.click("#confirm-send")
         page.wait_for_selector("#page-result:not([hidden])", timeout=30000)
-        for d in page.locator("#final details").all():
-            d.evaluate("el => el.open = true")
-        assert page.evaluate("window.__xss") is None  # 질문·근거·제목의 HTML이 실행되지 않음
-        assert page.locator("#final img, #qslot img, #final script").count() == 0
-        assert XSS in page.inner_text("#final")
         assert _no_hscroll(page)
+        detail = _open_trial(page, h.TRIAL_IDS[0])  # 근거(위험한 문자열)는 상세 화면의 조건별 근거에
+        assert page.evaluate("window.__xss") is None  # 질문·근거·제목의 HTML이 실행되지 않음
+        assert page.locator("#final img, #detail img, #qslot img, #final script, #detail script").count() == 0
+        assert XSS in detail
+        assert _no_hscroll(page)
+        page.click("#detail-back")
         if viewport["width"] < 500:  # 모바일: 주요 버튼이 화면 안에 보임
             assert page.is_visible("#new-run")
             box = page.locator("#new-run").bounding_box()
@@ -691,16 +724,19 @@ def test_result_text_without_internal_codes_and_originals_kept(make_server):
         _open_details(page)
         assert _visible_code(page) is None  # 사용자용 글에 내부 표기 없음
         final = page.inner_text("#final")
-        assert "현재 추천할 수 있는 임상시험이 없습니다" in final and "맞지 않는 조건이 있어 추천에서 제외" in final
-        assert "가상 데모 시험이라 추천에서 제외" in final and "충족하지 않은 조건" in final
+        assert "현재 추천할 수 있는 임상시험이 없어요" in final and "제외 사유: 맞지 않는 조건 있음" in final
+        assert "가상 시험 · 실제 모집 아님" in final  # 가상 데모 시험은 실제 시험과 구분
         raws = page.evaluate("() => [...document.querySelectorAll('#final details.raw')].map(d => d.textContent)")
         assert any("INELIGIBLE" in r for r in raws)  # 원문은 지우지 않고 접어서 보존
         rid = page.evaluate("() => sessionStorage.getItem('ctrec-run-id')")
         ev = next(e for e in web.RUNS[rid].events if e["type"] == "result")
         for tid, m in ev["result"]["matches"].items():  # 판정 상태는 서버 값 그대로 표시
             assert m["match_status"] == "CRITERIA_MISMATCH"
-            card = page.locator("#final .card").filter(has=page.locator(".tid", has_text=tid)).first
+            card = page.locator("#final .rec").filter(has=page.locator(".rmeta", has_text=tid)).first
             assert "공개 기준 불충족" in card.inner_text()
+        detail = _open_trial(page, h.TRIAL_IDS[0])  # 상세 화면: 충족하지 않은 조건 묶음, AI 판정 표시
+        assert "맞지 않음" in detail and "AI 판정 · 검증된 사실 아님" in detail
+        assert _visible_code(page) is None
         _assert_clean(page)
         browser.close()
     assert errors == [], errors
@@ -716,11 +752,16 @@ def test_insufficient_information_distinct_from_mismatch(server):
         _answer(page)
         page.wait_for_selector("#final .rec", timeout=30000)
         _open_details(page)
-        rec = page.inner_text("#final .rec >> nth=0")
-        assert "추가 정보 필요" in rec and "불충족이라는 뜻이 아닙니다" in rec
-        assert "정보가 부족한 조건" in rec and "충족하지 않은 조건" not in rec and "공개 기준 불충족" not in rec
-        assert "AI 판정 · 검증된 사실 아님" in rec and "의사 확인 필요" in rec
+        rec = page.inner_text("#final .rec >> nth=1")  # NCT04063540
+        assert "추가 정보 필요" in rec and "불충족 아님" in rec
+        assert "정보 부족" in rec and "맞지 않음" not in rec and "공개 기준 불충족" not in rec
+        assert "담당 의사와 프로토콜 대조" in rec
         assert _visible_code(page) is None
+        detail = _open_trial(page, "NCT04063540")
+        for v in ("정보 부족", "연구진 판단"):
+            assert v in detail, v
+        assert "맞지 않음" not in detail
+        page.click("#detail-back")
         # AI 글에 내부 표기가 섞이면 중립 안내 + 원문 접기 (글자를 바꾸지 않음)
         html = page.evaluate("() => aiText('AI 요약', '이 시험은 UNCERTAIN 상태입니다')")
         assert "접어 두었습니다" in html and "details" in html and "UNCERTAIN" in html
@@ -742,7 +783,8 @@ def test_evaluation_failure_hides_error_detail(make_server):
         page.wait_for_selector("#page-result:not([hidden])", timeout=30000)
         _open_details(page)
         final = page.inner_text("#final")
-        assert "평가 실패" in final and "부적격이라는 뜻이 아니" in final
+        assert "평가 실패" in final and "부적격 아님" in final
+        assert "부적격이라는 뜻이 아니" in _open_trial(page, h.TRIAL_IDS[0])
         assert SECRET not in page.content()
         rid = page.evaluate("() => sessionStorage.getItem('ctrec-run-id')")
         sent = json.dumps([e for e in web.RUNS[rid].events if e["type"] == "result"], ensure_ascii=False)
@@ -770,19 +812,31 @@ def test_question_format_validation_and_unknown(make_server):
         browser = _browser(p)
         page = _page(browser, base, errors)
         _fill_and_start(page, base)
-        page.wait_for_selector("#qslot input[data-q='Q2']", timeout=20000)
+        page.wait_for_selector("#qslot .q[data-qid='Q1']:not([hidden])", timeout=20000)
         assert page.get_attribute("#qslot input[data-q='Q2']", "inputmode") == "decimal"
         assert page.get_attribute("#qslot input[data-q='Q3']", "inputmode") == "numeric"
+        # 질문마다 '다음'에서 형식 확인: 틀리면 그 질문에 머물고 입력 칸으로 포커스
+        _goto_q(page, "Q2")
         page.fill("#qslot input[data-q='Q2']", "높음")
+        page.click("#qnext")
+        assert page.is_visible("#qslot .q[data-qid='Q2']") and page.inner_text("#qerr-Q2")
+        assert page.get_attribute("#qslot input[data-q='Q2']", "aria-invalid") == "true"
+        assert page.evaluate("() => document.activeElement.dataset.q") == "Q2"
+        page.fill("#qslot input[data-q='Q2']", "1.2 mg/dL")
+        page.click("#qnext")
         page.fill("#qslot input[data-q='Q3']", "2026-02-30")  # 달력에 없는 날짜
+        page.click("#qnext")
+        assert page.is_visible("#qslot .q[data-qid='Q3']") and page.inner_text("#qerr-Q3")
+        assert page.get_attribute("#qslot input[data-q='Q3']", "aria-invalid") == "true"
+        # 보낼 때 전체를 한 번 더 확인: 앞 질문을 틀리게 바꾸면 그 질문으로 돌아가 표시
+        page.evaluate("() => { const i = document.querySelector(\"#qslot input[data-q='Q2']\"); i.value = '높음'; }")
+        page.fill("#qslot input[data-q='Q3']", "2026-02")
+        page.click("#qnext")
         page.click("#send")
         assert page.is_hidden("#qreview") and "형식이 맞지 않는" in page.inner_text("#qerror")
-        assert page.get_attribute("#qslot input[data-q='Q2']", "aria-invalid") == "true"
-        assert page.get_attribute("#qslot input[data-q='Q3']", "aria-invalid") == "true"
-        assert page.evaluate("() => document.activeElement.dataset.q") == "Q2"  # 첫 오류로 포커스
-        assert page.inner_text("#qerr-Q2") and page.inner_text("#qerr-Q3")
+        assert page.is_visible("#qslot .q[data-qid='Q2']") and page.evaluate("() => document.activeElement.dataset.q") == "Q2"
         page.fill("#qslot input[data-q='Q2']", "1.2 mg/dL")
-        page.fill("#qslot input[data-q='Q3']", "2026-02")
+        _goto_q(page, "Q4")
         page.fill("#qslot input[data-q='Q4']", "모름")  # 직접 쓴 '모름'도 표준 미응답으로
         page.click("#send")
         page.wait_for_selector("#confirm-send", state="visible")
@@ -820,7 +874,7 @@ def test_keyboard_only_journey(server):
         _tab_to(page, "#start")
         page.keyboard.press("Enter")
         page.wait_for_selector("#qslot input[data-q='Q1']", timeout=30000)
-        assert page.evaluate("() => document.activeElement.id") == "q-h"  # 질문 제목으로 포커스
+        assert page.evaluate("() => document.activeElement.id") == "qt-Q1"  # 지금 질문 문장으로 포커스
         _tab_to(page, "#qslot input[data-q='Q1']")
         page.keyboard.type(h.SYN_ANSWER)
         _tab_to(page, "#send")
@@ -829,9 +883,12 @@ def test_keyboard_only_journey(server):
         page.keyboard.press("Enter")
         page.wait_for_selector("#final .rec", timeout=30000)
         assert page.evaluate("() => document.activeElement.id") == "result-h"  # 결과 제목으로 포커스
-        _tab_to(page, "#final .rec details.more > summary")
+        _tab_to(page, "#final [data-detail]")
         page.keyboard.press("Enter")
-        assert page.evaluate("() => document.querySelector('#final .rec details.more').open")
+        assert page.evaluate("() => document.activeElement.id") == "detail-h"  # 상세 화면 제목으로 포커스
+        _tab_to(page, "#detail-back")
+        page.keyboard.press("Enter")
+        assert page.is_visible("#page-result")
         _tab_to(page, "#new-run")
         page.keyboard.press("Enter")
         assert page.evaluate("() => document.activeElement.id") == "custom" and page.is_visible("#input-panel")
@@ -858,18 +915,23 @@ def test_responsive_contrast_and_names_each_screen(make_server, ctx):
         _check_screen(page, "입력 오류")
         page.fill("#custom", h.SYN_TEXT)
         page.click("#start")
-        page.wait_for_selector("#qslot input[data-q='Q2']", timeout=30000)
+        page.wait_for_selector("#qslot .q[data-qid='Q1']:not([hidden])", timeout=30000)
         _check_screen(page, "분석 진행·질문")
+        _goto_q(page, "Q2")
         page.fill("#qslot input[data-q='Q2']", "높음")
-        page.click("#send")
+        page.click("#qnext")
         _check_screen(page, "질문 형식 오류")
         page.fill("#qslot input[data-q='Q2']", "1.2")
-        page.click("#send")
+        _to_send(page)
         _check_screen(page, "답변 확인")
         page.click("#confirm-send")
         page.wait_for_selector("#page-result:not([hidden])", timeout=30000)
         _open_details(page)
-        _check_screen(page, "결과·조건별 근거")
+        _check_screen(page, "결과")
+        _open_trial(page, "NCT04063540")
+        _open_details(page, "#detail")
+        _check_screen(page, "조건별 근거")
+        page.click("#detail-back")
         page.click("#new-run")
         _check_screen(page, "새 분석")
         _assert_clean(page)
@@ -1026,8 +1088,8 @@ def test_operational_timings(make_server):
         t["answer_to_completed_s"] = time.perf_counter() - s
         s = time.perf_counter()
         page.click('#pages [data-page="result"]')
-        page.click("#final .rec details.more > summary")
-        page.wait_for_selector("#final .rec details.more[open]")
+        page.click("#final [data-detail]")
+        page.wait_for_selector("#page-detail:not([hidden]) .cond")
         t["result_tab_and_detail_render_s"] = time.perf_counter() - s
         _assert_clean(page)
         browser.close()
@@ -1118,16 +1180,20 @@ def test_choice_questions_and_korean_titles(make_server):
         _fill_and_start(page, base)
         page.wait_for_selector("#qslot .q", timeout=20000)
         page.check("input[data-yn='Q1'][value='아니요']")
+        _goto_q(page, "Q2")
         assert page.is_disabled("input[data-etc='Q2']")
         page.check("input[data-ch='Q2'][value='3']")  # 기타(직접 입력)
         assert not page.is_disabled("input[data-etc='Q2']")
         page.fill("input[data-etc='Q2']", "6주 전")
+        _goto_q(page, "Q3")
         page.check("input[data-mc='Q3'][value='0']")
         page.check("input[data-mc='Q3'][value='1']")  # 선택지 안에 쉼표 ("당뇨, 2형")
+        _goto_q(page, "Q4")
         assert "단위: g/dL" in page.inner_text("#qslot .q[data-qid='Q4']")
         page.fill("input[data-q='Q4']", "11.2")
+        _goto_q(page, "Q5")
         page.check("input[data-unknown='Q5']")
-        page.click("#send")
+        _to_send(page)
         page.wait_for_selector("#confirm-send", state="visible")
         review = page.inner_text("#qreview")
         for v in ("아니요", "기타: 6주 전", "고혈압, 당뇨, 2형", "11.2 g/dL", "모름 · 확인 불가"):
@@ -1138,8 +1204,8 @@ def test_choice_questions_and_korean_titles(make_server):
         second = fake.profiler_inputs[-1]
         for v in ("아니요", "기타: 6주 전", "고혈압, 당뇨, 2형", "11.2 g/dL"):
             assert v in second, v
-        page.click("#final .rec details.more > summary")
-        assert "원문:" in page.inner_text("#final")  # 번역한 제목·기준 옆에 원문
+        assert "원문:" in page.inner_text("#final")  # 번역한 제목 옆에 원문
+        assert "원문:" in _open_trial(page, "NCT04063540")  # 번역한 기준 옆에 원문
         assert "AI 요약" not in page.inner_text("#final")  # 추천 카드 줄글 설명 삭제 (팀원 결정)
         _assert_clean(page)
         browser.close()

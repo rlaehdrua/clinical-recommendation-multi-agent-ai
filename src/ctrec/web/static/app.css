@@ -3,10 +3,12 @@
    CSP style-src·font-src 'self': 인라인 style 속성·<style>·외부 글꼴을 쓰지 않음 (Pretendard는 설치된 경우에만 사용) */
 :root {
   --outer: #f2f4f6; --bg: #f2f4f6; --panel: #ffffff; --panel-2: #f2f4f6; --panel-3: #f9fafb; --line: #e5e8eb;
-  --text: #191f28; --body: #4e5968; --muted: #6b7684; --faint: #8b95a1;
-  --accent: #3182f6; --accent-hover: #1b64da; --accent-soft: #e8f3ff; --on-accent: #ffffff;
-  --ok: #0a8a5a; --ok-dot: #03b26c; --ok-soft: #e5f8ef;
-  --warn: #c25e00; --warn-dot: #fe9800; --warn-soft: #fff3e0;
+  /* 글자 대비 WCAG AA(4.5:1): 강조색 글자·버튼은 #1b64da, 원래 파랑(#3182f6)은 테두리·막대 같은 장식(--accent-deco)에만 */
+  --text: #191f28; --body: #4e5968; --muted: #525d6a; --faint: #5f6b78;
+  --accent: #1b64da; --accent-hover: #1957c2; --accent-soft: #e8f3ff; --on-accent: #ffffff;
+  --accent-btn: #1b64da; --accent-btn-hover: #1957c2; --accent-deco: #3182f6;
+  --ok: #087a4f; --ok-dot: #03b26c; --ok-soft: #e5f8ef;
+  --warn: #a85200; --warn-dot: #fe9800; --warn-soft: #fff3e0;
   --bad: #d22030; --bad-dot: #f04452; --bad-soft: #ffeeee;
   --blue-dot: #90c2ff; --violet: #6a4bd1; --violet-dot: #a58bf0; --violet-soft: #f1edfc;
   --idle: #d1d6db; --focus: #3182f6;
@@ -15,8 +17,9 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --outer: #101013; --bg: #101013; --panel: #17171c; --panel-2: #21232a; --panel-3: #1c1d23; --line: #2c2f37;
-    --text: #f2f4f6; --body: #c3c9d0; --muted: #9ea7b1; --faint: #7c8590;
+    --text: #f2f4f6; --body: #c3c9d0; --muted: #9ea7b1; --faint: #8d96a1;
     --accent: #4d94f8; --accent-hover: #6aa7fa; --accent-soft: #1a2a42; --on-accent: #ffffff;
+    --accent-btn: #2369d6; --accent-btn-hover: #2a72e0; --accent-deco: #4d94f8;  /* 흰 글자 버튼은 더 진한 파랑 (5.2:1) */
     --ok: #3ed598; --ok-dot: #2cc486; --ok-soft: #13302a; --warn: #ffb455; --warn-dot: #f59a23; --warn-soft: #3a2a14;
     --bad: #ff7b86; --bad-dot: #f04452; --bad-soft: #3d1c20; --blue-dot: #4f7fbf; --violet: #b9a6ff; --violet-dot: #7f66d6; --violet-soft: #29233f;
     --idle: #3a3e47; --focus: #6aa7fa;
@@ -77,9 +80,9 @@ main { padding: 12px 20px 40px; display: flex; flex-direction: column; gap: 12px
 .note.warn { background: var(--warn-soft); color: var(--warn); } .note.bad { background: var(--bad-soft); color: var(--bad); }
 .note.info { background: var(--panel-3); } .note.ok { background: var(--ok-soft); color: var(--ok); } .note.soft { background: var(--panel-2); }
 .note b { font-weight: 700; color: var(--text); }
-.btn { border: 0; background: var(--accent); color: var(--on-accent); font: inherit; font-size: 17px; font-weight: 700; padding: 0 18px; border-radius: 16px; cursor: pointer; min-height: 56px;
+.btn { border: 0; background: var(--accent-btn); color: var(--on-accent); font: inherit; font-size: 17px; font-weight: 700; padding: 0 18px; border-radius: 16px; cursor: pointer; min-height: 56px;
   transition: background-color .1s, transform .1s; }
-.btn:hover:not(:disabled) { background: var(--accent-hover); } .btn:active:not(:disabled) { transform: scale(.98); }
+.btn:hover:not(:disabled) { background: var(--accent-btn-hover); } .btn:active:not(:disabled) { transform: scale(.98); }
 .btn.block { width: 100%; } .btn.sm { min-height: 36px; font-size: 14px; padding: 0 12px; border-radius: 10px; }
 .btn:disabled { cursor: not-allowed; background: var(--panel-2); color: var(--faint); }
 .btn.ghost { background: var(--panel-2); color: var(--body); } .btn.ghost:hover:not(:disabled) { background: var(--line); }
@@ -144,7 +147,7 @@ ol.stages { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
 ol.stages li { display: grid; grid-template-columns: 28px 1fr auto; gap: 12px; align-items: center; padding: 9px 0; color: var(--faint); font-size: 16px; }
 ol.stages li .dot { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; background: var(--panel-2); color: var(--faint); }
 ol.stages li .st { font-size: 13px; font-weight: 600; }
-ol.stages li.active { color: var(--text); font-weight: 700; } ol.stages li.active .dot { background: var(--accent); color: var(--on-accent); } ol.stages li.active .st { color: var(--accent); }
+ol.stages li.active { color: var(--text); font-weight: 700; } ol.stages li.active .dot { background: var(--accent-btn); color: var(--on-accent); } ol.stages li.active .st { color: var(--accent); }
 ol.stages li.done { color: var(--body); } ol.stages li.done .dot { background: var(--accent-soft); color: var(--accent); }
 ol.stages li.failed { color: var(--bad); } ol.stages li.failed .dot { background: var(--bad-soft); color: var(--bad); }
 @media (prefers-reduced-motion: no-preference) { ol.stages li.active .dot { animation: pulse 1.4s ease-in-out infinite; } }
@@ -152,7 +155,9 @@ ol.stages li.failed { color: var(--bad); } ol.stages li.failed .dot { background
 .eta { font-size: 13px; color: var(--faint); margin: -6px 0 0; }
 /* 질문을 받는 동안에는 질문 화면만 보이게 (진행 상세는 숨김) */
 #progress-panel.asking .run-detail { display: none; }
-#progress-panel.asking > h2 { display: none; }
+/* 제목 글자만 숨기고 '분석 취소'는 남김 (질문에 답하는 중에도 취소할 수 있어야 함) */
+#progress-panel.asking > h2 { justify-content: flex-end; padding-bottom: 0; }
+#progress-panel.asking > h2 .ttl { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* 추가 질문: 한 화면에 질문 하나, 큰 제목형 질문 */
 .qbox { display: flex; flex-direction: column; gap: 20px; }
@@ -163,8 +168,8 @@ ol.stages li.failed { color: var(--bad); } ol.stages li.failed .dot { background
 .seg { display: flex; gap: 3px; height: 6px; }
 .seg > span { flex: 1; background: var(--panel-2); }
 .seg > span:first-child { border-radius: 3px 0 0 3px; } .seg > span:last-child { border-radius: 0 3px 3px 0; } .seg > span:only-child { border-radius: 3px; }
-.seg > .on { background: var(--accent); } .seg > .now { background: var(--accent); opacity: .35; }
-.seg > .met { background: var(--accent); }
+.seg > .on { background: var(--accent-deco); } .seg > .now { background: var(--accent-deco); opacity: .35; }
+.seg > .met { background: var(--accent-deco); }
 .seg > .record_check { background: var(--warn-dot); } .seg > .procedural { background: var(--blue-dot); }
 .seg > .physician_review { background: var(--violet-dot); } .seg > .missing, .seg > .unclassified { background: var(--idle); }
 .seg > .not_met { background: var(--bad-dot); }
@@ -238,7 +243,7 @@ details.sent > summary { font-size: 15px; color: var(--body); }
 .legend2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px; font-size: 13px; color: var(--body); }
 .legend2 span { display: flex; align-items: center; gap: 6px; } .legend2 span b { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
 .legend2 i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; background: var(--idle); }
-.legend2 i.met { background: var(--accent); } .legend2 i.record_check { background: var(--warn-dot); } .legend2 i.procedural { background: var(--blue-dot); }
+.legend2 i.met { background: var(--accent-deco); } .legend2 i.record_check { background: var(--warn-dot); } .legend2 i.procedural { background: var(--blue-dot); }
 .legend2 i.physician_review { background: var(--violet-dot); } .legend2 i.not_met { background: var(--bad-dot); }
 .todo { background: var(--panel-3); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
 .todo > b { font-size: 13px; font-weight: 700; color: var(--body); }
