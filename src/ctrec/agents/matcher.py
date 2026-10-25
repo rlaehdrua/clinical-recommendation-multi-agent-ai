@@ -259,18 +259,6 @@ def _enforce_directness(a: LLMAssessment, rule: Rule, source_text: str | None,
     }), c
 
 
-# 무엇을 확인해야 하는지 말하지 않는 문구 (모델 출력·대역에서 그대로 오던 값). 화면에 '필요: 확인 필요'로 보였음 (P14)
-_GENERIC_MISSING = {"", "확인 필요", "확인필요", "확인이 필요함", "확인 필요함", "정보 필요", "추가 정보 필요", "정보 부족", "추가 확인 필요",
-                    "unknown", "none", "n/a", "-", "없음", "미상"}
-
-
-def _specific_missing_info(a: CriterionAssessment, rule: Rule) -> CriterionAssessment:
-    """판정 불가 기준의 missing_info가 비었거나 일반 문구뿐이면 원문 기준 문장을 그대로 보여 줌 (새 요구사항을 만들지 않음)."""
-    if a.passes is not None or (a.missing_info or "").strip(" .").lower() not in _GENERIC_MISSING:
-        return a
-    return a.model_copy(update={"missing_info": f"이 기준을 확인할 정보 (원문): {rule.text[:300]}"})
-
-
 def _meta(parsed: ParsedTrial, rule: Rule) -> RuleMeta:
     """사전 컴파일 메타. 없으면(즉석 파싱 등) 유형별 고정 규칙으로 근거 수준만 정함."""
     m = parsed.rule_meta.get(rule.rule_id)
@@ -499,8 +487,8 @@ def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
                 cohort=rule.cohort,
             )
 
-    all_assessments = [_apply_evidence_policy(_specific_missing_info(results[r.rule_id], r), _meta(parsed, r), source_text,
-                                              input_source) for r in parsed.rules]
+    all_assessments = [_apply_evidence_policy(results[r.rule_id], _meta(parsed, r), source_text, input_source)
+                       for r in parsed.rules]
     # Q&A 정책 (qa_guard.policy): contract면 계약 없는 확인 답변에 기댄 확정을 UNVERIFIED로. 기본 legacy는 기존과 같음
     from .. import qa_guard
     if qa_guard.policy() == "contract":
