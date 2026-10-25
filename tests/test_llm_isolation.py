@@ -139,7 +139,11 @@ def test_pilots_a_and_b_concurrently_with_independent_caps_models_and_accounting
         t = r["totals"]
         assert t["calls"] == len(f.calls)
         assert sum(c["usage"]["calls"] for c in r["cases"] if "usage" in c) == t["calls"]
-        assert round(sum(c["usage"]["cost_actual_usd"] for c in r["cases"] if "usage" in c), 3) == round(t["cost_usd"], 3)
+        # 사례별 금액(cost_actual_usd)과 실행 합계(cost_usd)는 각각 소수 넷째 자리로 반올림해 보고함(llm_pilot.Ledger).
+        # 반올림한 사례별 금액의 합은 반올림한 합계와 최대 (사례 수 + 1) x 0.00005까지 다를 수 있음 -> 그 범위로 비교
+        # (이전: 셋째 자리로 다시 반올림해 정확히 같다고 비교 -> 합계가 x.xxx5 근처면 계산이 맞아도 실패)
+        case_costs = [c["usage"]["cost_actual_usd"] for c in r["cases"] if "usage" in c]
+        assert abs(sum(case_costs) - t["cost_usd"]) <= 0.00005 * (len(case_costs) + 1) + 1e-12
         assert sum(c["usage"]["input_tokens"] for c in r["cases"] if "usage" in c) == t["input_tokens"]
     assert rc["totals"]["cost_conservative_usd"] <= 0.6 and len({ra["run_id"], rb["run_id"], rc["run_id"]}) == 3
     assert _global_state() == before

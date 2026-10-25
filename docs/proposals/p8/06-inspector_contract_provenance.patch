@@ -1,0 +1,70 @@
+diff --git a/src/ctrec/inspector.py b/src/ctrec/inspector.py
+index 705b291..1a260d3 100644
+--- a/src/ctrec/inspector.py
++++ b/src/ctrec/inspector.py
+@@ -207,7 +207,7 @@ def _pick(d: dict | None, fields: dict) -> dict:
+ 
+ _CRITERION_KEYS = ("rule_id", "kind", "criterion_text", "category", "method", "holds", "passes", "applicable",
+                    "cohort", "underspecified", "needs_verification", "self_reported_holds", "evidence_source",
+-                   "required_evidence", "gap")
++                   "required_evidence", "gap", "evidence_directness", "validation_flags")
+ 
+ 
+ # 라운드 사이 변화로 표시하는 기록 필드. 판정(verdict)과 근거·확인 상태(evidence)를 나눠 셈
+@@ -771,7 +771,27 @@ def build_view(rec: RunRecord, *, synthetic_details: bool = False) -> dict:
+         if changes["comparable"] else None,
+     }
+ 
+-    return {"schema": SCHEMA, "run": run, "overview": overview, "timeline": timeline, "unlinked_question_rounds": unlinked_q,
++    # 계약 판정 출처 (ContractSession result["contract"]): 기준 ID·명제 키·계약·질문·사실 ID·IR 버전·출처·평가 방법.
++    # 없으면 None (기존 Session 기록과 호환: v1 스키마에 선택 필드로 추가)
++    contract = r.get("contract") if isinstance(r.get("contract"), dict) else None
++    contract_view = None if contract is None else {
++        "session_type": _scalar(contract.get("session_type")), "profile_source": _scalar(contract.get("profile_source")),
++        "criteria": [
++            {"criterion_id": k, "proposition_keys": p.get("propositions"), "contract_ids": p.get("contracts"),
++             "question_ids": p.get("questions"), "fact_ids": p.get("fact_ids"), "ir_version": p.get("ir_version"),
++             "ir_digest": (p.get("ir_digest") or "")[:12] or None, "completeness": p.get("completeness"),
++             "sources": p.get("sources"), "method": p.get("method"), "outcome": p.get("outcome"),
++             "round": p.get("round")}
++            for k, p in sorted((contract.get("provenance") or {}).items()) if isinstance(p, dict)],
++        # 명제 사실의 출처 (어느 계약·버전·라운드 질문의 답에서 왔는가). 명제 값은 환자 답이므로 답변과 같은 원칙:
++        # strict에서는 빼고 synthetic_details에서만 보임
++        "facts": [{**{k: _scalar(f.get(k)) for k in ("fact_id", "proposition_key", "contract_id", "contract_version",
++                                                     "question", "as_of", "source", "superseded")},
++                   "value": _scalar(f.get("value")) if synthetic_details else None}
++                  for f in _dicts(contract.get("facts"), "contract.facts", anomalies)],
++    }
++    return {"schema": SCHEMA, "contract": contract_view,
++            "run": run, "overview": overview, "timeline": timeline, "unlinked_question_rounds": unlinked_q,
+             "changes": changes, "facts": facts, "fact_shadow": fact_shadow, "screening": screening,
+             "trials": trials, "questions": questions, "decision": decision, "history": history,
+             "fact_changes": fact_changes, "steps": steps, "errors": errors or [], "usage": usage, "metering": metering,
+@@ -1193,6 +1213,27 @@ def render_html(view: dict) -> str:
+         w(_table(["기준", "구분", "기준 원문(공개 시험 정보)", "판정 방법", "최종", "라운드별 변화", "해소 경로", "근거 출처",
+                   "필요 근거", "문서 확인 필요", "분류"], rows, raw_cols=set(range(11))))
+         w("</details>")
++    if v.get("contract"):  # 계약 판정 출처 (ContractSession 기록에만 있음)
++        cv = v["contract"]
++        w("<h3>계약 판정 출처 (결정적 평가기)</h3>")
++        w(f'<p class="note">Session: {_e(cv["session_type"])} · 프로필: {_e(cv["profile_source"])} · '
++          '결과 decided만 결정적 확정이며, undecided·partial_ir_not_used는 기존 판정을 그대로 둔 것</p>')
++        if cv["criteria"]:
++            w(_table(["기준", "명제 키", "질문 계약", "질문", "사실 ID", "IR 버전", "IR digest", "완전성", "출처", "평가 방법",
++                      "결과", "라운드"],
++                     [[_e(c["criterion_id"]), _e(", ".join(c["proposition_keys"] or [])),
++                       _e(", ".join(c["contract_ids"] or [])), _e(", ".join(c["question_ids"] or [])),
++                       _e(", ".join(c["fact_ids"] or [])), _e(c["ir_version"]), _e(c["ir_digest"]), _e(c["completeness"]),
++                       _e(", ".join(c["sources"] or [])), _e(c["method"]), _e(c["outcome"]), _e(c["round"])]
++                      for c in cv["criteria"]], raw_cols=set(range(12))))
++        else:
++            w('<p class="note">활성(승인된) IR이 없어 결정적 평가가 실행되지 않았습니다.</p>')
++        if cv["facts"]:
++            w(_table(["사실 ID", "명제 키", "값", "질문 계약", "질문", "답변 기준일", "출처", "정정됨"],
++                     [[_e(f["fact_id"]), _e(f["proposition_key"]),
++                       _e(f["value"]) if run["mode"] == "synthetic_details" else "(strict: 숨김)",
++                       _e(f"{f['contract_id']}@v{f['contract_version']}"), _e(f["question"]), _e(f["as_of"]),
++                       _e(f["source"]), _e(f["superseded"])] for f in cv["facts"]], raw_cols=set(range(8))))
+     tids = sorted({t for h in v["history"] for t in h["eligibility"]})
+     if v["history"]:
+         w('<p class="note">매칭 단계별 시험 판정 (result.json eligibility_history: 그 시점 Session에 있던 판정이며, '

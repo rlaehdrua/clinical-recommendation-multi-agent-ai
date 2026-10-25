@@ -1,0 +1,3190 @@
+diff --git a/contracts/ir/NCT06756191.json b/contracts/ir/NCT06756191.json
+index 4e02f3a..fbb6566 100644
+--- a/contracts/ir/NCT06756191.json
++++ b/contracts/ir/NCT06756191.json
+@@ -47,12 +47,12 @@
+      },
+      {
+       "op": "atom",
+-      "prop": "amphotericin_b/event/ever"
++      "prop": "amphotericin_b(over_5d)/event/ever"
+      },
+      {
+       "op": "unsupported",
+-      "text": "for a duration exceeding 5 days",
+-      "reason": "투여 기간 5일 초과를 계약 답으로 표현하지 않음"
++      "text": "who have previously been treated with amphotericin B",
++      "reason": "암포테리신 B 투여가 폐 털곰팡이증 치료(같은 에피소드)였어야 하는지 원문에 없음"
+      }
+     ]
+    },
+@@ -61,9 +61,9 @@
+    "applicability": null,
+    "anchor_policy": {},
+    "unsupported_parts": [
+-    "암포테리신 B 투여 기간"
++    "암포테리신 B 투여와 폐 털곰팡이증의 관계(치료 목적·에피소드)"
+    ],
+-   "notes": "",
++   "notes": "P8: 'for a duration exceeding 5 days'를 한정어 over_5d로 표현(원문 그대로 질문, 누적·1회 구분은 임상 검토). 남은 unsupported 때문에 부분 IR(결정적 판정에 쓰지 않음, 계산 값은 provisional 기록). 임상 검토에서 투여 목적 조건이 필요 없다고 정하면 unsupported 노드를 빼고 complete로 바꿀 수 있음",
+    "author": "draft-generator (P6, 사람 검수 전)",
+    "review_status": "draft"
+   },
+diff --git a/contracts/ir_cases.json b/contracts/ir_cases.json
+index eaa66ff..4218bd3 100644
+--- a/contracts/ir_cases.json
++++ b/contracts/ir_cases.json
+@@ -1218,7 +1218,7 @@
+   "NCT06756191:E1": {
+    "contract_candidates": [
+     "QC-MUCORMYCOSIS-EVER",
+-    "QC-AMPHOTERICIN-EVER"
++    "QC-AMPHOTERICIN-COURSE"
+    ],
+    "kind": "exclusion",
+    "cases": [
+@@ -1239,6 +1239,32 @@
+       ],
+       [
+        "amphotericin_b/event/ever",
++       false
++      ]
++     ],
++     "expect": "no"
++    },
++    {
++     "facts": [
++      [
++       "pulmonary_mucormycosis/condition/ever",
++       true
++      ],
++      [
++       "amphotericin_b(over_5d)/event/ever",
++       false
++      ]
++     ],
++     "expect": "no"
++    },
++    {
++     "facts": [
++      [
++       "pulmonary_mucormycosis/condition/ever",
++       true
++      ],
++      [
++       "amphotericin_b(over_5d)/event/ever",
+        true
+       ]
+      ],
+diff --git a/contracts/question_contracts.json b/contracts/question_contracts.json
+index f70340d..84f0f72 100644
+--- a/contracts/question_contracts.json
++++ b/contracts/question_contracts.json
+@@ -181,7 +181,7 @@
+   {
+    "contract_id": "QC-TRIAL-PARTICIPATION-LAST",
+    "version": 1,
+-   "question": "가장 최근에 다른 임상시험에 참여한 시기는 언제인가요?",
++   "question": "다른 임상시험에 마지막으로 참여한 때는 언제인가요? (지금도 참여 중이면 '최근 3개월(90일) 이내'를 고르세요)",
+    "answer_type": "single_choice",
+    "options": [
+     {
+@@ -550,14 +550,27 @@
+    "review_status": "draft"
+   },
+   {
+-   "contract_id": "QC-AMPHOTERICIN-EVER",
++   "contract_id": "QC-AMPHOTERICIN-COURSE",
+    "version": 1,
+-   "question": "암포테리신 B 치료를 받은 적이 있나요?",
+-   "answer_type": "yes_no",
++   "answer_type": "single_choice",
++   "question": "암포테리신 B(주사 항진균제) 치료를 받은 적이 있나요? 받았다면 투여 기간이 5일을 넘었나요?",
+    "options": [
+     {
+-     "label": "예",
++     "label": "받았고, 5일을 넘게 투여함",
+      "assertions": [
++      [
++       "amphotericin_b(over_5d)/event/ever",
++       true
++      ]
++     ]
++    },
++    {
++     "label": "받았지만 5일 이하로 투여함",
++     "assertions": [
++      [
++       "amphotericin_b(over_5d)/event/ever",
++       false
++      ],
+       [
+        "amphotericin_b/event/ever",
+        true
+@@ -565,7 +578,7 @@
+      ]
+     },
+     {
+-     "label": "아니요",
++     "label": "받은 적 없음",
+      "assertions": [
+       [
+        "amphotericin_b/event/ever",
+@@ -580,7 +593,7 @@
+   {
+    "contract_id": "QC-RITUXIMAB-LAST",
+    "version": 1,
+-   "question": "리툭시맙(rituximab)를 가장 최근에 사용한 시기는 언제인가요?",
++   "question": "리툭시맙(rituximab)을 가장 최근에 사용한 시기는 언제인가요?",
+    "answer_type": "single_choice",
+    "options": [
+     {
+@@ -647,7 +660,7 @@
+   {
+    "contract_id": "QC-OBINUTUZUMAB-LAST",
+    "version": 1,
+-   "question": "오비누투주맙(obinutuzumab)를 가장 최근에 사용한 시기는 언제인가요?",
++   "question": "오비누투주맙(obinutuzumab)을 가장 최근에 사용한 시기는 언제인가요?",
+    "answer_type": "single_choice",
+    "options": [
+     {
+@@ -781,7 +794,7 @@
+   {
+    "contract_id": "QC-CYCLOSPORINE-LAST",
+    "version": 1,
+-   "question": "사이클로스포린(cyclosporine A)를 가장 최근에 사용한 시기는 언제인가요?",
++   "question": "사이클로스포린(cyclosporine A)을 가장 최근에 사용한 시기는 언제인가요?",
+    "answer_type": "single_choice",
+    "options": [
+     {
+@@ -848,7 +861,7 @@
+   {
+    "contract_id": "QC-MYCOPHENOLATE-MOFETIL-LAST",
+    "version": 1,
+-   "question": "마이코페놀레이트 모페틸(mycophenolate mofetil)를 가장 최근에 사용한 시기는 언제인가요?",
++   "question": "마이코페놀레이트 모페틸(mycophenolate mofetil)을 가장 최근에 사용한 시기는 언제인가요?",
+    "answer_type": "single_choice",
+    "options": [
+     {
+@@ -1049,7 +1062,7 @@
+   {
+    "contract_id": "QC-AZATHIOPRINE-LAST",
+    "version": 1,
+-   "question": "아자티오프린(azathioprine)를 가장 최근에 사용한 시기는 언제인가요?",
++   "question": "아자티오프린(azathioprine)을 가장 최근에 사용한 시기는 언제인가요?",
+    "answer_type": "single_choice",
+    "options": [
+     {
+@@ -1116,7 +1129,7 @@
+   {
+    "contract_id": "QC-BELIMUMAB-LAST",
+    "version": 1,
+-   "question": "벨리무맙(belimumab)를 가장 최근에 사용한 시기는 언제인가요?",
++   "question": "벨리무맙(belimumab)을 가장 최근에 사용한 시기는 언제인가요?",
+    "answer_type": "single_choice",
+    "options": [
+     {
+@@ -1183,7 +1196,7 @@
+   {
+    "contract_id": "QC-LEVAMISOLE-LAST",
+    "version": 1,
+-   "question": "레바미솔(levamisole)를 가장 최근에 사용한 시기는 언제인가요?",
++   "question": "레바미솔(levamisole)을 가장 최근에 사용한 시기는 언제인가요?",
+    "answer_type": "single_choice",
+    "options": [
+     {
+@@ -1642,7 +1655,7 @@
+   {
+    "contract_id": "QC-CANCER-VACCINE-EVER",
+    "version": 1,
+-   "question": "암 백신 치료를 받은 적이 있나요?",
++   "question": "암을 치료하기 위한 암 백신(치료용 암 백신)을 맞은 적이 있나요? (자궁경부암(HPV)·B형간염 같은 예방 백신은 해당하지 않습니다)",
+    "answer_type": "yes_no",
+    "options": [
+     {
+diff --git a/docs/contract_redesign.md b/docs/contract_redesign.md
+index 428eff2..e987977 100644
+--- a/docs/contract_redesign.md
++++ b/docs/contract_redesign.md
+@@ -27,9 +27,11 @@
+ | `question_contract.py` | 계약(문장·선택지·선택지별 명제 단언), 형식·모순 검사, 렌더링, 변조 검사(verify_asked), 답 매핑 |
+ | `proposition_store.py` | 계약 답 -> FactStore 명제 사실, 장부가 기록한 사실만 신뢰(issued), 세션 격리, 명시적 정정만, 자유 서술은 후보로만 |
+ | `evaluator.py` | 승인 IR + 명제 사실 -> 기존 `CriterionAssessment` (확정·미확인·UNVERIFIED·상충) |
+-| `qa_guard.py` | 계약 없는 답변에 기댄 확정을 UNVERIFIED로 되돌림(출처 판별만, 의미 검증 아님), 시험 판정 재계산(`recompose`). 구조 모드(initial_text·qa_log)·머리말 모드 |
++| `qa_guard.py` | 계약 없는 답변에 기댄 확정을 UNVERIFIED로 되돌림(출처 판별만, 의미 검증 아님), 시험 판정 재계산(`recompose`). 구조 모드(initial_text·qa_log)·머리말 모드. `policy()`: 기존 Session 경로의 정책 선택(CTREC_QA_POLICY=legacy 기본 / contract) |
+ | `contract_session.py` | `Session` 상속 어댑터: 프로필 격리 + 경계 + 결정적 평가 + 계약 질문 + 출처 기록. `session_class()` (CTREC_SESSION=contract) |
+ | `scripts/build_contract_drafts.py` | P6 초안 생성기 (`--check`로 동기 확인) |
++| `scripts/report_contract_drafts.py` | 검수 준비 상태표 (`docs/review/contract_draft_review.md`) |
++| `scripts/build_review_package.py` | 기준별 검수 자료 (`docs/review/ir_review_package.md`): 사람이 읽는 IR, 승인 대상 digest, 계약 선택지별 명제 사실, 임상 검토 질문·필요 증거, 표현 불가 사유·확장 요건 |
+ 
+ ## 3. 상태 매핑 (기존 체계 재사용)
+ 
+@@ -66,7 +68,25 @@
+    자동화 이름(claude, llm, bot 등)과 사유 없는 승인은 거부됩니다. 계약도 같은 방식(`"contracts"`).
+ 4. 내용을 고치면 이전 승인은 효력이 없고 다시 검수해야 합니다.
+ 
+-## 6. 패치 제안 (`docs/proposals/`, 적용하지 않음)
++## 6. 정책 선택 (P8)
++
++| 설정 | 기존 Session 경로 (matcher, 패치 03 v2) | ContractSession |
++|---|---|---|
++| `CTREC_QA_POLICY` 없음 / `legacy` (기본, 현재 서비스 정책) | 기존과 같음 (확인 답변 인용 확정은 인용·E9·근거 수준 검사만) | 항상 경계 적용 (구조 모드) |
++| `CTREC_QA_POLICY=contract` (그 밖의 값도 contract) | 계약 없는 답변에 기댄 확정 -> UNVERIFIED (머리말 모드) | 같음 |
++| `CTREC_SESSION=contract` | - | CLI·웹 실행이 ContractSession 사용 (패치 04·05) |
++
++정책 비교 테스트: `tests/test_qa_policy_migration.py` (Legacy Regression / Contract Policy Regression / Migration Comparison).
++사례 A(질문이 기준과 의미상 다름)는 계약 정책에서 막는 것이 안전성 개선, 사례 B(정확한 질문이지만 계약 없음)는 계약 도입 전의
++기능 제한이며 승인된 계약·IR로 회복됨(`test_case_b_is_recovered_by_approved_contract`).
++
++E9 보조 검사 (P8, 패치 07): 부정 표현을 어절 단위로 판별(산부인과의 '부인', 음성 녹음의 '음성', 끊임없이의 '없'은 부정 아님),
++답 전체가 거부·모름·무응답인 확인 답변은 어느 쪽 확정 근거도 아님(`question_contract.non_answer` 하나로 판별).
++
++## 7. 패치 제안 (`docs/proposals/`, 적용하지 않음)
++
++P8 통합 후보 패치는 `docs/proposals/p8/`(적용 순서·검증은 `docs/review/p8/p8_integration_report.md`). 아래는 P7 패치입니다
++(03은 P8의 `03-matcher_qa_policy.patch`가, 06은 P8 v2가 대체).
+ 
+ | 파일 | 대상 | 내용 |
+ |---|---|---|
+@@ -82,9 +102,12 @@
+ P7 검토 결과는 `docs/review/p7_integration_review.md` (패치별 검토표, 기존 테스트 4건 승인 자료, 안전성 검증, qalink 처리 계획).
+ IR·계약 검수표는 `docs/review/contract_draft_review.md` (`scripts/report_contract_drafts.py`로 생성).
+ 
+-## 7. 알려진 한계
++## 8. 알려진 한계
+ 
+ - 계약은 아직 수치 답(measurement)을 사실로 만들지 않습니다. `compare` 노드는 평가기에서 미확인입니다.
+ - 진단 기능(dependency_diagnostic, decision_loop)은 기존 `Session.match` 안에서 경계 적용 전 판정으로 계산됩니다(기본 off).
+ - 개념 표는 초안 57개에 필요한 개념만 담았습니다. 개념·상위 관계 추가는 코드 변경과 검수가 필요합니다.
+ - 질문 계약은 답변 시점 기준(assessment)만 다룹니다. 미래 시점 기준(first_dose 등)은 기준별 근사 승인이 필요합니다.
++- E9 부정어 판별은 표기 판별입니다. 띄어 쓴 '음성'(陰性/音聲)과 '부인'(否認/婦人, 예: "부인 동반 내원")은 구분하지 못해 부정으로 둡니다.
++- 기존 Session(legacy)은 Matcher에 qa_log를 넘기지 않습니다. qalink처럼 넘기도록 바꾸면 라운드·목적·답변 상충 검사도 함께 필요합니다
++  (`docs/review/p8/p8_integration_report.md` C절).
+diff --git a/docs/review/contract_draft_review.md b/docs/review/contract_draft_review.md
+index f2f54bd..ae0d6ab 100644
+--- a/docs/review/contract_draft_review.md
++++ b/docs/review/contract_draft_review.md
+@@ -7,12 +7,13 @@
+ 
+ ## IR 57개
+ 
+-임상 전문가 검토 필요 12 / 수정 필요 1 / 검수 준비 완료 37 / 현재 IR로 표현 불가 7
++임상 전문가 검토 필요 13 / 수정 필요 0 / 검수 준비 완료 37 / 현재 IR로 표현 불가 7
+ 
+ | 기준 | 사전 분류 | 완전성 | 근거 수준 | 명제 | 상위 개념 사용 | 계약 후보 | 정적 검사 | 위험·확인 사항 |
+ |---|---|---|---|---|---|---|---|---|
+ | NCT06125405:I12 | 임상 전문가 검토 필요 | complete | self_report_ok | acth/event/w90d-assessment | - | QC-ACTH-LAST | 기준 시점 결정 필요: enrollment | 진단 목적 ACTH(자극 검사) 투여가 'used'에 포함되는지 |
+ | NCT06468397:E21 | 임상 전문가 검토 필요 | partial | self_report_ok | retinal_detachment_family_history/condition/ever | - | QC-RETINAL-DETACHMENT-FAMILY-HISTORY | - | 'Fellow eye:' 표지와 가족력의 관계 불분명 |
++| NCT06756191:E1 | 임상 전문가 검토 필요 | partial | self_report_ok | amphotericin_b(over_5d)/event/ever, pulmonary_mucormycosis/condition/ever | - | QC-MUCORMYCOSIS-EVER, QC-AMPHOTERICIN-COURSE | - | P8 수정: '5일 초과'를 한정어(over_5d)로 표현. 남은 쟁점: 투여가 폐 털곰팡이증 치료(같은 에피소드)여야 하는지 (부분 IR: 결정적 판정에 쓰이지 않음), 5일이 누적인지 1회 투여 기간인지 |
+ | NCT06908096:E11 | 임상 전문가 검토 필요 | complete | self_report_ok | angioedema/condition/ever | - | QC-ANGIOEDEMA-EVER | - | '유전성·후천성·특발성 = 모든 혈관부종' 해석 확인 |
+ | NCT06908096:E12 | 임상 전문가 검토 필요 | complete | self_report_ok | idiopathic_urticaria/condition/w365d-assessment | - | QC-URTICARIA-LAST | 기준 시점 결정 필요: screening | 'within the past year' 기준 시점을 screening으로 가정 |
+ | NCT06908096:E25 | 임상 전문가 검토 필요 | complete | self_report_ok | hiv_infection/condition/ever | - | QC-HIV-EVER | - | 'HIV 진단 이력 = 감염' 해석 확인 |
+@@ -23,7 +24,6 @@
+ | NCT07087314:I11 | 임상 전문가 검토 필요 | complete | self_report_ok | azathioprine/event/w60d-assessment, belimumab/event/w60d-assessment, cyclophosphamide/event/w60d-assessment, cyclosporine/event/w60d-assessment, levamisole/event/w60d-assessment, mycophenolate_mofetil/event/w60d-assessment, tacrolimus/event/w60d-assessment | - | QC-TACROLIMUS-LAST, QC-CYCLOSPORINE-LAST, QC-MYCOPHENOLATE-MOFETIL-LAST, QC-BELIMUMAB-LAST, QC-LEVAMISOLE-LAST, QC-AZATHIOPRINE-LAST, QC-CYCLOPHOSPHAMIDE-LAST | 기준 시점 결정 필요: enrollment | 원문에 기준 시점이 없어 enrollment로 가정, 2개월=60일 환산 |
+ | NCT07087314:I12 | 임상 전문가 검토 필요 | complete | self_report_ok | obinutuzumab/event/w180d-assessment, rituximab/event/w180d-assessment | obinutuzumab, rituximab | QC-ANTICD20-LAST, QC-RITUXIMAB-LAST, QC-OBINUTUZUMAB-LAST | 기준 시점 결정 필요: enrollment | 기준 시점 가정(enrollment), 6개월=180일 환산 |
+ | NCT07679893:E25 | 임상 전문가 검토 필요 | partial | self_report_ok | smoking/event/current, smoking/event/w365d-assessment | - | QC-SMOKING-LAST | 기준 시점 결정 필요: screening | 'recently smoked' 기간 정의, 전자담배 포함 여부 (부분 IR) |
+-| NCT06756191:E1 | 수정 필요 | partial | self_report_ok | amphotericin_b/event/ever, pulmonary_mucormycosis/condition/ever | - | QC-MUCORMYCOSIS-EVER, QC-AMPHOTERICIN-EVER | - | 암포테리신 B '5일 초과'는 한정어(기간)로 표현 가능 - 개념·계약 확장 필요 |
+ | DEMO-LUNG-001:E2 | 검수 준비 완료 | complete | self_report_ok | egfr_adc/event/ever | - | QC-EGFR-ADC-EVER | - | 환자가 'ADC' 용어를 모를 수 있음 (모름 -> 미확인으로 남음) |
+ | DEMO-LUNG-001:E3 | 검수 준비 완료 | complete | self_report_ok | interstitial_lung_disease_steroid/condition/ever | - | QC-ILD-STEROID-EVER | - | '스테로이드가 필요했던 ILD'를 한 개념으로 둠 |
+ | DEMO-LUNG-001:E4 | 검수 준비 완료 | complete | self_report_ok | lactation/condition/current, pregnancy/condition/current | - | QC-PREGNANT-NOW, QC-LACTATING-NOW | - | 현재 임신·수유 자기 보고의 신뢰도는 QC-PREGNANT-NOW 검토 사항 |
+@@ -71,19 +71,21 @@
+ 
+ ## 질문 계약 49개
+ 
+-임상 전문가 검토 필요 6 / 검수 준비 완료 43
++임상 전문가 검토 필요 9 / 검수 준비 완료 40
+ 
+ 공유 범위: 같은 계약을 여러 IR이 쓰는 것은 명제 키가 같거나 코드로 승인된 함의(넓은 기간 '없음' -> 좁은 기간 '없음', 하위 개념 '있음' -> 상위 개념 '있음')로만 이어질 때입니다. 아래 '사용 IR'이 그 목록입니다.
+ 
+ | 계약 | 사전 분류 | 형식 | 선택지 수 | 단언 명제 | 사용 IR | 정적 검사 | 위험·확인 사항 |
+ |---|---|---|---|---|---|---|---|
+ | QC-ACTH-LAST | 임상 전문가 검토 필요 | single_choice | 5 | acth/event/ever, acth/event/w180d-assessment, acth/event/w60d-assessment, acth/event/w90d-assessment | 1 (NCT06125405:I12) | - | 진단 목적 ACTH 투여 포함 여부 |
++| QC-AMPHOTERICIN-COURSE | 임상 전문가 검토 필요 | single_choice | 3 | amphotericin_b(over_5d)/event/ever, amphotericin_b/event/ever | 1 (NCT06756191:E1) | - | P8 신규(QC-AMPHOTERICIN-EVER 대체): '5일'이 누적 기간인지 1회 투여 기간인지 환자가 다르게 해석할 수 있음 |
+ | QC-ANTICANCER-LAST | 임상 전문가 검토 필요 | single_choice | 3 | systemic_anticancer_therapy/event/ever, systemic_anticancer_therapy/event/w28d-assessment | 1 (NCT06833073:E5) | - | 호르몬 치료 포함 여부가 선택지에 드러나지 않음 |
++| QC-CANCER-VACCINE-EVER | 임상 전문가 검토 필요 | yes_no | 2 | cancer_vaccine/event/ever | 1 (NCT06833073:E6) | - | P8 수정: '암 백신'이 예방 백신(HPV 등)으로 읽힐 수 있었음(잘못된 제외) -> 치료용 명시. 예방 백신 제외가 기준 의도와 맞는지 임상 확인 |
+ | QC-FEBRILE-ILLNESS-LAST | 임상 전문가 검토 필요 | single_choice | 3 | febrile_illness/condition/ever, febrile_illness/condition/w14d-assessment | 1 (NCT06908096:E8) | - | '열이 나는 병'의 체온 기준 |
+ | QC-LIVE-VACCINE-LAST | 임상 전문가 검토 필요 | single_choice | 3 | live_vaccine/event/ever, live_vaccine/event/w28d-assessment | 1 (NCT07087314:E14) | - | 환자가 생백신 여부를 구분하기 어려움 |
+ | QC-PREGNANT-NOW | 임상 전문가 검토 필요 | yes_no | 2 | pregnancy/condition/current | 8 (DEMO-LUNG-001:E4, NCT04063540:E9, NCT04761523:E6, NCT06294847:E5, NCT06756191:E13, NCT07369063:E9, NCT06468397:E5, NCT06908096:E1) | - | 초기 임신은 본인이 모를 수 있음. 자기 보고 '아니요'로 '임신 아님'을 확정해도 되는지 (검사 요구 여부) |
+ | QC-SMOKING-LAST | 임상 전문가 검토 필요 | single_choice | 3 | smoking/event/ever, smoking/event/w365d-assessment | 1 (NCT07679893:E25) | - | 전자담배·가열담배 포함 여부 |
+-| QC-AMPHOTERICIN-EVER | 검수 준비 완료 | yes_no | 2 | amphotericin_b/event/ever | 1 (NCT06756191:E1) | - | - |
++| QC-TRIAL-PARTICIPATION-LAST | 임상 전문가 검토 필요 | single_choice | 3 | clinical_trial_participation/event/ever, clinical_trial_participation/event/w90d-assessment | 1 (NCT06125405:E13) | - | P8 수정: '참여한 시기'가 시작 시점으로 읽혀 현재 참여 중인 환자가 '3개월보다 전'을 고를 수 있었음(잘못된 통과) -> 마지막 참여 시점·현재 참여 안내. '참여' 종료 기준(마지막 투약·방문·추적관찰 포함 여부)은 임상 결정 |
+ | QC-ANGIOEDEMA-EVER | 검수 준비 완료 | yes_no | 2 | angioedema/condition/ever | 1 (NCT06908096:E11) | - | - |
+ | QC-ANTICD20-LAST | 검수 준비 완료 | single_choice | 3 | anti_cd20_antibody/event/ever, anti_cd20_antibody/event/w180d-assessment | 1 (NCT07087314:I12) | - | - |
+ | QC-ANTICD38-EVER | 검수 준비 완료 | yes_no | 2 | anti_cd38_therapy/event/ever | 1 (NCT07087314:E13) | - | - |
+@@ -92,7 +94,6 @@
+ | QC-BELIMUMAB-LAST | 검수 준비 완료 | single_choice | 5 | belimumab/event/ever, belimumab/event/w180d-assessment, belimumab/event/w60d-assessment, belimumab/event/w90d-assessment | 1 (NCT07087314:I11) | - | - |
+ | QC-BLOOD-PRODUCT-LAST | 검수 준비 완료 | single_choice | 3 | blood_product/event/ever, blood_product/event/w120d-assessment | 1 (NCT06908096:E4) | - | - |
+ | QC-CANCER-IMMUNOTHERAPY-EVER | 검수 준비 완료 | yes_no | 2 | cancer_immunotherapy/event/ever | 1 (NCT06916494:I3) | - | - |
+-| QC-CANCER-VACCINE-EVER | 검수 준비 완료 | yes_no | 2 | cancer_vaccine/event/ever | 1 (NCT06833073:E6) | - | - |
+ | QC-CEREBRAL-INFARCTION-EVER | 검수 준비 완료 | yes_no | 2 | cerebral_infarction/condition/ever | 1 (NCT06756191:E11) | - | - |
+ | QC-CHOLECYSTECTOMY-EVER | 검수 준비 완료 | yes_no | 2 | cholecystectomy/event/ever | 1 (NCT06391359:E5) | - | - |
+ | QC-COELIAC-EVER | 검수 준비 완료 | yes_no | 2 | coeliac_disease/condition/ever | 1 (NCT07516951:E1) | - | - |
+@@ -123,6 +124,5 @@
+ | QC-TACROLIMUS-LAST | 검수 준비 완료 | single_choice | 5 | tacrolimus/event/ever, tacrolimus/event/w180d-assessment, tacrolimus/event/w60d-assessment, tacrolimus/event/w90d-assessment | 2 (NCT07087314:I11, NCT06125405:I8) | - | - |
+ | QC-TARGETED-THERAPY-EVER | 검수 준비 완료 | yes_no | 2 | targeted_anticancer_therapy/event/ever | 1 (NCT06916494:I3) | - | - |
+ | QC-THYROIDECTOMY-EVER | 검수 준비 완료 | yes_no | 2 | total_thyroidectomy/event/ever | 1 (NCT06727604:E1) | - | - |
+-| QC-TRIAL-PARTICIPATION-LAST | 검수 준비 완료 | single_choice | 3 | clinical_trial_participation/event/ever, clinical_trial_participation/event/w90d-assessment | 1 (NCT06125405:E13) | - | - |
+ | QC-URTICARIA-LAST | 검수 준비 완료 | single_choice | 3 | idiopathic_urticaria/condition/ever, idiopathic_urticaria/condition/w365d-assessment | 1 (NCT06908096:E12) | - | P7에서 수정: '진단 시기' -> '증상이 마지막으로 있었던 시기' (기준은 1년 내 증상) |
+ | QC-VITRECTOMY-RD-EVER | 검수 준비 완료 | yes_no | 2 | vitrectomy(for_detached_retina)/event/ever | 1 (NCT06294847:E1) | - | - |
+diff --git a/docs/review/ir_review_package.md b/docs/review/ir_review_package.md
+new file mode 100644
+index 0000000..4fbbd96
+--- /dev/null
++++ b/docs/review/ir_review_package.md
+@@ -0,0 +1,1710 @@
++# IR·질문 계약 기준별 검수 자료 (자동 생성: scripts/build_review_package.py)
++
++**모든 초안은 미승인입니다. 분류·검토 질문은 AI가 만든 사전 자료이며 승인이 아닙니다.** 승인은 임상 검수자가 아래 digest를 확인하고 검수 기록을 남길 때만 효력이 있고, 초안 내용이 바뀌면 digest가 바뀌어 이전 승인은 무효입니다.
++
++검수 기록 (사람만, 자동화 이름·사유 없는 승인은 거부됨):
++
++```python
++from ctrec.ir_review import Registry
++Registry().record_review("ir", "<기준>", "<IR digest>", "approved" | "rejected",
++                         reviewer="<검수자 이름>", note="<사유>", clinical_review_confirmed=True)
++Registry().record_review("contracts", "<계약 ID>", "<계약 digest>", ...)  # 계약도 같은 방식
++```
++
++기간 기준은 기준 시점 근사(anchor_policy) 정책 결정 후 검수자가 IR에 추가해야 판정에 쓰입니다(추가하면 digest가 바뀜).
++
++## 임상 전문가 검토 필요 (13)
++
++### NCT06125405:I12 (포함 기준)
++
++- 원문: "No ACTH was used within 3 months prior to the enrollment"
++- IR (사람이 읽는 형태): 아님(⟨부신피질자극호르몬(ACTH) · 등록 전 90일 이내⟩)
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 등록
++- 승인 대상: IR v1 digest `07aed5b1a99572d993d4f8b68a72c50863854bb213109b0e0ef176cf2fc31de7`, 잠긴 원문 해시 `73e46dfeb1a64d2c…`
++- 초안 메모: 개월 -> 일 환산은 잠긴 기준표 time_window_days 값 사용 (검수 확인). 기준 시점(enrollment)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정)
++- 위험·확인 사항: 진단 목적 ACTH(자극 검사) 투여가 'used'에 포함되는지
++- 임상 검토 질문:
++  1. 진단 목적 ACTH 투여(ACTH 자극 검사 1회)가 'ACTH was used'에 포함되는가?
++  2. 3개월을 90일로 환산해도 되는가?
++  3. 기준 시점 등록(enrollment)을 답변 시점으로 근사해도 되는가?
++- 판단에 필요한 증거: 프로토콜의 ACTH 사용 정의, 연구진 확인
++- 계약 후보:
++  - `QC-ACTH-LAST` v1 (임상 전문가 검토 필요) digest `2f2602d0386ad345aa833fdce222be27349d21be45000c1d054f1d4869590fcd`: "부신피질자극호르몬(ACTH) 주사를 가장 최근에 사용한 시기는 언제인가요?"
++    - "최근 2개월(60일) 이내" -> ⟨부신피질자극호르몬(ACTH) · 답변 시점 전 60일 이내⟩ = 참
++    - "2개월(60일)보다 전, 3개월(90일) 이내" -> ⟨부신피질자극호르몬(ACTH) · 답변 시점 전 60일 이내⟩ = 거짓, ⟨부신피질자극호르몬(ACTH) · 답변 시점 전 90일 이내⟩ = 참
++    - "3개월(90일)보다 전, 6개월(180일) 이내" -> ⟨부신피질자극호르몬(ACTH) · 답변 시점 전 90일 이내⟩ = 거짓, ⟨부신피질자극호르몬(ACTH) · 답변 시점 전 180일 이내⟩ = 참
++    - "6개월(180일)보다 전" -> ⟨부신피질자극호르몬(ACTH) · 답변 시점 전 180일 이내⟩ = 거짓, ⟨부신피질자극호르몬(ACTH) · 평생(한 번이라도)⟩ = 참
++    - "사용한 적 없음" -> ⟨부신피질자극호르몬(ACTH) · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨부신피질자극호르몬(ACTH) · 답변 시점 전 90일 이내⟩ = 거짓 -> yes
++  - ⟨부신피질자극호르몬(ACTH) · 답변 시점 전 90일 이내⟩ = 참 -> no
++  - ⟨부신피질자극호르몬(ACTH) · 평생(한 번이라도)⟩ = 거짓 -> yes
++  - ⟨부신피질자극호르몬(ACTH) · 평생(한 번이라도)⟩ = 참 -> unknown
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06468397:E21 (제외 기준)
++
++- 원문: "Fellow eye: Family history of retinal detachment."
++- IR (사람이 읽는 형태): ⟨망막 박리 가족력 · 평생(한 번이라도)⟩
++- 완전성 partial / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `2e57b223d41afd1e8351dec0bc180dbe44467c9eb3b964130a2600dc2221f1d4`, 잠긴 원문 해시 `29196ae8d1830e68…`
++- 표현하지 못한 부분: 'Fellow eye:' 표지와 가족력의 관계가 원문상 불분명
++- 위험·확인 사항: 'Fellow eye:' 표지와 가족력의 관계 불분명
++- 임상 검토 질문:
++  1. 'Fellow eye:' 표지는 반대쪽 눈 조건의 하위 항목인가? 가족력 조건이 반대쪽 눈과 어떤 관계인가?
++  2. 가족의 범위(직계·형제 등)는?
++- 판단에 필요한 증거: 프로토콜 원문 전체 맥락(잠긴 기준표 밖 원문)
++- 계약 후보:
++  - `QC-RETINAL-DETACHMENT-FAMILY-HISTORY` v1 (검수 준비 완료) digest `cd99c26d5c10b3f76e810f3f13176480cd97ec57532a6e4c17756d03429c4252`: "가족 중에 망막 박리를 겪은 사람이 있나요?"
++    - "예" -> ⟨망막 박리 가족력 · 평생(한 번이라도)⟩ = 참
++    - "아니요" -> ⟨망막 박리 가족력 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨망막 박리 가족력 · 평생(한 번이라도)⟩ = 참 -> yes
++  - ⟨망막 박리 가족력 · 평생(한 번이라도)⟩ = 거짓 -> no
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06756191:E1 (제외 기준)
++
++- 원문: "Patients with a history of pulmonary mucormycosis (PM) who have previously been treated with amphotericin B for a duration exceeding 5 days"
++- IR (사람이 읽는 형태): (⟨폐 털곰팡이증 · 평생(한 번이라도)⟩ 그리고 ⟨암포테리신 B[투여 기간 5일 초과] · 평생(한 번이라도)⟩ 그리고 [미지원: who have previously been treated with amphotericin B - 암포테리신 B 투여가 폐 털곰팡이증 치료(같은 에피소드)였어야 하는지 원문에 없음])
++- 완전성 partial / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `d3a74d8491317614fe53955063e635bea4ac8d8aade5462e465867606fbf3153`, 잠긴 원문 해시 `f7f6e61f5bb18cfc…`
++- 표현하지 못한 부분: 암포테리신 B 투여와 폐 털곰팡이증의 관계(치료 목적·에피소드)
++- 초안 메모: P8: 'for a duration exceeding 5 days'를 한정어 over_5d로 표현(원문 그대로 질문, 누적·1회 구분은 임상 검토). 남은 unsupported 때문에 부분 IR(결정적 판정에 쓰지 않음, 계산 값은 provisional 기록). 임상 검토에서 투여 목적 조건이 필요 없다고 정하면 unsupported 노드를 빼고 complete로 바꿀 수 있음
++- 위험·확인 사항: P8 수정: '5일 초과'를 한정어(over_5d)로 표현. 남은 쟁점: 투여가 폐 털곰팡이증 치료(같은 에피소드)여야 하는지 (부분 IR: 결정적 판정에 쓰이지 않음), 5일이 누적인지 1회 투여 기간인지
++- 임상 검토 질문:
++  1. 암포테리신 B 투여가 폐 털곰팡이증 치료(같은 에피소드)여야 하는가? 아니면 다른 이유의 투여도 포함하는가?
++  2. '5일 초과'는 누적 투여 기간인가, 1회 치료 기간인가?
++  3. 위 두 가지가 정해지면 unsupported 노드를 빼고 complete로 바꿀 수 있는가?
++- 판단에 필요한 증거: 프로토콜 정의, 연구진 확인 (이 시험의 대상이 현재 PM 에피소드 환자인지)
++- 계약 후보:
++  - `QC-MUCORMYCOSIS-EVER` v1 (검수 준비 완료) digest `d0fcd0b4e7753313b43663d0c26bef8683004b9e85f70842e84248894ccedbf3`: "폐 털곰팡이증(뮤코르진균증) 진단을 받은 적이 있나요?"
++    - "예" -> ⟨폐 털곰팡이증 · 평생(한 번이라도)⟩ = 참
++    - "아니요" -> ⟨폐 털곰팡이증 · 평생(한 번이라도)⟩ = 거짓
++  - `QC-AMPHOTERICIN-COURSE` v1 (임상 전문가 검토 필요) digest `5a83b320eef545b5611a74f5cc7c49d99371e6c772944d718558a68aa6a6bfa5`: "암포테리신 B(주사 항진균제) 치료를 받은 적이 있나요? 받았다면 투여 기간이 5일을 넘었나요?"
++    - "받았고, 5일을 넘게 투여함" -> ⟨암포테리신 B[투여 기간 5일 초과] · 평생(한 번이라도)⟩ = 참
++    - "받았지만 5일 이하로 투여함" -> ⟨암포테리신 B[투여 기간 5일 초과] · 평생(한 번이라도)⟩ = 거짓, ⟨암포테리신 B · 평생(한 번이라도)⟩ = 참
++    - "받은 적 없음" -> ⟨암포테리신 B · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨폐 털곰팡이증 · 평생(한 번이라도)⟩ = 거짓 -> no
++  - ⟨폐 털곰팡이증 · 평생(한 번이라도)⟩ = 참, ⟨암포테리신 B · 평생(한 번이라도)⟩ = 거짓 -> no
++  - ⟨폐 털곰팡이증 · 평생(한 번이라도)⟩ = 참, ⟨암포테리신 B[투여 기간 5일 초과] · 평생(한 번이라도)⟩ = 거짓 -> no
++  - ⟨폐 털곰팡이증 · 평생(한 번이라도)⟩ = 참, ⟨암포테리신 B[투여 기간 5일 초과] · 평생(한 번이라도)⟩ = 참 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06908096:E11 (제외 기준)
++
++- 원문: "Hereditary, acquired, or idiopathic forms of angioedema."
++- IR (사람이 읽는 형태): ⟨혈관부종 · 평생(한 번이라도)⟩
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `3aaf9789690fd26426f2e832fdd622cb5d32240d5e2a9ae08215867d2387ec32`, 잠긴 원문 해시 `6713b4c3d6631ce3…`
++- 초안 메모: 유전성·후천성·특발성 = 모든 형태의 혈관부종으로 해석 (검수 확인)
++- 위험·확인 사항: '유전성·후천성·특발성 = 모든 혈관부종' 해석 확인
++- 임상 검토 질문:
++  1. 유전성·후천성·특발성 = 모든 혈관부종으로 보아도 되는가? 약물(ACE 억제제 등) 유발 혈관부종은?
++- 판단에 필요한 증거: 임상 판단
++- 계약 후보:
++  - `QC-ANGIOEDEMA-EVER` v1 (검수 준비 완료) digest `24b15a266dfbcfe3b1ea9618f1f75b664d5ae68ccba14a3070c8691254700dd2`: "혈관부종 진단을 받은 적이 있나요?"
++    - "예" -> ⟨혈관부종 · 평생(한 번이라도)⟩ = 참
++    - "아니요" -> ⟨혈관부종 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨혈관부종 · 평생(한 번이라도)⟩ = 참 -> yes
++  - ⟨혈관부종 · 평생(한 번이라도)⟩ = 거짓 -> no
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06908096:E12 (제외 기준)
++
++- 원문: "Idiopathic urticaria within the past year."
++- IR (사람이 읽는 형태): ⟨원인 불명 두드러기 · 스크리닝 전 365일 이내⟩
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 스크리닝
++- 승인 대상: IR v1 digest `0fdce5f6b9f90a227ef0cbd4fe733e882972d9076529c5aa4a6f0501e6778e44`, 잠긴 원문 해시 `6713b4c3d6631ce3…`
++- 초안 메모: 'within the past year'의 기준 시점을 screening으로 둠. 기준 시점(screening)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정)
++- 위험·확인 사항: 'within the past year' 기준 시점을 screening으로 가정
++- 임상 검토 질문:
++  1. 'within the past year'의 기준 시점(screening) 가정이 맞는가?
++  2. '증상이 마지막으로 있었던 시기'로 묻는 것이 기준(1년 내 특발성 두드러기)과 같은가? 진단 없이 증상만 있던 경우는?
++- 판단에 필요한 증거: 프로토콜 정의, 임상 판단
++- 계약 후보:
++  - `QC-URTICARIA-LAST` v1 (검수 준비 완료) digest `d725b02a42c38fd5e0422558c4c2abe88f4ea90c0f2913009884298d0988bc9b`: "원인을 모르는 두드러기(특발성 두드러기) 증상이 마지막으로 있었던 시기는 언제인가요?"
++    - "최근 1년(365일) 이내" -> ⟨원인 불명 두드러기 · 답변 시점 전 365일 이내⟩ = 참
++    - "1년(365일)보다 전" -> ⟨원인 불명 두드러기 · 답변 시점 전 365일 이내⟩ = 거짓, ⟨원인 불명 두드러기 · 평생(한 번이라도)⟩ = 참
++    - "특발성 두드러기 증상이 있었던 적 없음" -> ⟨원인 불명 두드러기 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨원인 불명 두드러기 · 답변 시점 전 365일 이내⟩ = 참 -> yes
++  - ⟨원인 불명 두드러기 · 평생(한 번이라도)⟩ = 거짓 -> no
++  - ⟨원인 불명 두드러기 · 평생(한 번이라도)⟩ = 참 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06908096:E25 (제외 기준)
++
++- 원문: "HIV infection."
++- IR (사람이 읽는 형태): ⟨HIV 감염 · 평생(한 번이라도)⟩
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `e529635b5abdadbcf4744621a3c8344da1a719db3c53d0a6bbc8fcfcbefca96e`, 잠긴 원문 해시 `6713b4c3d6631ce3…`
++- 초안 메모: HIV 감염은 완치되지 않으므로 진단 이력 = 감염으로 해석 (검수 확인)
++- 위험·확인 사항: 'HIV 진단 이력 = 감염' 해석 확인
++- 임상 검토 질문:
++  1. HIV 진단 이력 = 현재 감염으로 해석해도 되는가?
++  2. 자기 보고로 충분한가, 진료 기록(clinical_record)이 필요한가?
++- 판단에 필요한 증거: 임상 판단, 근거 수준 정책
++- 계약 후보:
++  - `QC-HIV-EVER` v1 (검수 준비 완료) digest `8e084607e3dcc750679a908d01a1779113694ca7fdb483185191f872439782e9`: "HIV 감염 진단을 받은 적이 있나요?"
++    - "예" -> ⟨HIV 감염 · 평생(한 번이라도)⟩ = 참
++    - "아니요" -> ⟨HIV 감염 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨HIV 감염 · 평생(한 번이라도)⟩ = 참 -> yes
++  - ⟨HIV 감염 · 평생(한 번이라도)⟩ = 거짓 -> no
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06908096:E8 (제외 기준)
++
++- 원문: "Febrile illness within 14 days of the first dose of vaccine."
++- IR (사람이 읽는 형태): ⟨발열성 질환 · 첫 투여 전 14일 이내⟩
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 첫 투여
++- 승인 대상: IR v1 digest `526b961a48e6787b2514f90b5016ab562d4a5407899b9b9f64371fefa9dc9426`, 잠긴 원문 해시 `6713b4c3d6631ce3…`
++- 초안 메모: 기준 시점(first_dose)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정)
++- 위험·확인 사항: 'febrile illness' 체온 기준 정의, 기준 시점 first_dose
++- 임상 검토 질문:
++  1. 'febrile illness'의 체온 기준(예: 38.0°C 이상)은? 환자 자기 보고 '열이 나는 병'으로 충분한가?
++  2. 기준 시점 첫 투여(first_dose)를 답변 시점으로 근사해도 되는가?
++- 판단에 필요한 증거: 프로토콜의 발열 정의
++- 계약 후보:
++  - `QC-FEBRILE-ILLNESS-LAST` v1 (임상 전문가 검토 필요) digest `7cf00e851a2893b1d84ee513295868595aa78b2d85ad429162691f161f67fd81`: "가장 최근에 열이 나는 병을 앓은 시기는 언제인가요?"
++    - "최근 2주(14일) 이내" -> ⟨발열성 질환 · 답변 시점 전 14일 이내⟩ = 참
++    - "2주(14일)보다 전" -> ⟨발열성 질환 · 답변 시점 전 14일 이내⟩ = 거짓, ⟨발열성 질환 · 평생(한 번이라도)⟩ = 참
++    - "열이 나는 병을 앓은 적 없음" -> ⟨발열성 질환 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨발열성 질환 · 답변 시점 전 14일 이내⟩ = 참 -> yes
++  - ⟨발열성 질환 · 답변 시점 전 14일 이내⟩ = 거짓 -> no
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06916494:I3 (포함 기준)
++
++- 원문: "No prior use of systemic immunotherapy or target therapy"
++- IR (사람이 읽는 형태): 아님((⟨항암 면역요법 · 평생(한 번이라도)⟩ 또는 ⟨표적 항암 치료 · 평생(한 번이라도)⟩))
++- 완전성 partial / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `94579297c81e864eb84d87c3d04bb7d85124517b406c02c32e7c2c2df76f1df1`, 잠긴 원문 해시 `d011fe7e02358bcc…`
++- 표현하지 못한 부분: systemic immunotherapy가 항암 면역요법만인지(다른 면역요법 포함 여부); target therapy의 범위
++- 위험·확인 사항: systemic immunotherapy·target therapy의 범위 (부분 IR)
++- 임상 검토 질문:
++  1. 'systemic immunotherapy'는 항암 면역요법만인가(알레르기 면역요법 등 포함 여부)?
++  2. 'target therapy'의 범위는?
++  3. 범위가 정해지면 complete로 바꿀 수 있는가?
++- 판단에 필요한 증거: 프로토콜 정의
++- 계약 후보:
++  - `QC-CANCER-IMMUNOTHERAPY-EVER` v1 (검수 준비 완료) digest `1b7eff4dcea21d6facda8c42d3717c758205425e3639b9aabd741f3f443dcee3`: "암 치료로 면역항암제(면역관문억제제 등)를 쓴 적이 있나요?"
++    - "예" -> ⟨항암 면역요법 · 평생(한 번이라도)⟩ = 참
++    - "아니요" -> ⟨항암 면역요법 · 평생(한 번이라도)⟩ = 거짓
++  - `QC-TARGETED-THERAPY-EVER` v1 (검수 준비 완료) digest `169d4e03d037e10954a666d25cd85fa9ac098c2034d20f5bf68e25653ca8959c`: "암 치료로 표적항암제를 쓴 적이 있나요?"
++    - "예" -> ⟨표적 항암 치료 · 평생(한 번이라도)⟩ = 참
++    - "아니요" -> ⟨표적 항암 치료 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨항암 면역요법 · 평생(한 번이라도)⟩ = 거짓, ⟨표적 항암 치료 · 평생(한 번이라도)⟩ = 거짓 -> yes
++  - ⟨항암 면역요법 · 평생(한 번이라도)⟩ = 참 -> no
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT07087314:E14 (제외 기준)
++
++- 원문: "Live/attenuated vaccine receipt within 4 weeks before first dose."
++- IR (사람이 읽는 형태): ⟨생백신 접종 · 첫 투여 전 28일 이내⟩
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 첫 투여
++- 승인 대상: IR v1 digest `1653090830e9206c0a024c4da4483805fce5bbb348a20be668ae78402753c8d5`, 잠긴 원문 해시 `8b8675fc0bafe56b…`
++- 초안 메모: 기준 시점(first_dose)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정)
++- 위험·확인 사항: 환자가 생백신 여부를 구분할 수 있는지 (답 신뢰도), 기준 시점 first_dose
++- 임상 검토 질문:
++  1. 환자가 생백신 여부를 스스로 구분할 수 있는가? 예방접종 기록 확인(clinical_record)이 필요한가?
++  2. 기준 시점 첫 투여 근사 허용 여부
++- 판단에 필요한 증거: 임상 판단, 예방접종 기록 확보 가능성
++- 계약 후보:
++  - `QC-LIVE-VACCINE-LAST` v1 (임상 전문가 검토 필요) digest `0043c7e4df5817f2f7bcc2d211e55d6650620362770613058e0a1e4c6cd98d30`: "가장 최근에 생백신(살아 있는 약독화 바이러스·세균 백신)을 맞은 시기는 언제인가요?"
++    - "최근 4주(28일) 이내" -> ⟨생백신 접종 · 답변 시점 전 28일 이내⟩ = 참
++    - "4주(28일)보다 전" -> ⟨생백신 접종 · 답변 시점 전 28일 이내⟩ = 거짓, ⟨생백신 접종 · 평생(한 번이라도)⟩ = 참
++    - "생백신을 맞은 적 없음" -> ⟨생백신 접종 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨생백신 접종 · 답변 시점 전 28일 이내⟩ = 참 -> yes
++  - ⟨생백신 접종 · 답변 시점 전 28일 이내⟩ = 거짓 -> no
++  - ⟨백신 접종 · 답변 시점 전 28일 이내⟩ = 거짓 -> no
++  - ⟨백신 접종 · 답변 시점 전 28일 이내⟩ = 참 -> unknown
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT07087314:E15 (제외 기준)
++
++- 원문: "Major surgery (non-diagnostic) within 4 weeks before first dose."
++- IR (사람이 읽는 형태): ⟨수술[큰 수술(주요 수술)][진단 목적이 아닌] · 첫 투여 전 28일 이내⟩
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 첫 투여
++- 승인 대상: IR v1 digest `89d11693cf74000b4b066a60a1ff7eca4cbfdcbeffb4bdf3beaa27dae1e826ce`, 잠긴 원문 해시 `8b8675fc0bafe56b…`
++- 초안 메모: 'major' 정의가 원문에 없음: 환자 답 '수술 없음'만 결정, '수술 있음'은 큰 수술 여부를 몰라 미확인. 기준 시점(first_dose)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정)
++- 위험·확인 사항: 'major' 정의 없음, 기준 시점 first_dose. '수술 없음'만 결정 가능
++- 임상 검토 질문:
++  1. 'major surgery' 정의는? 현재 IR은 '수술 없음'만 결정 가능 - 큰 수술 여부를 묻는 계약이 필요한가?
++  2. 기준 시점 첫 투여 근사 허용 여부
++- 판단에 필요한 증거: 프로토콜 정의 (예: 전신마취·입원 기준)
++- 계약 후보:
++  - `QC-SURGERY-LAST` v1 (검수 준비 완료) digest `361410f14998302023d0ec99854fa116d9c45aa5abfbb33c542a9a74039ab56c`: "가장 최근에 수술(내시경·조직검사 같은 시술 제외)을 받은 시기는 언제인가요?"
++    - "최근 4주(28일) 이내" -> ⟨수술 · 답변 시점 전 28일 이내⟩ = 참
++    - "4주(28일)보다 전, 3개월(90일) 이내" -> ⟨수술 · 답변 시점 전 28일 이내⟩ = 거짓, ⟨수술 · 답변 시점 전 90일 이내⟩ = 참
++    - "3개월(90일)보다 전" -> ⟨수술 · 답변 시점 전 90일 이내⟩ = 거짓, ⟨수술 · 평생(한 번이라도)⟩ = 참
++    - "수술을 받은 적 없음" -> ⟨수술 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨수술 · 평생(한 번이라도)⟩ = 거짓 -> no
++  - ⟨수술 · 답변 시점 전 28일 이내⟩ = 거짓 -> no
++  - ⟨수술 · 답변 시점 전 28일 이내⟩ = 참 -> unknown
++  - ⟨수술 · 평생(한 번이라도)⟩ = 참 -> unknown
++  - ⟨수술[큰 수술(주요 수술)][진단 목적이 아닌] · 답변 시점 전 28일 이내⟩ = 참 -> yes
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT07087314:I11 (포함 기준)
++
++- 원문: "No Tacrolimus, cyclosporine A, mycophenolate mofetil, belimumab, levamisole, azathioprine, or cyclophosphamide in prior 2 months."
++- IR (사람이 읽는 형태): 아님((⟨타크로리무스 · 등록 전 60일 이내⟩ 또는 ⟨사이클로스포린 · 등록 전 60일 이내⟩ 또는 ⟨마이코페놀레이트 모페틸 · 등록 전 60일 이내⟩ 또는 ⟨벨리무맙 · 등록 전 60일 이내⟩ 또는 ⟨레바미솔 · 등록 전 60일 이내⟩ 또는 ⟨아자티오프린 · 등록 전 60일 이내⟩ 또는 ⟨사이클로포스파마이드 · 등록 전 60일 이내⟩))
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 등록
++- 승인 대상: IR v1 digest `92f8706eb7fb70240127021bcc26ebdcb3da12cbce9cac6f69c450254921a0b9`, 잠긴 원문 해시 `8b8675fc0bafe56b…`
++- 초안 메모: 'in prior 2 months'의 기준 시점이 원문에 없어 enrollment로 둠(검수 확인). 개월 -> 일 환산은 잠긴 기준표 time_window_days 값 사용 (검수 확인)
++- 위험·확인 사항: 원문에 기준 시점이 없어 enrollment로 가정, 2개월=60일 환산
++- 임상 검토 질문:
++  1. 원문에 기준 시점이 없음: 등록(enrollment)으로 두어도 되는가?
++  2. 2개월을 60일로 환산해도 되는가?
++- 판단에 필요한 증거: 프로토콜 정의
++- 계약 후보:
++  - `QC-TACROLIMUS-LAST` v1 (검수 준비 완료) digest `100788e44252ff12e6de346195ae61970381a0fcea64b3485ed79fa7d48f99e0`: "타크로리무스(tacrolimus)를 가장 최근에 사용한 시기는 언제인가요?"
++    - "최근 2개월(60일) 이내" -> ⟨타크로리무스 · 답변 시점 전 60일 이내⟩ = 참
++    - "2개월(60일)보다 전, 3개월(90일) 이내" -> ⟨타크로리무스 · 답변 시점 전 60일 이내⟩ = 거짓, ⟨타크로리무스 · 답변 시점 전 90일 이내⟩ = 참
++    - "3개월(90일)보다 전, 6개월(180일) 이내" -> ⟨타크로리무스 · 답변 시점 전 90일 이내⟩ = 거짓, ⟨타크로리무스 · 답변 시점 전 180일 이내⟩ = 참
++    - "6개월(180일)보다 전" -> ⟨타크로리무스 · 답변 시점 전 180일 이내⟩ = 거짓, ⟨타크로리무스 · 평생(한 번이라도)⟩ = 참
++    - "사용한 적 없음" -> ⟨타크로리무스 · 평생(한 번이라도)⟩ = 거짓
++  - `QC-CYCLOSPORINE-LAST` v1 (검수 준비 완료) digest `8a713d196bade376d4844ed76869c697bf28771012066d21d6f63af2326034ae`: "사이클로스포린(cyclosporine A)을 가장 최근에 사용한 시기는 언제인가요?"
++    - "최근 2개월(60일) 이내" -> ⟨사이클로스포린 · 답변 시점 전 60일 이내⟩ = 참
++    - "2개월(60일)보다 전, 3개월(90일) 이내" -> ⟨사이클로스포린 · 답변 시점 전 60일 이내⟩ = 거짓, ⟨사이클로스포린 · 답변 시점 전 90일 이내⟩ = 참
++    - "3개월(90일)보다 전, 6개월(180일) 이내" -> ⟨사이클로스포린 · 답변 시점 전 90일 이내⟩ = 거짓, ⟨사이클로스포린 · 답변 시점 전 180일 이내⟩ = 참
++    - "6개월(180일)보다 전" -> ⟨사이클로스포린 · 답변 시점 전 180일 이내⟩ = 거짓, ⟨사이클로스포린 · 평생(한 번이라도)⟩ = 참
++    - "사용한 적 없음" -> ⟨사이클로스포린 · 평생(한 번이라도)⟩ = 거짓
++  - `QC-MYCOPHENOLATE-MOFETIL-LAST` v1 (검수 준비 완료) digest `c7f657c8d01c56b27b1cc7b5e741d4067d51615d8f6b2556850ef6755d4cd914`: "마이코페놀레이트 모페틸(mycophenolate mofetil)을 가장 최근에 사용한 시기는 언제인가요?"
++    - "최근 2개월(60일) 이내" -> ⟨마이코페놀레이트 모페틸 · 답변 시점 전 60일 이내⟩ = 참
++    - "2개월(60일)보다 전, 3개월(90일) 이내" -> ⟨마이코페놀레이트 모페틸 · 답변 시점 전 60일 이내⟩ = 거짓, ⟨마이코페놀레이트 모페틸 · 답변 시점 전 90일 이내⟩ = 참
++    - "3개월(90일)보다 전, 6개월(180일) 이내" -> ⟨마이코페놀레이트 모페틸 · 답변 시점 전 90일 이내⟩ = 거짓, ⟨마이코페놀레이트 모페틸 · 답변 시점 전 180일 이내⟩ = 참
++    - "6개월(180일)보다 전" -> ⟨마이코페놀레이트 모페틸 · 답변 시점 전 180일 이내⟩ = 거짓, ⟨마이코페놀레이트 모페틸 · 평생(한 번이라도)⟩ = 참
++    - "사용한 적 없음" -> ⟨마이코페놀레이트 모페틸 · 평생(한 번이라도)⟩ = 거짓
++  - `QC-BELIMUMAB-LAST` v1 (검수 준비 완료) digest `04da164e180bf8e4d7390891bb09c168cc963909174cee1cd874d8fe7e9bf891`: "벨리무맙(belimumab)을 가장 최근에 사용한 시기는 언제인가요?"
++    - "최근 2개월(60일) 이내" -> ⟨벨리무맙 · 답변 시점 전 60일 이내⟩ = 참
++    - "2개월(60일)보다 전, 3개월(90일) 이내" -> ⟨벨리무맙 · 답변 시점 전 60일 이내⟩ = 거짓, ⟨벨리무맙 · 답변 시점 전 90일 이내⟩ = 참
++    - "3개월(90일)보다 전, 6개월(180일) 이내" -> ⟨벨리무맙 · 답변 시점 전 90일 이내⟩ = 거짓, ⟨벨리무맙 · 답변 시점 전 180일 이내⟩ = 참
++    - "6개월(180일)보다 전" -> ⟨벨리무맙 · 답변 시점 전 180일 이내⟩ = 거짓, ⟨벨리무맙 · 평생(한 번이라도)⟩ = 참
++    - "사용한 적 없음" -> ⟨벨리무맙 · 평생(한 번이라도)⟩ = 거짓
++  - `QC-LEVAMISOLE-LAST` v1 (검수 준비 완료) digest `f89dc26deca28eab5d685be4cbe0a85f1aee03cfb9e20b6489742524a631d8c7`: "레바미솔(levamisole)을 가장 최근에 사용한 시기는 언제인가요?"
++    - "최근 2개월(60일) 이내" -> ⟨레바미솔 · 답변 시점 전 60일 이내⟩ = 참
++    - "2개월(60일)보다 전, 3개월(90일) 이내" -> ⟨레바미솔 · 답변 시점 전 60일 이내⟩ = 거짓, ⟨레바미솔 · 답변 시점 전 90일 이내⟩ = 참
++    - "3개월(90일)보다 전, 6개월(180일) 이내" -> ⟨레바미솔 · 답변 시점 전 90일 이내⟩ = 거짓, ⟨레바미솔 · 답변 시점 전 180일 이내⟩ = 참
++    - "6개월(180일)보다 전" -> ⟨레바미솔 · 답변 시점 전 180일 이내⟩ = 거짓, ⟨레바미솔 · 평생(한 번이라도)⟩ = 참
++    - "사용한 적 없음" -> ⟨레바미솔 · 평생(한 번이라도)⟩ = 거짓
++  - `QC-AZATHIOPRINE-LAST` v1 (검수 준비 완료) digest `5c361eb3337cf84a14f68039b1d61cd721e5d6303971ff516e2d088e9aa95f9e`: "아자티오프린(azathioprine)을 가장 최근에 사용한 시기는 언제인가요?"
++    - "최근 2개월(60일) 이내" -> ⟨아자티오프린 · 답변 시점 전 60일 이내⟩ = 참
++    - "2개월(60일)보다 전, 3개월(90일) 이내" -> ⟨아자티오프린 · 답변 시점 전 60일 이내⟩ = 거짓, ⟨아자티오프린 · 답변 시점 전 90일 이내⟩ = 참
++    - "3개월(90일)보다 전, 6개월(180일) 이내" -> ⟨아자티오프린 · 답변 시점 전 90일 이내⟩ = 거짓, ⟨아자티오프린 · 답변 시점 전 180일 이내⟩ = 참
++    - "6개월(180일)보다 전" -> ⟨아자티오프린 · 답변 시점 전 180일 이내⟩ = 거짓, ⟨아자티오프린 · 평생(한 번이라도)⟩ = 참
++    - "사용한 적 없음" -> ⟨아자티오프린 · 평생(한 번이라도)⟩ = 거짓
++  - `QC-CYCLOPHOSPHAMIDE-LAST` v1 (검수 준비 완료) digest `5c6692b52d8f00714989260b113d823bbf192b612653d19f484f62edcd9f43f1`: "사이클로포스파마이드(cyclophosphamide)를 가장 최근에 사용한 시기는 언제인가요?"
++    - "최근 2개월(60일) 이내" -> ⟨사이클로포스파마이드 · 답변 시점 전 60일 이내⟩ = 참
++    - "2개월(60일)보다 전, 3개월(90일) 이내" -> ⟨사이클로포스파마이드 · 답변 시점 전 60일 이내⟩ = 거짓, ⟨사이클로포스파마이드 · 답변 시점 전 90일 이내⟩ = 참
++    - "3개월(90일)보다 전, 6개월(180일) 이내" -> ⟨사이클로포스파마이드 · 답변 시점 전 90일 이내⟩ = 거짓, ⟨사이클로포스파마이드 · 답변 시점 전 180일 이내⟩ = 참
++    - "6개월(180일)보다 전" -> ⟨사이클로포스파마이드 · 답변 시점 전 180일 이내⟩ = 거짓, ⟨사이클로포스파마이드 · 평생(한 번이라도)⟩ = 참
++    - "사용한 적 없음" -> ⟨사이클로포스파마이드 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨타크로리무스 · 답변 시점 전 60일 이내⟩ = 거짓, ⟨사이클로스포린 · 답변 시점 전 60일 이내⟩ = 거짓, ⟨마이코페놀레이트 모페틸 · 답변 시점 전 60일 이내⟩ = 거짓, ⟨벨리무맙 · 답변 시점 전 60일 이내⟩ = 거짓, ⟨레바미솔 · 답변 시점 전 60일 이내⟩ = 거짓, ⟨아자티오프린 · 답변 시점 전 60일 이내⟩ = 거짓, ⟨사이클로포스파마이드 · 답변 시점 전 60일 이내⟩ = 거짓 -> yes
++  - ⟨아자티오프린 · 답변 시점 전 60일 이내⟩ = 참 -> no
++  - ⟨타크로리무스 · 답변 시점 전 60일 이내⟩ = 거짓, ⟨사이클로스포린 · 답변 시점 전 60일 이내⟩ = 거짓, ⟨마이코페놀레이트 모페틸 · 답변 시점 전 60일 이내⟩ = 거짓, ⟨벨리무맙 · 답변 시점 전 60일 이내⟩ = 거짓, ⟨레바미솔 · 답변 시점 전 60일 이내⟩ = 거짓, ⟨아자티오프린 · 답변 시점 전 60일 이내⟩ = 거짓 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT07087314:I12 (포함 기준)
++
++- 원문: "No rituximab or obinutuzumab in prior 6 months."
++- IR (사람이 읽는 형태): 아님((⟨리툭시맙 · 등록 전 180일 이내⟩ 또는 ⟨오비누투주맙 · 등록 전 180일 이내⟩))
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 등록
++- 승인 대상: IR v1 digest `28f8f639fb31f5caa48897784d1600cc3049595460736a4111cc0b1dc35586ee`, 잠긴 원문 해시 `8b8675fc0bafe56b…`
++- 초안 메모: 기준 시점 enrollment로 둠(원문 'prior 6 months'). 개월 -> 일 환산은 잠긴 기준표 time_window_days 값 사용 (검수 확인)
++- 위험·확인 사항: 기준 시점 가정(enrollment), 6개월=180일 환산
++- 임상 검토 질문:
++  1. 원문에 기준 시점이 없음: 등록(enrollment)으로 두어도 되는가?
++  2. 6개월을 180일로 환산해도 되는가?
++  3. 상위 개념 계약(QC-ANTICD20-LAST, 항CD20 항체)으로 리툭시맙·오비누투주맙을 함께 물어도 되는가?
++- 판단에 필요한 증거: 프로토콜 정의
++- 계약 후보:
++  - `QC-ANTICD20-LAST` v1 (검수 준비 완료) digest `678689bde50d5e6e1c3b8f9e626f64ecd0a850e62e03d4d7684e48196938be2c`: "항CD20 항체 주사(리툭시맙·오비누투주맙 등)를 가장 최근에 맞은 시기는 언제인가요?"
++    - "최근 6개월(180일) 이내" -> ⟨항CD20 항체 · 답변 시점 전 180일 이내⟩ = 참
++    - "6개월(180일)보다 전" -> ⟨항CD20 항체 · 답변 시점 전 180일 이내⟩ = 거짓, ⟨항CD20 항체 · 평생(한 번이라도)⟩ = 참
++    - "맞은 적 없음" -> ⟨항CD20 항체 · 평생(한 번이라도)⟩ = 거짓
++  - `QC-RITUXIMAB-LAST` v1 (검수 준비 완료) digest `243f289f847e302c5e141083aa839c0358ba8519f4f057061eabd5e73aaec175`: "리툭시맙(rituximab)을 가장 최근에 사용한 시기는 언제인가요?"
++    - "최근 2개월(60일) 이내" -> ⟨리툭시맙 · 답변 시점 전 60일 이내⟩ = 참
++    - "2개월(60일)보다 전, 3개월(90일) 이내" -> ⟨리툭시맙 · 답변 시점 전 60일 이내⟩ = 거짓, ⟨리툭시맙 · 답변 시점 전 90일 이내⟩ = 참
++    - "3개월(90일)보다 전, 6개월(180일) 이내" -> ⟨리툭시맙 · 답변 시점 전 90일 이내⟩ = 거짓, ⟨리툭시맙 · 답변 시점 전 180일 이내⟩ = 참
++    - "6개월(180일)보다 전" -> ⟨리툭시맙 · 답변 시점 전 180일 이내⟩ = 거짓, ⟨리툭시맙 · 평생(한 번이라도)⟩ = 참
++    - "사용한 적 없음" -> ⟨리툭시맙 · 평생(한 번이라도)⟩ = 거짓
++  - `QC-OBINUTUZUMAB-LAST` v1 (검수 준비 완료) digest `9e7b12df83cf202c6c250df74105b84693a9803ad1881231174c219d199c21c1`: "오비누투주맙(obinutuzumab)을 가장 최근에 사용한 시기는 언제인가요?"
++    - "최근 2개월(60일) 이내" -> ⟨오비누투주맙 · 답변 시점 전 60일 이내⟩ = 참
++    - "2개월(60일)보다 전, 3개월(90일) 이내" -> ⟨오비누투주맙 · 답변 시점 전 60일 이내⟩ = 거짓, ⟨오비누투주맙 · 답변 시점 전 90일 이내⟩ = 참
++    - "3개월(90일)보다 전, 6개월(180일) 이내" -> ⟨오비누투주맙 · 답변 시점 전 90일 이내⟩ = 거짓, ⟨오비누투주맙 · 답변 시점 전 180일 이내⟩ = 참
++    - "6개월(180일)보다 전" -> ⟨오비누투주맙 · 답변 시점 전 180일 이내⟩ = 거짓, ⟨오비누투주맙 · 평생(한 번이라도)⟩ = 참
++    - "사용한 적 없음" -> ⟨오비누투주맙 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨항CD20 항체 · 답변 시점 전 180일 이내⟩ = 거짓 -> yes
++  - ⟨리툭시맙 · 답변 시점 전 180일 이내⟩ = 참 -> no
++  - ⟨리툭시맙 · 답변 시점 전 180일 이내⟩ = 거짓 -> unknown
++  - ⟨리툭시맙 · 답변 시점 전 180일 이내⟩ = 거짓, ⟨오비누투주맙 · 답변 시점 전 180일 이내⟩ = 거짓 -> yes
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT07679893:E25 (제외 기준)
++
++- 원문: "Currently smokes, recently smoked, or quit smoking less than 1 year ago."
++- IR (사람이 읽는 형태): (⟨흡연 · 현재⟩ 또는 ⟨흡연 · 스크리닝 전 365일 이내⟩)
++- 완전성 partial / 근거 수준 self_report_ok / 기준 시점 근사 필요: 스크리닝
++- 승인 대상: IR v1 digest `318f80b0d3064a625d37a731eaca47d5586d45f0a66ec5e991b8d73960f0650c`, 잠긴 원문 해시 `27428485bb57ba89…`
++- 표현하지 못한 부분: 'recently smoked'의 기간 정의 없음
++- 초안 메모: 기준 시점(screening)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정)
++- 위험·확인 사항: 'recently smoked' 기간 정의, 전자담배 포함 여부 (부분 IR)
++- 임상 검토 질문:
++  1. 'recently smoked'의 기간은? (현재 IR은 현재 흡연 또는 1년 내 흡연, 'recently' 부분은 미지원)
++  2. 전자담배·가열담배를 포함하는가?
++- 판단에 필요한 증거: 프로토콜 정의
++- 계약 후보:
++  - `QC-SMOKING-LAST` v1 (임상 전문가 검토 필요) digest `b83d586da33a2522fc95aaf67925c0c5f901418b5e9168a276dd02e52e74e805`: "가장 최근에 담배를 피운 시기는 언제인가요?"
++    - "최근 1년(365일) 이내" -> ⟨흡연 · 답변 시점 전 365일 이내⟩ = 참
++    - "1년(365일)보다 전" -> ⟨흡연 · 답변 시점 전 365일 이내⟩ = 거짓, ⟨흡연 · 평생(한 번이라도)⟩ = 참
++    - "담배를 피운 적 없음" -> ⟨흡연 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨흡연 · 현재⟩ = 참 -> yes
++  - ⟨흡연 · 평생(한 번이라도)⟩ = 거짓 -> no
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++## 검수 준비 완료 (37)
++
++### DEMO-LUNG-001:E2 (제외 기준)
++
++- 원문: "Prior treatment with any EGFR-targeted antibody-drug conjugate"
++- IR (사람이 읽는 형태): ⟨EGFR 표적 항체-약물 결합체 · 평생(한 번이라도)⟩
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `5f09db112704f28950ac4864859464b430824a55dffdfebc38832d18285a3f24`, 잠긴 원문 해시 `4ed39009ea062f2f…`
++- 위험·확인 사항: 환자가 'ADC' 용어를 모를 수 있음 (모름 -> 미확인으로 남음)
++- 계약 후보:
++  - `QC-EGFR-ADC-EVER` v1 (검수 준비 완료) digest `5cfec54593ee5b5cecea69710b124eca1fc556aa0a700e402e7ffa96d305d7a0`: "EGFR를 표적으로 하는 항체-약물 결합체(ADC) 치료를 받은 적이 있나요?"
++    - "예" -> ⟨EGFR 표적 항체-약물 결합체 · 평생(한 번이라도)⟩ = 참
++    - "아니요" -> ⟨EGFR 표적 항체-약물 결합체 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨EGFR 표적 항체-약물 결합체 · 평생(한 번이라도)⟩ = 참 -> yes
++  - ⟨EGFR 표적 항체-약물 결합체 · 평생(한 번이라도)⟩ = 거짓 -> no
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### DEMO-LUNG-001:E3 (제외 기준)
++
++- 원문: "History of interstitial lung disease requiring steroids"
++- IR (사람이 읽는 형태): ⟨스테로이드 치료가 필요했던 간질성 폐질환 · 평생(한 번이라도)⟩
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `d509eb0fa3e5bcebcf76e5280222c2513ab82a10972917429420c54261388ae7`, 잠긴 원문 해시 `4ed39009ea062f2f…`
++- 초안 메모: '스테로이드 치료가 필요했던 ILD'를 한 개념으로 둠. 스테로이드가 필요 없던 ILD 이력은 이 명제가 아님
++- 위험·확인 사항: '스테로이드가 필요했던 ILD'를 한 개념으로 둠
++- 계약 후보:
++  - `QC-ILD-STEROID-EVER` v1 (검수 준비 완료) digest `db607e18f5b386ccc09c58599d435632479c481eb96d0fe40e46a52465dd9aad`: "간질성 폐질환으로 스테로이드 치료가 필요했던 적이 있나요?"
++    - "예" -> ⟨스테로이드 치료가 필요했던 간질성 폐질환 · 평생(한 번이라도)⟩ = 참
++    - "아니요" -> ⟨스테로이드 치료가 필요했던 간질성 폐질환 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨스테로이드 치료가 필요했던 간질성 폐질환 · 평생(한 번이라도)⟩ = 참 -> yes
++  - ⟨스테로이드 치료가 필요했던 간질성 폐질환 · 평생(한 번이라도)⟩ = 거짓 -> no
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### DEMO-LUNG-001:E4 (제외 기준)
++
++- 원문: "Pregnant or breastfeeding"
++- IR (사람이 읽는 형태): (⟨임신 · 현재⟩ 또는 ⟨수유 · 현재⟩)
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `055aaaad47ba228999cb070a7ef71a4e2bc2cc3c117e97b2b9b2a92f8442a89c`, 잠긴 원문 해시 `4ed39009ea062f2f…`
++- 위험·확인 사항: 현재 임신·수유 자기 보고의 신뢰도는 QC-PREGNANT-NOW 검토 사항
++- 계약 후보:
++  - `QC-PREGNANT-NOW` v1 (임상 전문가 검토 필요) digest `0a244d8d0339b94fd267529c521960e6b7225fe91fde0e22eba347133d5430be`: "현재 임신 중인가요?"
++    - "예" -> ⟨임신 · 현재⟩ = 참
++    - "아니요" -> ⟨임신 · 현재⟩ = 거짓
++  - `QC-LACTATING-NOW` v1 (검수 준비 완료) digest `5498b327d305a52d160b421cc365273cd21ef5284df773e3424c983452149842`: "현재 모유 수유 중인가요?"
++    - "예" -> ⟨수유 · 현재⟩ = 참
++    - "아니요" -> ⟨수유 · 현재⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨임신 · 현재⟩ = 참 -> yes
++  - ⟨수유 · 현재⟩ = 참 -> yes
++  - ⟨임신 · 현재⟩ = 거짓, ⟨수유 · 현재⟩ = 거짓 -> no
++  - ⟨임신 · 현재⟩ = 거짓 -> unknown
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### DEMO-LUNG-001:E5 (제외 기준)
++
++- 원문: "Active hepatitis B or C infection"
++- IR (사람이 읽는 형태): (⟨활동성 B형 간염 · 현재⟩ 또는 ⟨활동성 C형 간염 · 현재⟩)
++- 완전성 complete / 근거 수준 clinical_record / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `c0c81e7eaecd45f2d2c7dd9cfe7f5e607158d3166bb108fc5f94d42c5d1fda8e`, 잠긴 원문 해시 `4ed39009ea062f2f…`
++- 초안 메모: 활동성 감염 여부는 혈액검사 확인이 필요해 근거 수준을 clinical_record로 올림
++- 위험·확인 사항: clinical_record로 상향: 자기 보고만으로는 UNVERIFIED (계약 없음)
++- 계약 후보: 없음 (진료 기록 확인 경로)
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨활동성 B형 간염 · 현재⟩ = 거짓, ⟨활동성 C형 간염 · 현재⟩ = 거짓 -> no
++  - ⟨활동성 C형 간염 · 현재⟩ = 참 -> yes
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT04063540:E9 (제외 기준)
++
++- 원문: "Pregnant or lactating patient"
++- IR (사람이 읽는 형태): (⟨임신 · 현재⟩ 또는 ⟨수유 · 현재⟩)
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `37d4102c01acda176b843d8e2ec902566a5c1f2e9c3f0f0f0c347fa171ef8007`, 잠긴 원문 해시 `5ee663fe3aabbe0f…`
++- 계약 후보:
++  - `QC-PREGNANT-NOW` v1 (임상 전문가 검토 필요) digest `0a244d8d0339b94fd267529c521960e6b7225fe91fde0e22eba347133d5430be`: "현재 임신 중인가요?"
++    - "예" -> ⟨임신 · 현재⟩ = 참
++    - "아니요" -> ⟨임신 · 현재⟩ = 거짓
++  - `QC-LACTATING-NOW` v1 (검수 준비 완료) digest `5498b327d305a52d160b421cc365273cd21ef5284df773e3424c983452149842`: "현재 모유 수유 중인가요?"
++    - "예" -> ⟨수유 · 현재⟩ = 참
++    - "아니요" -> ⟨수유 · 현재⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨임신 · 현재⟩ = 참 -> yes
++  - ⟨수유 · 현재⟩ = 참 -> yes
++  - ⟨임신 · 현재⟩ = 거짓, ⟨수유 · 현재⟩ = 거짓 -> no
++  - ⟨임신 · 현재⟩ = 거짓 -> unknown
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT04761523:E6 (제외 기준)
++
++- 원문: "Individuals who are pregnant or nursing"
++- IR (사람이 읽는 형태): (⟨임신 · 현재⟩ 또는 ⟨수유 · 현재⟩)
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `7bc51529eb6fbc552d85a3bbad2e7ed8c3a583c1710b7a94d5240f0a4b0ba76d`, 잠긴 원문 해시 `34348e7944dfa888…`
++- 초안 메모: 'nursing' = 수유
++- 계약 후보:
++  - `QC-PREGNANT-NOW` v1 (임상 전문가 검토 필요) digest `0a244d8d0339b94fd267529c521960e6b7225fe91fde0e22eba347133d5430be`: "현재 임신 중인가요?"
++    - "예" -> ⟨임신 · 현재⟩ = 참
++    - "아니요" -> ⟨임신 · 현재⟩ = 거짓
++  - `QC-LACTATING-NOW` v1 (검수 준비 완료) digest `5498b327d305a52d160b421cc365273cd21ef5284df773e3424c983452149842`: "현재 모유 수유 중인가요?"
++    - "예" -> ⟨수유 · 현재⟩ = 참
++    - "아니요" -> ⟨수유 · 현재⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨임신 · 현재⟩ = 참 -> yes
++  - ⟨수유 · 현재⟩ = 참 -> yes
++  - ⟨임신 · 현재⟩ = 거짓, ⟨수유 · 현재⟩ = 거짓 -> no
++  - ⟨임신 · 현재⟩ = 거짓 -> unknown
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06080789:E4 (제외 기준)
++
++- 원문: "History of previous pancreatic necrosis, including necrosectomy"
++- IR (사람이 읽는 형태): (⟨췌장 괴사 · 평생(한 번이라도)⟩ 또는 ⟨췌장 괴사 조직 제거술 · 평생(한 번이라도)⟩)
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `03318cb5c3d0105648c4c16d9a82757ccd2263b4698eeb29a751eafc3e3d33fc`, 잠긴 원문 해시 `fba7c9c5f17f79a8…`
++- 초안 메모: 원문 'including necrosectomy'는 췌장 괴사의 제거술만 뜻함 (다른 부위 괴사 조직 제거는 해당 없음)
++- 위험·확인 사항: P7에서 수정: necrosectomy를 췌장 괴사 제거술로 한정 (다른 부위 제거술로 잘못 제외하던 결함)
++- 계약 후보:
++  - `QC-PANCREATIC-NECROSIS-EVER` v1 (검수 준비 완료) digest `8b7b9ef39c02bb94e58fe1af6ad2c5bb0b6b54fcd9d919a24411992ddabbd96c`: "췌장 괴사 진단을 받은 적이 있나요?"
++    - "예" -> ⟨췌장 괴사 · 평생(한 번이라도)⟩ = 참
++    - "아니요" -> ⟨췌장 괴사 · 평생(한 번이라도)⟩ = 거짓
++  - `QC-PANCREATIC-NECROSECTOMY-EVER` v1 (검수 준비 완료) digest `30b4cd22051273aef18427f8698a762dbea9b33821cc955d11b47e2b5283803a`: "췌장의 괴사된 조직을 제거하는 시술·수술(췌장 괴사 조직 제거술)을 받은 적이 있나요?"
++    - "예" -> ⟨췌장 괴사 조직 제거술 · 평생(한 번이라도)⟩ = 참
++    - "아니요" -> ⟨췌장 괴사 조직 제거술 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨췌장 괴사 · 평생(한 번이라도)⟩ = 참 -> yes
++  - ⟨췌장 괴사 조직 제거술 · 평생(한 번이라도)⟩ = 참 -> yes
++  - ⟨췌장 괴사 · 평생(한 번이라도)⟩ = 거짓, ⟨췌장 괴사 조직 제거술 · 평생(한 번이라도)⟩ = 거짓 -> no
++  - ⟨췌장 괴사 · 평생(한 번이라도)⟩ = 거짓 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06125405:E1 (제외 기준)
++
++- 원문: "Family history of nephrotic syndrome, chronic glomerulonephritis or uremia"
++- IR (사람이 읽는 형태): ⟨신증후군·만성 사구체신염·요독증 가족력 · 평생(한 번이라도)⟩
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `5d3519b766674d4aefa83bda6c64275e9dd7ae0fd8da6f5669b01d46bf05e5e9`, 잠긴 원문 해시 `73e46dfeb1a64d2c…`
++- 계약 후보:
++  - `QC-NEPHROTIC-FAMILY-HISTORY` v1 (검수 준비 완료) digest `d8cee615a1456f4ea72ea09fa5163d798331ceebbc16117bf5dede8d8a40ef1c`: "가족 중에 신증후군, 만성 사구체신염, 요독증 진단을 받은 사람이 있나요?"
++    - "예" -> ⟨신증후군·만성 사구체신염·요독증 가족력 · 평생(한 번이라도)⟩ = 참
++    - "아니요" -> ⟨신증후군·만성 사구체신염·요독증 가족력 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨신증후군·만성 사구체신염·요독증 가족력 · 평생(한 번이라도)⟩ = 참 -> yes
++  - ⟨신증후군·만성 사구체신염·요독증 가족력 · 평생(한 번이라도)⟩ = 거짓 -> no
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06125405:E13 (제외 기준)
++
++- 원문: "Those who have participated in other clinical trials within three months prior to the enrollment"
++- IR (사람이 읽는 형태): ⟨다른 임상시험 참여 · 등록 전 90일 이내⟩
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 등록
++- 승인 대상: IR v1 digest `8a954c79335019a629624b3ecdbaa6167ee44f1afb8edbb90644c5da5505bde6`, 잠긴 원문 해시 `73e46dfeb1a64d2c…`
++- 초안 메모: 개월 -> 일 환산은 잠긴 기준표 time_window_days 값 사용 (검수 확인). 기준 시점(enrollment)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정)
++- 위험·확인 사항: '참여' 정의(동의 시점·투약 시점) 확인
++- 계약 후보:
++  - `QC-TRIAL-PARTICIPATION-LAST` v1 (임상 전문가 검토 필요) digest `eb5c41909bc873d252a0377ea8f3af579ff3ab0a886dbb90ec66af9dfef83e7c`: "다른 임상시험에 마지막으로 참여한 때는 언제인가요? (지금도 참여 중이면 '최근 3개월(90일) 이내'를 고르세요)"
++    - "최근 3개월(90일) 이내" -> ⟨다른 임상시험 참여 · 답변 시점 전 90일 이내⟩ = 참
++    - "3개월(90일)보다 전" -> ⟨다른 임상시험 참여 · 답변 시점 전 90일 이내⟩ = 거짓, ⟨다른 임상시험 참여 · 평생(한 번이라도)⟩ = 참
++    - "임상시험에 참여한 적 없음" -> ⟨다른 임상시험 참여 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨다른 임상시험 참여 · 답변 시점 전 90일 이내⟩ = 참 -> yes
++  - ⟨다른 임상시험 참여 · 평생(한 번이라도)⟩ = 거짓 -> no
++  - ⟨EBV 백신 임상시험 참여 · 답변 시점 전 90일 이내⟩ = 참 -> yes
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06125405:I10 (포함 기준)
++
++- 원문: "No cyclosporine A was used within 3 months prior to the enrollment"
++- IR (사람이 읽는 형태): 아님(⟨사이클로스포린 · 등록 전 90일 이내⟩)
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 등록
++- 승인 대상: IR v1 digest `fcc2d6c69c896e937bf617a6a77a2e19ef9542c87462fc8656d32af659b033ef`, 잠긴 원문 해시 `73e46dfeb1a64d2c…`
++- 초안 메모: 개월 -> 일 환산은 잠긴 기준표 time_window_days 값 사용 (검수 확인). 기준 시점(enrollment)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정)
++- 위험·확인 사항: 3개월=90일 환산 확인
++- 계약 후보:
++  - `QC-CYCLOSPORINE-LAST` v1 (검수 준비 완료) digest `8a713d196bade376d4844ed76869c697bf28771012066d21d6f63af2326034ae`: "사이클로스포린(cyclosporine A)을 가장 최근에 사용한 시기는 언제인가요?"
++    - "최근 2개월(60일) 이내" -> ⟨사이클로스포린 · 답변 시점 전 60일 이내⟩ = 참
++    - "2개월(60일)보다 전, 3개월(90일) 이내" -> ⟨사이클로스포린 · 답변 시점 전 60일 이내⟩ = 거짓, ⟨사이클로스포린 · 답변 시점 전 90일 이내⟩ = 참
++    - "3개월(90일)보다 전, 6개월(180일) 이내" -> ⟨사이클로스포린 · 답변 시점 전 90일 이내⟩ = 거짓, ⟨사이클로스포린 · 답변 시점 전 180일 이내⟩ = 참
++    - "6개월(180일)보다 전" -> ⟨사이클로스포린 · 답변 시점 전 180일 이내⟩ = 거짓, ⟨사이클로스포린 · 평생(한 번이라도)⟩ = 참
++    - "사용한 적 없음" -> ⟨사이클로스포린 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨사이클로스포린 · 답변 시점 전 90일 이내⟩ = 거짓 -> yes
++  - ⟨사이클로스포린 · 답변 시점 전 90일 이내⟩ = 참 -> no
++  - ⟨사이클로스포린 · 평생(한 번이라도)⟩ = 거짓 -> yes
++  - ⟨사이클로스포린 · 평생(한 번이라도)⟩ = 참 -> unknown
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06125405:I11 (포함 기준)
++
++- 원문: "No cyclophosphamide was used within 3 months prior to the enrollment"
++- IR (사람이 읽는 형태): 아님(⟨사이클로포스파마이드 · 등록 전 90일 이내⟩)
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 등록
++- 승인 대상: IR v1 digest `3c88c68da89d3b858373f8fe1fb4b0bb2865ba7b396f47ef01d6de625de54258`, 잠긴 원문 해시 `73e46dfeb1a64d2c…`
++- 초안 메모: 개월 -> 일 환산은 잠긴 기준표 time_window_days 값 사용 (검수 확인). 기준 시점(enrollment)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정)
++- 위험·확인 사항: 3개월=90일 환산 확인
++- 계약 후보:
++  - `QC-CYCLOPHOSPHAMIDE-LAST` v1 (검수 준비 완료) digest `5c6692b52d8f00714989260b113d823bbf192b612653d19f484f62edcd9f43f1`: "사이클로포스파마이드(cyclophosphamide)를 가장 최근에 사용한 시기는 언제인가요?"
++    - "최근 2개월(60일) 이내" -> ⟨사이클로포스파마이드 · 답변 시점 전 60일 이내⟩ = 참
++    - "2개월(60일)보다 전, 3개월(90일) 이내" -> ⟨사이클로포스파마이드 · 답변 시점 전 60일 이내⟩ = 거짓, ⟨사이클로포스파마이드 · 답변 시점 전 90일 이내⟩ = 참
++    - "3개월(90일)보다 전, 6개월(180일) 이내" -> ⟨사이클로포스파마이드 · 답변 시점 전 90일 이내⟩ = 거짓, ⟨사이클로포스파마이드 · 답변 시점 전 180일 이내⟩ = 참
++    - "6개월(180일)보다 전" -> ⟨사이클로포스파마이드 · 답변 시점 전 180일 이내⟩ = 거짓, ⟨사이클로포스파마이드 · 평생(한 번이라도)⟩ = 참
++    - "사용한 적 없음" -> ⟨사이클로포스파마이드 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨사이클로포스파마이드 · 답변 시점 전 90일 이내⟩ = 거짓 -> yes
++  - ⟨사이클로포스파마이드 · 답변 시점 전 90일 이내⟩ = 참 -> no
++  - ⟨사이클로포스파마이드 · 평생(한 번이라도)⟩ = 거짓 -> yes
++  - ⟨사이클로포스파마이드 · 평생(한 번이라도)⟩ = 참 -> unknown
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06125405:I7 (포함 기준)
++
++- 원문: "No rituximab was used within 6 months prior to the enrollment"
++- IR (사람이 읽는 형태): 아님(⟨리툭시맙 · 등록 전 180일 이내⟩)
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 등록
++- 승인 대상: IR v1 digest `53b6ad4b51cc8783421a08c070737107a23eabe663e7111beab464c40695e442`, 잠긴 원문 해시 `73e46dfeb1a64d2c…`
++- 초안 메모: 개월 -> 일 환산은 잠긴 기준표 time_window_days 값 사용 (검수 확인). 기준 시점(enrollment)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정)
++- 위험·확인 사항: 6개월=180일 환산 확인
++- 계약 후보:
++  - `QC-RITUXIMAB-LAST` v1 (검수 준비 완료) digest `243f289f847e302c5e141083aa839c0358ba8519f4f057061eabd5e73aaec175`: "리툭시맙(rituximab)을 가장 최근에 사용한 시기는 언제인가요?"
++    - "최근 2개월(60일) 이내" -> ⟨리툭시맙 · 답변 시점 전 60일 이내⟩ = 참
++    - "2개월(60일)보다 전, 3개월(90일) 이내" -> ⟨리툭시맙 · 답변 시점 전 60일 이내⟩ = 거짓, ⟨리툭시맙 · 답변 시점 전 90일 이내⟩ = 참
++    - "3개월(90일)보다 전, 6개월(180일) 이내" -> ⟨리툭시맙 · 답변 시점 전 90일 이내⟩ = 거짓, ⟨리툭시맙 · 답변 시점 전 180일 이내⟩ = 참
++    - "6개월(180일)보다 전" -> ⟨리툭시맙 · 답변 시점 전 180일 이내⟩ = 거짓, ⟨리툭시맙 · 평생(한 번이라도)⟩ = 참
++    - "사용한 적 없음" -> ⟨리툭시맙 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨리툭시맙 · 답변 시점 전 180일 이내⟩ = 거짓 -> yes
++  - ⟨리툭시맙 · 답변 시점 전 180일 이내⟩ = 참 -> no
++  - ⟨리툭시맙 · 평생(한 번이라도)⟩ = 거짓 -> yes
++  - ⟨리툭시맙 · 평생(한 번이라도)⟩ = 참 -> unknown
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06125405:I8 (포함 기준)
++
++- 원문: "No tacrolimus was used within 3 months prior to the enrollment"
++- IR (사람이 읽는 형태): 아님(⟨타크로리무스 · 등록 전 90일 이내⟩)
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 등록
++- 승인 대상: IR v1 digest `5790bd00c6d9160469d35afc35d1e7feac165e3c795aafbabd26e7ed22db49c0`, 잠긴 원문 해시 `73e46dfeb1a64d2c…`
++- 초안 메모: 개월 -> 일 환산은 잠긴 기준표 time_window_days 값 사용 (검수 확인). 기준 시점(enrollment)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정)
++- 위험·확인 사항: 3개월=90일 환산 확인
++- 계약 후보:
++  - `QC-TACROLIMUS-LAST` v1 (검수 준비 완료) digest `100788e44252ff12e6de346195ae61970381a0fcea64b3485ed79fa7d48f99e0`: "타크로리무스(tacrolimus)를 가장 최근에 사용한 시기는 언제인가요?"
++    - "최근 2개월(60일) 이내" -> ⟨타크로리무스 · 답변 시점 전 60일 이내⟩ = 참
++    - "2개월(60일)보다 전, 3개월(90일) 이내" -> ⟨타크로리무스 · 답변 시점 전 60일 이내⟩ = 거짓, ⟨타크로리무스 · 답변 시점 전 90일 이내⟩ = 참
++    - "3개월(90일)보다 전, 6개월(180일) 이내" -> ⟨타크로리무스 · 답변 시점 전 90일 이내⟩ = 거짓, ⟨타크로리무스 · 답변 시점 전 180일 이내⟩ = 참
++    - "6개월(180일)보다 전" -> ⟨타크로리무스 · 답변 시점 전 180일 이내⟩ = 거짓, ⟨타크로리무스 · 평생(한 번이라도)⟩ = 참
++    - "사용한 적 없음" -> ⟨타크로리무스 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨타크로리무스 · 답변 시점 전 90일 이내⟩ = 거짓 -> yes
++  - ⟨타크로리무스 · 답변 시점 전 90일 이내⟩ = 참 -> no
++  - ⟨타크로리무스 · 평생(한 번이라도)⟩ = 거짓 -> yes
++  - ⟨타크로리무스 · 평생(한 번이라도)⟩ = 참 -> unknown
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06125405:I9 (포함 기준)
++
++- 원문: "No mycophenolate mofetil was used within 3 months prior to the enrollment"
++- IR (사람이 읽는 형태): 아님(⟨마이코페놀레이트 모페틸 · 등록 전 90일 이내⟩)
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 등록
++- 승인 대상: IR v1 digest `dab623e5b127cebdd916782ce45c6af9c878eb01735574d3f5aed942baf8c339`, 잠긴 원문 해시 `73e46dfeb1a64d2c…`
++- 초안 메모: 개월 -> 일 환산은 잠긴 기준표 time_window_days 값 사용 (검수 확인). 기준 시점(enrollment)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정)
++- 위험·확인 사항: 3개월=90일 환산 확인
++- 계약 후보:
++  - `QC-MYCOPHENOLATE-MOFETIL-LAST` v1 (검수 준비 완료) digest `c7f657c8d01c56b27b1cc7b5e741d4067d51615d8f6b2556850ef6755d4cd914`: "마이코페놀레이트 모페틸(mycophenolate mofetil)을 가장 최근에 사용한 시기는 언제인가요?"
++    - "최근 2개월(60일) 이내" -> ⟨마이코페놀레이트 모페틸 · 답변 시점 전 60일 이내⟩ = 참
++    - "2개월(60일)보다 전, 3개월(90일) 이내" -> ⟨마이코페놀레이트 모페틸 · 답변 시점 전 60일 이내⟩ = 거짓, ⟨마이코페놀레이트 모페틸 · 답변 시점 전 90일 이내⟩ = 참
++    - "3개월(90일)보다 전, 6개월(180일) 이내" -> ⟨마이코페놀레이트 모페틸 · 답변 시점 전 90일 이내⟩ = 거짓, ⟨마이코페놀레이트 모페틸 · 답변 시점 전 180일 이내⟩ = 참
++    - "6개월(180일)보다 전" -> ⟨마이코페놀레이트 모페틸 · 답변 시점 전 180일 이내⟩ = 거짓, ⟨마이코페놀레이트 모페틸 · 평생(한 번이라도)⟩ = 참
++    - "사용한 적 없음" -> ⟨마이코페놀레이트 모페틸 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨마이코페놀레이트 모페틸 · 답변 시점 전 90일 이내⟩ = 거짓 -> yes
++  - ⟨마이코페놀레이트 모페틸 · 답변 시점 전 90일 이내⟩ = 참 -> no
++  - ⟨마이코페놀레이트 모페틸 · 평생(한 번이라도)⟩ = 거짓 -> yes
++  - ⟨마이코페놀레이트 모페틸 · 평생(한 번이라도)⟩ = 참 -> unknown
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06294847:E1 (제외 기준)
++
++- 원문: "Patients who have previously undergone vitrectomy for retinal detachment"
++- IR (사람이 읽는 형태): ⟨유리체 절제술[망막 박리 치료 목적] · 평생(한 번이라도)⟩
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `3979363a64c6ec68281e750c9c81f11a31bda001d7febe7c851f5aaab4501c40`, 잠긴 원문 해시 `376ce877f7092dc9…`
++- 계약 후보:
++  - `QC-VITRECTOMY-RD-EVER` v1 (검수 준비 완료) digest `275f36f755bf78802e789fcb3014474670b3d884c9f66b848149df158711c71e`: "망막 박리 때문에 유리체 절제술을 받은 적이 있나요?"
++    - "예" -> ⟨유리체 절제술[망막 박리 치료 목적] · 평생(한 번이라도)⟩ = 참
++    - "아니요" -> ⟨유리체 절제술[망막 박리 치료 목적] · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨유리체 절제술[망막 박리 치료 목적] · 평생(한 번이라도)⟩ = 참 -> yes
++  - ⟨유리체 절제술 · 평생(한 번이라도)⟩ = 거짓 -> no
++  - ⟨유리체 절제술 · 평생(한 번이라도)⟩ = 참 -> unknown
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06294847:E5 (제외 기준)
++
++- 원문: "Pregnant or lactating women"
++- IR (사람이 읽는 형태): (⟨임신 · 현재⟩ 또는 ⟨수유 · 현재⟩)
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `654c26a62ef3fc7a506164ffaedeb13f4efb9e2fd235ee214ab95863a05ecab2`, 잠긴 원문 해시 `376ce877f7092dc9…`
++- 계약 후보:
++  - `QC-PREGNANT-NOW` v1 (임상 전문가 검토 필요) digest `0a244d8d0339b94fd267529c521960e6b7225fe91fde0e22eba347133d5430be`: "현재 임신 중인가요?"
++    - "예" -> ⟨임신 · 현재⟩ = 참
++    - "아니요" -> ⟨임신 · 현재⟩ = 거짓
++  - `QC-LACTATING-NOW` v1 (검수 준비 완료) digest `5498b327d305a52d160b421cc365273cd21ef5284df773e3424c983452149842`: "현재 모유 수유 중인가요?"
++    - "예" -> ⟨수유 · 현재⟩ = 참
++    - "아니요" -> ⟨수유 · 현재⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨임신 · 현재⟩ = 참 -> yes
++  - ⟨수유 · 현재⟩ = 참 -> yes
++  - ⟨임신 · 현재⟩ = 거짓, ⟨수유 · 현재⟩ = 거짓 -> no
++  - ⟨임신 · 현재⟩ = 거짓 -> unknown
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06391359:E5 (제외 기준)
++
++- 원문: "Prior cholecystectomy"
++- IR (사람이 읽는 형태): ⟨담낭 절제술 · 평생(한 번이라도)⟩
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `38dae7e3e2fb2f6389910def4a562eb5d4b9bc1c517b8f68e58134066938349f`, 잠긴 원문 해시 `c61acebee11c3944…`
++- 계약 후보:
++  - `QC-CHOLECYSTECTOMY-EVER` v1 (검수 준비 완료) digest `55d631859b495afc1e5562547c47d765ffcef3c9f9ae892444db1046fee62a19`: "담낭(쓸개) 절제 수술을 받은 적이 있나요?"
++    - "예" -> ⟨담낭 절제술 · 평생(한 번이라도)⟩ = 참
++    - "아니요" -> ⟨담낭 절제술 · 평생(한 번이라도)⟩ = 거짓
++  - `QC-SURGERY-LAST` v1 (검수 준비 완료) digest `361410f14998302023d0ec99854fa116d9c45aa5abfbb33c542a9a74039ab56c`: "가장 최근에 수술(내시경·조직검사 같은 시술 제외)을 받은 시기는 언제인가요?"
++    - "최근 4주(28일) 이내" -> ⟨수술 · 답변 시점 전 28일 이내⟩ = 참
++    - "4주(28일)보다 전, 3개월(90일) 이내" -> ⟨수술 · 답변 시점 전 28일 이내⟩ = 거짓, ⟨수술 · 답변 시점 전 90일 이내⟩ = 참
++    - "3개월(90일)보다 전" -> ⟨수술 · 답변 시점 전 90일 이내⟩ = 거짓, ⟨수술 · 평생(한 번이라도)⟩ = 참
++    - "수술을 받은 적 없음" -> ⟨수술 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨담낭 절제술 · 평생(한 번이라도)⟩ = 참 -> yes
++  - ⟨담낭 절제술 · 평생(한 번이라도)⟩ = 거짓 -> no
++  - 사실 없음 -> unknown
++  - ⟨수술 · 평생(한 번이라도)⟩ = 거짓 -> no
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06756191:E10 (제외 기준)
++
++- 원문: "Patients who have experienced a myocardial infarction"
++- IR (사람이 읽는 형태): ⟨심근경색 · 평생(한 번이라도)⟩
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `8a6bed4cd8e4346f42e9c37581760f85c20889ba57ce21a591070b58143aa603`, 잠긴 원문 해시 `f7f6e61f5bb18cfc…`
++- 계약 후보:
++  - `QC-MI-LAST` v1 (검수 준비 완료) digest `7fe01f5567f0e55631c5f23c49f425dcb7cc2693609d0a68764e173362dd1e52`: "심근경색(심장마비) 진단을 받은 가장 최근 시기는 언제인가요?"
++    - "최근 6개월(180일) 이내" -> ⟨심근경색 · 답변 시점 전 180일 이내⟩ = 참
++    - "6개월(180일)보다 전" -> ⟨심근경색 · 답변 시점 전 180일 이내⟩ = 거짓, ⟨심근경색 · 평생(한 번이라도)⟩ = 참
++    - "심근경색 진단을 받은 적 없음" -> ⟨심근경색 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨심근경색 · 평생(한 번이라도)⟩ = 참 -> yes
++  - ⟨심근경색 · 평생(한 번이라도)⟩ = 거짓 -> no
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06756191:E11 (제외 기준)
++
++- 원문: "Patients who have experienced a cerebral infarction"
++- IR (사람이 읽는 형태): ⟨뇌경색 · 평생(한 번이라도)⟩
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `4a5835dd59cb3e4fdc37eef983fb8fc70bc634557e47a7d16c1d9c7c45d84cbb`, 잠긴 원문 해시 `f7f6e61f5bb18cfc…`
++- 계약 후보:
++  - `QC-CEREBRAL-INFARCTION-EVER` v1 (검수 준비 완료) digest `5c68f81a4ccd518e5708c3dd37436c28cfbc67f95a15279e986725845c488c5d`: "뇌경색 진단을 받은 적이 있나요?"
++    - "예" -> ⟨뇌경색 · 평생(한 번이라도)⟩ = 참
++    - "아니요" -> ⟨뇌경색 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨뇌경색 · 평생(한 번이라도)⟩ = 참 -> yes
++  - ⟨뇌경색 · 평생(한 번이라도)⟩ = 거짓 -> no
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06756191:E12 (제외 기준)
++
++- 원문: "Patients currently receiving extracorporeal membrane oxygenation (ECMO) treatment"
++- IR (사람이 읽는 형태): ⟨체외막산소공급(ECMO) · 현재⟩
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `8b316bb20969bbdf895307b106ef69a39805598c1fa4e58a3156e7841d07f3af`, 잠긴 원문 해시 `f7f6e61f5bb18cfc…`
++- 위험·확인 사항: 현재 ECMO 중인 환자는 직접 답하기 어려움 (보호자 답)
++- 계약 후보:
++  - `QC-ECMO-NOW` v1 (검수 준비 완료) digest `f0f5b0d4332899c9539e026a0456f3b3b6b4b92ee966f4f53620d8b566fb767c`: "현재 체외막산소공급(ECMO) 치료를 받고 있나요?"
++    - "예" -> ⟨체외막산소공급(ECMO) · 현재⟩ = 참
++    - "아니요" -> ⟨체외막산소공급(ECMO) · 현재⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨체외막산소공급(ECMO) · 현재⟩ = 참 -> yes
++  - ⟨체외막산소공급(ECMO) · 현재⟩ = 거짓 -> no
++  - ⟨체외막산소공급(ECMO) · 평생(한 번이라도)⟩ = 거짓 -> no
++  - ⟨체외막산소공급(ECMO) · 평생(한 번이라도)⟩ = 참 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06756191:E13 (제외 기준)
++
++- 원문: "Pregnant or breastfeeding individuals"
++- IR (사람이 읽는 형태): (⟨임신 · 현재⟩ 또는 ⟨수유 · 현재⟩)
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `1400366278d450cdb1bb7e049d2ba5beba57099fce944d49f619314b440ff1b1`, 잠긴 원문 해시 `f7f6e61f5bb18cfc…`
++- 계약 후보:
++  - `QC-PREGNANT-NOW` v1 (임상 전문가 검토 필요) digest `0a244d8d0339b94fd267529c521960e6b7225fe91fde0e22eba347133d5430be`: "현재 임신 중인가요?"
++    - "예" -> ⟨임신 · 현재⟩ = 참
++    - "아니요" -> ⟨임신 · 현재⟩ = 거짓
++  - `QC-LACTATING-NOW` v1 (검수 준비 완료) digest `5498b327d305a52d160b421cc365273cd21ef5284df773e3424c983452149842`: "현재 모유 수유 중인가요?"
++    - "예" -> ⟨수유 · 현재⟩ = 참
++    - "아니요" -> ⟨수유 · 현재⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨임신 · 현재⟩ = 참 -> yes
++  - ⟨수유 · 현재⟩ = 참 -> yes
++  - ⟨임신 · 현재⟩ = 거짓, ⟨수유 · 현재⟩ = 거짓 -> no
++  - ⟨임신 · 현재⟩ = 거짓 -> unknown
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06833073:E10 (제외 기준)
++
++- 원문: "Cohort A: Has current active tuberculosis"
++- IR (사람이 읽는 형태): ⟨활동성 결핵 · 현재⟩
++- 완전성 complete / 근거 수준 clinical_record / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `e9e53254f4ff81e4ece67c3480841e65719053d75299335fc13b1e6e4479a4d7`, 잠긴 원문 해시 `e76ea7304fb4c759…`
++- 초안 메모: 활동성 결핵은 검사·진료 기록 확인이 필요해 clinical_record. 코호트 A 적용은 Rule.cohort로 처리
++- 위험·확인 사항: clinical_record (활동성 결핵)
++- 계약 후보: 없음 (진료 기록 확인 경로)
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨활동성 결핵 · 현재⟩ = 참 -> yes
++  - ⟨활동성 결핵 · 현재⟩ = 거짓 -> no
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06833073:E11 (제외 기준)
++
++- 원문: "Cohort A: Has a known history of HIV infection"
++- IR (사람이 읽는 형태): ⟨HIV 감염 · 평생(한 번이라도)⟩
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `b27f5ad0d4c3b6fc06c7f1a30f03eb1f49218a7fe2e3eaa0aeef3fdbd13d23fe`, 잠긴 원문 해시 `e76ea7304fb4c759…`
++- 초안 메모: 'known history of HIV infection' = 진단받은 적 있음. 코호트 A 적용은 Rule.cohort로 처리
++- 계약 후보:
++  - `QC-HIV-EVER` v1 (검수 준비 완료) digest `8e084607e3dcc750679a908d01a1779113694ca7fdb483185191f872439782e9`: "HIV 감염 진단을 받은 적이 있나요?"
++    - "예" -> ⟨HIV 감염 · 평생(한 번이라도)⟩ = 참
++    - "아니요" -> ⟨HIV 감염 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨HIV 감염 · 평생(한 번이라도)⟩ = 참 -> yes
++  - ⟨HIV 감염 · 평생(한 번이라도)⟩ = 거짓 -> no
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06833073:E12 (제외 기준)
++
++- 원문: "Cohort B: HIV-infected individuals with a history of Kaposi's sarcoma and/or Multicentric Castleman's Disease"
++- IR (사람이 읽는 형태): (⟨HIV 감염 · 평생(한 번이라도)⟩ 그리고 ⟨카포시 육종 또는 다발성 캐슬만병 · 평생(한 번이라도)⟩)
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `48ef4f873e296c82a8c2ccd07085e0dddab5df481b07ad37f102a13a9ee39153`, 잠긴 원문 해시 `e76ea7304fb4c759…`
++- 초안 메모: 코호트 B 전용
++- 계약 후보:
++  - `QC-HIV-EVER` v1 (검수 준비 완료) digest `8e084607e3dcc750679a908d01a1779113694ca7fdb483185191f872439782e9`: "HIV 감염 진단을 받은 적이 있나요?"
++    - "예" -> ⟨HIV 감염 · 평생(한 번이라도)⟩ = 참
++    - "아니요" -> ⟨HIV 감염 · 평생(한 번이라도)⟩ = 거짓
++  - `QC-KAPOSI-CASTLEMAN-EVER` v1 (검수 준비 완료) digest `9d9665b951d3cb893e174c093f294a9b063d28e621e3d8580c6cf95193f43748`: "카포시 육종이나 다발성 캐슬만병 진단을 받은 적이 있나요?"
++    - "예" -> ⟨카포시 육종 또는 다발성 캐슬만병 · 평생(한 번이라도)⟩ = 참
++    - "아니요" -> ⟨카포시 육종 또는 다발성 캐슬만병 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨HIV 감염 · 평생(한 번이라도)⟩ = 참, ⟨카포시 육종 또는 다발성 캐슬만병 · 평생(한 번이라도)⟩ = 참 -> yes
++  - ⟨HIV 감염 · 평생(한 번이라도)⟩ = 거짓 -> no
++  - ⟨카포시 육종 또는 다발성 캐슬만병 · 평생(한 번이라도)⟩ = 거짓 -> no
++  - ⟨HIV 감염 · 평생(한 번이라도)⟩ = 참 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06833073:E4 (제외 기준)
++
++- 원문: "Has had a myocardial infarction within 6 months of randomization/allocation"
++- IR (사람이 읽는 형태): ⟨심근경색 · 무작위 배정 전 180일 이내⟩
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 무작위 배정
++- 승인 대상: IR v1 digest `92076e93aa0c179406bd239176fb9a22d46c5943eb614e5d0ed46eacdef2f83a`, 잠긴 원문 해시 `e76ea7304fb4c759…`
++- 초안 메모: 기준 시점(randomization)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정) 개월 -> 일 환산은 잠긴 기준표 time_window_days 값 사용 (검수 확인)
++- 위험·확인 사항: 기준 시점 randomization 근사는 팀 결정
++- 계약 후보:
++  - `QC-MI-LAST` v1 (검수 준비 완료) digest `7fe01f5567f0e55631c5f23c49f425dcb7cc2693609d0a68764e173362dd1e52`: "심근경색(심장마비) 진단을 받은 가장 최근 시기는 언제인가요?"
++    - "최근 6개월(180일) 이내" -> ⟨심근경색 · 답변 시점 전 180일 이내⟩ = 참
++    - "6개월(180일)보다 전" -> ⟨심근경색 · 답변 시점 전 180일 이내⟩ = 거짓, ⟨심근경색 · 평생(한 번이라도)⟩ = 참
++    - "심근경색 진단을 받은 적 없음" -> ⟨심근경색 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨심근경색 · 답변 시점 전 180일 이내⟩ = 참 -> yes
++  - ⟨심근경색 · 평생(한 번이라도)⟩ = 거짓 -> no
++  - ⟨심근경색 · 평생(한 번이라도)⟩ = 참 -> unknown
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06833073:E6 (제외 기준)
++
++- 원문: "Has received prior treatment with a cancer vaccine"
++- IR (사람이 읽는 형태): ⟨암 백신 · 평생(한 번이라도)⟩
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `de829ce64742516a5d395b1350aed1ef92af95c86ecf44ee09b39a72bc7ce9e0`, 잠긴 원문 해시 `e76ea7304fb4c759…`
++- 계약 후보:
++  - `QC-CANCER-VACCINE-EVER` v1 (임상 전문가 검토 필요) digest `8c035d097e35bb15070afe2ab59661110bbee4b8e5d9b56a57764ebda782ff09`: "암을 치료하기 위한 암 백신(치료용 암 백신)을 맞은 적이 있나요? (자궁경부암(HPV)·B형간염 같은 예방 백신은 해당하지 않습니다)"
++    - "예" -> ⟨암 백신 · 평생(한 번이라도)⟩ = 참
++    - "아니요" -> ⟨암 백신 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨암 백신 · 평생(한 번이라도)⟩ = 참 -> yes
++  - ⟨암 백신 · 평생(한 번이라도)⟩ = 거짓 -> no
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06908096:E14 (제외 기준)
++
++- 원문: "Diabetes mellitus type 1 or type 2, excluding a history of gestational diabetes."
++- IR (사람이 읽는 형태): (⟨제1형 당뇨병 · 평생(한 번이라도)⟩ 또는 ⟨제2형 당뇨병 · 평생(한 번이라도)⟩)
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `9aee17d67ccf7b602465601cdac81ad483a5b72a206ef0c94d679a063ab1cad9`, 잠긴 원문 해시 `6713b4c3d6631ce3…`
++- 초안 메모: 임신성 당뇨병은 별개 개념이라 제외 조건이 개념 구분으로 표현됨
++- 위험·확인 사항: 임신성 당뇨 제외는 개념 구분으로 표현
++- 계약 후보:
++  - `QC-DIABETES-TYPE` v1 (검수 준비 완료) digest `2e9e08c92071c9c742dd635e6215f7046baead9eba2570ab01e04fadc762f74a`: "당뇨병 진단을 받은 적이 있다면 어떤 당뇨병인가요?"
++    - "제1형 당뇨병" -> ⟨제1형 당뇨병 · 평생(한 번이라도)⟩ = 참
++    - "제2형 당뇨병" -> ⟨제2형 당뇨병 · 평생(한 번이라도)⟩ = 참
++    - "임신 중에만 생긴 임신성 당뇨병" -> ⟨임신성 당뇨병 · 평생(한 번이라도)⟩ = 참, ⟨제1형 당뇨병 · 평생(한 번이라도)⟩ = 거짓, ⟨제2형 당뇨병 · 평생(한 번이라도)⟩ = 거짓
++    - "당뇨병 진단을 받은 적 없음" -> ⟨제1형 당뇨병 · 평생(한 번이라도)⟩ = 거짓, ⟨제2형 당뇨병 · 평생(한 번이라도)⟩ = 거짓, ⟨임신성 당뇨병 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨제2형 당뇨병 · 평생(한 번이라도)⟩ = 참 -> yes
++  - ⟨제1형 당뇨병 · 평생(한 번이라도)⟩ = 거짓, ⟨제2형 당뇨병 · 평생(한 번이라도)⟩ = 거짓 -> no
++  - ⟨임신성 당뇨병 · 평생(한 번이라도)⟩ = 참 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06908096:E22 (제외 기준)
++
++- 원문: "Asplenia, functional asplenia, or any condition resulting in absence or removal of the spleen."
++- IR (사람이 읽는 형태): ⟨비장이 없거나 기능하지 않음(비장 절제 포함) · 현재⟩
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `be5cdbc23c70b1670e0f3b4faf07700ab0dd88e144d394cd921995cecf5e1060`, 잠긴 원문 해시 `6713b4c3d6631ce3…`
++- 초안 메모: 해부학적·기능적 무비증과 비장 제거를 한 개념(asplenia)으로 둠
++- 계약 후보:
++  - `QC-ASPLENIA-NOW` v1 (검수 준비 완료) digest `d8e71b6dd00569f4109ffd4ffd1833588d14f145a2d5a60129441dd1a8eb64fb`: "비장을 제거했거나, 비장이 없거나 기능하지 않는다는 진단을 받았나요?"
++    - "예" -> ⟨비장이 없거나 기능하지 않음(비장 절제 포함) · 현재⟩ = 참
++    - "아니요" -> ⟨비장이 없거나 기능하지 않음(비장 절제 포함) · 현재⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨비장이 없거나 기능하지 않음(비장 절제 포함) · 현재⟩ = 참 -> yes
++  - ⟨비장이 없거나 기능하지 않음(비장 절제 포함) · 현재⟩ = 거짓 -> no
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06908096:E23 (제외 기준)
++
++- 원문: "History of Guillain-Barre Syndrome."
++- IR (사람이 읽는 형태): ⟨길랭-바레 증후군 · 평생(한 번이라도)⟩
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `1a00fea209ecfad938754b67e85316c697485458b6f447b132f9cc0a4a4088e7`, 잠긴 원문 해시 `6713b4c3d6631ce3…`
++- 계약 후보:
++  - `QC-GBS-EVER` v1 (검수 준비 완료) digest `1c50c5490f4e11341da7ddca694a949cecaa33bf9da90994cc19d7e65d2020f1`: "길랭-바레 증후군 진단을 받은 적이 있나요?"
++    - "예" -> ⟨길랭-바레 증후군 · 평생(한 번이라도)⟩ = 참
++    - "아니요" -> ⟨길랭-바레 증후군 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨길랭-바레 증후군 · 평생(한 번이라도)⟩ = 참 -> yes
++  - ⟨길랭-바레 증후군 · 평생(한 번이라도)⟩ = 거짓 -> no
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06908096:E4 (제외 기준)
++
++- 원문: "Blood products, including immunoglobulin products, within 120 days prior to first dose of vaccine."
++- IR (사람이 읽는 형태): ⟨혈액 제제 투여 · 첫 투여 전 120일 이내⟩
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 첫 투여
++- 승인 대상: IR v1 digest `7b172e1136fb56958faed27193ae0e45be954950f1b1af3b3ded3cc5e959dd9c`, 잠긴 원문 해시 `6713b4c3d6631ce3…`
++- 초안 메모: 면역글로불린 제제를 blood_product 개념에 포함. 기준 시점(first_dose)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정)
++- 위험·확인 사항: 기준 시점 first_dose 근사는 팀 결정
++- 계약 후보:
++  - `QC-BLOOD-PRODUCT-LAST` v1 (검수 준비 완료) digest `b6c063bba0a2ffb4bc8e952080af671afdb6139a1cff1f66e33181e5f30fc660`: "가장 최근에 수혈이나 면역글로불린 같은 혈액 제제를 맞은 시기는 언제인가요?"
++    - "최근 4개월(120일) 이내" -> ⟨혈액 제제 투여 · 답변 시점 전 120일 이내⟩ = 참
++    - "4개월(120일)보다 전" -> ⟨혈액 제제 투여 · 답변 시점 전 120일 이내⟩ = 거짓, ⟨혈액 제제 투여 · 평생(한 번이라도)⟩ = 참
++    - "맞은 적 없음" -> ⟨혈액 제제 투여 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨혈액 제제 투여 · 답변 시점 전 120일 이내⟩ = 참 -> yes
++  - ⟨혈액 제제 투여 · 답변 시점 전 120일 이내⟩ = 거짓 -> no
++  - ⟨혈액 제제 투여 · 평생(한 번이라도)⟩ = 참 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06908096:E7 (제외 기준)
++
++- 원문: "Prior participant in an EBV vaccine clinical trial."
++- IR (사람이 읽는 형태): ⟨EBV 백신 임상시험 참여 · 평생(한 번이라도)⟩
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `456a2004764fc1485c31e41ec1c8b753768eb5e98d8bd2b07e2ffab103ec3826`, 잠긴 원문 해시 `6713b4c3d6631ce3…`
++- 계약 후보:
++  - `QC-EBV-VACCINE-TRIAL-EVER` v1 (검수 준비 완료) digest `4c87d9825855a56f12776eefe1fbd22c216e5c6679f64f94b6b18421ce5084a2`: "EBV(엡스타인-바 바이러스) 백신 임상시험에 참여한 적이 있나요?"
++    - "예" -> ⟨EBV 백신 임상시험 참여 · 평생(한 번이라도)⟩ = 참
++    - "아니요" -> ⟨EBV 백신 임상시험 참여 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨EBV 백신 임상시험 참여 · 평생(한 번이라도)⟩ = 참 -> yes
++  - ⟨EBV 백신 임상시험 참여 · 평생(한 번이라도)⟩ = 거짓 -> no
++  - 사실 없음 -> unknown
++  - ⟨다른 임상시험 참여 · 평생(한 번이라도)⟩ = 거짓 -> no
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT07087314:E1 (제외 기준)
++
++- 원문: "Family history of nephrotic syndrome, chronic glomerulonephritis, or uremia."
++- IR (사람이 읽는 형태): ⟨신증후군·만성 사구체신염·요독증 가족력 · 평생(한 번이라도)⟩
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `c6c43807f5cb1f5a85af14f2b5ab73ab5ebd2df5562e6620cf30545fca95cabe`, 잠긴 원문 해시 `8b8675fc0bafe56b…`
++- 위험·확인 사항: 가족 범위(직계 등)가 원문에 없음 - 질문은 '가족 중'
++- 계약 후보:
++  - `QC-NEPHROTIC-FAMILY-HISTORY` v1 (검수 준비 완료) digest `d8cee615a1456f4ea72ea09fa5163d798331ceebbc16117bf5dede8d8a40ef1c`: "가족 중에 신증후군, 만성 사구체신염, 요독증 진단을 받은 사람이 있나요?"
++    - "예" -> ⟨신증후군·만성 사구체신염·요독증 가족력 · 평생(한 번이라도)⟩ = 참
++    - "아니요" -> ⟨신증후군·만성 사구체신염·요독증 가족력 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨신증후군·만성 사구체신염·요독증 가족력 · 평생(한 번이라도)⟩ = 참 -> yes
++  - ⟨신증후군·만성 사구체신염·요독증 가족력 · 평생(한 번이라도)⟩ = 거짓 -> no
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT07087314:E11 (제외 기준)
++
++- 원문: "Primary immunodeficiency."
++- IR (사람이 읽는 형태): ⟨원발성 면역결핍 · 평생(한 번이라도)⟩
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `abb38573878bbbe303187000e865fd1c2b8eb56371c0ed0e5557651edc4a24fe`, 잠긴 원문 해시 `8b8675fc0bafe56b…`
++- 계약 후보:
++  - `QC-PRIMARY-IMMUNODEFICIENCY-EVER` v1 (검수 준비 완료) digest `757e10b97e627192c17eea017db55546b24f665c0d99b812bcaeeba7241142d7`: "선천성(원발성) 면역결핍 진단을 받은 적이 있나요?"
++    - "예" -> ⟨원발성 면역결핍 · 평생(한 번이라도)⟩ = 참
++    - "아니요" -> ⟨원발성 면역결핍 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨원발성 면역결핍 · 평생(한 번이라도)⟩ = 참 -> yes
++  - ⟨원발성 면역결핍 · 평생(한 번이라도)⟩ = 거짓 -> no
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT07087314:E13 (제외 기준)
++
++- 원문: "Prior anti-cluster of differentiation 38 (CD38) treatment."
++- IR (사람이 읽는 형태): ⟨항CD38 치료 · 평생(한 번이라도)⟩
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `607999d47ea8fe5382713fbbf830f88948d2bfce8fc70d0877e04d1a58a6ea95`, 잠긴 원문 해시 `8b8675fc0bafe56b…`
++- 위험·확인 사항: 환자가 'CD38' 치료명을 모를 수 있음
++- 계약 후보:
++  - `QC-ANTICD38-EVER` v1 (검수 준비 완료) digest `c071706780b630e4b548c208e389af1e23cc9bd06af69d7ae14b3ac26a39fb34`: "항CD38 치료(다라투무맙 등)를 받은 적이 있나요?"
++    - "예" -> ⟨항CD38 치료 · 평생(한 번이라도)⟩ = 참
++    - "아니요" -> ⟨항CD38 치료 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨항CD38 치료 · 평생(한 번이라도)⟩ = 참 -> yes
++  - ⟨항CD38 치료 · 평생(한 번이라도)⟩ = 거짓 -> no
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT07369063:E9 (제외 기준)
++
++- 원문: "Pregnant participants"
++- IR (사람이 읽는 형태): ⟨임신 · 현재⟩
++- 완전성 complete / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `d2bbd7635d05abf54e86641839e7e27c26c2f663291284ad1377a5660fa38c33`, 잠긴 원문 해시 `1ba3f7d89892139a…`
++- 계약 후보:
++  - `QC-PREGNANT-NOW` v1 (임상 전문가 검토 필요) digest `0a244d8d0339b94fd267529c521960e6b7225fe91fde0e22eba347133d5430be`: "현재 임신 중인가요?"
++    - "예" -> ⟨임신 · 현재⟩ = 참
++    - "아니요" -> ⟨임신 · 현재⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨임신 · 현재⟩ = 참 -> yes
++  - ⟨임신 · 현재⟩ = 거짓 -> no
++  - ⟨임신 · 평생(한 번이라도)⟩ = 참 -> unknown
++  - ⟨임신 · 평생(한 번이라도)⟩ = 거짓 -> no
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT07516951:E1 (제외 기준)
++
++- 원문: "Participant with a documented diagnosis of coeliac disease."
++- IR (사람이 읽는 형태): ⟨셀리악병 · 평생(한 번이라도)⟩
++- 완전성 complete / 근거 수준 clinical_record / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `182d5ac4050f34eede101dbd8217ea873924b20ffee5d46a300eae00d609a5a7`, 잠긴 원문 해시 `689cfad78a3814c1…`
++- 초안 메모: 'documented diagnosis' -> clinical_record
++- 위험·확인 사항: clinical_record ('documented')
++- 계약 후보:
++  - `QC-COELIAC-EVER` v1 (검수 준비 완료) digest `baaefaae838721eb770efa7f6c94e992f89902f6b1ad86bcbdf0122e6f96719c`: "셀리악병 진단을 받은 적이 있나요?"
++    - "예" -> ⟨셀리악병 · 평생(한 번이라도)⟩ = 참
++    - "아니요" -> ⟨셀리악병 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨셀리악병 · 평생(한 번이라도)⟩ = 참 -> yes
++  - ⟨셀리악병 · 평생(한 번이라도)⟩ = 거짓 -> no
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT07516951:E2 (제외 기준)
++
++- 원문: "Documented low respiratory tract infection in the last 4 weeks prior to screening."
++- IR (사람이 읽는 형태): ⟨하기도 감염 · 스크리닝 전 28일 이내⟩
++- 완전성 complete / 근거 수준 clinical_record / 기준 시점 근사 필요: 스크리닝
++- 승인 대상: IR v1 digest `a615230cec49d59905fcf4028f6c7a892264d7ba38d0b0ebbede127e4d3a2467`, 잠긴 원문 해시 `689cfad78a3814c1…`
++- 초안 메모: 'Documented' -> clinical_record. 기준 시점(screening)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정)
++- 위험·확인 사항: clinical_record ('Documented'), 계약 없음
++- 계약 후보: 없음 (진료 기록 확인 경로)
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨하기도 감염 · 답변 시점 전 28일 이내⟩ = 거짓 -> no
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++## 현재 IR로 표현 불가 (7)
++
++### NCT00575185:E6 (제외 기준)
++
++- 원문: "Breast feeding during the study"
++- IR (사람이 읽는 형태): (⟨수유 · 현재⟩ 또는 [미지원: during the study - 연구 기간 중 수유 계획은 현재 사실이 아님])
++- 완전성 partial / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `80bca23358917fc3f7a98534c486093486a7f3f6bd8181aca300b96dd9547c45`, 잠긴 원문 해시 `673267acbff20475…`
++- 표현하지 못한 부분: 연구 기간 중(미래) 수유
++- 위험·확인 사항: 'during the study' 미래 수유 (부분 IR)
++- 지원되지 않는 이유: 'during the study'(연구 기간 중 수유)는 미래 행동이라 현재 사실 명제가 아님
++- 향후 확장 요건: 미래 의향(intent) 양상을 명제에 추가하거나, 동의 절차(연구 중 수유하지 않기로 동의)로 판정에서 분리
++- 현재 동작: 부분 IR이므로 결정적 판정에 쓰이지 않음 (기존 판정·질문 경로 유지)
++- 계약 후보:
++  - `QC-LACTATING-NOW` v1 (검수 준비 완료) digest `5498b327d305a52d160b421cc365273cd21ef5284df773e3424c983452149842`: "현재 모유 수유 중인가요?"
++    - "예" -> ⟨수유 · 현재⟩ = 참
++    - "아니요" -> ⟨수유 · 현재⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨수유 · 현재⟩ = 참 -> yes
++  - ⟨수유 · 현재⟩ = 거짓 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06468397:E5 (제외 기준)
++
++- 원문: "Pregnant and/or breast feeding (to be confirmed on treatment day)."
++- IR (사람이 읽는 형태): (⟨임신 · 현재⟩ 또는 ⟨수유 · 현재⟩)
++- 완전성 partial / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `c8f818def99a096b7a00334aed2c7de9b4d46d98f559fc8fae16b11d974f733d`, 잠긴 원문 해시 `29196ae8d1830e68…`
++- 표현하지 못한 부분: to be confirmed on treatment day: 치료일 확인 절차
++- 위험·확인 사항: 'to be confirmed on treatment day' 절차 (부분 IR)
++- 지원되지 않는 이유: 'to be confirmed on treatment day'는 치료일 확인 절차(시점이 미래)
++- 향후 확장 요건: 절차 요건 표기(procedural)를 IR에 추가하고 판정 결과에 '치료일 재확인 필요'로 표시
++- 현재 동작: 부분 IR이므로 결정적 판정에 쓰이지 않음 (기존 판정·질문 경로 유지)
++- 계약 후보:
++  - `QC-PREGNANT-NOW` v1 (임상 전문가 검토 필요) digest `0a244d8d0339b94fd267529c521960e6b7225fe91fde0e22eba347133d5430be`: "현재 임신 중인가요?"
++    - "예" -> ⟨임신 · 현재⟩ = 참
++    - "아니요" -> ⟨임신 · 현재⟩ = 거짓
++  - `QC-LACTATING-NOW` v1 (검수 준비 완료) digest `5498b327d305a52d160b421cc365273cd21ef5284df773e3424c983452149842`: "현재 모유 수유 중인가요?"
++    - "예" -> ⟨수유 · 현재⟩ = 참
++    - "아니요" -> ⟨수유 · 현재⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨임신 · 현재⟩ = 참 -> yes
++  - ⟨임신 · 현재⟩ = 거짓, ⟨수유 · 현재⟩ = 거짓 -> no
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06727604:E1 (제외 기준)
++
++- 원문: "Have previously been successfully treated with radioactive iodine (RAI) therapy or have undergone total thyroidectomy."
++- IR (사람이 읽는 형태): (⟨방사성 요오드 치료[성공적으로 치료됨] · 평생(한 번이라도)⟩ 또는 ⟨갑상샘 전절제술 · 평생(한 번이라도)⟩)
++- 완전성 partial / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `c665caf37a871345f3a30d7d04474716694b5df93e2a2b0ad0945005a755379f`, 잠긴 원문 해시 `8903d299ce089867…`
++- 표현하지 못한 부분: successfully treated: 방사성 요오드 치료의 '성공' 여부는 의료진 판단
++- 위험·확인 사항: 'successfully treated'는 의료진 판단 (부분 IR)
++- 지원되지 않는 이유: 방사성 요오드 치료의 '성공' 여부는 검사 결과에 근거한 의료진 판단
++- 향후 확장 요건: clinical_record 근거와 결과 지표(measurement 명제) 또는 의료진 확인 항목으로 표현
++- 현재 동작: 부분 IR이므로 결정적 판정에 쓰이지 않음 (기존 판정·질문 경로 유지)
++- 계약 후보:
++  - `QC-THYROIDECTOMY-EVER` v1 (검수 준비 완료) digest `6a4b0fcf1df13d1b657afbe294d9b402bb8679c92f7afe3cd8fbac512f3badac`: "갑상샘 전체를 떼어내는 수술을 받은 적이 있나요?"
++    - "예" -> ⟨갑상샘 전절제술 · 평생(한 번이라도)⟩ = 참
++    - "아니요" -> ⟨갑상샘 전절제술 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨갑상샘 전절제술 · 평생(한 번이라도)⟩ = 참 -> yes
++  - ⟨방사성 요오드 치료 · 평생(한 번이라도)⟩ = 거짓, ⟨갑상샘 전절제술 · 평생(한 번이라도)⟩ = 거짓 -> no
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06833073:E5 (제외 기준)
++
++- 원문: "Has received any systemic anticancer therapy including investigational agents within 4 weeks before randomization/allocation"
++- IR (사람이 읽는 형태): (⟨전신 항암 치료 · 무작위 배정 전 28일 이내⟩ 또는 [미지원: including investigational agents - 항암 목적 임상시험약인지 환자 답으로 구분하지 않음])
++- 완전성 partial / 근거 수준 self_report_ok / 기준 시점 근사 필요: 무작위 배정
++- 승인 대상: IR v1 digest `d056ed27165ea2e79455bbc742ccb20ee92e880cfea60fde0c14686ecccc6a10`, 잠긴 원문 해시 `e76ea7304fb4c759…`
++- 표현하지 못한 부분: investigational agents의 범위
++- 초안 메모: 기준 시점(randomization)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정)
++- 위험·확인 사항: 'including investigational agents' 범위 (부분 IR)
++- 지원되지 않는 이유: 'including investigational agents'의 범위(시험약을 전신 항암 치료에 포함하는지)가 정해지지 않음
++- 향후 확장 요건: 개념 표에서 investigational_agent와 systemic_anticancer_therapy의 관계 결정 + 계약 선택지에 시험약 명시
++- 현재 동작: 부분 IR이므로 결정적 판정에 쓰이지 않음 (기존 판정·질문 경로 유지)
++- 계약 후보:
++  - `QC-ANTICANCER-LAST` v1 (임상 전문가 검토 필요) digest `62fef36098048d6468e55586023d7f38c879a257175d9cd7b779ea43697c5463`: "가장 최근에 전신 항암 치료(항암 화학요법·면역항암제·표적항암제)를 받은 시기는 언제인가요?"
++    - "최근 4주(28일) 이내" -> ⟨전신 항암 치료 · 답변 시점 전 28일 이내⟩ = 참
++    - "4주(28일)보다 전" -> ⟨전신 항암 치료 · 답변 시점 전 28일 이내⟩ = 거짓, ⟨전신 항암 치료 · 평생(한 번이라도)⟩ = 참
++    - "받은 적 없음" -> ⟨전신 항암 치료 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨전신 항암 치료 · 답변 시점 전 28일 이내⟩ = 참 -> yes
++  - ⟨전신 항암 치료 · 답변 시점 전 28일 이내⟩ = 거짓 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06908096:E1 (제외 기준)
++
++- 원문: "Pregnant, breastfeeding, or planning to become pregnant while participating through 60 days after the last dose of vaccine."
++- IR (사람이 읽는 형태): (⟨임신 · 현재⟩ 또는 ⟨수유 · 현재⟩ 또는 [미지원: planning to become pregnant while participating through 60 days after the last dose - 향후 임신 계획은 사실이 아닌 의향])
++- 완전성 partial / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `604b5fdc9cd8a121466d9d41c527fb6b4c050b475f9edbb545390cf932eed482`, 잠긴 원문 해시 `6713b4c3d6631ce3…`
++- 표현하지 못한 부분: 임신 계획(미래)
++- 위험·확인 사항: 임신 계획(미래 의향)
++- 지원되지 않는 이유: 'planning to become pregnant'는 미래 의향
++- 향후 확장 요건: NCT00575185:E6과 같음 (미래 의향 양상 또는 동의 절차)
++- 현재 동작: 부분 IR이므로 결정적 판정에 쓰이지 않음 (기존 판정·질문 경로 유지)
++- 계약 후보:
++  - `QC-PREGNANT-NOW` v1 (임상 전문가 검토 필요) digest `0a244d8d0339b94fd267529c521960e6b7225fe91fde0e22eba347133d5430be`: "현재 임신 중인가요?"
++    - "예" -> ⟨임신 · 현재⟩ = 참
++    - "아니요" -> ⟨임신 · 현재⟩ = 거짓
++  - `QC-LACTATING-NOW` v1 (검수 준비 완료) digest `5498b327d305a52d160b421cc365273cd21ef5284df773e3424c983452149842`: "현재 모유 수유 중인가요?"
++    - "예" -> ⟨수유 · 현재⟩ = 참
++    - "아니요" -> ⟨수유 · 현재⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨임신 · 현재⟩ = 참 -> yes
++  - ⟨임신 · 현재⟩ = 거짓, ⟨수유 · 현재⟩ = 거짓 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06908096:E3 (제외 기준)
++
++- 원문: "Immunomodulating therapy within 180 days prior to first dose of vaccine."
++- IR (사람이 읽는 형태): [미지원: Immunomodulating therapy within 180 days - 면역조절 치료의 범위(약물 목록)가 원문에 없음]
++- 완전성 partial / 근거 수준 self_report_ok / 기준 시점 근사 필요: 없음
++- 승인 대상: IR v1 digest `85b599d4f452c70eec9f9f6e299ba15c5cde95fd8567ef07705df3426d6266f0`, 잠긴 원문 해시 `6713b4c3d6631ce3…`
++- 표현하지 못한 부분: 면역조절 치료의 정의
++- 위험·확인 사항: 면역조절 치료 범위가 원문에 없음
++- 지원되지 않는 이유: 'Immunomodulating therapy'의 정의(약제 범위)가 원문에 없음
++- 향후 확장 요건: 임상 검수자가 면역조절 치료 약제 목록을 정하고 개념 표·계약에 추가한 뒤 IR 작성
++- 현재 동작: 부분 IR이므로 결정적 판정에 쓰이지 않음 (기존 판정·질문 경로 유지)
++- 계약 후보: 없음 (진료 기록 확인 경로)
++- 검증 사례 (사실 -> 기대 판정):
++  - 사실 없음 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++### NCT06908096:E5 (제외 기준)
++
++- 원문: "Investigational research agents within 30 days prior to first dose or planning to receive investigational products while on study."
++- IR (사람이 읽는 형태): (⟨임상시험용 약 · 첫 투여 전 30일 이내⟩ 또는 [미지원: planning to receive investigational products while on study - 향후 계획])
++- 완전성 partial / 근거 수준 self_report_ok / 기준 시점 근사 필요: 첫 투여
++- 승인 대상: IR v1 digest `8d32d652a45c7f4598db7a650d494e7139caee2e05f8b4d1818e85af447db660`, 잠긴 원문 해시 `6713b4c3d6631ce3…`
++- 표현하지 못한 부분: 연구 중 임상시험약 투여 계획
++- 초안 메모: 기준 시점(first_dose)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정)
++- 위험·확인 사항: 연구 중 시험약 계획(미래 의향)
++- 지원되지 않는 이유: 'planning to receive investigational products while on study'는 미래 의향
++- 향후 확장 요건: NCT00575185:E6과 같음. 과거 30일 시험약 부분은 이미 표현됨(기준 시점 근사 결정 필요)
++- 현재 동작: 부분 IR이므로 결정적 판정에 쓰이지 않음 (기존 판정·질문 경로 유지)
++- 계약 후보:
++  - `QC-INVESTIGATIONAL-LAST` v1 (검수 준비 완료) digest `741ce804c88b3ebdafc1b67a928625e9eec70d9b34ad682dd46d6391d80ec363`: "가장 최근에 임상시험에서 시험약을 투여받은 시기는 언제인가요?"
++    - "최근 30일 이내" -> ⟨임상시험용 약 · 답변 시점 전 30일 이내⟩ = 참
++    - "30일보다 전" -> ⟨임상시험용 약 · 답변 시점 전 30일 이내⟩ = 거짓, ⟨임상시험용 약 · 평생(한 번이라도)⟩ = 참
++    - "시험약을 투여받은 적 없음" -> ⟨임상시험용 약 · 평생(한 번이라도)⟩ = 거짓
++- 검증 사례 (사실 -> 기대 판정):
++  - ⟨임상시험용 약 · 답변 시점 전 30일 이내⟩ = 참 -> yes
++  - ⟨임상시험용 약 · 답변 시점 전 30일 이내⟩ = 거짓 -> unknown
++- 검수 체크리스트:
++  - [ ] 원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다
++  - [ ] 기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)
++  - [ ] 한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다
++  - [ ] 근거 수준(self_report_ok / clinical_record)이 기준에 맞다
++  - [ ] 계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다
++  - [ ] 환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)
++  - [ ] 검증 사례의 기대값이 원문 의미와 같다
++
++## 임상 전문가 검토가 필요한 질문 계약 (9)
++
++### QC-ACTH-LAST v1
++
++- 질문: "부신피질자극호르몬(ACTH) 주사를 가장 최근에 사용한 시기는 언제인가요?"
++- digest `2f2602d0386ad345aa833fdce222be27349d21be45000c1d054f1d4869590fcd`
++- 위험·확인 사항: 진단 목적 ACTH 투여 포함 여부
++- 검토 질문:
++  1. 질문에 진단 목적 투여 포함 여부를 밝혀야 하는가?
++- 판단에 필요한 증거: NCT06125405:I12 검토 결과
++
++### QC-AMPHOTERICIN-COURSE v1
++
++- 질문: "암포테리신 B(주사 항진균제) 치료를 받은 적이 있나요? 받았다면 투여 기간이 5일을 넘었나요?"
++- digest `5a83b320eef545b5611a74f5cc7c49d99371e6c772944d718558a68aa6a6bfa5`
++- 위험·확인 사항: P8 신규(QC-AMPHOTERICIN-EVER 대체): '5일'이 누적 기간인지 1회 투여 기간인지 환자가 다르게 해석할 수 있음
++- 검토 질문:
++  1. '5일'을 누적/1회 중 무엇으로 물어야 하는가? 질문 문장에 밝혀야 하는가?
++- 판단에 필요한 증거: NCT06756191:E1 검토 결과
++
++### QC-ANTICANCER-LAST v1
++
++- 질문: "가장 최근에 전신 항암 치료(항암 화학요법·면역항암제·표적항암제)를 받은 시기는 언제인가요?"
++- digest `62fef36098048d6468e55586023d7f38c879a257175d9cd7b779ea43697c5463`
++- 위험·확인 사항: 호르몬 치료 포함 여부가 선택지에 드러나지 않음
++- 검토 질문:
++  1. 호르몬 치료·시험약을 '전신 항암 치료'에 포함하는지 선택지에 밝혀야 하는가?
++- 판단에 필요한 증거: NCT06833073:E5 검토 결과
++
++### QC-CANCER-VACCINE-EVER v1
++
++- 질문: "암을 치료하기 위한 암 백신(치료용 암 백신)을 맞은 적이 있나요? (자궁경부암(HPV)·B형간염 같은 예방 백신은 해당하지 않습니다)"
++- digest `8c035d097e35bb15070afe2ab59661110bbee4b8e5d9b56a57764ebda782ff09`
++- 위험·확인 사항: P8 수정: '암 백신'이 예방 백신(HPV 등)으로 읽힐 수 있었음(잘못된 제외) -> 치료용 명시. 예방 백신 제외가 기준 의도와 맞는지 임상 확인
++- 검토 질문:
++  1. 예방 백신(HPV·B형간염)을 제외하는 것이 기준 의도와 맞는가?
++- 판단에 필요한 증거: 프로토콜 정의 (NCT06833073:E6)
++
++### QC-FEBRILE-ILLNESS-LAST v1
++
++- 질문: "가장 최근에 열이 나는 병을 앓은 시기는 언제인가요?"
++- digest `7cf00e851a2893b1d84ee513295868595aa78b2d85ad429162691f161f67fd81`
++- 위험·확인 사항: '열이 나는 병'의 체온 기준
++- 검토 질문:
++  1. 체온 기준을 질문에 넣어야 하는가?
++- 판단에 필요한 증거: NCT06908096:E8 검토 결과
++
++### QC-LIVE-VACCINE-LAST v1
++
++- 질문: "가장 최근에 생백신(살아 있는 약독화 바이러스·세균 백신)을 맞은 시기는 언제인가요?"
++- digest `0043c7e4df5817f2f7bcc2d211e55d6650620362770613058e0a1e4c6cd98d30`
++- 위험·확인 사항: 환자가 생백신 여부를 구분하기 어려움
++- 검토 질문:
++  1. 예시 백신(MMR·수두·대상포진 생백신 등)을 질문에 넣어야 하는가? 모름 응답 비율이 높을 것인가?
++- 판단에 필요한 증거: 임상 판단
++
++### QC-PREGNANT-NOW v1
++
++- 질문: "현재 임신 중인가요?"
++- digest `0a244d8d0339b94fd267529c521960e6b7225fe91fde0e22eba347133d5430be`
++- 위험·확인 사항: 초기 임신은 본인이 모를 수 있음. 자기 보고 '아니요'로 '임신 아님'을 확정해도 되는지 (검사 요구 여부)
++- 검토 질문:
++  1. 자기 보고 '아니요'로 '현재 임신 아님'을 확정해도 되는가, 임신 검사가 필요한가?
++- 판단에 필요한 증거: 임상 판단 (8개 기준이 이 계약을 공유)
++
++### QC-SMOKING-LAST v1
++
++- 질문: "가장 최근에 담배를 피운 시기는 언제인가요?"
++- digest `b83d586da33a2522fc95aaf67925c0c5f901418b5e9168a276dd02e52e74e805`
++- 위험·확인 사항: 전자담배·가열담배 포함 여부
++- 검토 질문:
++  1. 전자담배·가열담배를 질문에 포함해야 하는가?
++- 판단에 필요한 증거: NCT07679893:E25 검토 결과
++
++### QC-TRIAL-PARTICIPATION-LAST v1
++
++- 질문: "다른 임상시험에 마지막으로 참여한 때는 언제인가요? (지금도 참여 중이면 '최근 3개월(90일) 이내'를 고르세요)"
++- digest `eb5c41909bc873d252a0377ea8f3af579ff3ab0a886dbb90ec66af9dfef83e7c`
++- 위험·확인 사항: P8 수정: '참여한 시기'가 시작 시점으로 읽혀 현재 참여 중인 환자가 '3개월보다 전'을 고를 수 있었음(잘못된 통과) -> 마지막 참여 시점·현재 참여 안내. '참여' 종료 기준(마지막 투약·방문·추적관찰 포함 여부)은 임상 결정
++- 검토 질문:
++  1. '참여'의 종료 기준(마지막 시험약 투여·마지막 방문·추적관찰 포함 여부)은?
++- 판단에 필요한 증거: 프로토콜 정의 (NCT06125405:E13)
+diff --git a/scripts/build_contract_drafts.py b/scripts/build_contract_drafts.py
+index 56bfc83..5531a59 100644
+--- a/scripts/build_contract_drafts.py
++++ b/scripts/build_contract_drafts.py
+@@ -197,11 +197,18 @@ SPEC = [
+     ("NCT06468397", "E21", A("retinal_detachment_family_history/condition/ever"), "partial", None, None,
+      ["'Fellow eye:' 표지와 가족력의 관계가 원문상 불분명"], "", ["QC-RETINAL-DETACHMENT-FAMILY-HISTORY"],
+      ever_cases("retinal_detachment_family_history/condition/ever")),
+-    ("NCT06756191", "E1", AND(A("pulmonary_mucormycosis/condition/ever"), A("amphotericin_b/event/ever"),
+-                              U("for a duration exceeding 5 days", "투여 기간 5일 초과를 계약 답으로 표현하지 않음")),
+-     "partial", None, None, ["암포테리신 B 투여 기간"], "", ["QC-MUCORMYCOSIS-EVER", "QC-AMPHOTERICIN-EVER"],
++    ("NCT06756191", "E1", AND(A("pulmonary_mucormycosis/condition/ever"), A("amphotericin_b(over_5d)/event/ever"),
++                              U("who have previously been treated with amphotericin B",
++                                "암포테리신 B 투여가 폐 털곰팡이증 치료(같은 에피소드)였어야 하는지 원문에 없음")),
++     "partial", None, None, ["암포테리신 B 투여와 폐 털곰팡이증의 관계(치료 목적·에피소드)"],
++     "P8: 'for a duration exceeding 5 days'를 한정어 over_5d로 표현(원문 그대로 질문, 누적·1회 구분은 임상 검토). "
++     "남은 unsupported 때문에 부분 IR(결정적 판정에 쓰지 않음, 계산 값은 provisional 기록). 임상 검토에서 투여 목적 "
++     "조건이 필요 없다고 정하면 unsupported 노드를 빼고 complete로 바꿀 수 있음",
++     ["QC-MUCORMYCOSIS-EVER", "QC-AMPHOTERICIN-COURSE"],
+      [({"pulmonary_mucormycosis/condition/ever": False}, "no"),
+-      ({"pulmonary_mucormycosis/condition/ever": True, "amphotericin_b/event/ever": True}, "unknown")]),
++      ({"pulmonary_mucormycosis/condition/ever": True, "amphotericin_b/event/ever": False}, "no"),
++      ({"pulmonary_mucormycosis/condition/ever": True, "amphotericin_b(over_5d)/event/ever": False}, "no"),
++      ({"pulmonary_mucormycosis/condition/ever": True, "amphotericin_b(over_5d)/event/ever": True}, "unknown")]),
+     ("NCT06756191", "E10", A("myocardial_infarction/condition/ever"), "complete", None, None, [], "", ["QC-MI-LAST"],
+      ever_cases("myocardial_infarction/condition/ever")),
+     ("NCT06756191", "E11", A("cerebral_infarction/condition/ever"), "complete", None, None, [], "",
+@@ -294,6 +301,12 @@ def last_contract(cid, concept, question, bins, never_label):
+     return {"contract_id": cid, "version": 1, "question": question, "answer_type": "single_choice", "options": opts}
+ 
+ 
++def _obj(ko: str) -> str:
++    """목적격 조사: 마지막 한글 음절에 받침이 있으면 '을', 없으면 '를' ("리툭시맙(rituximab)을", "ACTH) 주사를")."""
++    last = next(ch for ch in reversed(ko) if "가" <= ch <= "힣")
++    return ko + ("을" if (ord(last) - 0xAC00) % 28 else "를")
++
++
+ def _is_event(concept):
+     from ctrec.propositions import CONCEPTS
+     return CONCEPTS[concept].aspect == "event"
+@@ -321,7 +334,8 @@ CONTRACTS = [
+     last_contract("QC-INVESTIGATIONAL-LAST", "investigational_agent",
+                   "가장 최근에 임상시험에서 시험약을 투여받은 시기는 언제인가요?", [30], "시험약을 투여받은 적 없음"),
+     last_contract("QC-TRIAL-PARTICIPATION-LAST", "clinical_trial_participation",
+-                  "가장 최근에 다른 임상시험에 참여한 시기는 언제인가요?", [90], "임상시험에 참여한 적 없음"),
++                  "다른 임상시험에 마지막으로 참여한 때는 언제인가요? (지금도 참여 중이면 '최근 3개월(90일) 이내'를 "
++                  "고르세요)", [90], "임상시험에 참여한 적 없음"),
+     last_contract("QC-FEBRILE-ILLNESS-LAST", "febrile_illness",
+                   "가장 최근에 열이 나는 병을 앓은 시기는 언제인가요?", [14], "열이 나는 병을 앓은 적 없음"),
+     last_contract("QC-MI-LAST", "myocardial_infarction",
+@@ -340,8 +354,13 @@ CONTRACTS = [
+            "암 치료로 면역항암제(면역관문억제제 등)를 쓴 적이 있나요?"),
+     yes_no("QC-TARGETED-THERAPY-EVER", "targeted_anticancer_therapy/event/ever", "암 치료로 표적항암제를 쓴 적이 있나요?"),
+     yes_no("QC-MUCORMYCOSIS-EVER", "pulmonary_mucormycosis/condition/ever", "폐 털곰팡이증(뮤코르진균증) 진단을 받은 적이 있나요?"),
+-    yes_no("QC-AMPHOTERICIN-EVER", "amphotericin_b/event/ever", "암포테리신 B 치료를 받은 적이 있나요?"),
+-    *[last_contract(f"QC-{c.upper().replace('_', '-')}-LAST", c, f"{ko}를 가장 최근에 사용한 시기는 언제인가요?",
++    {"contract_id": "QC-AMPHOTERICIN-COURSE", "version": 1, "answer_type": "single_choice",
++     "question": "암포테리신 B(주사 항진균제) 치료를 받은 적이 있나요? 받았다면 투여 기간이 5일을 넘었나요?",
++     "options": [{"label": "받았고, 5일을 넘게 투여함", "assertions": [["amphotericin_b(over_5d)/event/ever", True]]},
++                 {"label": "받았지만 5일 이하로 투여함", "assertions": [["amphotericin_b(over_5d)/event/ever", False],
++                                                          ["amphotericin_b/event/ever", True]]},
++                 {"label": "받은 적 없음", "assertions": [["amphotericin_b/event/ever", False]]}]},
++    *[last_contract(f"QC-{c.upper().replace('_', '-')}-LAST", c, f"{_obj(ko)} 가장 최근에 사용한 시기는 언제인가요?",
+                     [60, 90, 180], "사용한 적 없음") for c, ko in DRUGS],
+     yes_no("QC-PREGNANT-NOW", PREG_NOW, "현재 임신 중인가요?"),
+     yes_no("QC-LACTATING-NOW", LACT_NOW, "현재 모유 수유 중인가요?"),
+@@ -363,7 +382,9 @@ CONTRACTS = [
+     yes_no("QC-PANCREATIC-NECROSIS-EVER", "pancreatic_necrosis/condition/ever", "췌장 괴사 진단을 받은 적이 있나요?"),
+     yes_no("QC-PANCREATIC-NECROSECTOMY-EVER", "pancreatic_necrosectomy/event/ever",
+            "췌장의 괴사된 조직을 제거하는 시술·수술(췌장 괴사 조직 제거술)을 받은 적이 있나요?"),
+-    yes_no("QC-CANCER-VACCINE-EVER", "cancer_vaccine/event/ever", "암 백신 치료를 받은 적이 있나요?"),
++    yes_no("QC-CANCER-VACCINE-EVER", "cancer_vaccine/event/ever",
++           "암을 치료하기 위한 암 백신(치료용 암 백신)을 맞은 적이 있나요? (자궁경부암(HPV)·B형간염 같은 예방 백신은 "
++           "해당하지 않습니다)"),
+     yes_no("QC-HIV-EVER", "hiv_infection/condition/ever", "HIV 감염 진단을 받은 적이 있나요?"),
+     yes_no("QC-KAPOSI-CASTLEMAN-EVER", "kaposi_or_castleman/condition/ever",
+            "카포시 육종이나 다발성 캐슬만병 진단을 받은 적이 있나요?"),
+diff --git a/scripts/build_review_package.py b/scripts/build_review_package.py
+new file mode 100644
+index 0000000..10e6c05
+--- /dev/null
++++ b/scripts/build_review_package.py
+@@ -0,0 +1,221 @@
++"""IR·질문 계약 기준별 검수 자료 생성 (P8). 승인 기록을 만들거나 바꾸지 않습니다.
++
++    python scripts/build_review_package.py           # docs/review/ir_review_package.md 작성
++    python scripts/build_review_package.py --check   # 자료가 최신인지만 확인
++
++검수자가 기준 하나를 한 곳에서 확인하도록: 원문, 사람이 읽는 IR, 승인 대상 digest, 계약 질문·선택지와 각 선택지가 만드는
++명제 사실, 검증 사례, 사전 분류와 위험, 임상 검토 질문·필요한 증거(임상 검토 필요), 지원되지 않는 이유·확장 요건(표현 불가),
++검수 체크리스트. 분류·질문은 AI 사전 작성이며 승인이 아닙니다.
++"""
++
++from __future__ import annotations
++
++import argparse
++import json
++import sys
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(ROOT / "src"))
++sys.path.insert(0, str(ROOT / "scripts"))
++
++from ctrec.condition_ir import walk  # noqa: E402
++from ctrec.ir_review import Registry  # noqa: E402
++from ctrec.propositions import CONCEPTS, QUALIFIERS, Proposition  # noqa: E402
++from ctrec.question_contract import ContractRegistry  # noqa: E402
++from report_contract_drafts import CONTRACT_REVIEW, IR_REVIEW, LABEL, PRIORITY  # noqa: E402
++
++OUT = ROOT / "docs" / "review" / "ir_review_package.md"
++ANCHOR_KO = {"assessment": "답변 시점", "enrollment": "등록", "screening": "스크리닝", "randomization": "무작위 배정",
++             "first_dose": "첫 투여"}
++
++# 임상 전문가 검토 필요 항목: (검토 질문들, 판단에 필요한 증거)
++CLINICAL = {
++    "NCT06125405:I12": (["진단 목적 ACTH 투여(ACTH 자극 검사 1회)가 'ACTH was used'에 포함되는가?",
++                         "3개월을 90일로 환산해도 되는가?", "기준 시점 등록(enrollment)을 답변 시점으로 근사해도 되는가?"],
++                        "프로토콜의 ACTH 사용 정의, 연구진 확인"),
++    "NCT06468397:E21": (["'Fellow eye:' 표지는 반대쪽 눈 조건의 하위 항목인가? 가족력 조건이 반대쪽 눈과 어떤 관계인가?",
++                         "가족의 범위(직계·형제 등)는?"], "프로토콜 원문 전체 맥락(잠긴 기준표 밖 원문)"),
++    "NCT06756191:E1": (["암포테리신 B 투여가 폐 털곰팡이증 치료(같은 에피소드)여야 하는가? 아니면 다른 이유의 투여도 포함하는가?",
++                        "'5일 초과'는 누적 투여 기간인가, 1회 치료 기간인가?",
++                        "위 두 가지가 정해지면 unsupported 노드를 빼고 complete로 바꿀 수 있는가?"],
++                       "프로토콜 정의, 연구진 확인 (이 시험의 대상이 현재 PM 에피소드 환자인지)"),
++    "NCT06908096:E8": (["'febrile illness'의 체온 기준(예: 38.0°C 이상)은? 환자 자기 보고 '열이 나는 병'으로 충분한가?",
++                        "기준 시점 첫 투여(first_dose)를 답변 시점으로 근사해도 되는가?"], "프로토콜의 발열 정의"),
++    "NCT06908096:E11": (["유전성·후천성·특발성 = 모든 혈관부종으로 보아도 되는가? 약물(ACE 억제제 등) 유발 혈관부종은?"],
++                        "임상 판단"),
++    "NCT06908096:E12": (["'within the past year'의 기준 시점(screening) 가정이 맞는가?",
++                         "'증상이 마지막으로 있었던 시기'로 묻는 것이 기준(1년 내 특발성 두드러기)과 같은가? 진단 없이 증상만 있던 경우는?"],
++                        "프로토콜 정의, 임상 판단"),
++    "NCT06908096:E25": (["HIV 진단 이력 = 현재 감염으로 해석해도 되는가?", "자기 보고로 충분한가, 진료 기록(clinical_record)이 필요한가?"],
++                        "임상 판단, 근거 수준 정책"),
++    "NCT06916494:I3": (["'systemic immunotherapy'는 항암 면역요법만인가(알레르기 면역요법 등 포함 여부)?",
++                        "'target therapy'의 범위는?", "범위가 정해지면 complete로 바꿀 수 있는가?"], "프로토콜 정의"),
++    "NCT07087314:E15": (["'major surgery' 정의는? 현재 IR은 '수술 없음'만 결정 가능 - 큰 수술 여부를 묻는 계약이 필요한가?",
++                         "기준 시점 첫 투여 근사 허용 여부"], "프로토콜 정의 (예: 전신마취·입원 기준)"),
++    "NCT07087314:E14": (["환자가 생백신 여부를 스스로 구분할 수 있는가? 예방접종 기록 확인(clinical_record)이 필요한가?",
++                         "기준 시점 첫 투여 근사 허용 여부"], "임상 판단, 예방접종 기록 확보 가능성"),
++    "NCT07087314:I11": (["원문에 기준 시점이 없음: 등록(enrollment)으로 두어도 되는가?", "2개월을 60일로 환산해도 되는가?"],
++                        "프로토콜 정의"),
++    "NCT07087314:I12": (["원문에 기준 시점이 없음: 등록(enrollment)으로 두어도 되는가?", "6개월을 180일로 환산해도 되는가?",
++                         "상위 개념 계약(QC-ANTICD20-LAST, 항CD20 항체)으로 리툭시맙·오비누투주맙을 함께 물어도 되는가?"],
++                        "프로토콜 정의"),
++    "NCT07679893:E25": (["'recently smoked'의 기간은? (현재 IR은 현재 흡연 또는 1년 내 흡연, 'recently' 부분은 미지원)",
++                         "전자담배·가열담배를 포함하는가?"], "프로토콜 정의"),
++}
++CONTRACT_CLINICAL = {
++    "QC-ACTH-LAST": (["질문에 진단 목적 투여 포함 여부를 밝혀야 하는가?"], "NCT06125405:I12 검토 결과"),
++    "QC-ANTICANCER-LAST": (["호르몬 치료·시험약을 '전신 항암 치료'에 포함하는지 선택지에 밝혀야 하는가?"], "NCT06833073:E5 검토 결과"),
++    "QC-FEBRILE-ILLNESS-LAST": (["체온 기준을 질문에 넣어야 하는가?"], "NCT06908096:E8 검토 결과"),
++    "QC-LIVE-VACCINE-LAST": (["예시 백신(MMR·수두·대상포진 생백신 등)을 질문에 넣어야 하는가? 모름 응답 비율이 높을 것인가?"],
++                             "임상 판단"),
++    "QC-PREGNANT-NOW": (["자기 보고 '아니요'로 '현재 임신 아님'을 확정해도 되는가, 임신 검사가 필요한가?"],
++                        "임상 판단 (8개 기준이 이 계약을 공유)"),
++    "QC-SMOKING-LAST": (["전자담배·가열담배를 질문에 포함해야 하는가?"], "NCT07679893:E25 검토 결과"),
++    "QC-AMPHOTERICIN-COURSE": (["'5일'을 누적/1회 중 무엇으로 물어야 하는가? 질문 문장에 밝혀야 하는가?"], "NCT06756191:E1 검토 결과"),
++    "QC-TRIAL-PARTICIPATION-LAST": (["'참여'의 종료 기준(마지막 시험약 투여·마지막 방문·추적관찰 포함 여부)은?"],
++                                    "프로토콜 정의 (NCT06125405:E13)"),
++    "QC-CANCER-VACCINE-EVER": (["예방 백신(HPV·B형간염)을 제외하는 것이 기준 의도와 맞는가?"], "프로토콜 정의 (NCT06833073:E6)"),
++}
++# 현재 IR로 표현 불가: (지원되지 않는 이유, 향후 확장 요건)
++INEXPRESS = {
++    "NCT00575185:E6": ("'during the study'(연구 기간 중 수유)는 미래 행동이라 현재 사실 명제가 아님",
++                       "미래 의향(intent) 양상을 명제에 추가하거나, 동의 절차(연구 중 수유하지 않기로 동의)로 판정에서 분리"),
++    "NCT06468397:E5": ("'to be confirmed on treatment day'는 치료일 확인 절차(시점이 미래)",
++                       "절차 요건 표기(procedural)를 IR에 추가하고 판정 결과에 '치료일 재확인 필요'로 표시"),
++    "NCT06727604:E1": ("방사성 요오드 치료의 '성공' 여부는 검사 결과에 근거한 의료진 판단",
++                       "clinical_record 근거와 결과 지표(measurement 명제) 또는 의료진 확인 항목으로 표현"),
++    "NCT06833073:E5": ("'including investigational agents'의 범위(시험약을 전신 항암 치료에 포함하는지)가 정해지지 않음",
++                       "개념 표에서 investigational_agent와 systemic_anticancer_therapy의 관계 결정 + 계약 선택지에 시험약 명시"),
++    "NCT06908096:E1": ("'planning to become pregnant'는 미래 의향", "NCT00575185:E6과 같음 (미래 의향 양상 또는 동의 절차)"),
++    "NCT06908096:E3": ("'Immunomodulating therapy'의 정의(약제 범위)가 원문에 없음",
++                       "임상 검수자가 면역조절 치료 약제 목록을 정하고 개념 표·계약에 추가한 뒤 IR 작성"),
++    "NCT06908096:E5": ("'planning to receive investigational products while on study'는 미래 의향",
++                       "NCT00575185:E6과 같음. 과거 30일 시험약 부분은 이미 표현됨(기준 시점 근사 결정 필요)"),
++}
++CHECKLIST = ["원문 구간(source_span)이 잠긴 기준표 원문과 같고 빠진 조건이 없다",
++             "기간·환산(개월->일)과 기준 시점이 원문과 같다 (기준 시점 근사는 anchor_policy로만)",
++             "한정어(major, non-diagnostic 등)·예외(excluding ...)가 빠지지 않았다",
++             "근거 수준(self_report_ok / clinical_record)이 기준에 맞다",
++             "계약 질문이 명제를 정확히 묻고, 각 선택지의 명제 사실이 선택지 문장과 같다",
++             "환자(보호자)가 이 질문에 답할 수 있다 (모름은 미확인으로 남음)",
++             "검증 사례의 기대값이 원문 의미와 같다"]
++
++
++def _prop_ko(key: str) -> str:
++    p = Proposition.parse(key)
++    c = CONCEPTS[p.concept]
++    q = "".join(f"[{QUALIFIERS[x]}]" for x in sorted(p.qualifiers))
++    s = p.scope
++    when = ("현재" if s.kind == "current" else "평생(한 번이라도)" if s.kind == "ever"
++            else f"{ANCHOR_KO[s.anchor]} 전 {s.days}일 이내")
++    return f"{c.label_ko}{q} · {when}"
++
++
++def _node_ko(n: dict) -> str:
++    op = n["op"]
++    if op == "atom":
++        return f"⟨{_prop_ko(n['prop'])}⟩"
++    if op == "unsupported":
++        return f"[미지원: {n['text']} - {n['reason']}]"
++    if op == "not":
++        return f"아님({_node_ko(n['arg'])})"
++    if op == "compare":
++        return f"[수치 비교 {n}]"
++    joiner = " 그리고 " if op == "and" else " 또는 "
++    return "(" + joiner.join(_node_ko(a) for a in n["args"]) + ")"
++
++
++def _value_ko(v: bool) -> str:
++    return "참" if v else "거짓"
++
++
++def build() -> str:
++    reg = Registry()
++    cr = ContractRegistry(reg)
++    cases = json.loads((ROOT / "contracts" / "ir_cases.json").read_text(encoding="utf-8"))["criteria"]
++    recs = {f"{t}:{rid}": rec for t in reg.trial_ids() for rid, rec in reg.trial_records(t).items()}
++    missing = sorted((set(k for k, v in IR_REVIEW.items() if v[0] == "clinical") ^ set(CLINICAL))
++                     | (set(k for k, v in IR_REVIEW.items() if v[0] == "inexpress") ^ set(INEXPRESS))
++                     | (set(k for k, v in CONTRACT_REVIEW.items() if v[0] == "clinical") ^ set(CONTRACT_CLINICAL)))
++    if missing:
++        raise SystemExit(f"검토 질문·사유가 분류와 맞지 않음: {missing}")
++    out = ["# IR·질문 계약 기준별 검수 자료 (자동 생성: scripts/build_review_package.py)", "",
++           "**모든 초안은 미승인입니다. 분류·검토 질문은 AI가 만든 사전 자료이며 승인이 아닙니다.** 승인은 임상 검수자가 아래 "
++           "digest를 확인하고 검수 기록을 남길 때만 효력이 있고, 초안 내용이 바뀌면 digest가 바뀌어 이전 승인은 무효입니다.", "",
++           "검수 기록 (사람만, 자동화 이름·사유 없는 승인은 거부됨):", "",
++           "```python", "from ctrec.ir_review import Registry",
++           "Registry().record_review(\"ir\", \"<기준>\", \"<IR digest>\", \"approved\" | \"rejected\",",
++           "                         reviewer=\"<검수자 이름>\", note=\"<사유>\", clinical_review_confirmed=True)",
++           "Registry().record_review(\"contracts\", \"<계약 ID>\", \"<계약 digest>\", ...)  # 계약도 같은 방식", "```", "",
++           "기간 기준은 기준 시점 근사(anchor_policy) 정책 결정 후 검수자가 IR에 추가해야 판정에 쓰입니다(추가하면 digest가 바뀜).", ""]
++    order = sorted(recs, key=lambda k: (PRIORITY[IR_REVIEW[k][0]], k))
++    section = None
++    for key in order:
++        cls, risk = IR_REVIEW[key]
++        if cls != section:
++            section = cls
++            n = sum(1 for k in order if IR_REVIEW[k][0] == cls)
++            out += [f"## {LABEL[cls]} ({n})", ""]
++        ir = recs[key].ir
++        cc = cases[key]
++        anchors = sorted({Proposition.parse(x["prop"]).scope.anchor for x in walk(ir.condition) if x.get("op") == "atom"}
++                         - {"assessment"})
++        out += [f"### {key} ({'포함' if cc['kind'] == 'inclusion' else '제외'} 기준)", "",
++                f"- 원문: \"{ir.criterion_text}\"",
++                f"- IR (사람이 읽는 형태): {_node_ko(ir.condition)}",
++                f"- 완전성 {ir.completeness} / 근거 수준 {ir.source_requirement} / 기준 시점 근사 필요: "
++                f"{', '.join(ANCHOR_KO[a] for a in anchors) or '없음'}",
++                f"- 승인 대상: IR v{ir.ir_version} digest `{ir.digest()}`, 잠긴 원문 해시 `{ir.frozen_file_hash[:16]}…`"]
++        if ir.unsupported_parts:
++            out.append(f"- 표현하지 못한 부분: {'; '.join(ir.unsupported_parts)}")
++        if ir.notes:
++            out.append(f"- 초안 메모: {ir.notes}")
++        if risk:
++            out.append(f"- 위험·확인 사항: {risk}")
++        if cls == "clinical":
++            qs, ev = CLINICAL[key]
++            out += ["- 임상 검토 질문:", *[f"  {i}. {q}" for i, q in enumerate(qs, 1)], f"- 판단에 필요한 증거: {ev}"]
++        if cls == "inexpress":
++            why, ext = INEXPRESS[key]
++            out += [f"- 지원되지 않는 이유: {why}", f"- 향후 확장 요건: {ext}",
++                    "- 현재 동작: 부분 IR이므로 결정적 판정에 쓰이지 않음 (기존 판정·질문 경로 유지)"]
++        out.append("- 계약 후보:" if cc["contract_candidates"] else "- 계약 후보: 없음 (진료 기록 확인 경로)")
++        for cid in cc["contract_candidates"]:
++            c = cr.raw(cid)
++            ccls = CONTRACT_REVIEW.get(cid, ("ready", ""))[0]
++            out.append(f"  - `{cid}` v{c.version} ({LABEL[ccls]}) digest `{c.digest()}`: \"{c.question}\"")
++            for o in c.options:
++                facts = ", ".join(f"⟨{_prop_ko(k)}⟩ = {_value_ko(v)}" for k, v in o["assertions"])
++                out.append(f"    - \"{o['label']}\" -> {facts}")
++        out.append("- 검증 사례 (사실 -> 기대 판정):")
++        for case in cc["cases"]:
++            facts = ", ".join(f"⟨{_prop_ko(k)}⟩ = {_value_ko(v)}" for k, v in case["facts"]) or "사실 없음"
++            out.append(f"  - {facts} -> {case['expect']}")
++        out += ["- 검수 체크리스트:", *[f"  - [ ] {c}" for c in CHECKLIST], ""]
++    out += [f"## 임상 전문가 검토가 필요한 질문 계약 ({len(CONTRACT_CLINICAL)})", ""]
++    for cid in sorted(CONTRACT_CLINICAL):
++        c = cr.raw(cid)
++        qs, ev = CONTRACT_CLINICAL[cid]
++        out += [f"### {cid} v{c.version}", "", f"- 질문: \"{c.question}\"", f"- digest `{c.digest()}`",
++                f"- 위험·확인 사항: {CONTRACT_REVIEW[cid][1]}", "- 검토 질문:",
++                *[f"  {i}. {q}" for i, q in enumerate(qs, 1)], f"- 판단에 필요한 증거: {ev}", ""]
++    return "\n".join(out).rstrip() + "\n"
++
++
++def main(argv=None) -> int:
++    ap = argparse.ArgumentParser()
++    ap.add_argument("--check", action="store_true")
++    args = ap.parse_args(argv)
++    text = build()
++    if args.check:
++        same = OUT.exists() and OUT.read_text(encoding="utf-8") == text
++        print("최신" if same else "다름: scripts/build_review_package.py로 다시 작성하세요")
++        return 0 if same else 1
++    OUT.write_text(text, encoding="utf-8")
++    print(f"작성: {OUT.relative_to(ROOT)}")
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+diff --git a/scripts/report_contract_drafts.py b/scripts/report_contract_drafts.py
+index 520f670..37900a2 100644
+--- a/scripts/report_contract_drafts.py
++++ b/scripts/report_contract_drafts.py
+@@ -63,7 +63,8 @@ IR_REVIEW = {
+     "NCT00575185:E6": ("inexpress", "'during the study' 미래 수유 (부분 IR)"),
+     "NCT06468397:E5": ("inexpress", "'to be confirmed on treatment day' 절차 (부분 IR)"),
+     "NCT06468397:E21": ("clinical", "'Fellow eye:' 표지와 가족력의 관계 불분명"),
+-    "NCT06756191:E1": ("fix", "암포테리신 B '5일 초과'는 한정어(기간)로 표현 가능 - 개념·계약 확장 필요"),
++    "NCT06756191:E1": ("clinical", "P8 수정: '5일 초과'를 한정어(over_5d)로 표현. 남은 쟁점: 투여가 폐 털곰팡이증 치료(같은 "
++                                   "에피소드)여야 하는지 (부분 IR: 결정적 판정에 쓰이지 않음), 5일이 누적인지 1회 투여 기간인지"),
+     "NCT06756191:E10": ("ready", ""),
+     "NCT06756191:E11": ("ready", ""),
+     "NCT06756191:E12": ("ready", "현재 ECMO 중인 환자는 직접 답하기 어려움 (보호자 답)"),
+@@ -98,6 +99,13 @@ CONTRACT_REVIEW = {
+     "QC-ANTICANCER-LAST": ("clinical", "호르몬 치료 포함 여부가 선택지에 드러나지 않음"),
+     "QC-SMOKING-LAST": ("clinical", "전자담배·가열담배 포함 여부"),
+     "QC-ACTH-LAST": ("clinical", "진단 목적 ACTH 투여 포함 여부"),
++    "QC-TRIAL-PARTICIPATION-LAST": ("clinical", "P8 수정: '참여한 시기'가 시작 시점으로 읽혀 현재 참여 중인 환자가 '3개월보다 "
++                                                "전'을 고를 수 있었음(잘못된 통과) -> 마지막 참여 시점·현재 참여 안내. "
++                                                "'참여' 종료 기준(마지막 투약·방문·추적관찰 포함 여부)은 임상 결정"),
++    "QC-CANCER-VACCINE-EVER": ("clinical", "P8 수정: '암 백신'이 예방 백신(HPV 등)으로 읽힐 수 있었음(잘못된 제외) -> 치료용 "
++                                           "명시. 예방 백신 제외가 기준 의도와 맞는지 임상 확인"),
++    "QC-AMPHOTERICIN-COURSE": ("clinical", "P8 신규(QC-AMPHOTERICIN-EVER 대체): '5일'이 누적 기간인지 1회 투여 기간인지 "
++                                           "환자가 다르게 해석할 수 있음"),
+     "QC-FEBRILE-ILLNESS-LAST": ("clinical", "'열이 나는 병'의 체온 기준"),
+     "QC-SURGERY-LAST": ("ready", "'시술 제외' 안내가 환자마다 다르게 해석될 수 있음 (복강경 수술은 수술)"),
+     "QC-URTICARIA-LAST": ("ready", "P7에서 수정: '진단 시기' -> '증상이 마지막으로 있었던 시기' (기준은 1년 내 증상)"),
+diff --git a/src/ctrec/propositions.py b/src/ctrec/propositions.py
+index f95dd9c..a8f8522 100644
+--- a/src/ctrec/propositions.py
++++ b/src/ctrec/propositions.py
+@@ -132,6 +132,7 @@ QUALIFIERS = {
+     "systemic": "전신 투여",
+     "for_detached_retina": "망막 박리 치료 목적",
+     "successful": "성공적으로 치료됨",
++    "over_5d": "투여 기간 5일 초과",
+ }
+ 
+ 
+diff --git a/src/ctrec/qa_guard.py b/src/ctrec/qa_guard.py
+index 893dc77..73da593 100644
+--- a/src/ctrec/qa_guard.py
++++ b/src/ctrec/qa_guard.py
+@@ -23,6 +23,7 @@ matcher.match_trial의 결과를 받아, 확정 판정(yes/no, 해당 없음)의
+ 
+ from __future__ import annotations
+ 
++import os
+ import re
+ 
+ from . import evidence
+@@ -30,6 +31,19 @@ from .agents import matcher
+ from .schemas import CriterionAssessment, ParsedTrial, QAPair, TrialMatch
+ 
+ FLAG = "qa_uncontracted"
++POLICY_ENV = "CTREC_QA_POLICY"
++
++
++def policy() -> str:
++    """기존 Session 경로(matcher.match_trial)에 적용할 Q&A 판정 정책 (환경 변수 CTREC_QA_POLICY).
++
++    - legacy (기본, 값 없음): 현재 서비스 정책. 확인 답변을 인용한 확정은 기존 검사(인용·E9 직접성·근거 수준)만 거침
++    - contract: 계약 없는 확인 답변은 확정 근거가 아님 (이 모듈의 경계를 matcher 끝에서 적용, 머리말 모드)
++    그 밖의 값은 contract로 봄 (철자 오류로 경계가 꺼지지 않도록, 엄격한 쪽).
++    ContractSession은 이 값과 관계없이 항상 경계를 적용합니다(구조 모드). 이 값은 서비스 기본 정책을 바꾸지 않습니다.
++    """
++    v = os.getenv(POLICY_ENV, "").strip().lower()
++    return "legacy" if v in ("", "legacy") else "contract"
+ 
+ 
+ def _norm(s: str) -> str:
+diff --git a/src/ctrec/question_contract.py b/src/ctrec/question_contract.py
+index e578f10..5f44661 100644
+--- a/src/ctrec/question_contract.py
++++ b/src/ctrec/question_contract.py
+@@ -25,11 +25,19 @@ from .schemas import ClarifyingQuestion
+ 
+ CONTRACTS_FILE = "question_contracts.json"
+ YES_NO = ("예", "아니요")
+-# 사실을 말하지 않은 답 (모름·거부·미응답). decision_state.DECLINED_ANSWERS에 흔한 변형을 더함
++# 사실을 말하지 않은 답 (모름·거부·미응답). decision_state.DECLINED_ANSWERS에 흔한 변형을 더함.
++# 답 전체가 거부·모름인 경우만 (문장 안의 '거부'·'모름'은 사실 진술일 수 있음: "BCG 치료를 거부했습니다").
++# fix/qa-evidence-link의 판별(문장형 거부 등)을 합친 유일한 판별 함수 (E9 evidence_directness도 이것을 씀)
++# 거부 문장 앞의 짧은 화제어 ("그 부분은 답변하지 않겠습니다", "그건 말하고 싶지 않아요"). 거부 문장에만 붙임
++_TOPIC = r"(?:[가-힣]{1,6}(?:\s+[가-힣]{1,6})?(?:은|는|건)\s+)?"
+ _NON_ANSWER = re.compile(
+     r"^(?:잘\s*)?(?:모름|모르겠[가-힣]*|모릅니다|몰라요?)$|^기억(?:이)?\s*(?:안\s*[가-힣]+|나지\s*않[가-힣]*)$|"
+-    r"^(?:답변\s*)?거부(?:합니다|함)?$|^(?:답변|응답)\s*(?:안\s*함|없음|하지\s*않[가-힣]*)$|^(?:무|미)응답$|"
+-    r"^(?:unknown|not sure|unsure|don'?t know|declined?|refused?|no answer|n/?a)$", re.IGNORECASE)
++    r"^확실하지\s*않[가-힣]*$|"
++    rf"^{_TOPIC}(?:답변\s*)?거부(?:합니다|할게요|해요|함)?$|"
++    rf"^{_TOPIC}(?:답변|대답|응답)\s*(?:하지\s*않[가-힣]*|안\s*함|없음|불가)$|^(?:무|미)응답$|"
++    rf"^{_TOPIC}말하고\s*싶지\s*않(?:아요|습니다|음)?$|^{_TOPIC}말(?:씀\s*드리|하)기\s*(?:싫|어렵)[가-힣]*$|^노\s*코멘트$|"
++    r"^(?:unknown|not sure|unsure|don'?t know|i don'?t know|idk|decline[ds]?|refuse[ds]?|"
++    r"prefer not to (?:say|answer)|no answer|no comment|n/?a)$", re.IGNORECASE)
+ 
+ 
+ def _norm(s: str) -> str:
+diff --git a/tests/contract_fixtures.py b/tests/contract_fixtures.py
+index f0acb6b..c31579a 100644
+--- a/tests/contract_fixtures.py
++++ b/tests/contract_fixtures.py
+@@ -17,9 +17,12 @@ from ctrec.question_contract import ContractRegistry
+ from ctrec.schemas import QAPair, Rule
+ 
+ REF = "2026-10-24"
+-# 보호 파일 패치 03(matcher에 qa_guard 연결)이 적용된 환경인가. 적용되면 '경계 전 기존 Matcher 결과'도 이미 경계를 거침
+-# -> 대조 테스트는 이 값에 따라 기존 경로의 기대값을 고름 (경계 후 기대값은 환경과 무관하게 같음)
+-MATCHER_GUARDED = "guard_assessments" in inspect.getsource(_matcher.match_trial)
++# 보호 파일 패치 03(matcher에 qa_guard 연결)이 적용되고 그 경계가 켜진 환경인가. 켜지면 '경계 전 기존 Matcher 결과'도 이미
++# 경계를 거침 -> 대조 테스트는 이 값에 따라 기존 경로의 기대값을 고름 (경계 후 기대값은 환경과 무관하게 같음).
++# 패치 03 v2(P8)는 정책 선택(qa_guard.policy, CTREC_QA_POLICY)일 때만 경계를 적용, v1은 항상 적용
++_MATCH_SRC = inspect.getsource(_matcher.match_trial)
++MATCHER_GUARDED = "guard_assessments" in _MATCH_SRC and (
++    "qa_guard.policy()" not in _MATCH_SRC or __import__("ctrec.qa_guard", fromlist=["policy"]).policy() == "contract")
+ SID = "S-contract-test"
+ REVIEWER = "임상검수자A"
+ 
+diff --git a/tests/test_contract_p7_safety.py b/tests/test_contract_p7_safety.py
+index 3ec4aaa..8e3d975 100644
+--- a/tests/test_contract_p7_safety.py
++++ b/tests/test_contract_p7_safety.py
+@@ -271,9 +271,11 @@ def test_session_class_selection(monkeypatch):
+     assert session_class() is Session
+ 
+ 
+-def test_existing_e9_negation_word_finding(monkeypatch):
+-    """발견 사항 기록 (기존 evidence_directness, 이 브랜치에서 고치지 않음): '산부인과'의 '부인'을 부정어로 읽어
+-    기록상 '현재 임신 12주로 산부인과 추적 중'(제외 기준 해당)이 판정 불가로 됨. 안전한 방향이지만 정상 판정 손실."""
++def test_e9_gynecology_word_is_not_negation(monkeypatch):
++    """P7 발견 사항의 회귀 테스트 (P8 E9 수정, test_e9_negation_lexical.py): '산부인과'의 '부인'을 부정어로 읽지 않음.
++    기록상 '현재 임신 12주로 산부인과 추적 중'(제외 기준 해당)은 처음 입력 근거로 확정, 반대 판정은 막힘."""
+     text = "45세 여성. 현재 임신 12주로 산부인과 추적 중."
+     m, _ = _match(monkeypatch, PREG_ONLY, text, [], "yes", "현재 임신 12주로 산부인과 추적 중")
++    assert m.assessments[0].passes is False and m.assessments[0].evidence_directness == "direct"
++    m, _ = _match(monkeypatch, PREG_ONLY, text, [], "no", "현재 임신 12주로 산부인과 추적 중")
+     assert m.assessments[0].passes is None and "polarity_mismatch" in m.assessments[0].validation_flags
+diff --git a/tests/test_e9_negation_lexical.py b/tests/test_e9_negation_lexical.py
+new file mode 100644
+index 0000000..da513b4
+--- /dev/null
++++ b/tests/test_e9_negation_lexical.py
+@@ -0,0 +1,88 @@
++"""E9(evidence_directness) 부정어 판별 회귀 테스트 (P8).
++
++P7 발견: 부정 표현을 부분 문자열로 찾아 '산부인과'의 '부인'(婦人)을 부정어(否認)로 읽음. 결과는 양방향이었음
++- 정상 판정 손실: 기록 "현재 임신 12주로 산부인과 추적 중" + 판정 '임신 중'(holds=yes) -> polarity_mismatch로 판정 불가
++- 잘못된 통과: 같은 기록 + 잘못된 판정 '임신 아님'(holds=no) -> 극성이 '없음'과 맞는다고 보아 direct(통과)
++수정: 한국어 부정 표현을 어절 단위로 판별 (문법 부정 형태소 / 굳은 '~없이' 부사 / 한자어 부정 명사 + 어미).
++E9는 보조 안전장치이며 의미 판정기가 아닙니다. 이 테스트는 표기 판별만 확인합니다.
++"""
++
++from __future__ import annotations
++
++import pytest
++
++from ctrec.evidence_directness import _clause, _negated, check, polarity
++
++NEGATIVE = [  # 실제 부정 표현 (붙여 쓴 기록·환자 진술·의료진 서술)
++    "임신 아님", "임신아님", "이상없음", "특이 소견 없음", "알레르기 없어요", "수술 받지 않았어요", "임신이 아니에요",
++    "흡연 부인함", "약물 알레르기 부인", "흡연력은 부인하였음", "HBsAg 음성", "임신 반응 검사 음성으로 확인",
++    "검사 결과 음성입니다", "안 받았어요", "못 받았어요", "denies smoking", "no prior surgery", "환자는 '임신 아니다'라고 함",
++]
++NOT_NEGATIVE = [  # 부정 글자열이 다른 낱말의 일부 (婦人, 音聲, 굳은 부사)
++    "산부인과 추적 중", "부인과 진료 중", "부인암 수술력 있음", "산부인과적 검사 시행", "부인께서 동반 내원",
++    "음성인식 기록 제출", "음성메시지로 전달", "끊임없이 통증 호소", "틀림없이 임신 중", "변함없이 임신 유지 중",
++    "빠짐없이 복용 중", "안정 상태", "안과 진료 중",
++]
++
++
++@pytest.mark.parametrize("text", NEGATIVE)
++def test_real_negations_are_detected(text):
++    assert _negated(text) and polarity(text) == "negative"
++
++
++@pytest.mark.parametrize("text", NOT_NEGATIVE)
++def test_negation_substrings_inside_other_words_are_not_negation(text):
++    assert not _negated(text) and polarity(text) == "positive"
++
++
++def test_standalone_eumseong_stays_negation_known_ambiguity():
++    """띄어 쓴 '음성'(陰性/音聲)은 표기로 구분할 수 없어 이전처럼 부정으로 둠 (확정 판정을 막는 쪽: 알려진 한계)."""
++    assert _negated("음성 녹음 파일 제출")
++
++
++PREG = "Pregnant participants"
++TEXT = "45세 여성. 현재 임신 12주로 산부인과 추적 중."
++QUOTE = "현재 임신 12주로 산부인과 추적 중"
++
++
++def test_gynecology_word_keeps_correct_pregnancy_judgment():
++    assert check(PREG, QUOTE, TEXT, holds="yes").directness == "direct"
++
++
++def test_gynecology_word_no_longer_lets_wrong_absence_pass():
++    """수정 전에는 '임신 아님'(holds=no)이 direct로 통과했음 (잘못된 통과 방향)."""
++    c = check(PREG, QUOTE, TEXT, holds="no")
++    assert not c.ok and "polarity_mismatch" in c.flags
++
++
++@pytest.mark.parametrize("text,quote,holds,ok", [
++    ("변함없이 임신 유지 중.", "변함없이 임신 유지 중", "yes", True),
++    ("변함없이 임신 유지 중.", "변함없이 임신 유지 중", "no", False),
++    ("현재 임신 아님(산부인과 확인).", "현재 임신 아님(산부인과 확인)", "no", True),
++    ("현재 임신 아님(산부인과 확인).", "현재 임신 아님(산부인과 확인)", "yes", False),
++])
++def test_lexical_words_and_real_negation_in_same_record(text, quote, holds, ok):
++    assert check(PREG, quote, text, holds=holds).ok is ok
++
++
++def test_mixed_polarity_sentence_is_split_by_clause():
++    """긍정·부정 공존: 절 단위로 극성을 봄. 수유 기준은 '수유 중' 절, 임신 기준은 '임신은 아니지만' 절."""
++    text = "임신은 아니지만 현재 수유 중입니다."
++    assert polarity(_clause(text, text.index("수유"), text.index("수유") + 2)) == "positive"
++    assert polarity(_clause(text, 0, 2)) == "negative"
++    assert check("Breastfeeding participants", "현재 수유 중입니다", text, holds="yes").ok
++    assert check(PREG, "임신은 아니지만", text, holds="no").ok
++
++
++def test_different_concepts_in_one_record():
++    text = "현재 임신 12주로 산부인과 추적 중, 조영제 알레르기 없음."
++    assert check(PREG, QUOTE, text, holds="yes").directness == "direct"
++    assert check("Known allergy to contrast agents", "조영제 알레르기 없음", text, holds="no").ok
++
++
++def test_patient_statement_and_clinician_narrative_clauses():
++    """인용된 환자 진술과 의료진 서술이 한 문장에 있으면 절로 나뉘고 각각의 극성을 가짐 (상충 판단은 기존 _conflicts)."""
++    s = "환자는 흡연을 부인하였으나 보호자는 매일 흡연한다고 함"
++    lo = s.index("보호자")
++    assert polarity(_clause(s, 0, 3)) == "negative"
++    assert polarity(_clause(s, lo, lo + 3)) == "positive"
+diff --git a/tests/test_p8_e2e.py b/tests/test_p8_e2e.py
+new file mode 100644
+index 0000000..a8e554b
+--- /dev/null
++++ b/tests/test_p8_e2e.py
+@@ -0,0 +1,273 @@
++"""P8 통합 E2E (결정적 대역, 유료 API 없음): 처음 입력 -> Profiler -> 후보 -> 질문(계약/비계약) -> 선택지 답 ->
++Proposition Ledger -> 평가기 -> Matcher 결과 병합 -> 상태 계산 -> Inspector 화면 데이터·HTML.
++
++세션 수준(ContractSession.run_fixed), CLI(cli.main, CTREC_SESSION=contract), 웹(FastAPI TestClient, 실제 실행 스레드)을
++지납니다. 브라우저 화면 조작(클릭·렌더링)은 범위 밖입니다. 사이드카(IR·계약·검수 기록)는 tmp_path의 테스트 사본이며 저장소의
++contracts/는 읽기만 합니다(검수 기록 없음 = 활성 IR 0개).
++"""
++
++from __future__ import annotations
++
++import json
++import sys
++from pathlib import Path
++
++import pytest
++
++sys.path.insert(0, str(Path(__file__).parent))
++
++from ctrec import pipeline, qa_guard
++from ctrec.agents import matcher
++from ctrec.contract_session import ContractSession
++from ctrec.fact_store import FactStore
++from ctrec.pipeline import Session
++from ctrec.status import external_status
++
++from contract_fixtures import (PREG_IR, PROXY, QC_LACT, QC_PREG, QC_SURGERY, RULES, SURG_IR, frozen_dir, ir_dict, rule,
++                               sidecar)
++from test_contract_p5_session import (T1_RULES, _Answerer, _contract_env, _matcher, _profile_from, _session,  # noqa: F401
++                                      _trials, patched)
++
++inspector = pytest.importorskip("ctrec.inspector", reason="Inspector(feat/decision-inspector)가 있는 통합 환경에서만")
++
++META = {"format_version": 1, "llm_backend": "offline_stub", "synthetic": True, "written_by": "test"}
++SIDE_Q, SIDE_A = "최근 4주 이내 수술 부작용이 있었나요?", "아니요, 부작용은 전혀 없었어요"
++
++
++def _view(s, *, synthetic=False):
++    rec = inspector.record_from_session(s, trace=s.tracer.records, meta=META)
++    v = inspector.build_view(rec, synthetic_details=synthetic)
++    return v, inspector.render_html(v)
++
++
++def _crit(s, tid, rid):
++    m = s.matches[tid]
++    return next(a for a in m.assessments + m.other_cohort_assessments if a.rule_id == rid)
++
++
++# ------------------------------------------------------------ 1. 정확한 계약 질문 -> 결정적 판정 -> 출처 표시
++def test_contract_answers_decide_share_across_trials_and_show_in_inspector(monkeypatch, patched, tmp_path):
++    monkeypatch.setattr(pipeline.patient_profiler, "profile_patient", _profile_from(None))
++    trials = _trials(monkeypatch, {"T1": T1_RULES, "T2": [RULES["SURG"]]})
++    ans = _Answerer({QC_SURGERY["question"]: "수술을 받은 적 없음", QC_PREG["question"]: "아니요",
++                     QC_LACT["question"]: "아니요"})
++    s = _session(ContractSession, trials, ans, **_contract_env(tmp_path))
++    s.run_fixed()
++    asked = [q for q in ans.seen if q.question_id.startswith("C")]
++    assert len([q for q in asked if q.question == QC_SURGERY["question"]]) == 1  # 두 시험이 한 번의 답을 공유
++    for tid in ("T1", "T2"):
++        m = s.matches[tid]
++        a = _crit(s, tid, "E1")
++        assert (a.method, a.passes, a.evidence_directness) == ("contract", True, "contract")
++        assert m.eligibility == "ELIGIBLE" and m.match_status == external_status(m)
++        assert m.n_pass == sum(x.passes is True for x in m.assessments) and m.n_unknown == 0
++    res = s.result()
++    facts = res["contract"]["facts"]
++    assert {f["proposition_key"] for f in facts} == {"surgery/event/ever", "pregnancy/condition/current",
++                                                     "lactation/condition/current"}
++    assert all(f["contract_version"] == 1 and f["question"].startswith("r1:C") for f in facts)
++
++    v, page = _view(s)  # strict: 명제 값·질문 문구·답변을 보이지 않음
++    crit = {c["criterion_id"]: c for c in v["contract"]["criteria"]}
++    assert crit["T1:E1"]["outcome"] == "decided" and crit["T1:E1"]["contract_ids"] == ["QC-SURGERY-LAST@v1"]
++    assert crit["T1:E1"]["ir_digest"] and crit["T1:E1"]["completeness"] == "complete"
++    assert all(f["value"] is None for f in v["contract"]["facts"])
++    assert "계약 판정 출처" in page and "(strict: 숨김)" in page
++    assert QC_SURGERY["question"] not in page and "수술을 받은 적 없음" not in page
++    sv, spage = _view(s, synthetic=True)  # 합성 실행만 값 표시
++    assert {f["value"] for f in sv["contract"]["facts"]} == {False} and "(strict: 숨김)" not in spage
++
++
++# ------------------------------------------------------------ 2. 정확하지만 비계약 질문 -> 미확정 (기능 제한)
++def test_exact_uncontracted_question_stays_unverified_and_is_visible(monkeypatch, patched, tmp_path):
++    monkeypatch.setattr(pipeline.patient_profiler, "profile_patient", _profile_from(None))
++    trials = _trials(monkeypatch, {"T1": [RULES["SURG"]]})
++    q, a = "최근 4주(28일) 안에 큰 수술을 받은 적이 있나요?", "아니요, 최근 4주 안에 큰 수술은 받지 않았어요"
++    patched["llm_questions"] = [dict(question_id="Q1", question=q, answer_type="yes_no", target=["T1:E1"],
++                                     purpose="eligibility", why="E1")]
++    ans = _Answerer({q: a})
++    monkeypatch.setattr(matcher.llm, "structured", lambda model, system, user, **k: _matcher(
++        {"E1": ("no", a)} if ans.seen else {})(model, system, user))
++    s = _session(ContractSession, trials, ans, **_contract_env(tmp_path, approve=False))
++    s.run_fixed()
++    x = _crit(s, "T1", "E1")
++    assert x.passes is None and qa_guard.FLAG in x.validation_flags and x.self_reported_holds == "no"
++    assert s.matches["T1"].match_status == "POTENTIAL_MATCH"
++    v, page = _view(s)
++    shown = next(c for t in v["trials"] for c in t["criteria"] if c["rule_id"] == "E1")
++    assert qa_guard.FLAG in shown["validation_flags"]  # 화면 기준 필드에 경계 표지 (패치 06의 validation_flags)
++    assert v["contract"]["criteria"] == [] and "활성(승인된) IR이 없어" in page
++    assert s.result()["qa_log"][0]["answer"] == a  # 비계약 답 자체는 기록에 남음 (삭제하지 않음)
++
++
++# ------------------------------------------------------------ 3. 잘못된 통과·잘못된 제외 4방향 (세션 수준)
++PRIOR_SURG = rule("I1", "Prior surgery", kind="inclusion", category="procedure")
++DIRECTIONS = [
++    (RULES["SURG"], "T1:E1", SIDE_Q, SIDE_A, "no", "제외 기준 FALSE (잘못된 통과)"),
++    (RULES["SURG"], "T1:E1", SIDE_Q, "예, 수술 부작용이 있었어요", "yes", "제외 기준 TRUE (잘못된 제외)"),
++    (PRIOR_SURG, "T1:I1", "수술 후 부작용이 있었나요?", "예, 수술 후 부작용이 있었어요", "yes", "포함 기준 TRUE (잘못된 통과)"),
++    (PRIOR_SURG, "T1:I1", "수술 부작용이 있었나요?", "아니요, 부작용은 없었어요", "no", "포함 기준 FALSE (잘못된 제외)"),
++]
++
++
++@pytest.mark.parametrize("r,key,q,a,holds,why", DIRECTIONS, ids=[d[-1] for d in DIRECTIONS])
++@pytest.mark.parametrize("policy", ["legacy", "contract"])
++def test_uncontracted_answer_never_confirms_in_contract_session(monkeypatch, patched, tmp_path, r, key, q, a, holds,
++                                                                why, policy):
++    monkeypatch.setenv(qa_guard.POLICY_ENV, policy)  # ContractSession은 matcher 정책과 무관하게 경계 적용
++    monkeypatch.setattr(pipeline.patient_profiler, "profile_patient", _profile_from(None))
++    trials = _trials(monkeypatch, {"T1": [r]})
++    patched["llm_questions"] = [dict(question_id="Q1", question=q, answer_type="yes_no", target=[key],
++                                     purpose="eligibility", why=r.rule_id)]
++    ans = _Answerer({q: a})
++    monkeypatch.setattr(matcher.llm, "structured", lambda model, system, user, **k: _matcher(
++        {r.rule_id: (holds, a)} if ans.seen else {})(model, system, user))
++    s = _session(ContractSession, trials, ans, contract_root=tmp_path / "none")
++    s.run_fixed()
++    x = _crit(s, "T1", r.rule_id)
++    # 확정되지 않음. 막은 곳은 경계(qa_uncontracted, 답변상 판정 보존) 또는 그 전에 E9(예: 기간 확인 불가)
++    assert x.passes is None, why
++    assert qa_guard.FLAG in x.validation_flags and x.self_reported_holds == holds or x.validation_flags, why
++    assert s.matches["T1"].eligibility == "UNCERTAIN"
++
++
++# ------------------------------------------------------------ 4. 처음 입력의 정상 판정 보존 (E9 수정 포함)
++def test_initial_record_judgment_kept_with_active_contracts(monkeypatch, patched, tmp_path):
++    monkeypatch.setattr(pipeline.patient_profiler, "profile_patient", _profile_from(None))
++    trials = _trials(monkeypatch, {"T1": T1_RULES})
++    quote = "현재 임신 12주로 산부인과 추적 중"
++    monkeypatch.setattr(matcher.llm, "structured", _matcher({"E3": ("yes", quote)}))
++    ans = _Answerer({QC_SURGERY["question"]: "수술을 받은 적 없음"})
++    s = _session(ContractSession, trials, ans, raw=f"45세 여성. {quote}.", **_contract_env(tmp_path))
++    s.run_fixed()
++    x = _crit(s, "T1", "E3")
++    assert x.passes is False and x.method == "llm" and x.evidence_directness == "direct"
++    assert s.matches["T1"].eligibility == "INELIGIBLE"
++    assert not [q for q in ans.seen if q.question in (QC_PREG["question"], QC_LACT["question"])]  # 이미 정해짐
++
++
++# ------------------------------------------------------------ 5. 진료 기록 필요 기준: 자기 보고는 UNVERIFIED
++def test_clinical_record_criterion_contract_answer_is_unverified(monkeypatch, patched, tmp_path):
++    monkeypatch.setattr(pipeline.patient_profiler, "profile_patient", _profile_from(None))
++    trials = _trials(monkeypatch, {"T1": [RULES["PREG"]]})
++    d = frozen_dir(tmp_path, [RULES["PREG"]], "T1")
++    sidecar(tmp_path, d, [ir_dict(RULES["PREG"], d, PREG_IR, source_requirement="clinical_record")])
++    ans = _Answerer({QC_PREG["question"]: "아니요", QC_LACT["question"]: "아니요"})
++    s = _session(ContractSession, trials, ans, contract_root=tmp_path / "contracts", contract_parsed_dir=d)
++    s.run_fixed()
++    x = _crit(s, "T1", "E3")
++    assert x.passes is None and x.needs_verification and x.self_reported_holds == "no" and x.method == "contract"
++    assert s.matches["T1"].match_status == "POTENTIAL_MATCH"
++    v, _ = _view(s)
++    assert {c["criterion_id"]: c["outcome"] for c in v["contract"]["criteria"]}["T1:E3"] == "unverified"
++
++
++# ------------------------------------------------------------ 6. 기간 경계·기준 시점
++@pytest.mark.parametrize("label,passes", [
++    ("4주(28일)보다 전, 3개월(90일) 이내", True),  # 4주 이내 수술 없음 -> 큰 수술도 없음 -> 제외 기준 불충족
++    ("최근 4주(28일) 이내", None),  # 수술 있음 != 큰 수술 있음 -> 미확정
++])
++def test_window_boundary_answers(monkeypatch, patched, tmp_path, label, passes):
++    monkeypatch.setattr(pipeline.patient_profiler, "profile_patient", _profile_from(None))
++    trials = _trials(monkeypatch, {"T1": [RULES["SURG"]]})
++    d = frozen_dir(tmp_path, [RULES["SURG"]], "T1")
++    sidecar(tmp_path, d, [ir_dict(RULES["SURG"], d, SURG_IR, anchor_policy=PROXY)])
++    s = _session(ContractSession, trials, _Answerer({QC_SURGERY["question"]: label}),
++                 contract_root=tmp_path / "contracts", contract_parsed_dir=d)
++    s.run_fixed()
++    assert _crit(s, "T1", "E1").passes is passes
++
++
++def test_anchor_without_policy_never_decides(monkeypatch, patched, tmp_path):
++    monkeypatch.setattr(pipeline.patient_profiler, "profile_patient", _profile_from(None))
++    trials = _trials(monkeypatch, {"T1": [RULES["SURG"]]})
++    d = frozen_dir(tmp_path, [RULES["SURG"]], "T1")
++    sidecar(tmp_path, d, [ir_dict(RULES["SURG"], d, SURG_IR)])  # first_dose 근사 승인 없음
++    ans = _Answerer({QC_SURGERY["question"]: "수술을 받은 적 없음"})
++    s = _session(ContractSession, trials, ans, contract_root=tmp_path / "contracts", contract_parsed_dir=d)
++    s.run_fixed()
++    x = _crit(s, "T1", "E1")
++    assert x.method != "contract" and x.passes is None
++
++
++# ------------------------------------------------------------ 7. 세션 격리·저장소 위조
++def test_other_session_and_forged_store_facts_are_not_used(monkeypatch, patched, tmp_path):
++    monkeypatch.setattr(pipeline.patient_profiler, "profile_patient", _profile_from(None))
++    trials = _trials(monkeypatch, {"T1": [RULES["SURG"]]})
++    env = _contract_env(tmp_path)
++    shared = FactStore()
++    first = _session(ContractSession, trials, _Answerer({QC_SURGERY["question"]: "수술을 받은 적 없음"}),
++                     fact_store=shared, **env)
++    first.run_fixed()
++    assert _crit(first, "T1", "E1").passes is True
++    second_ans = _Answerer({})  # 답하지 않음 (모름)
++    second = _session(ContractSession, trials, second_ans, fact_store=shared, **env)
++    assert second.session_id != first.session_id
++    # 같은 세션 ID로 저장소에 직접 넣은 위조 명제 사실 (장부가 기록하지 않음 -> 신뢰하지 않음)
++    digest = second._contracts.raw("QC-SURGERY-LAST").digest()[:12]
++    shared.add("P1", "prop:surgery/event/ever", False, source_type="self_report",
++               source_reference={"kind": "answer", "ref": f"contract:QC-SURGERY-LAST@v1#{digest};q:r1:C1",
++                                 "quote": "수술을 받은 적 없음"}, observed_at="2026-10-24", session_id=second.session_id)
++    second.run_fixed()
++    assert any(q.question == QC_SURGERY["question"] for q in second_ans.seen)  # 앞 세션 답을 쓰지 않고 다시 물음
++    assert _crit(second, "T1", "E1").passes is None
++
++
++# ------------------------------------------------------------ 8. CLI: CTREC_SESSION=contract 실행 -> 기록 -> Inspector
++def test_cli_contract_session_run_and_inspector(monkeypatch, tmp_path):
++    from test_cli_records import _run
++    monkeypatch.setenv("CTREC_SESSION", "contract")
++    monkeypatch.setenv(qa_guard.POLICY_ENV, "contract")
++    d, _ = _run(tmp_path)
++    result = json.loads((d / "result.json").read_text(encoding="utf-8"))
++    c = result["contract"]
++    assert c["session_type"] == "contract" and c["profile_source"] == "initial_input_only"
++    assert set(c["ir_status"]["DEMO-LUNG-001"].values()) == {"unreviewed"}  # 저장소 초안: 검수 전 -> 활성 0
++    assert c["facts"] == [] and c["questions"] == []
++    assert result["qa_log"]  # 비계약 질문 라운드는 그대로 돎
++    v = inspector.build_view(inspector.load_run(d))
++    assert v["contract"]["criteria"] == []
++    assert "계약 판정 출처" in inspector.render_html(v)
++
++
++def test_cli_default_run_has_no_contract_section(tmp_path, monkeypatch):
++    from test_cli_records import _run
++    monkeypatch.delenv("CTREC_SESSION", raising=False)
++    d, _ = _run(tmp_path)
++    assert "contract" not in json.loads((d / "result.json").read_text(encoding="utf-8"))
++    v = inspector.build_view(inspector.load_run(d))
++    assert v["contract"] is None and "계약 판정 출처" not in inspector.render_html(v)
++
++
++# ------------------------------------------------------------ 9. 웹: 실행 생성·답변·결과, 대기 중 취소
++def test_web_contract_session_flow_and_cancel(monkeypatch, tmp_path):
++    pytest.importorskip("fastapi")
++    pytest.importorskip("httpx")
++    import web_harness as h
++    from ctrec.web import app as web
++    monkeypatch.setenv("CTREC_SESSION", "contract")
++    h.install(monkeypatch, tmp_path)
++    c = h.browser()
++    r = c.post("/api/runs", json={"custom_text": h.SYN_TEXT, "trial_ids": h.TRIAL_IDS, "screen": False})
++    assert r.status_code == 200, r.text
++    rid = r.json()["run_id"]
++    run = web.RUNS[rid]
++    q = h.wait_for(run, "questions")
++    assert c.post(f"/api/runs/{rid}/answers",
++                  json={"answers": {x["question_id"]: h.SYN_ANSWER for x in q["questions"]}}).status_code == 200
++    h.wait_for(run, "end", 30)
++    events = h.sse_events(c.get(f"/api/runs/{rid}/events").text)
++    res = next(e for e in events if e["type"] == "result")["result"]
++    assert res["contract"]["session_type"] == "contract" and res["qa_log"][0]["answer"] == h.SYN_ANSWER
++    for m in res["matches"].values():
++        assert m["eligibility"] in ("ELIGIBLE", "UNCERTAIN", "INELIGIBLE", "NOT_EVALUATED")
++
++    r2 = c.post("/api/runs", json={"custom_text": h.SYN_TEXT, "trial_ids": h.TRIAL_IDS, "screen": False})
++    rid2 = r2.json()["run_id"]
++    run2 = web.RUNS[rid2]
++    h.wait_for(run2, "questions")
++    assert c.post(f"/api/runs/{rid2}/cancel").json() == {"ok": True, "state": "cancelling"}
++    h.wait_for(run2, "end", 10)
++    ev2 = h.sse_events(c.get(f"/api/runs/{rid2}/events").text)
++    assert ev2[-1]["type"] == "end" and ev2[-1]["state"] == "cancelled"
++    assert not [e for e in ev2 if e["type"] == "result"]
+diff --git a/tests/test_p8_non_answer.py b/tests/test_p8_non_answer.py
+new file mode 100644
+index 0000000..80a8bb9
+--- /dev/null
++++ b/tests/test_p8_non_answer.py
+@@ -0,0 +1,65 @@
++"""P8 qalink 선별 이전: 거부·모름·무응답 판별 통합 (question_contract.non_answer 하나) + E9에서 확정 근거 제외.
++
++legacy 정책(서비스 기본)에서도 "답변하지 않겠습니다"의 '않'을 부재 진술로 읽어 확정하던 경로를 막음 (qa_guard와 무관).
++"""
++
++from __future__ import annotations
++
++import pytest
++
++from ctrec.decision_state import DECLINED_ANSWERS
++from ctrec.evidence_directness import check
++from ctrec.question_contract import QuestionContract, map_answer, non_answer, render
++
++NON_ANSWERS = ["", "모름", "잘 모르겠어요", "모름(답변 없음)", "기억이 안 나요", "확실하지 않아요", "답변 거부", "거부합니다",
++               "답변하지 않겠습니다", "대답 안 함", "응답 불가", "미응답", "말하고 싶지 않아요", "말씀드리기 어렵습니다",
++               "그 부분은 답변하지 않겠습니다", "그건 말하고 싶지 않아요", "노코멘트", "I don't know", "prefer not to say",
++               "declined", "N/A"]
++STATEMENTS = ["예", "아니요", "BCG 치료를 거부했습니다", "수술은 받지 않았어요", "손목 수술 종류는 몰라요",
++              "최근 4주 안에 큰 수술은 받지 않았어요", "임신 아니에요", "치료를 거부하고 퇴원함"]
++
++
++@pytest.mark.parametrize("answer", NON_ANSWERS)
++def test_non_answers(answer):
++    assert non_answer(answer)
++
++
++@pytest.mark.parametrize("answer", STATEMENTS)
++def test_statements_are_not_non_answers(answer):
++    assert not non_answer(answer)
++
++
++def test_covers_decision_state_policy():
++    assert all(non_answer(a) for a in DECLINED_ANSWERS)
++
++
++CRITERIA = [("Major surgery within 4 weeks before first dose", "procedure"), ("Pregnant or breastfeeding", "reproductive"),
++            ("Prior surgery", "procedure")]
++DECLINES = ["그 부분은 답변하지 않겠습니다", "답변 거부합니다", "말하고 싶지 않아요", "모름(답변 없음)"]
++
++
++@pytest.mark.parametrize("criterion,category", CRITERIA)
++@pytest.mark.parametrize("answer", DECLINES)
++@pytest.mark.parametrize("holds", ["yes", "no"])
++def test_e9_non_answer_never_confirms_either_way(criterion, category, answer, holds):
++    text = f"45세 여성.\n\n[추가 확인 정보 - 라운드 1]\nQ: 확인 질문입니다\nA: {answer}"
++    c = check(criterion, answer, text, holds=holds, category=category)
++    assert not c.ok and c.flags == ["non_answer"]
++
++
++def test_record_refusal_statement_is_not_non_answer():
++    """처음 입력(기록)의 거부 진술은 사실 진술 -> 비답변 판별 대상이 아님 (답변 줄에만 적용)."""
++    text = "45세 여성. 2024년 BCG 치료를 거부함."
++    assert check("Prior BCG therapy", "2024년 BCG 치료를 거부함", text, holds="no", category="treatment_history").flags \
++        != ["non_answer"]
++
++
++def test_contract_non_answer_records_no_fact():
++    c = QuestionContract.from_dict({"contract_id": "QC-X", "version": 1, "answer_type": "yes_no",
++                                    "question": "현재 임신 중인가요?",
++                                    "options": [{"label": "예", "assertions": [["pregnancy/condition/current", True]]},
++                                                {"label": "아니요",
++                                                 "assertions": [["pregnancy/condition/current", False]]}]})
++    q = render(c, "C1", ["T1:E3"])
++    for a in ["그 부분은 답변하지 않겠습니다", "모름"]:
++        assert map_answer(c, q, a).kind == "non_answer"
+diff --git a/tests/test_p8_review_package.py b/tests/test_p8_review_package.py
+new file mode 100644
+index 0000000..3b7ae0e
+--- /dev/null
++++ b/tests/test_p8_review_package.py
+@@ -0,0 +1,60 @@
++"""P8 검수 패키지: 기준별 검수 자료 동기화, 계약 문구 재검증 결과(조사·현재 참여·예방 백신), 수정 필요 IR 처리, 미승인 유지."""
++
++from __future__ import annotations
++
++import json
++import re
++import sys
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parent.parent
++sys.path.insert(0, str(ROOT / "scripts"))
++
++import build_review_package  # noqa: E402
++import report_contract_drafts  # noqa: E402
++
++from ctrec.ir_review import Registry  # noqa: E402
++
++CONTRACTS = {c["contract_id"]: c for c in
++             json.loads((ROOT / "contracts" / "question_contracts.json").read_text(encoding="utf-8"))["contracts"]}
++
++
++def test_review_package_in_sync():
++    assert build_review_package.main(["--check"]) == 0
++
++
++def test_still_no_review_records_and_no_active_ir():
++    assert not (ROOT / "contracts" / "reviews.json").exists()
++    reg = Registry()
++    assert all(not reg.active_irs(t) for t in reg.trial_ids())
++
++
++def test_no_ir_left_in_fix_needed():
++    """P7 '수정 필요' 1건(NCT06756191:E1)은 한정어로 표현을 보강하고 남은 쟁점은 임상 검토로 넘김."""
++    assert not [k for k, (c, _) in report_contract_drafts.IR_REVIEW.items() if c == "fix"]
++    assert report_contract_drafts.IR_REVIEW["NCT06756191:E1"][0] == "clinical"
++    keys = {k for o in CONTRACTS["QC-AMPHOTERICIN-COURSE"]["options"] for k, _ in o["assertions"]}
++    assert "amphotericin_b(over_5d)/event/ever" in keys and "QC-AMPHOTERICIN-EVER" not in CONTRACTS
++
++
++_PARTICLE = re.compile(r"([가-힣])(\s*\([^)]*\))?(을|를)(?=\s)")
++
++
++def test_object_particles_match_final_consonant():
++    bad = []
++    for cid, c in CONTRACTS.items():
++        for m in _PARTICLE.finditer(c["question"]):
++            want = "을" if (ord(m.group(1)) - 0xAC00) % 28 else "를"
++            if m.group(3) != want:
++                bad.append((cid, m.group(0)))
++    assert not bad
++
++
++def test_trial_participation_question_covers_ongoing_participation():
++    q = CONTRACTS["QC-TRIAL-PARTICIPATION-LAST"]["question"]
++    assert "마지막으로" in q and "지금도 참여 중" in q
++
++
++def test_cancer_vaccine_question_excludes_prophylactic_vaccines():
++    q = CONTRACTS["QC-CANCER-VACCINE-EVER"]["question"]
++    assert "치료" in q and "예방 백신" in q
+diff --git a/tests/test_qa_policy_migration.py b/tests/test_qa_policy_migration.py
+new file mode 100644
+index 0000000..f88959e
+--- /dev/null
++++ b/tests/test_qa_policy_migration.py
+@@ -0,0 +1,188 @@
++"""Q&A 판정 정책 이전 테스트 (P8): 기존 정책과 계약 정책을 같은 입력으로 나란히 검증.
++
++서비스 기본 정책은 바꾸지 않습니다(qa_guard.policy: CTREC_QA_POLICY 미설정 = legacy). 각 테스트가 정책을 직접 고릅니다.
++
++1. Legacy Regression          : legacy 정책의 현재 동작을 기록 (기존 테스트 4건의 입력 + 새 사례 2건)
++2. Contract Policy Regression : contract 정책에서 계약 없는 답변에 기댄 확정은 UNVERIFIED (답변상 판정은 보존)
++3. Migration Comparison       : 두 정책의 차이표. 사례 종류별로 의미가 다름
++   - A (질문이 기준과 의미상 다름)          : legacy의 확정은 근거 없는 확정 -> contract에서 막는 것이 안전성 개선
++   - B (질문이 기준을 정확히 물었으나 계약 없음): legacy의 확정은 대체로 옳음 -> contract에서 막히는 것은 계약 도입 전의
++                                             기능 제한(정상 판정 손실). 승인된 계약이 있으면 결정적으로 회복됨
++   - B-free (질문은 넓고 답이 기준을 직접 진술) : 자유 서술은 계약 선택지가 아니므로 B와 같이 기능 제한
++
++LLM은 결정적 대역이며 API를 부르지 않습니다.
++"""
++
++from __future__ import annotations
++
++import sys
++from dataclasses import dataclass
++from pathlib import Path
++from typing import Callable
++
++import pytest
++
++sys.path.insert(0, str(Path(__file__).parent))
++
++from ctrec import pipeline, qa_guard
++from ctrec.contract_session import ContractSession
++from ctrec.schemas import CriterionAssessment
++
++from contract_fixtures import QC_SURGERY, RULES
++from test_contract_p5_session import _Answerer, _contract_env, _profile_from, _session, _trials, patched  # noqa: F401
++from test_evidence_directness import B_TEXT, LIG
++from test_evidence_directness import SURG as WRIST
++from test_evidence_directness import TFCC as WRIST_TFCC
++from test_evidence_directness import _match as _e9_match
++from test_evidence_directness_counterexamples import SURG_Q, SURGERY, _judge, _log, _qa
++from test_stage05 import SOURCE as HEP_SOURCE
++from test_stage05 import _la, _run as _hep_run
++
++pytestmark = pytest.mark.skipif("qa_guard.policy()" not in __import__("inspect").getsource(
++    __import__("ctrec.agents.matcher", fromlist=["match_trial"]).match_trial),
++    reason="matcher 정책 선택 패치(03 v2)가 적용된 환경에서만 의미가 있음")
++
++SIDE_EFFECT_Q = "최근 4주 이내 수술 부작용이 있었나요?"
++SIDE_EFFECT_A = "아니요, 부작용은 전혀 없었어요"
++EXACT_Q = "최근 4주(28일) 안에 큰 수술을 받은 적이 있나요?"
++EXACT_A = "아니요, 최근 4주 안에 큰 수술은 받지 않았어요"
++
++
++@dataclass(frozen=True)
++class Case:
++    case_id: str
++    kind: str  # A / B / B-free
++    source: str  # 기존 테스트 이름 또는 '신규'
++    question: str
++    answer: str
++    criterion: str
++    run: Callable[[pytest.MonkeyPatch], CriterionAssessment]
++    legacy: tuple  # (holds, passes)
++    meaning: str
++
++
++def _l1(mp):
++    return _e9_match(mp, [WRIST, WRIST_TFCC, LIG], [("I1", "yes", "explicit", "손목 수술은 했는데"),
++                                                     ("I2", "no", "explicit", "TFCC인지 인대재건술인지는 몰라요"),
++                                                     ("E1", "no", "explicit", "인대재건술인지는 몰라요")], B_TEXT)["I1"]
++
++
++def _l2(mp):
++    return _judge(mp, SURGERY, SURG_Q, "yes", "Q: 수술 받은 적 있나요? A: 예", required="self_report_ok",
++                  qa_log=_log())[1]
++
++
++def _l3(mp):
++    return _judge(mp, SURGERY, "45세 남성." + _qa("수술 받은 적 있나요?", "아니요"), "no",
++                  "Q: 수술 받은 적 있나요? A: 아니요", required="self_report_ok", qa_log=_log(answer="아니요"))[1]
++
++
++def _l4(mp):
++    source = HEP_SOURCE + "\n\n[추가 확인 정보 - 라운드 1]\nQ: 간염 치료 중인가요?\nA: 간염 치료 받은 적 없어요"
++    return _hep_run(mp, _la(evidence="간염 치료 받은 적 없어요"), source=source).assessments[0]
++
++
++def _n1(mp):
++    return _judge(mp, RULES["SURG"], "45세 남성." + _qa(SIDE_EFFECT_Q, SIDE_EFFECT_A), "no", SIDE_EFFECT_A,
++                  required="self_report_ok")[1]
++
++
++def _n2(mp):
++    return _judge(mp, RULES["SURG"], "45세 남성." + _qa(EXACT_Q, EXACT_A), "no", EXACT_A, required="self_report_ok")[1]
++
++
++CASES = [
++    Case("L1", "B-free", "test_evidence_directness::test_clause_scope_keeps_certain_clause_and_blocks_unknown_clause",
++         "수술 받은 적 있나요?", "손목 수술은 했는데 TFCC인지 인대재건술인지는 몰라요.", "Prior wrist surgery (포함)",
++         _l1, ("yes", True), "답이 기준(손목 수술)을 직접 진술. 판정은 옳을 가능성이 높음 -> 정상 판정 손실"),
++    Case("L2", "B", "test_evidence_directness_counterexamples::test_short_answer_needs_question_target_link",
++         "수술 받은 적 있나요?", "예", "Prior surgery (포함)",
++         _l2, ("yes", True), "질문이 기준을 그대로 물음 -> 정상 판정 손실 (계약 승인 시 회복)"),
++    Case("L3", "B", "test_evidence_directness_counterexamples::test_linked_answer_polarity_must_match (두 번째 단언)",
++         "수술 받은 적 있나요?", "아니요", "Prior surgery (포함)",
++         _l3, ("no", False), "질문이 기준을 그대로 물음 -> 정상 제외 손실 (계약 승인 시 회복)"),
++    Case("L4", "A", "test_stage05::test_quote_check_uses_clarification_answers",
++         "간염 치료 중인가요?", "간염 치료 받은 적 없어요", "Active hepatitis B or C (제외)",
++         _l4, ("no", True), "치료 이력 답으로 활동성 감염 부재를 확정 -> 막는 것이 안전성 개선"),
++    Case("N1", "A", "신규 (P0 반례 A)", SIDE_EFFECT_Q, SIDE_EFFECT_A, "Major surgery within 4 weeks before first dose (제외)",
++         _n1, ("no", True), "수술 부작용 질문의 답으로 수술 여부를 확정 (잘못된 통과) -> 막는 것이 안전성 개선"),
++    Case("N2", "B", "신규", EXACT_Q, EXACT_A, "Major surgery within 4 weeks before first dose (제외)",
++         _n2, ("no", True), "기간·대상을 정확히 물음. 단 기준점(첫 투여 전 vs 답변 시점)은 IR anchor_policy 승인으로만 "
++                            "같다고 봄 -> 정상 판정 손실 (계약+IR 승인 시 회복)"),
++]
++IDS = [c.case_id for c in CASES]
++
++
++def _with_policy(mp, policy: str, case: Case) -> CriterionAssessment:
++    mp.setenv(qa_guard.POLICY_ENV, policy)
++    assert qa_guard.policy() == policy
++    return case.run(mp)
++
++
++# ------------------------------------------------------------ 1. Legacy Regression
++@pytest.mark.parametrize("case", CASES, ids=IDS)
++def test_legacy_policy_regression(monkeypatch, case):
++    a = _with_policy(monkeypatch, "legacy", case)
++    assert (a.holds, a.passes) == case.legacy
++    assert qa_guard.FLAG not in a.validation_flags
++
++
++def test_default_policy_is_legacy(monkeypatch):
++    monkeypatch.delenv(qa_guard.POLICY_ENV, raising=False)
++    assert qa_guard.policy() == "legacy"
++    for v, want in [("legacy", "legacy"), ("contract", "contract"), ("CONTRACT ", "contract"), ("contrct", "contract")]:
++        monkeypatch.setenv(qa_guard.POLICY_ENV, v)
++        assert qa_guard.policy() == want  # 알 수 없는 값은 엄격한 쪽
++
++
++# ------------------------------------------------------------ 2. Contract Policy Regression
++@pytest.mark.parametrize("case", CASES, ids=IDS)
++def test_contract_policy_regression(monkeypatch, case):
++    a = _with_policy(monkeypatch, "contract", case)
++    assert a.passes is None and a.holds == "unknown" and a.needs_verification
++    assert qa_guard.FLAG in a.validation_flags
++    assert a.self_reported_holds == case.legacy[0]  # 답변상 판정은 지우지 않고 보존 (기록·재질문·의료진 확인용)
++
++
++# ------------------------------------------------------------ 3. Migration Comparison
++def test_migration_comparison_table(monkeypatch):
++    rows = []
++    for c in CASES:
++        leg = _with_policy(monkeypatch, "legacy", c)
++        con = _with_policy(monkeypatch, "contract", c)
++        rows.append((c.case_id, c.kind, leg.passes, con.passes))
++    assert rows == [("L1", "B-free", True, None), ("L2", "B", True, None), ("L3", "B", False, None),
++                    ("L4", "A", True, None), ("N1", "A", True, None), ("N2", "B", True, None)]
++    # 계약 정책은 확정을 더하지 않음 (단조성): legacy가 미확정인 것을 contract가 확정하는 사례 없음
++    assert all(con is None or con == leg for _, _, leg, con in rows)
++
++
++def test_case_b_is_recovered_by_approved_contract(monkeypatch, patched, tmp_path):
++    """사례 B(정확한 질문, 계약 없음)는 기능 제한: 같은 기준을 승인된 질문 계약 + IR로 물으면 결정적으로 확정."""
++    monkeypatch.setattr(pipeline.patient_profiler, "profile_patient", _profile_from(None))
++    trials = _trials(monkeypatch, {"T1": [RULES["SURG"], RULES["PREG"]]})
++    monkeypatch.setenv(qa_guard.POLICY_ENV, "contract")
++    ans = _Answerer({QC_SURGERY["question"]: "수술을 받은 적 없음"})
++    s = _session(ContractSession, trials, ans, **_contract_env(tmp_path))
++    s.run_fixed()
++    a = next(x for x in s.matches["T1"].assessments if x.rule_id == "E1")
++    assert a.method == "contract" and a.passes is True and qa_guard.FLAG not in a.validation_flags
++
++
++def test_case_b_without_approval_stays_unverified(monkeypatch, patched, tmp_path):
++    """같은 계약이라도 승인 전이면 계약 질문을 하지 않고, 비계약 정확 질문의 답은 확정 근거가 아님."""
++    monkeypatch.setattr(pipeline.patient_profiler, "profile_patient", _profile_from(None))
++    trials = _trials(monkeypatch, {"T1": [RULES["SURG"]]})
++    monkeypatch.setenv(qa_guard.POLICY_ENV, "contract")
++    patched["llm_questions"] = [dict(question_id="Q1", question=EXACT_Q, answer_type="yes_no", target=["T1:E1"],
++                                     purpose="eligibility", why="E1")]
++    from ctrec.agents import matcher
++    from test_contract_p5_session import _matcher
++    ans = _Answerer({EXACT_Q: EXACT_A})
++    monkeypatch.setattr(matcher.llm, "structured", lambda model, system, user, **k: _matcher(
++        {"E1": ("no", EXACT_A)} if ans.seen else {})(model, system, user))
++    s = _session(ContractSession, trials, ans, **_contract_env(tmp_path, approve=False))
++    s.run_fixed()
++    a = s.matches["T1"].assessments[0]
++    assert not [q for q in ans.seen if q.question_id.startswith("C")]
++    assert a.passes is None and a.self_reported_holds == "no" and s.matches["T1"].eligibility == "UNCERTAIN"

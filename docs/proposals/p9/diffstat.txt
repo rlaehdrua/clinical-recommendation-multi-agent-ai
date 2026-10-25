@@ -1,0 +1,9 @@
+ src/ctrec/agents/matcher.py          |   4 ++
+ src/ctrec/agents/patient_profiler.py |  17 ++++-
+ src/ctrec/cli.py                     | 115 +++++++++++++++++++++++++++++++++-
+ src/ctrec/evidence_directness.py     | 116 +++++++++++++++++++++++++++++++----
+ src/ctrec/pipeline.py                |   3 +-
+ src/ctrec/schemas.py                 |   9 ++-
+ src/ctrec/web/app.py                 |   3 +-
+ tests/test_llm_isolation.py          |   6 +-
+ 8 files changed, 254 insertions(+), 19 deletions(-)

@@ -1,0 +1,84 @@
+ M src/ctrec/agents/matcher.py
+ M src/ctrec/agents/patient_profiler.py
+ M src/ctrec/cli.py
+ M src/ctrec/evidence_directness.py
+ M src/ctrec/pipeline.py
+ M src/ctrec/schemas.py
+ M src/ctrec/web/app.py
+ M tests/test_llm_isolation.py
+?? contracts/ir/DEMO-LUNG-001.json
+?? contracts/ir/NCT00575185.json
+?? contracts/ir/NCT04063540.json
+?? contracts/ir/NCT04761523.json
+?? contracts/ir/NCT06080789.json
+?? contracts/ir/NCT06125405.json
+?? contracts/ir/NCT06294847.json
+?? contracts/ir/NCT06391359.json
+?? contracts/ir/NCT06468397.json
+?? contracts/ir/NCT06727604.json
+?? contracts/ir/NCT06756191.json
+?? contracts/ir/NCT06833073.json
+?? contracts/ir/NCT06908096.json
+?? contracts/ir/NCT06916494.json
+?? contracts/ir/NCT07087314.json
+?? contracts/ir/NCT07369063.json
+?? contracts/ir/NCT07516951.json
+?? contracts/ir/NCT07679893.json
+?? contracts/ir_cases.json
+?? contracts/question_contracts.json
+?? docs/contract_redesign.md
+?? docs/proposals/01-patient_profiler.patch
+?? docs/proposals/02-pipeline_session_id.patch
+?? docs/proposals/03-matcher_qa_guard.patch
+?? docs/proposals/04-cli_session_class.patch
+?? docs/proposals/05-web_session_class.patch
+?? docs/proposals/06-inspector_contract_provenance.patch
+?? docs/proposals/p8/00-integration-candidate-full.patch
+?? docs/proposals/p8/01-patient_profiler.patch
+?? docs/proposals/p8/02-pipeline_session_id.patch
+?? docs/proposals/p8/03-matcher_qa_policy.patch
+?? docs/proposals/p8/04-cli_session_class.patch
+?? docs/proposals/p8/04b-cli_session_class_on_inspector-record-contract.patch
+?? docs/proposals/p8/05-web_session_class.patch
+?? docs/proposals/p8/06-inspector_contract_provenance.patch
+?? docs/proposals/p8/07-evidence_directness_negation_non_answer.patch
+?? docs/proposals/p8/08-test_llm_isolation_rounding.patch
+?? docs/proposals/p8/10-redesign_p8_nonprotected.patch
+?? docs/proposals/p8/SHA256SUMS.txt
+?? docs/review/contract_draft_review.md
+?? docs/review/ir_review_package.md
+?? docs/review/p7_integration_review.md
+?? docs/review/p8/ir_review_package.md
+?? docs/review/p8/p8_integration_report.md
+?? docs/review/p9/p9_integration_report.md
+?? scripts/build_contract_drafts.py
+?? scripts/build_review_package.py
+?? scripts/render_inspector.py
+?? scripts/report_contract_drafts.py
+?? src/ctrec/condition_ir.py
+?? src/ctrec/contract_session.py
+?? src/ctrec/evaluator.py
+?? src/ctrec/inspector.py
+?? src/ctrec/ir_review.py
+?? src/ctrec/proposition_store.py
+?? src/ctrec/propositions.py
+?? src/ctrec/qa_guard.py
+?? src/ctrec/question_contract.py
+?? tests/contract_fixtures.py
+?? tests/test_cli_records.py
+?? tests/test_contract_p1_guard.py
+?? tests/test_contract_p2_ir.py
+?? tests/test_contract_p3_p4.py
+?? tests/test_contract_p5_session.py
+?? tests/test_contract_p6_drafts.py
+?? tests/test_contract_p7_safety.py
+?? tests/test_e9_negation_lexical.py
+?? tests/test_inspector.py
+?? tests/test_p8_e2e.py
+?? tests/test_p8_non_answer.py
+?? tests/test_p8_review_package.py
+?? tests/test_p9_default_policy.py
+?? tests/test_p9_e2e_paths.py
+?? tests/test_p9_e9_regression.py
+?? tests/test_p9_inspector_contract.py
+?? tests/test_qa_policy_migration.py

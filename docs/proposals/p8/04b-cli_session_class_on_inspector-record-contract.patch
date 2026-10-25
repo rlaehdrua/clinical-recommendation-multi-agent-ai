@@ -1,0 +1,14 @@
+diff --git a/src/ctrec/cli.py b/src/ctrec/cli.py
+index c42b2e2..96e7903 100644
+--- a/src/ctrec/cli.py
++++ b/src/ctrec/cli.py
+@@ -173,7 +173,8 @@ def _run_case(case: PatientCase, trials: dict[str, dict], args, answerer) -> Ses
+     tracer = Tracer(out_dir / "trace.jsonl", verbose=not args.quiet,
+                     label=case.patient_id if args.workers > 1 else "")
+     fact_dir = _fact_store_dir(args, out_dir)
+-    session = Session(
++    from .contract_session import session_class  # CTREC_SESSION=contract -> ContractSession (기본: 기존 Session)
++    session = session_class()(
+         case=case, trials=trials, answerer=answerer, tracer=tracer,
+         max_rounds=args.max_rounds, allow_search=args.search, question_budget=args.question_budget,
+         screen_trials=args.candidates == "screen" and len(trials) > args.max_candidates,

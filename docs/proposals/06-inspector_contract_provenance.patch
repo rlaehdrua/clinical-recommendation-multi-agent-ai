@@ -1,0 +1,45 @@
+--- a/src/ctrec/inspector.py
++++ b/src/ctrec/inspector.py
+@@ -207,7 +207,7 @@
+ 
+ _CRITERION_KEYS = ("rule_id", "kind", "criterion_text", "category", "method", "holds", "passes", "applicable",
+                    "cohort", "underspecified", "needs_verification", "self_reported_holds", "evidence_source",
+-                   "required_evidence", "gap")
++                   "required_evidence", "gap", "evidence_directness", "validation_flags")
+ 
+ 
+ # 라운드 사이 변화로 표시하는 기록 필드. 판정(verdict)과 근거·확인 상태(evidence)를 나눠 셈
+@@ -771,7 +771,17 @@
+         if changes["comparable"] else None,
+     }
+ 
+-    return {"schema": SCHEMA, "run": run, "overview": overview, "timeline": timeline, "unlinked_question_rounds": unlinked_q,
++    # 계약 판정 출처 (ContractSession result["contract"]): 기준 ID·명제 키·계약·질문·사실 ID·IR 버전·출처·평가 방법.
++    # 없으면 None (기존 Session 기록과 호환: v1 스키마에 선택 필드로 추가)
++    contract = r.get("contract") if isinstance(r.get("contract"), dict) else None
++    contract_view = None if contract is None else [
++        {"criterion_id": k, "proposition_keys": p.get("propositions"), "contract_ids": p.get("contracts"),
++         "question_ids": p.get("questions"), "fact_ids": p.get("fact_ids"), "ir_version": p.get("ir_version"),
++         "sources": p.get("sources"), "method": p.get("method"), "outcome": p.get("outcome"),
++         "round": p.get("round")}
++        for k, p in sorted((contract.get("provenance") or {}).items()) if isinstance(p, dict)]
++    return {"schema": SCHEMA, "contract": contract_view,
++            "run": run, "overview": overview, "timeline": timeline, "unlinked_question_rounds": unlinked_q,
+             "changes": changes, "facts": facts, "fact_shadow": fact_shadow, "screening": screening,
+             "trials": trials, "questions": questions, "decision": decision, "history": history,
+             "fact_changes": fact_changes, "steps": steps, "errors": errors or [], "usage": usage, "metering": metering,
+@@ -1193,6 +1203,14 @@
+         w(_table(["기준", "구분", "기준 원문(공개 시험 정보)", "판정 방법", "최종", "라운드별 변화", "해소 경로", "근거 출처",
+                   "필요 근거", "문서 확인 필요", "분류"], rows, raw_cols=set(range(11))))
+         w("</details>")
++    if v.get("contract"):  # 계약 판정 출처 (ContractSession 기록에만 있음)
++        w("<h3>계약 판정 출처 (결정적 평가기)</h3>")
++        w(_table(["기준", "명제 키", "질문 계약", "질문", "사실 ID", "IR 버전", "출처", "평가 방법", "결과", "라운드"],
++                 [[_e(c["criterion_id"]), _e(", ".join(c["proposition_keys"] or [])),
++                   _e(", ".join(c["contract_ids"] or [])), _e(", ".join(c["question_ids"] or [])),
++                   _e(", ".join(c["fact_ids"] or [])), _e(c["ir_version"]), _e(", ".join(c["sources"] or [])),
++                   _e(c["method"]), _e(c["outcome"]), _e(c["round"])] for c in v["contract"]],
++                 raw_cols=set(range(10))))
+     tids = sorted({t for h in v["history"] for t in h["eligibility"]})
+     if v["history"]:
+         w('<p class="note">매칭 단계별 시험 판정 (result.json eligibility_history: 그 시점 Session에 있던 판정이며, '

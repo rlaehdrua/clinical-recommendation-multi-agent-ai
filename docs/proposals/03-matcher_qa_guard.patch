@@ -1,0 +1,12 @@
+--- a/src/ctrec/agents/matcher.py
++++ b/src/ctrec/agents/matcher.py
+@@ -473,6 +473,9 @@
+ 
+     all_assessments = [_apply_evidence_policy(results[r.rule_id], _meta(parsed, r), source_text, input_source)
+                        for r in parsed.rules]
++    # Q&A 안전 경계 (재설계 P1): 계약 없는 확인 답변에 기댄 확정은 UNVERIFIED로 (qa_guard.py)
++    from ..qa_guard import guard_assessments
++    all_assessments = guard_assessments(all_assessments, source_text)
+     assessments, matched_cohort, cohort_results = _select_cohort(all_assessments, parsed.cohorts)
+     other = [a for a in all_assessments if a not in assessments]
+     eligibility = decide(assessments)
