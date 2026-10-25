@@ -154,19 +154,22 @@ CONCEPTS = (
              ObjectTerm("lactation", re.compile(r"breast-?feed\w*|lactat\w*|nursing|수유", re.I))),
             re.compile(r"\btest|hcg|검사", re.I),
             # 가임 대상 집단 밖: 폐경·자궁 적출·양측 난소(난관) 절제. 폐경 '전'·폐경 이행기·난관결찰·"임신 가능성 없음"(자기 평가)은 아님
-            re.compile(r"(?<!pre)(?<!peri)(?<!pre-)(?<!peri-)menopaus|hysterectom|"
+            re.compile(r"(?<!pre)(?<!peri)(?<!pre-)(?<!peri-)(?<!pre )(?<!peri )menopaus|hysterectom|"
                        r"bilateral\s+(?:salpingo-?)?oophorectom|bilateral\s+salpingectom|"
                        r"(?:폐경|완경)(?!기?\s*(?:전|이행|주변|여부))|자궁\s*(?:적출|절제)|"
-                       r"양측\s*(?:난관\s*)?(?:난소|난관)\s*(?:절제|적출)", re.I)),
+                       r"(?:양측|양쪽)\s*(?:난관\s*)?(?:난소|난관)\s*(?:난관\s*)?(?:절제|적출)", re.I)),
 )
+# 대상 집단 밖이 아직 아님 ("menopausal transition", "approaching menopause", "폐경기 증상", "폐경이 가까움", "조기 폐경 위험")
+_NOT_YET = re.compile(r"transition|approach|\bnear|symptom|\brisk|가까|접어들|증상|위험|이행", re.I)
 # '해당 없음' 근거가 서로 다른 상태를 묶음 ("폐경되었거나 임신 가능성이 없음"): 어느 상태인지 모름
 _DISJUNCTION = re.compile(r"거나|또는|혹은|\b(?:or|either)\b", re.I)  # '/'는 약어(s/p, w/o)에 흔해 넣지 않음
 # 앞으로 일어날 일 ("자궁 적출 예정"): 지금 대상 집단 밖이라는 근거가 아님
 _PLANNED = re.compile(r"예정|계획|하려고|할\s*것|\b(?:scheduled|planned|planning|will|plans?\s+to)\b", re.I)
 # 기준 원문이 가임 대상 집단을 정하는가 ("women of childbearing potential ..."). "Pregnant or lactating"처럼 모든 환자에게
 # 적용되는 기준은 폐경 등으로 '해당 없음'이 되지 않음 ('폐경 -> 임신·수유 아님'은 임상 추론, Phase 10-E9)
-_POPULATION_CLAUSE = re.compile(r"child-?bearing|wocbp|potential|(?:able\s+to|can|could|may)\s+(?:become|get)\s+pregnant|"
-                                r"가임|임신\s*가능", re.I)
+_POPULATION_CLAUSE = re.compile(r"child-?bearing|wocbp|reproductive\s+potential|potential\s+(?:to|for)\s+(?:become\s+|get\s+)?"
+                                r"pregnan|(?:able\s+to|can|could|may)\s+(?:become|get)\s+pregnant|"
+                                r"\b(?:unless|except)\b[^.;]{0,40}?(?:menopaus|steril)|가임|임신\s*가능", re.I)
 _PARENT = {o.name: o.parent for c in CONCEPTS for o in c.objects}
 
 
@@ -565,7 +568,8 @@ def check(criterion_text: str, evidence_text: str, source_text: str | None, *, h
             if any(_DISJUNCTION.search(u.context) for u in units):
                 return Check("hedged", ["combined_states"], cname)
             if not any(concept.population_exclusion.search(u.context) and u.polarity == "positive"
-                       and not _PLANNED.search(u.context) and not (u.linked and _negated(u.question)) for u in units):
+                       and not _PLANNED.search(u.context) and not _NOT_YET.search(u.context)
+                       and not (u.linked and _negated(u.question)) for u in units):
                 return Check("indirect", ["population_exclusion_not_stated"], cname)
             return Check("direct", [], cname)
         if concept and not any(concept.direct.search(u.context) for u in units):

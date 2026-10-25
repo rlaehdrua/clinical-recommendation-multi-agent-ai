@@ -198,3 +198,26 @@ def test_population_less_criterion_cannot_be_not_applicable(criterion):
 def test_population_criteria_still_accept_population_fact(criterion):
     criterion = _i4() if criterion == "I4" else criterion
     assert _na(criterion, "postmenopausal since 2015", "62-year-old woman, postmenopausal since 2015.").ok
+
+
+# ------------------------------------------------------------ 독립 리뷰가 찾은 남은 구멍 (수정 전에도 통과하던 우회)
+@pytest.mark.parametrize("quote", ["pre menopausal woman", "menopausal transition", "approaching menopause",
+                                   "폐경기 증상(안면홍조)이 있음", "폐경기에 접어들고 있음", "폐경이 가까움", "조기 폐경 위험"])
+def test_not_yet_outside_population_is_blocked(quote):
+    assert not _na(WOCBP, quote, f"47세 여성. {quote}.").ok
+
+
+def test_potential_substring_does_not_define_population():
+    crit = "Pregnant or breastfeeding women or any condition that could potentially interfere with the study"
+    c = _na(crit, "postmenopausal since 2015", "62-year-old woman, postmenopausal since 2015.", key="T:E9")
+    assert not c.ok and c.flags == ["no_target_population"]
+
+
+@pytest.mark.parametrize("quote", ["2015년 자궁 및 양쪽 난소 절제술", "양측 난소난관절제술을 받음"])
+def test_korean_bilateral_oophorectomy_is_direct(quote):
+    assert _na(WOCBP, quote, f"55세 여성. {quote}.").directness == "direct"
+
+
+def test_criterion_exempting_postmenopausal_defines_population():
+    crit = "Female patients must have a negative serum pregnancy test unless postmenopausal or surgically sterile"
+    assert _na(crit, "postmenopausal since 2015", "62-year-old woman, postmenopausal since 2015.").ok
