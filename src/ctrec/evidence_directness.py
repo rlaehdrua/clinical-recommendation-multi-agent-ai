@@ -163,6 +163,9 @@ CONCEPTS = (
 _DISJUNCTION = re.compile(r"거나|또는|혹은|\b(?:or|either)\b", re.I)  # '/'는 약어(s/p, w/o)에 흔해 넣지 않음
 # 앞으로 일어날 일 ("자궁 적출 예정"): 지금 대상 집단 밖이라는 근거가 아님
 _PLANNED = re.compile(r"예정|계획|하려고|할\s*것|\b(?:scheduled|planned|planning|will|plans?\s+to)\b", re.I)
+# 기준 원문이 가임 대상 집단을 정하는가 ("women of childbearing potential ..."). "Pregnant or lactating"처럼 모든 환자에게
+# 적용되는 기준은 폐경 등으로 '해당 없음'이 되지 않음 ('폐경 -> 임신·수유 아님'은 임상 추론, Phase 10-E9)
+_POPULATION_CLAUSE = re.compile(r"child-?bearing|wocbp|potential|able\s+to\s+(?:become|get)\s+pregnant|가임|임신\s*가능", re.I)
 _PARENT = {o.name: o.parent for c in CONCEPTS for o in c.objects}
 
 
@@ -554,7 +557,10 @@ def check(criterion_text: str, evidence_text: str, source_text: str | None, *, h
     if not applicable:  # '해당 없음': 대상 집단이 아님을 말하는 근거. 기준 본문의 대상·기간·검사 요건은 적용하지 않음
         if concept and concept.population_exclusion:
             # P14 D1: 개념어("임신 가능성")가 있다는 것만으로 대상 집단 밖이라고 보지 않음. 대상 집단 밖임을 정하는 사실을
-            # 근거가 다른 상태와 묶지 않고, 긍정으로(부정형 질문의 예/아니요 제외), 이미 일어난 일로 말해야 함
+            # 근거가 다른 상태와 묶지 않고, 긍정으로(부정형 질문의 예/아니요 제외), 이미 일어난 일로 말해야 함.
+            # 기준 원문이 대상 집단을 정하지 않으면 '해당 없음'이 성립하지 않음
+            if not _POPULATION_CLAUSE.search(criterion_text):
+                return Check("indirect", ["no_target_population"], cname)
             if any(_DISJUNCTION.search(u.context) for u in units):
                 return Check("hedged", ["combined_states"], cname)
             if not any(concept.population_exclusion.search(u.context) and u.polarity == "positive"

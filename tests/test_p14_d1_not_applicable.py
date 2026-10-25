@@ -181,3 +181,19 @@ def test_matcher_bundled_choice_answer_is_not_auto_passed(monkeypatch):
 def test_matcher_menopause_record_still_passes(monkeypatch):
     a = _match(monkeypatch, WOCBP, "62세 여성. 2015년에 폐경됨.", "2015년에 폐경됨")
     assert a.passes is True and a.applicable is False and a.evidence_directness == "direct" and a.validation_flags == []
+
+
+# ------------------------------------------------------------ 대상 집단을 정하지 않는 기준 (D1 후속)
+@pytest.mark.parametrize("criterion", ["Pregnant or lactating patient", "Pregnant or breastfeeding women"])
+def test_population_less_criterion_cannot_be_not_applicable(criterion):
+    """"Pregnant or lactating"은 모든 환자에게 적용: 폐경 기록으로 '해당 없음' 통과하지 않음 ('폐경 -> 임신 아님'은 임상 추론).
+    수정 전: 개념어(폐경)가 있어 direct로 통과."""
+    c = _na(criterion, "postmenopausal since 2015", "62-year-old woman, postmenopausal since 2015.", key="T:E9")
+    assert not c.ok and c.flags == ["no_target_population"]
+
+
+@pytest.mark.parametrize("criterion", [WOCBP, "Females of reproductive potential must have a negative pregnancy test",
+                                       "가임 여성은 피임해야 함", "I4"])
+def test_population_criteria_still_accept_population_fact(criterion):
+    criterion = _i4() if criterion == "I4" else criterion
+    assert _na(criterion, "postmenopausal since 2015", "62-year-old woman, postmenopausal since 2015.").ok
