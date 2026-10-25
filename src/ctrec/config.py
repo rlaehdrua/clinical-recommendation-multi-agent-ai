@@ -15,6 +15,9 @@ ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT / "data"
 TRIALS_DIR = DATA_DIR / "trials"
 CACHE_DIR = DATA_DIR / "cache"
+# 실행 중 ClinicalTrials.gov 검색(웹·오케스트레이터 search_trials)으로 가져온 시험 원본. data/trials(잠긴 기준표와 짝인 대회 시험)와
+# 분리 (P14: 검색 결과가 data/trials에 쌓여 시험 목록·잠긴 기준표 검사가 바뀌던 문제). data/cache는 git에 넣지 않음
+CTGOV_CACHE_DIR = CACHE_DIR / "ctgov"
 # 사전 컴파일(파싱 + 검증)한 시험 기준 고정 저장소 (git에 포함, 팀원 모두 같은 기준 목록 사용)
 PARSED_DIR = DATA_DIR / "parsed"
 OUTPUT_DIR = ROOT / "outputs"

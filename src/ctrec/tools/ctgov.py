@@ -2,7 +2,9 @@
 
 - 문서: https://clinicaltrials.gov/data-api/api
 - 이용 약관: https://clinicaltrials.gov/about-site/terms-conditions
-가져온 원본은 data/trials/<NCT ID>.json 으로 캐시해 재현성을 확보합니다.
+가져온 원본은 출처(source.retrieved_at 포함)와 함께 파일로 남겨 재현성을 확보합니다.
+- fetch_study (CLI --nct, 사람이 고른 시험): data/trials/<NCT ID>.json (대회 시험 목록에 추가하는 용도, 기존 동작)
+- search_studies (실행 중 자동 검색): data/cache/ctgov/<NCT ID>.json - data/trials를 바꾸지 않음 (P14)
 """
 
 from __future__ import annotations
@@ -99,13 +101,14 @@ def search_studies(
     resp.raise_for_status()
     records = [to_trial_record(s) for s in resp.json().get("studies", [])]
     for r in records:
-        save_record(r)
+        save_record(r, config.CTGOV_CACHE_DIR)  # 검색 결과는 실행 기록용 캐시 (대회 시험 목록·잠긴 기준표와 분리)
     return records[:max_results]
 
 
-def save_record(record: dict[str, Any]) -> Path:
-    config.TRIALS_DIR.mkdir(parents=True, exist_ok=True)
-    path = config.TRIALS_DIR / f"{record['trial_id']}.json"
+def save_record(record: dict[str, Any], directory: Path | None = None) -> Path:
+    directory = directory or config.TRIALS_DIR
+    directory.mkdir(parents=True, exist_ok=True)
+    path = directory / f"{record['trial_id']}.json"
     path.write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
     return path
 
