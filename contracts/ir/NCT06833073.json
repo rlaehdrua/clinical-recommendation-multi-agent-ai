@@ -1,0 +1,147 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT06833073",
+ "criteria": [
+  {
+   "trial_id": "NCT06833073",
+   "rule_id": "E4",
+   "ir_version": 1,
+   "criterion_text": "Has had a myocardial infarction within 6 months of randomization/allocation",
+   "source_span": "Has had a myocardial infarction within 6 months of randomization/allocation",
+   "frozen_file_hash": "e76ea7304fb4c7595e02a89b9f4cff4977e90f4833985a1ec67db72dd40833a8",
+   "condition": {
+    "op": "atom",
+    "prop": "myocardial_infarction/condition/w180d-randomization"
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "기준 시점(randomization)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정) 개월 -> 일 환산은 잠긴 기준표 time_window_days 값 사용 (검수 확인)",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT06833073",
+   "rule_id": "E5",
+   "ir_version": 1,
+   "criterion_text": "Has received any systemic anticancer therapy including investigational agents within 4 weeks before randomization/allocation",
+   "source_span": "Has received any systemic anticancer therapy including investigational agents within 4 weeks before randomization/allocation",
+   "frozen_file_hash": "e76ea7304fb4c7595e02a89b9f4cff4977e90f4833985a1ec67db72dd40833a8",
+   "condition": {
+    "op": "or",
+    "args": [
+     {
+      "op": "atom",
+      "prop": "systemic_anticancer_therapy/event/w28d-randomization"
+     },
+     {
+      "op": "unsupported",
+      "text": "including investigational agents",
+      "reason": "항암 목적 임상시험약인지 환자 답으로 구분하지 않음"
+     }
+    ]
+   },
+   "completeness": "partial",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [
+    "investigational agents의 범위"
+   ],
+   "notes": "기준 시점(randomization)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정)",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT06833073",
+   "rule_id": "E6",
+   "ir_version": 1,
+   "criterion_text": "Has received prior treatment with a cancer vaccine",
+   "source_span": "Has received prior treatment with a cancer vaccine",
+   "frozen_file_hash": "e76ea7304fb4c7595e02a89b9f4cff4977e90f4833985a1ec67db72dd40833a8",
+   "condition": {
+    "op": "atom",
+    "prop": "cancer_vaccine/event/ever"
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT06833073",
+   "rule_id": "E10",
+   "ir_version": 1,
+   "criterion_text": "Cohort A: Has current active tuberculosis",
+   "source_span": "Cohort A: Has current active tuberculosis",
+   "frozen_file_hash": "e76ea7304fb4c7595e02a89b9f4cff4977e90f4833985a1ec67db72dd40833a8",
+   "condition": {
+    "op": "atom",
+    "prop": "active_tuberculosis/condition/current"
+   },
+   "completeness": "complete",
+   "source_requirement": "clinical_record",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "활동성 결핵은 검사·진료 기록 확인이 필요해 clinical_record. 코호트 A 적용은 Rule.cohort로 처리",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT06833073",
+   "rule_id": "E11",
+   "ir_version": 1,
+   "criterion_text": "Cohort A: Has a known history of HIV infection",
+   "source_span": "Cohort A: Has a known history of HIV infection",
+   "frozen_file_hash": "e76ea7304fb4c7595e02a89b9f4cff4977e90f4833985a1ec67db72dd40833a8",
+   "condition": {
+    "op": "atom",
+    "prop": "hiv_infection/condition/ever"
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "'known history of HIV infection' = 진단받은 적 있음. 코호트 A 적용은 Rule.cohort로 처리",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT06833073",
+   "rule_id": "E12",
+   "ir_version": 1,
+   "criterion_text": "Cohort B: HIV-infected individuals with a history of Kaposi's sarcoma and/or Multicentric Castleman's Disease",
+   "source_span": "Cohort B: HIV-infected individuals with a history of Kaposi's sarcoma and/or Multicentric Castleman's Disease",
+   "frozen_file_hash": "e76ea7304fb4c7595e02a89b9f4cff4977e90f4833985a1ec67db72dd40833a8",
+   "condition": {
+    "op": "and",
+    "args": [
+     {
+      "op": "atom",
+      "prop": "hiv_infection/condition/ever"
+     },
+     {
+      "op": "atom",
+      "prop": "kaposi_or_castleman/condition/ever"
+     }
+    ]
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "코호트 B 전용",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  }
+ ]
+}

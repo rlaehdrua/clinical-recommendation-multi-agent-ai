@@ -1,0 +1,37 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT07679893",
+ "criteria": [
+  {
+   "trial_id": "NCT07679893",
+   "rule_id": "E25",
+   "ir_version": 1,
+   "criterion_text": "Currently smokes, recently smoked, or quit smoking less than 1 year ago.",
+   "source_span": "Currently smokes, recently smoked, or quit smoking less than 1 year ago.",
+   "frozen_file_hash": "27428485bb57ba89c50f23aad7078c9907c7735b2ced747bdae75e9470dce01d",
+   "condition": {
+    "op": "or",
+    "args": [
+     {
+      "op": "atom",
+      "prop": "smoking/event/current"
+     },
+     {
+      "op": "atom",
+      "prop": "smoking/event/w365d-screening"
+     }
+    ]
+   },
+   "completeness": "partial",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [
+    "'recently smoked'의 기간 정의 없음"
+   ],
+   "notes": "기준 시점(screening)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정)",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  }
+ ]
+}

@@ -1,0 +1,37 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT06727604",
+ "criteria": [
+  {
+   "trial_id": "NCT06727604",
+   "rule_id": "E1",
+   "ir_version": 1,
+   "criterion_text": "Have previously been successfully treated with radioactive iodine (RAI) therapy or have undergone total thyroidectomy.",
+   "source_span": "Have previously been successfully treated with radioactive iodine (RAI) therapy or have undergone total thyroidectomy.",
+   "frozen_file_hash": "8903d299ce0898678c8573ed450fe89e0d9c8268e3a0bbbc2b16264c1482d58b",
+   "condition": {
+    "op": "or",
+    "args": [
+     {
+      "op": "atom",
+      "prop": "radioactive_iodine_therapy(successful)/event/ever"
+     },
+     {
+      "op": "atom",
+      "prop": "total_thyroidectomy/event/ever"
+     }
+    ]
+   },
+   "completeness": "partial",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [
+    "successfully treated: 방사성 요오드 치료의 '성공' 여부는 의료진 판단"
+   ],
+   "notes": "",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  }
+ ]
+}

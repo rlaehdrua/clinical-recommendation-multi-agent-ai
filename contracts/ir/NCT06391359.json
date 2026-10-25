@@ -1,0 +1,26 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT06391359",
+ "criteria": [
+  {
+   "trial_id": "NCT06391359",
+   "rule_id": "E5",
+   "ir_version": 1,
+   "criterion_text": "Prior cholecystectomy",
+   "source_span": "Prior cholecystectomy",
+   "frozen_file_hash": "c61acebee11c39447ef9c138ca0929ff5901efd6043d7dc2b6a9a3be31c034b7",
+   "condition": {
+    "op": "atom",
+    "prop": "cholecystectomy/event/ever"
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  }
+ ]
+}

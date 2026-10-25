@@ -1,0 +1,1970 @@
+{
+ "format_version": 1,
+ "contracts": [
+  {
+   "contract_id": "QC-SURGERY-LAST",
+   "version": 1,
+   "question": "가장 최근에 수술(내시경·조직검사 같은 시술 제외)을 받은 시기는 언제인가요?",
+   "answer_type": "single_choice",
+   "options": [
+    {
+     "label": "최근 4주(28일) 이내",
+     "assertions": [
+      [
+       "surgery/event/w28d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "4주(28일)보다 전, 3개월(90일) 이내",
+     "assertions": [
+      [
+       "surgery/event/w28d-assessment",
+       false
+      ],
+      [
+       "surgery/event/w90d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "3개월(90일)보다 전",
+     "assertions": [
+      [
+       "surgery/event/w90d-assessment",
+       false
+      ],
+      [
+       "surgery/event/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "수술을 받은 적 없음",
+     "assertions": [
+      [
+       "surgery/event/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-LIVE-VACCINE-LAST",
+   "version": 1,
+   "question": "가장 최근에 생백신(살아 있는 약독화 바이러스·세균 백신)을 맞은 시기는 언제인가요?",
+   "answer_type": "single_choice",
+   "options": [
+    {
+     "label": "최근 4주(28일) 이내",
+     "assertions": [
+      [
+       "live_vaccine/event/w28d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "4주(28일)보다 전",
+     "assertions": [
+      [
+       "live_vaccine/event/w28d-assessment",
+       false
+      ],
+      [
+       "live_vaccine/event/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "생백신을 맞은 적 없음",
+     "assertions": [
+      [
+       "live_vaccine/event/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-BLOOD-PRODUCT-LAST",
+   "version": 1,
+   "question": "가장 최근에 수혈이나 면역글로불린 같은 혈액 제제를 맞은 시기는 언제인가요?",
+   "answer_type": "single_choice",
+   "options": [
+    {
+     "label": "최근 4개월(120일) 이내",
+     "assertions": [
+      [
+       "blood_product/event/w120d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "4개월(120일)보다 전",
+     "assertions": [
+      [
+       "blood_product/event/w120d-assessment",
+       false
+      ],
+      [
+       "blood_product/event/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "맞은 적 없음",
+     "assertions": [
+      [
+       "blood_product/event/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-INVESTIGATIONAL-LAST",
+   "version": 1,
+   "question": "가장 최근에 임상시험에서 시험약을 투여받은 시기는 언제인가요?",
+   "answer_type": "single_choice",
+   "options": [
+    {
+     "label": "최근 30일 이내",
+     "assertions": [
+      [
+       "investigational_agent/event/w30d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "30일보다 전",
+     "assertions": [
+      [
+       "investigational_agent/event/w30d-assessment",
+       false
+      ],
+      [
+       "investigational_agent/event/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "시험약을 투여받은 적 없음",
+     "assertions": [
+      [
+       "investigational_agent/event/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-TRIAL-PARTICIPATION-LAST",
+   "version": 1,
+   "question": "다른 임상시험에 마지막으로 참여한 때는 언제인가요? (지금도 참여 중이면 '최근 3개월(90일) 이내'를 고르세요)",
+   "answer_type": "single_choice",
+   "options": [
+    {
+     "label": "최근 3개월(90일) 이내",
+     "assertions": [
+      [
+       "clinical_trial_participation/event/w90d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "3개월(90일)보다 전",
+     "assertions": [
+      [
+       "clinical_trial_participation/event/w90d-assessment",
+       false
+      ],
+      [
+       "clinical_trial_participation/event/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "임상시험에 참여한 적 없음",
+     "assertions": [
+      [
+       "clinical_trial_participation/event/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-FEBRILE-ILLNESS-LAST",
+   "version": 1,
+   "question": "가장 최근에 열이 나는 병을 앓은 시기는 언제인가요?",
+   "answer_type": "single_choice",
+   "options": [
+    {
+     "label": "최근 2주(14일) 이내",
+     "assertions": [
+      [
+       "febrile_illness/condition/w14d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "2주(14일)보다 전",
+     "assertions": [
+      [
+       "febrile_illness/condition/w14d-assessment",
+       false
+      ],
+      [
+       "febrile_illness/condition/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "열이 나는 병을 앓은 적 없음",
+     "assertions": [
+      [
+       "febrile_illness/condition/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-MI-LAST",
+   "version": 1,
+   "question": "심근경색(심장마비) 진단을 받은 가장 최근 시기는 언제인가요?",
+   "answer_type": "single_choice",
+   "options": [
+    {
+     "label": "최근 6개월(180일) 이내",
+     "assertions": [
+      [
+       "myocardial_infarction/condition/w180d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "6개월(180일)보다 전",
+     "assertions": [
+      [
+       "myocardial_infarction/condition/w180d-assessment",
+       false
+      ],
+      [
+       "myocardial_infarction/condition/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "심근경색 진단을 받은 적 없음",
+     "assertions": [
+      [
+       "myocardial_infarction/condition/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-URTICARIA-LAST",
+   "version": 1,
+   "question": "원인을 모르는 두드러기(특발성 두드러기) 증상이 마지막으로 있었던 시기는 언제인가요?",
+   "answer_type": "single_choice",
+   "options": [
+    {
+     "label": "최근 1년(365일) 이내",
+     "assertions": [
+      [
+       "idiopathic_urticaria/condition/w365d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "1년(365일)보다 전",
+     "assertions": [
+      [
+       "idiopathic_urticaria/condition/w365d-assessment",
+       false
+      ],
+      [
+       "idiopathic_urticaria/condition/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "특발성 두드러기 증상이 있었던 적 없음",
+     "assertions": [
+      [
+       "idiopathic_urticaria/condition/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-ANTICD20-LAST",
+   "version": 1,
+   "question": "항CD20 항체 주사(리툭시맙·오비누투주맙 등)를 가장 최근에 맞은 시기는 언제인가요?",
+   "answer_type": "single_choice",
+   "options": [
+    {
+     "label": "최근 6개월(180일) 이내",
+     "assertions": [
+      [
+       "anti_cd20_antibody/event/w180d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "6개월(180일)보다 전",
+     "assertions": [
+      [
+       "anti_cd20_antibody/event/w180d-assessment",
+       false
+      ],
+      [
+       "anti_cd20_antibody/event/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "맞은 적 없음",
+     "assertions": [
+      [
+       "anti_cd20_antibody/event/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-ANTICANCER-LAST",
+   "version": 1,
+   "question": "가장 최근에 전신 항암 치료(항암 화학요법·면역항암제·표적항암제)를 받은 시기는 언제인가요?",
+   "answer_type": "single_choice",
+   "options": [
+    {
+     "label": "최근 4주(28일) 이내",
+     "assertions": [
+      [
+       "systemic_anticancer_therapy/event/w28d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "4주(28일)보다 전",
+     "assertions": [
+      [
+       "systemic_anticancer_therapy/event/w28d-assessment",
+       false
+      ],
+      [
+       "systemic_anticancer_therapy/event/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "받은 적 없음",
+     "assertions": [
+      [
+       "systemic_anticancer_therapy/event/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-SMOKING-LAST",
+   "version": 1,
+   "question": "가장 최근에 담배를 피운 시기는 언제인가요?",
+   "answer_type": "single_choice",
+   "options": [
+    {
+     "label": "최근 1년(365일) 이내",
+     "assertions": [
+      [
+       "smoking/event/w365d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "1년(365일)보다 전",
+     "assertions": [
+      [
+       "smoking/event/w365d-assessment",
+       false
+      ],
+      [
+       "smoking/event/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "담배를 피운 적 없음",
+     "assertions": [
+      [
+       "smoking/event/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-CANCER-IMMUNOTHERAPY-EVER",
+   "version": 1,
+   "question": "암 치료로 면역항암제(면역관문억제제 등)를 쓴 적이 있나요?",
+   "answer_type": "yes_no",
+   "options": [
+    {
+     "label": "예",
+     "assertions": [
+      [
+       "cancer_immunotherapy/event/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "아니요",
+     "assertions": [
+      [
+       "cancer_immunotherapy/event/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-TARGETED-THERAPY-EVER",
+   "version": 1,
+   "question": "암 치료로 표적항암제를 쓴 적이 있나요?",
+   "answer_type": "yes_no",
+   "options": [
+    {
+     "label": "예",
+     "assertions": [
+      [
+       "targeted_anticancer_therapy/event/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "아니요",
+     "assertions": [
+      [
+       "targeted_anticancer_therapy/event/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-MUCORMYCOSIS-EVER",
+   "version": 1,
+   "question": "폐 털곰팡이증(뮤코르진균증) 진단을 받은 적이 있나요?",
+   "answer_type": "yes_no",
+   "options": [
+    {
+     "label": "예",
+     "assertions": [
+      [
+       "pulmonary_mucormycosis/condition/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "아니요",
+     "assertions": [
+      [
+       "pulmonary_mucormycosis/condition/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-AMPHOTERICIN-COURSE",
+   "version": 1,
+   "answer_type": "single_choice",
+   "question": "암포테리신 B(주사 항진균제) 치료를 받은 적이 있나요? 받았다면 투여 기간이 5일을 넘었나요?",
+   "options": [
+    {
+     "label": "받았고, 5일을 넘게 투여함",
+     "assertions": [
+      [
+       "amphotericin_b(over_5d)/event/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "받았지만 5일 이하로 투여함",
+     "assertions": [
+      [
+       "amphotericin_b(over_5d)/event/ever",
+       false
+      ],
+      [
+       "amphotericin_b/event/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "받은 적 없음",
+     "assertions": [
+      [
+       "amphotericin_b/event/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-RITUXIMAB-LAST",
+   "version": 1,
+   "question": "리툭시맙(rituximab)을 가장 최근에 사용한 시기는 언제인가요?",
+   "answer_type": "single_choice",
+   "options": [
+    {
+     "label": "최근 2개월(60일) 이내",
+     "assertions": [
+      [
+       "rituximab/event/w60d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "2개월(60일)보다 전, 3개월(90일) 이내",
+     "assertions": [
+      [
+       "rituximab/event/w60d-assessment",
+       false
+      ],
+      [
+       "rituximab/event/w90d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "3개월(90일)보다 전, 6개월(180일) 이내",
+     "assertions": [
+      [
+       "rituximab/event/w90d-assessment",
+       false
+      ],
+      [
+       "rituximab/event/w180d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "6개월(180일)보다 전",
+     "assertions": [
+      [
+       "rituximab/event/w180d-assessment",
+       false
+      ],
+      [
+       "rituximab/event/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "사용한 적 없음",
+     "assertions": [
+      [
+       "rituximab/event/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-OBINUTUZUMAB-LAST",
+   "version": 1,
+   "question": "오비누투주맙(obinutuzumab)을 가장 최근에 사용한 시기는 언제인가요?",
+   "answer_type": "single_choice",
+   "options": [
+    {
+     "label": "최근 2개월(60일) 이내",
+     "assertions": [
+      [
+       "obinutuzumab/event/w60d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "2개월(60일)보다 전, 3개월(90일) 이내",
+     "assertions": [
+      [
+       "obinutuzumab/event/w60d-assessment",
+       false
+      ],
+      [
+       "obinutuzumab/event/w90d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "3개월(90일)보다 전, 6개월(180일) 이내",
+     "assertions": [
+      [
+       "obinutuzumab/event/w90d-assessment",
+       false
+      ],
+      [
+       "obinutuzumab/event/w180d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "6개월(180일)보다 전",
+     "assertions": [
+      [
+       "obinutuzumab/event/w180d-assessment",
+       false
+      ],
+      [
+       "obinutuzumab/event/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "사용한 적 없음",
+     "assertions": [
+      [
+       "obinutuzumab/event/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-TACROLIMUS-LAST",
+   "version": 1,
+   "question": "타크로리무스(tacrolimus)를 가장 최근에 사용한 시기는 언제인가요?",
+   "answer_type": "single_choice",
+   "options": [
+    {
+     "label": "최근 2개월(60일) 이내",
+     "assertions": [
+      [
+       "tacrolimus/event/w60d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "2개월(60일)보다 전, 3개월(90일) 이내",
+     "assertions": [
+      [
+       "tacrolimus/event/w60d-assessment",
+       false
+      ],
+      [
+       "tacrolimus/event/w90d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "3개월(90일)보다 전, 6개월(180일) 이내",
+     "assertions": [
+      [
+       "tacrolimus/event/w90d-assessment",
+       false
+      ],
+      [
+       "tacrolimus/event/w180d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "6개월(180일)보다 전",
+     "assertions": [
+      [
+       "tacrolimus/event/w180d-assessment",
+       false
+      ],
+      [
+       "tacrolimus/event/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "사용한 적 없음",
+     "assertions": [
+      [
+       "tacrolimus/event/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-CYCLOSPORINE-LAST",
+   "version": 1,
+   "question": "사이클로스포린(cyclosporine A)을 가장 최근에 사용한 시기는 언제인가요?",
+   "answer_type": "single_choice",
+   "options": [
+    {
+     "label": "최근 2개월(60일) 이내",
+     "assertions": [
+      [
+       "cyclosporine/event/w60d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "2개월(60일)보다 전, 3개월(90일) 이내",
+     "assertions": [
+      [
+       "cyclosporine/event/w60d-assessment",
+       false
+      ],
+      [
+       "cyclosporine/event/w90d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "3개월(90일)보다 전, 6개월(180일) 이내",
+     "assertions": [
+      [
+       "cyclosporine/event/w90d-assessment",
+       false
+      ],
+      [
+       "cyclosporine/event/w180d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "6개월(180일)보다 전",
+     "assertions": [
+      [
+       "cyclosporine/event/w180d-assessment",
+       false
+      ],
+      [
+       "cyclosporine/event/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "사용한 적 없음",
+     "assertions": [
+      [
+       "cyclosporine/event/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-MYCOPHENOLATE-MOFETIL-LAST",
+   "version": 1,
+   "question": "마이코페놀레이트 모페틸(mycophenolate mofetil)을 가장 최근에 사용한 시기는 언제인가요?",
+   "answer_type": "single_choice",
+   "options": [
+    {
+     "label": "최근 2개월(60일) 이내",
+     "assertions": [
+      [
+       "mycophenolate_mofetil/event/w60d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "2개월(60일)보다 전, 3개월(90일) 이내",
+     "assertions": [
+      [
+       "mycophenolate_mofetil/event/w60d-assessment",
+       false
+      ],
+      [
+       "mycophenolate_mofetil/event/w90d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "3개월(90일)보다 전, 6개월(180일) 이내",
+     "assertions": [
+      [
+       "mycophenolate_mofetil/event/w90d-assessment",
+       false
+      ],
+      [
+       "mycophenolate_mofetil/event/w180d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "6개월(180일)보다 전",
+     "assertions": [
+      [
+       "mycophenolate_mofetil/event/w180d-assessment",
+       false
+      ],
+      [
+       "mycophenolate_mofetil/event/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "사용한 적 없음",
+     "assertions": [
+      [
+       "mycophenolate_mofetil/event/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-CYCLOPHOSPHAMIDE-LAST",
+   "version": 1,
+   "question": "사이클로포스파마이드(cyclophosphamide)를 가장 최근에 사용한 시기는 언제인가요?",
+   "answer_type": "single_choice",
+   "options": [
+    {
+     "label": "최근 2개월(60일) 이내",
+     "assertions": [
+      [
+       "cyclophosphamide/event/w60d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "2개월(60일)보다 전, 3개월(90일) 이내",
+     "assertions": [
+      [
+       "cyclophosphamide/event/w60d-assessment",
+       false
+      ],
+      [
+       "cyclophosphamide/event/w90d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "3개월(90일)보다 전, 6개월(180일) 이내",
+     "assertions": [
+      [
+       "cyclophosphamide/event/w90d-assessment",
+       false
+      ],
+      [
+       "cyclophosphamide/event/w180d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "6개월(180일)보다 전",
+     "assertions": [
+      [
+       "cyclophosphamide/event/w180d-assessment",
+       false
+      ],
+      [
+       "cyclophosphamide/event/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "사용한 적 없음",
+     "assertions": [
+      [
+       "cyclophosphamide/event/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-ACTH-LAST",
+   "version": 1,
+   "question": "부신피질자극호르몬(ACTH) 주사를 가장 최근에 사용한 시기는 언제인가요?",
+   "answer_type": "single_choice",
+   "options": [
+    {
+     "label": "최근 2개월(60일) 이내",
+     "assertions": [
+      [
+       "acth/event/w60d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "2개월(60일)보다 전, 3개월(90일) 이내",
+     "assertions": [
+      [
+       "acth/event/w60d-assessment",
+       false
+      ],
+      [
+       "acth/event/w90d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "3개월(90일)보다 전, 6개월(180일) 이내",
+     "assertions": [
+      [
+       "acth/event/w90d-assessment",
+       false
+      ],
+      [
+       "acth/event/w180d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "6개월(180일)보다 전",
+     "assertions": [
+      [
+       "acth/event/w180d-assessment",
+       false
+      ],
+      [
+       "acth/event/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "사용한 적 없음",
+     "assertions": [
+      [
+       "acth/event/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-AZATHIOPRINE-LAST",
+   "version": 1,
+   "question": "아자티오프린(azathioprine)을 가장 최근에 사용한 시기는 언제인가요?",
+   "answer_type": "single_choice",
+   "options": [
+    {
+     "label": "최근 2개월(60일) 이내",
+     "assertions": [
+      [
+       "azathioprine/event/w60d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "2개월(60일)보다 전, 3개월(90일) 이내",
+     "assertions": [
+      [
+       "azathioprine/event/w60d-assessment",
+       false
+      ],
+      [
+       "azathioprine/event/w90d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "3개월(90일)보다 전, 6개월(180일) 이내",
+     "assertions": [
+      [
+       "azathioprine/event/w90d-assessment",
+       false
+      ],
+      [
+       "azathioprine/event/w180d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "6개월(180일)보다 전",
+     "assertions": [
+      [
+       "azathioprine/event/w180d-assessment",
+       false
+      ],
+      [
+       "azathioprine/event/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "사용한 적 없음",
+     "assertions": [
+      [
+       "azathioprine/event/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-BELIMUMAB-LAST",
+   "version": 1,
+   "question": "벨리무맙(belimumab)을 가장 최근에 사용한 시기는 언제인가요?",
+   "answer_type": "single_choice",
+   "options": [
+    {
+     "label": "최근 2개월(60일) 이내",
+     "assertions": [
+      [
+       "belimumab/event/w60d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "2개월(60일)보다 전, 3개월(90일) 이내",
+     "assertions": [
+      [
+       "belimumab/event/w60d-assessment",
+       false
+      ],
+      [
+       "belimumab/event/w90d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "3개월(90일)보다 전, 6개월(180일) 이내",
+     "assertions": [
+      [
+       "belimumab/event/w90d-assessment",
+       false
+      ],
+      [
+       "belimumab/event/w180d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "6개월(180일)보다 전",
+     "assertions": [
+      [
+       "belimumab/event/w180d-assessment",
+       false
+      ],
+      [
+       "belimumab/event/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "사용한 적 없음",
+     "assertions": [
+      [
+       "belimumab/event/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-LEVAMISOLE-LAST",
+   "version": 1,
+   "question": "레바미솔(levamisole)을 가장 최근에 사용한 시기는 언제인가요?",
+   "answer_type": "single_choice",
+   "options": [
+    {
+     "label": "최근 2개월(60일) 이내",
+     "assertions": [
+      [
+       "levamisole/event/w60d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "2개월(60일)보다 전, 3개월(90일) 이내",
+     "assertions": [
+      [
+       "levamisole/event/w60d-assessment",
+       false
+      ],
+      [
+       "levamisole/event/w90d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "3개월(90일)보다 전, 6개월(180일) 이내",
+     "assertions": [
+      [
+       "levamisole/event/w90d-assessment",
+       false
+      ],
+      [
+       "levamisole/event/w180d-assessment",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "6개월(180일)보다 전",
+     "assertions": [
+      [
+       "levamisole/event/w180d-assessment",
+       false
+      ],
+      [
+       "levamisole/event/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "사용한 적 없음",
+     "assertions": [
+      [
+       "levamisole/event/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-PREGNANT-NOW",
+   "version": 1,
+   "question": "현재 임신 중인가요?",
+   "answer_type": "yes_no",
+   "options": [
+    {
+     "label": "예",
+     "assertions": [
+      [
+       "pregnancy/condition/current",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "아니요",
+     "assertions": [
+      [
+       "pregnancy/condition/current",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-LACTATING-NOW",
+   "version": 1,
+   "question": "현재 모유 수유 중인가요?",
+   "answer_type": "yes_no",
+   "options": [
+    {
+     "label": "예",
+     "assertions": [
+      [
+       "lactation/condition/current",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "아니요",
+     "assertions": [
+      [
+       "lactation/condition/current",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-ECMO-NOW",
+   "version": 1,
+   "question": "현재 체외막산소공급(ECMO) 치료를 받고 있나요?",
+   "answer_type": "yes_no",
+   "options": [
+    {
+     "label": "예",
+     "assertions": [
+      [
+       "ecmo/event/current",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "아니요",
+     "assertions": [
+      [
+       "ecmo/event/current",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-ASPLENIA-NOW",
+   "version": 1,
+   "question": "비장을 제거했거나, 비장이 없거나 기능하지 않는다는 진단을 받았나요?",
+   "answer_type": "yes_no",
+   "options": [
+    {
+     "label": "예",
+     "assertions": [
+      [
+       "asplenia/condition/current",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "아니요",
+     "assertions": [
+      [
+       "asplenia/condition/current",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-EGFR-ADC-EVER",
+   "version": 1,
+   "question": "EGFR를 표적으로 하는 항체-약물 결합체(ADC) 치료를 받은 적이 있나요?",
+   "answer_type": "yes_no",
+   "options": [
+    {
+     "label": "예",
+     "assertions": [
+      [
+       "egfr_adc/event/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "아니요",
+     "assertions": [
+      [
+       "egfr_adc/event/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-ILD-STEROID-EVER",
+   "version": 1,
+   "question": "간질성 폐질환으로 스테로이드 치료가 필요했던 적이 있나요?",
+   "answer_type": "yes_no",
+   "options": [
+    {
+     "label": "예",
+     "assertions": [
+      [
+       "interstitial_lung_disease_steroid/condition/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "아니요",
+     "assertions": [
+      [
+       "interstitial_lung_disease_steroid/condition/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-ANTICD38-EVER",
+   "version": 1,
+   "question": "항CD38 치료(다라투무맙 등)를 받은 적이 있나요?",
+   "answer_type": "yes_no",
+   "options": [
+    {
+     "label": "예",
+     "assertions": [
+      [
+       "anti_cd38_therapy/event/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "아니요",
+     "assertions": [
+      [
+       "anti_cd38_therapy/event/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-PRIMARY-IMMUNODEFICIENCY-EVER",
+   "version": 1,
+   "question": "선천성(원발성) 면역결핍 진단을 받은 적이 있나요?",
+   "answer_type": "yes_no",
+   "options": [
+    {
+     "label": "예",
+     "assertions": [
+      [
+       "primary_immunodeficiency/condition/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "아니요",
+     "assertions": [
+      [
+       "primary_immunodeficiency/condition/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-NEPHROTIC-FAMILY-HISTORY",
+   "version": 1,
+   "question": "가족 중에 신증후군, 만성 사구체신염, 요독증 진단을 받은 사람이 있나요?",
+   "answer_type": "yes_no",
+   "options": [
+    {
+     "label": "예",
+     "assertions": [
+      [
+       "nephrotic_family_history/condition/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "아니요",
+     "assertions": [
+      [
+       "nephrotic_family_history/condition/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-CHOLECYSTECTOMY-EVER",
+   "version": 1,
+   "question": "담낭(쓸개) 절제 수술을 받은 적이 있나요?",
+   "answer_type": "yes_no",
+   "options": [
+    {
+     "label": "예",
+     "assertions": [
+      [
+       "cholecystectomy/event/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "아니요",
+     "assertions": [
+      [
+       "cholecystectomy/event/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-VITRECTOMY-RD-EVER",
+   "version": 1,
+   "question": "망막 박리 때문에 유리체 절제술을 받은 적이 있나요?",
+   "answer_type": "yes_no",
+   "options": [
+    {
+     "label": "예",
+     "assertions": [
+      [
+       "vitrectomy(for_detached_retina)/event/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "아니요",
+     "assertions": [
+      [
+       "vitrectomy(for_detached_retina)/event/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-THYROIDECTOMY-EVER",
+   "version": 1,
+   "question": "갑상샘 전체를 떼어내는 수술을 받은 적이 있나요?",
+   "answer_type": "yes_no",
+   "options": [
+    {
+     "label": "예",
+     "assertions": [
+      [
+       "total_thyroidectomy/event/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "아니요",
+     "assertions": [
+      [
+       "total_thyroidectomy/event/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-PANCREATIC-NECROSIS-EVER",
+   "version": 1,
+   "question": "췌장 괴사 진단을 받은 적이 있나요?",
+   "answer_type": "yes_no",
+   "options": [
+    {
+     "label": "예",
+     "assertions": [
+      [
+       "pancreatic_necrosis/condition/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "아니요",
+     "assertions": [
+      [
+       "pancreatic_necrosis/condition/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-PANCREATIC-NECROSECTOMY-EVER",
+   "version": 1,
+   "question": "췌장의 괴사된 조직을 제거하는 시술·수술(췌장 괴사 조직 제거술)을 받은 적이 있나요?",
+   "answer_type": "yes_no",
+   "options": [
+    {
+     "label": "예",
+     "assertions": [
+      [
+       "pancreatic_necrosectomy/event/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "아니요",
+     "assertions": [
+      [
+       "pancreatic_necrosectomy/event/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-CANCER-VACCINE-EVER",
+   "version": 1,
+   "question": "암을 치료하기 위한 암 백신(치료용 암 백신)을 맞은 적이 있나요? (자궁경부암(HPV)·B형간염 같은 예방 백신은 해당하지 않습니다)",
+   "answer_type": "yes_no",
+   "options": [
+    {
+     "label": "예",
+     "assertions": [
+      [
+       "cancer_vaccine/event/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "아니요",
+     "assertions": [
+      [
+       "cancer_vaccine/event/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-HIV-EVER",
+   "version": 1,
+   "question": "HIV 감염 진단을 받은 적이 있나요?",
+   "answer_type": "yes_no",
+   "options": [
+    {
+     "label": "예",
+     "assertions": [
+      [
+       "hiv_infection/condition/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "아니요",
+     "assertions": [
+      [
+       "hiv_infection/condition/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-KAPOSI-CASTLEMAN-EVER",
+   "version": 1,
+   "question": "카포시 육종이나 다발성 캐슬만병 진단을 받은 적이 있나요?",
+   "answer_type": "yes_no",
+   "options": [
+    {
+     "label": "예",
+     "assertions": [
+      [
+       "kaposi_or_castleman/condition/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "아니요",
+     "assertions": [
+      [
+       "kaposi_or_castleman/condition/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-CEREBRAL-INFARCTION-EVER",
+   "version": 1,
+   "question": "뇌경색 진단을 받은 적이 있나요?",
+   "answer_type": "yes_no",
+   "options": [
+    {
+     "label": "예",
+     "assertions": [
+      [
+       "cerebral_infarction/condition/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "아니요",
+     "assertions": [
+      [
+       "cerebral_infarction/condition/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-GBS-EVER",
+   "version": 1,
+   "question": "길랭-바레 증후군 진단을 받은 적이 있나요?",
+   "answer_type": "yes_no",
+   "options": [
+    {
+     "label": "예",
+     "assertions": [
+      [
+       "guillain_barre_syndrome/condition/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "아니요",
+     "assertions": [
+      [
+       "guillain_barre_syndrome/condition/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-ANGIOEDEMA-EVER",
+   "version": 1,
+   "question": "혈관부종 진단을 받은 적이 있나요?",
+   "answer_type": "yes_no",
+   "options": [
+    {
+     "label": "예",
+     "assertions": [
+      [
+       "angioedema/condition/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "아니요",
+     "assertions": [
+      [
+       "angioedema/condition/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-EBV-VACCINE-TRIAL-EVER",
+   "version": 1,
+   "question": "EBV(엡스타인-바 바이러스) 백신 임상시험에 참여한 적이 있나요?",
+   "answer_type": "yes_no",
+   "options": [
+    {
+     "label": "예",
+     "assertions": [
+      [
+       "ebv_vaccine_trial_participation/event/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "아니요",
+     "assertions": [
+      [
+       "ebv_vaccine_trial_participation/event/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-COELIAC-EVER",
+   "version": 1,
+   "question": "셀리악병 진단을 받은 적이 있나요?",
+   "answer_type": "yes_no",
+   "options": [
+    {
+     "label": "예",
+     "assertions": [
+      [
+       "coeliac_disease/condition/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "아니요",
+     "assertions": [
+      [
+       "coeliac_disease/condition/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-RETINAL-DETACHMENT-FAMILY-HISTORY",
+   "version": 1,
+   "question": "가족 중에 망막 박리를 겪은 사람이 있나요?",
+   "answer_type": "yes_no",
+   "options": [
+    {
+     "label": "예",
+     "assertions": [
+      [
+       "retinal_detachment_family_history/condition/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "아니요",
+     "assertions": [
+      [
+       "retinal_detachment_family_history/condition/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  },
+  {
+   "contract_id": "QC-DIABETES-TYPE",
+   "version": 1,
+   "answer_type": "single_choice",
+   "question": "당뇨병 진단을 받은 적이 있다면 어떤 당뇨병인가요?",
+   "options": [
+    {
+     "label": "제1형 당뇨병",
+     "assertions": [
+      [
+       "diabetes_type1/condition/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "제2형 당뇨병",
+     "assertions": [
+      [
+       "diabetes_type2/condition/ever",
+       true
+      ]
+     ]
+    },
+    {
+     "label": "임신 중에만 생긴 임신성 당뇨병",
+     "assertions": [
+      [
+       "diabetes_gestational/condition/ever",
+       true
+      ],
+      [
+       "diabetes_type1/condition/ever",
+       false
+      ],
+      [
+       "diabetes_type2/condition/ever",
+       false
+      ]
+     ]
+    },
+    {
+     "label": "당뇨병 진단을 받은 적 없음",
+     "assertions": [
+      [
+       "diabetes_type1/condition/ever",
+       false
+      ],
+      [
+       "diabetes_type2/condition/ever",
+       false
+      ],
+      [
+       "diabetes_gestational/condition/ever",
+       false
+      ]
+     ]
+    }
+   ],
+   "notes": "",
+   "review_status": "draft"
+  }
+ ]
+}

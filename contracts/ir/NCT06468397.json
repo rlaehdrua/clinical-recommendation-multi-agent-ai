@@ -1,0 +1,59 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT06468397",
+ "criteria": [
+  {
+   "trial_id": "NCT06468397",
+   "rule_id": "E5",
+   "ir_version": 1,
+   "criterion_text": "Pregnant and/or breast feeding (to be confirmed on treatment day).",
+   "source_span": "Pregnant and/or breast feeding (to be confirmed on treatment day).",
+   "frozen_file_hash": "29196ae8d1830e68828078c82f281f00f236f73ae43793e719d7dcf4412f6f23",
+   "condition": {
+    "op": "or",
+    "args": [
+     {
+      "op": "atom",
+      "prop": "pregnancy/condition/current"
+     },
+     {
+      "op": "atom",
+      "prop": "lactation/condition/current"
+     }
+    ]
+   },
+   "completeness": "partial",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [
+    "to be confirmed on treatment day: 치료일 확인 절차"
+   ],
+   "notes": "",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT06468397",
+   "rule_id": "E21",
+   "ir_version": 1,
+   "criterion_text": "Fellow eye: Family history of retinal detachment.",
+   "source_span": "Fellow eye: Family history of retinal detachment.",
+   "frozen_file_hash": "29196ae8d1830e68828078c82f281f00f236f73ae43793e719d7dcf4412f6f23",
+   "condition": {
+    "op": "atom",
+    "prop": "retinal_detachment_family_history/condition/ever"
+   },
+   "completeness": "partial",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [
+    "'Fellow eye:' 표지와 가족력의 관계가 원문상 불분명"
+   ],
+   "notes": "",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  }
+ ]
+}

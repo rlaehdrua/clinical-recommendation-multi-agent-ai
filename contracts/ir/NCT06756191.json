@@ -1,0 +1,131 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT06756191",
+ "criteria": [
+  {
+   "trial_id": "NCT06756191",
+   "rule_id": "E13",
+   "ir_version": 1,
+   "criterion_text": "Pregnant or breastfeeding individuals",
+   "source_span": "Pregnant or breastfeeding individuals",
+   "frozen_file_hash": "f7f6e61f5bb18cfc70954bcfa6914ee92960c2983c622eee468d8ad420f31bd5",
+   "condition": {
+    "op": "or",
+    "args": [
+     {
+      "op": "atom",
+      "prop": "pregnancy/condition/current"
+     },
+     {
+      "op": "atom",
+      "prop": "lactation/condition/current"
+     }
+    ]
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT06756191",
+   "rule_id": "E1",
+   "ir_version": 1,
+   "criterion_text": "Patients with a history of pulmonary mucormycosis (PM) who have previously been treated with amphotericin B for a duration exceeding 5 days",
+   "source_span": "Patients with a history of pulmonary mucormycosis (PM) who have previously been treated with amphotericin B for a duration exceeding 5 days",
+   "frozen_file_hash": "f7f6e61f5bb18cfc70954bcfa6914ee92960c2983c622eee468d8ad420f31bd5",
+   "condition": {
+    "op": "and",
+    "args": [
+     {
+      "op": "atom",
+      "prop": "pulmonary_mucormycosis/condition/ever"
+     },
+     {
+      "op": "atom",
+      "prop": "amphotericin_b(over_5d)/event/ever"
+     },
+     {
+      "op": "unsupported",
+      "text": "who have previously been treated with amphotericin B",
+      "reason": "암포테리신 B 투여가 폐 털곰팡이증 치료(같은 에피소드)였어야 하는지 원문에 없음"
+     }
+    ]
+   },
+   "completeness": "partial",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [
+    "암포테리신 B 투여와 폐 털곰팡이증의 관계(치료 목적·에피소드)"
+   ],
+   "notes": "P8: 'for a duration exceeding 5 days'를 한정어 over_5d로 표현(원문 그대로 질문, 누적·1회 구분은 임상 검토). 남은 unsupported 때문에 부분 IR(결정적 판정에 쓰지 않음, 계산 값은 provisional 기록). 임상 검토에서 투여 목적 조건이 필요 없다고 정하면 unsupported 노드를 빼고 complete로 바꿀 수 있음",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT06756191",
+   "rule_id": "E10",
+   "ir_version": 1,
+   "criterion_text": "Patients who have experienced a myocardial infarction",
+   "source_span": "Patients who have experienced a myocardial infarction",
+   "frozen_file_hash": "f7f6e61f5bb18cfc70954bcfa6914ee92960c2983c622eee468d8ad420f31bd5",
+   "condition": {
+    "op": "atom",
+    "prop": "myocardial_infarction/condition/ever"
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT06756191",
+   "rule_id": "E11",
+   "ir_version": 1,
+   "criterion_text": "Patients who have experienced a cerebral infarction",
+   "source_span": "Patients who have experienced a cerebral infarction",
+   "frozen_file_hash": "f7f6e61f5bb18cfc70954bcfa6914ee92960c2983c622eee468d8ad420f31bd5",
+   "condition": {
+    "op": "atom",
+    "prop": "cerebral_infarction/condition/ever"
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT06756191",
+   "rule_id": "E12",
+   "ir_version": 1,
+   "criterion_text": "Patients currently receiving extracorporeal membrane oxygenation (ECMO) treatment",
+   "source_span": "Patients currently receiving extracorporeal membrane oxygenation (ECMO) treatment",
+   "frozen_file_hash": "f7f6e61f5bb18cfc70954bcfa6914ee92960c2983c622eee468d8ad420f31bd5",
+   "condition": {
+    "op": "atom",
+    "prop": "ecmo/event/current"
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  }
+ ]
+}

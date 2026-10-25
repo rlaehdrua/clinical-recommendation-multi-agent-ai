@@ -1,0 +1,35 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT06080789",
+ "criteria": [
+  {
+   "trial_id": "NCT06080789",
+   "rule_id": "E4",
+   "ir_version": 1,
+   "criterion_text": "History of previous pancreatic necrosis, including necrosectomy",
+   "source_span": "History of previous pancreatic necrosis, including necrosectomy",
+   "frozen_file_hash": "fba7c9c5f17f79a8c257d0eaa8bb7583f84213738a2bfde1ace215f39859559c",
+   "condition": {
+    "op": "or",
+    "args": [
+     {
+      "op": "atom",
+      "prop": "pancreatic_necrosis/condition/ever"
+     },
+     {
+      "op": "atom",
+      "prop": "pancreatic_necrosectomy/event/ever"
+     }
+    ]
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "원문 'including necrosectomy'는 췌장 괴사의 제거술만 뜻함 (다른 부위 괴사 조직 제거는 해당 없음)",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  }
+ ]
+}

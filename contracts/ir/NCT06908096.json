@@ -1,0 +1,286 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT06908096",
+ "criteria": [
+  {
+   "trial_id": "NCT06908096",
+   "rule_id": "E1",
+   "ir_version": 1,
+   "criterion_text": "Pregnant, breastfeeding, or planning to become pregnant while participating through 60 days after the last dose of vaccine.",
+   "source_span": "Pregnant, breastfeeding, or planning to become pregnant while participating through 60 days after the last dose of vaccine.",
+   "frozen_file_hash": "6713b4c3d6631ce3aa657a4da9fe30e7a7bc6403ef2ab39a708e094b7e123b20",
+   "condition": {
+    "op": "or",
+    "args": [
+     {
+      "op": "atom",
+      "prop": "pregnancy/condition/current"
+     },
+     {
+      "op": "atom",
+      "prop": "lactation/condition/current"
+     },
+     {
+      "op": "unsupported",
+      "text": "planning to become pregnant while participating through 60 days after the last dose",
+      "reason": "향후 임신 계획은 사실이 아닌 의향"
+     }
+    ]
+   },
+   "completeness": "partial",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [
+    "임신 계획(미래)"
+   ],
+   "notes": "",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT06908096",
+   "rule_id": "E3",
+   "ir_version": 1,
+   "criterion_text": "Immunomodulating therapy within 180 days prior to first dose of vaccine.",
+   "source_span": "Immunomodulating therapy within 180 days prior to first dose of vaccine.",
+   "frozen_file_hash": "6713b4c3d6631ce3aa657a4da9fe30e7a7bc6403ef2ab39a708e094b7e123b20",
+   "condition": {
+    "op": "unsupported",
+    "text": "Immunomodulating therapy within 180 days",
+    "reason": "면역조절 치료의 범위(약물 목록)가 원문에 없음"
+   },
+   "completeness": "partial",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [
+    "면역조절 치료의 정의"
+   ],
+   "notes": "",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT06908096",
+   "rule_id": "E4",
+   "ir_version": 1,
+   "criterion_text": "Blood products, including immunoglobulin products, within 120 days prior to first dose of vaccine.",
+   "source_span": "Blood products, including immunoglobulin products, within 120 days prior to first dose of vaccine.",
+   "frozen_file_hash": "6713b4c3d6631ce3aa657a4da9fe30e7a7bc6403ef2ab39a708e094b7e123b20",
+   "condition": {
+    "op": "atom",
+    "prop": "blood_product/event/w120d-first_dose"
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "면역글로불린 제제를 blood_product 개념에 포함. 기준 시점(first_dose)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정)",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT06908096",
+   "rule_id": "E5",
+   "ir_version": 1,
+   "criterion_text": "Investigational research agents within 30 days prior to first dose or planning to receive investigational products while on study.",
+   "source_span": "Investigational research agents within 30 days prior to first dose or planning to receive investigational products while on study.",
+   "frozen_file_hash": "6713b4c3d6631ce3aa657a4da9fe30e7a7bc6403ef2ab39a708e094b7e123b20",
+   "condition": {
+    "op": "or",
+    "args": [
+     {
+      "op": "atom",
+      "prop": "investigational_agent/event/w30d-first_dose"
+     },
+     {
+      "op": "unsupported",
+      "text": "planning to receive investigational products while on study",
+      "reason": "향후 계획"
+     }
+    ]
+   },
+   "completeness": "partial",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [
+    "연구 중 임상시험약 투여 계획"
+   ],
+   "notes": "기준 시점(first_dose)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정)",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT06908096",
+   "rule_id": "E7",
+   "ir_version": 1,
+   "criterion_text": "Prior participant in an EBV vaccine clinical trial.",
+   "source_span": "Prior participant in an EBV vaccine clinical trial.",
+   "frozen_file_hash": "6713b4c3d6631ce3aa657a4da9fe30e7a7bc6403ef2ab39a708e094b7e123b20",
+   "condition": {
+    "op": "atom",
+    "prop": "ebv_vaccine_trial_participation/event/ever"
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT06908096",
+   "rule_id": "E8",
+   "ir_version": 1,
+   "criterion_text": "Febrile illness within 14 days of the first dose of vaccine.",
+   "source_span": "Febrile illness within 14 days of the first dose of vaccine.",
+   "frozen_file_hash": "6713b4c3d6631ce3aa657a4da9fe30e7a7bc6403ef2ab39a708e094b7e123b20",
+   "condition": {
+    "op": "atom",
+    "prop": "febrile_illness/condition/w14d-first_dose"
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "기준 시점(first_dose)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정)",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT06908096",
+   "rule_id": "E11",
+   "ir_version": 1,
+   "criterion_text": "Hereditary, acquired, or idiopathic forms of angioedema.",
+   "source_span": "Hereditary, acquired, or idiopathic forms of angioedema.",
+   "frozen_file_hash": "6713b4c3d6631ce3aa657a4da9fe30e7a7bc6403ef2ab39a708e094b7e123b20",
+   "condition": {
+    "op": "atom",
+    "prop": "angioedema/condition/ever"
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "유전성·후천성·특발성 = 모든 형태의 혈관부종으로 해석 (검수 확인)",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT06908096",
+   "rule_id": "E12",
+   "ir_version": 1,
+   "criterion_text": "Idiopathic urticaria within the past year.",
+   "source_span": "Idiopathic urticaria within the past year.",
+   "frozen_file_hash": "6713b4c3d6631ce3aa657a4da9fe30e7a7bc6403ef2ab39a708e094b7e123b20",
+   "condition": {
+    "op": "atom",
+    "prop": "idiopathic_urticaria/condition/w365d-screening"
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "'within the past year'의 기준 시점을 screening으로 둠. 기준 시점(screening)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정)",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT06908096",
+   "rule_id": "E14",
+   "ir_version": 1,
+   "criterion_text": "Diabetes mellitus type 1 or type 2, excluding a history of gestational diabetes.",
+   "source_span": "Diabetes mellitus type 1 or type 2, excluding a history of gestational diabetes.",
+   "frozen_file_hash": "6713b4c3d6631ce3aa657a4da9fe30e7a7bc6403ef2ab39a708e094b7e123b20",
+   "condition": {
+    "op": "or",
+    "args": [
+     {
+      "op": "atom",
+      "prop": "diabetes_type1/condition/ever"
+     },
+     {
+      "op": "atom",
+      "prop": "diabetes_type2/condition/ever"
+     }
+    ]
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "임신성 당뇨병은 별개 개념이라 제외 조건이 개념 구분으로 표현됨",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT06908096",
+   "rule_id": "E22",
+   "ir_version": 1,
+   "criterion_text": "Asplenia, functional asplenia, or any condition resulting in absence or removal of the spleen.",
+   "source_span": "Asplenia, functional asplenia, or any condition resulting in absence or removal of the spleen.",
+   "frozen_file_hash": "6713b4c3d6631ce3aa657a4da9fe30e7a7bc6403ef2ab39a708e094b7e123b20",
+   "condition": {
+    "op": "atom",
+    "prop": "asplenia/condition/current"
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "해부학적·기능적 무비증과 비장 제거를 한 개념(asplenia)으로 둠",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT06908096",
+   "rule_id": "E23",
+   "ir_version": 1,
+   "criterion_text": "History of Guillain-Barre Syndrome.",
+   "source_span": "History of Guillain-Barre Syndrome.",
+   "frozen_file_hash": "6713b4c3d6631ce3aa657a4da9fe30e7a7bc6403ef2ab39a708e094b7e123b20",
+   "condition": {
+    "op": "atom",
+    "prop": "guillain_barre_syndrome/condition/ever"
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT06908096",
+   "rule_id": "E25",
+   "ir_version": 1,
+   "criterion_text": "HIV infection.",
+   "source_span": "HIV infection.",
+   "frozen_file_hash": "6713b4c3d6631ce3aa657a4da9fe30e7a7bc6403ef2ab39a708e094b7e123b20",
+   "condition": {
+    "op": "atom",
+    "prop": "hiv_infection/condition/ever"
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "HIV 감염은 완치되지 않으므로 진단 이력 = 감염으로 해석 (검수 확인)",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  }
+ ]
+}

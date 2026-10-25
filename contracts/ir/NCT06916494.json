@@ -1,0 +1,41 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT06916494",
+ "criteria": [
+  {
+   "trial_id": "NCT06916494",
+   "rule_id": "I3",
+   "ir_version": 1,
+   "criterion_text": "No prior use of systemic immunotherapy or target therapy",
+   "source_span": "No prior use of systemic immunotherapy or target therapy",
+   "frozen_file_hash": "d011fe7e02358bccd7ab7d1406baf29c47622c87186f92a6d3301e90aa0b6d8c",
+   "condition": {
+    "op": "not",
+    "arg": {
+     "op": "or",
+     "args": [
+      {
+       "op": "atom",
+       "prop": "cancer_immunotherapy/event/ever"
+      },
+      {
+       "op": "atom",
+       "prop": "targeted_anticancer_therapy/event/ever"
+      }
+     ]
+    }
+   },
+   "completeness": "partial",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [
+    "systemic immunotherapy가 항암 면역요법만인지(다른 면역요법 포함 여부)",
+    "target therapy의 범위"
+   ],
+   "notes": "",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  }
+ ]
+}

@@ -55,8 +55,9 @@ class Rule(BaseModel):
 
 RequiredEvidence = Literal["self_report_ok", "clinical_record"]
 # 확정 판정 근거의 직접성 (evidence_directness.py가 계산). none = 확정 판정 없음
+# contract = 승인된 Condition IR과 질문 계약 사실로 결정적 평가기(evaluator.py)가 판정 (문자열 인용 검사 대상이 아님)
 EvidenceDirectness = Literal["direct", "unchecked", "structured", "hedged", "indirect", "conflicting", "question_only",
-                             "unlocated", "unlinked", "object_mismatch", "time_unverified", "none"]
+                             "unlocated", "unlinked", "object_mismatch", "time_unverified", "contract", "none"]
 
 
 class RuleMeta(BaseModel):
@@ -181,7 +182,7 @@ class CriterionAssessment(BaseModel):
     evidence: str
     reasoning: str
     missing_info: str | None
-    method: Literal["rule_engine", "llm"]
+    method: Literal["rule_engine", "llm", "contract"]  # contract = evaluator.py (승인된 IR + 계약 사실)
     category: str = "other"  # Rule.category (절차·행정 기준 구분용)
     underspecified: bool = False  # 원문에 구체 기준이 없어 '의사 확인 필요'로 분류
     cohort: str | None = None  # 특정 코호트 전용 기준이면 코호트 이름
@@ -262,6 +263,10 @@ class QAPair(BaseModel):
     answer: str
     purpose: str = "eligibility"
     target: list[str] = []
+    # 이 문답을 만든 Session과 질문 계약. 메모리 안에서만 쓰고 저장·화면 출력(model_dump)에는 넣지 않음
+    # -> result.json·trace·웹 이벤트 형식은 그대로 (계약 출처는 ContractSession.result()["contract"]에 따로 기록)
+    session_id: str | None = Field(default=None, exclude=True)
+    contract_id: str | None = Field(default=None, exclude=True)  # 계약 질문이 아니면 None (확정 근거가 될 수 없음)
 
 
 # ---------------------------------------------------------------------------

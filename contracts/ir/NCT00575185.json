@@ -1,0 +1,38 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT00575185",
+ "criteria": [
+  {
+   "trial_id": "NCT00575185",
+   "rule_id": "E6",
+   "ir_version": 1,
+   "criterion_text": "Breast feeding during the study",
+   "source_span": "Breast feeding during the study",
+   "frozen_file_hash": "673267acbff2047555a299fd62e8152940f65f7f2bee53eb5d49ba97e351d5bc",
+   "condition": {
+    "op": "or",
+    "args": [
+     {
+      "op": "atom",
+      "prop": "lactation/condition/current"
+     },
+     {
+      "op": "unsupported",
+      "text": "during the study",
+      "reason": "연구 기간 중 수유 계획은 현재 사실이 아님"
+     }
+    ]
+   },
+   "completeness": "partial",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [
+    "연구 기간 중(미래) 수유"
+   ],
+   "notes": "",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  }
+ ]
+}

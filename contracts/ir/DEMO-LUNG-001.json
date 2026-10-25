@@ -1,0 +1,104 @@
+{
+ "format_version": 1,
+ "trial_id": "DEMO-LUNG-001",
+ "criteria": [
+  {
+   "trial_id": "DEMO-LUNG-001",
+   "rule_id": "E2",
+   "ir_version": 1,
+   "criterion_text": "Prior treatment with any EGFR-targeted antibody-drug conjugate",
+   "source_span": "Prior treatment with any EGFR-targeted antibody-drug conjugate",
+   "frozen_file_hash": "4ed39009ea062f2f3236a206f047b7510d9e3e9361380ed08ba424d51db248e1",
+   "condition": {
+    "op": "atom",
+    "prop": "egfr_adc/event/ever"
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "DEMO-LUNG-001",
+   "rule_id": "E3",
+   "ir_version": 1,
+   "criterion_text": "History of interstitial lung disease requiring steroids",
+   "source_span": "History of interstitial lung disease requiring steroids",
+   "frozen_file_hash": "4ed39009ea062f2f3236a206f047b7510d9e3e9361380ed08ba424d51db248e1",
+   "condition": {
+    "op": "atom",
+    "prop": "interstitial_lung_disease_steroid/condition/ever"
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "'스테로이드 치료가 필요했던 ILD'를 한 개념으로 둠. 스테로이드가 필요 없던 ILD 이력은 이 명제가 아님",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "DEMO-LUNG-001",
+   "rule_id": "E4",
+   "ir_version": 1,
+   "criterion_text": "Pregnant or breastfeeding",
+   "source_span": "Pregnant or breastfeeding",
+   "frozen_file_hash": "4ed39009ea062f2f3236a206f047b7510d9e3e9361380ed08ba424d51db248e1",
+   "condition": {
+    "op": "or",
+    "args": [
+     {
+      "op": "atom",
+      "prop": "pregnancy/condition/current"
+     },
+     {
+      "op": "atom",
+      "prop": "lactation/condition/current"
+     }
+    ]
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "DEMO-LUNG-001",
+   "rule_id": "E5",
+   "ir_version": 1,
+   "criterion_text": "Active hepatitis B or C infection",
+   "source_span": "Active hepatitis B or C infection",
+   "frozen_file_hash": "4ed39009ea062f2f3236a206f047b7510d9e3e9361380ed08ba424d51db248e1",
+   "condition": {
+    "op": "or",
+    "args": [
+     {
+      "op": "atom",
+      "prop": "active_hepatitis_b/condition/current"
+     },
+     {
+      "op": "atom",
+      "prop": "active_hepatitis_c/condition/current"
+     }
+    ]
+   },
+   "completeness": "complete",
+   "source_requirement": "clinical_record",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "활동성 감염 여부는 혈액검사 확인이 필요해 근거 수준을 clinical_record로 올림",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  }
+ ]
+}

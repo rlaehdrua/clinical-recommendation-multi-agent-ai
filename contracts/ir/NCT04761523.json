@@ -1,0 +1,35 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT04761523",
+ "criteria": [
+  {
+   "trial_id": "NCT04761523",
+   "rule_id": "E6",
+   "ir_version": 1,
+   "criterion_text": "Individuals who are pregnant or nursing",
+   "source_span": "Individuals who are pregnant or nursing",
+   "frozen_file_hash": "34348e7944dfa8881469e8802ce8f57b209244d71da5eb886710e80082f55a97",
+   "condition": {
+    "op": "or",
+    "args": [
+     {
+      "op": "atom",
+      "prop": "pregnancy/condition/current"
+     },
+     {
+      "op": "atom",
+      "prop": "lactation/condition/current"
+     }
+    ]
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "'nursing' = 수유",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  }
+ ]
+}

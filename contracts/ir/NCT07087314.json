@@ -1,0 +1,190 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT07087314",
+ "criteria": [
+  {
+   "trial_id": "NCT07087314",
+   "rule_id": "E15",
+   "ir_version": 1,
+   "criterion_text": "Major surgery (non-diagnostic) within 4 weeks before first dose.",
+   "source_span": "Major surgery (non-diagnostic) within 4 weeks before first dose.",
+   "frozen_file_hash": "8b8675fc0bafe56b259adb5a0c74317907e72cf7557c4f12fc46517ac4c0f458",
+   "condition": {
+    "op": "atom",
+    "prop": "surgery(major.non_diagnostic)/event/w28d-first_dose"
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "'major' 정의가 원문에 없음: 환자 답 '수술 없음'만 결정, '수술 있음'은 큰 수술 여부를 몰라 미확인. 기준 시점(first_dose)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정)",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT07087314",
+   "rule_id": "E13",
+   "ir_version": 1,
+   "criterion_text": "Prior anti-cluster of differentiation 38 (CD38) treatment.",
+   "source_span": "Prior anti-cluster of differentiation 38 (CD38) treatment.",
+   "frozen_file_hash": "8b8675fc0bafe56b259adb5a0c74317907e72cf7557c4f12fc46517ac4c0f458",
+   "condition": {
+    "op": "atom",
+    "prop": "anti_cd38_therapy/event/ever"
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT07087314",
+   "rule_id": "E14",
+   "ir_version": 1,
+   "criterion_text": "Live/attenuated vaccine receipt within 4 weeks before first dose.",
+   "source_span": "Live/attenuated vaccine receipt within 4 weeks before first dose.",
+   "frozen_file_hash": "8b8675fc0bafe56b259adb5a0c74317907e72cf7557c4f12fc46517ac4c0f458",
+   "condition": {
+    "op": "atom",
+    "prop": "live_vaccine/event/w28d-first_dose"
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "기준 시점(first_dose)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정)",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT07087314",
+   "rule_id": "I11",
+   "ir_version": 1,
+   "criterion_text": "No Tacrolimus, cyclosporine A, mycophenolate mofetil, belimumab, levamisole, azathioprine, or cyclophosphamide in prior 2 months.",
+   "source_span": "No Tacrolimus, cyclosporine A, mycophenolate mofetil, belimumab, levamisole, azathioprine, or cyclophosphamide in prior 2 months.",
+   "frozen_file_hash": "8b8675fc0bafe56b259adb5a0c74317907e72cf7557c4f12fc46517ac4c0f458",
+   "condition": {
+    "op": "not",
+    "arg": {
+     "op": "or",
+     "args": [
+      {
+       "op": "atom",
+       "prop": "tacrolimus/event/w60d-enrollment"
+      },
+      {
+       "op": "atom",
+       "prop": "cyclosporine/event/w60d-enrollment"
+      },
+      {
+       "op": "atom",
+       "prop": "mycophenolate_mofetil/event/w60d-enrollment"
+      },
+      {
+       "op": "atom",
+       "prop": "belimumab/event/w60d-enrollment"
+      },
+      {
+       "op": "atom",
+       "prop": "levamisole/event/w60d-enrollment"
+      },
+      {
+       "op": "atom",
+       "prop": "azathioprine/event/w60d-enrollment"
+      },
+      {
+       "op": "atom",
+       "prop": "cyclophosphamide/event/w60d-enrollment"
+      }
+     ]
+    }
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "'in prior 2 months'의 기준 시점이 원문에 없어 enrollment로 둠(검수 확인). 개월 -> 일 환산은 잠긴 기준표 time_window_days 값 사용 (검수 확인)",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT07087314",
+   "rule_id": "I12",
+   "ir_version": 1,
+   "criterion_text": "No rituximab or obinutuzumab in prior 6 months.",
+   "source_span": "No rituximab or obinutuzumab in prior 6 months.",
+   "frozen_file_hash": "8b8675fc0bafe56b259adb5a0c74317907e72cf7557c4f12fc46517ac4c0f458",
+   "condition": {
+    "op": "not",
+    "arg": {
+     "op": "or",
+     "args": [
+      {
+       "op": "atom",
+       "prop": "rituximab/event/w180d-enrollment"
+      },
+      {
+       "op": "atom",
+       "prop": "obinutuzumab/event/w180d-enrollment"
+      }
+     ]
+    }
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "기준 시점 enrollment로 둠(원문 'prior 6 months'). 개월 -> 일 환산은 잠긴 기준표 time_window_days 값 사용 (검수 확인)",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT07087314",
+   "rule_id": "E11",
+   "ir_version": 1,
+   "criterion_text": "Primary immunodeficiency.",
+   "source_span": "Primary immunodeficiency.",
+   "frozen_file_hash": "8b8675fc0bafe56b259adb5a0c74317907e72cf7557c4f12fc46517ac4c0f458",
+   "condition": {
+    "op": "atom",
+    "prop": "primary_immunodeficiency/condition/ever"
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT07087314",
+   "rule_id": "E1",
+   "ir_version": 1,
+   "criterion_text": "Family history of nephrotic syndrome, chronic glomerulonephritis, or uremia.",
+   "source_span": "Family history of nephrotic syndrome, chronic glomerulonephritis, or uremia.",
+   "frozen_file_hash": "8b8675fc0bafe56b259adb5a0c74317907e72cf7557c4f12fc46517ac4c0f458",
+   "condition": {
+    "op": "atom",
+    "prop": "nephrotic_family_history/condition/ever"
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  }
+ ]
+}

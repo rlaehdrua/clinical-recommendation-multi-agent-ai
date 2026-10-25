@@ -1,0 +1,46 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT07516951",
+ "criteria": [
+  {
+   "trial_id": "NCT07516951",
+   "rule_id": "E1",
+   "ir_version": 1,
+   "criterion_text": "Participant with a documented diagnosis of coeliac disease.",
+   "source_span": "Participant with a documented diagnosis of coeliac disease.",
+   "frozen_file_hash": "689cfad78a3814c1d0529d9c1ef95bbfdd85303623ac831c72388cd429fdb550",
+   "condition": {
+    "op": "atom",
+    "prop": "coeliac_disease/condition/ever"
+   },
+   "completeness": "complete",
+   "source_requirement": "clinical_record",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "'documented diagnosis' -> clinical_record",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT07516951",
+   "rule_id": "E2",
+   "ir_version": 1,
+   "criterion_text": "Documented low respiratory tract infection in the last 4 weeks prior to screening.",
+   "source_span": "Documented low respiratory tract infection in the last 4 weeks prior to screening.",
+   "frozen_file_hash": "689cfad78a3814c1d0529d9c1ef95bbfdd85303623ac831c72388cd429fdb550",
+   "condition": {
+    "op": "atom",
+    "prop": "lower_respiratory_tract_infection/condition/w28d-screening"
+   },
+   "completeness": "complete",
+   "source_requirement": "clinical_record",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "'Documented' -> clinical_record. 기준 시점(screening)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정)",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  }
+ ]
+}

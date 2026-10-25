@@ -1,0 +1,35 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT04063540",
+ "criteria": [
+  {
+   "trial_id": "NCT04063540",
+   "rule_id": "E9",
+   "ir_version": 1,
+   "criterion_text": "Pregnant or lactating patient",
+   "source_span": "Pregnant or lactating patient",
+   "frozen_file_hash": "5ee663fe3aabbe0f2ce2f7daa2d286432b01224593a6e7f02d914ad59e698e58",
+   "condition": {
+    "op": "or",
+    "args": [
+     {
+      "op": "atom",
+      "prop": "pregnancy/condition/current"
+     },
+     {
+      "op": "atom",
+      "prop": "lactation/condition/current"
+     }
+    ]
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  }
+ ]
+}

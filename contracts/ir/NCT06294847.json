@@ -1,0 +1,55 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT06294847",
+ "criteria": [
+  {
+   "trial_id": "NCT06294847",
+   "rule_id": "E1",
+   "ir_version": 1,
+   "criterion_text": "Patients who have previously undergone vitrectomy for retinal detachment",
+   "source_span": "Patients who have previously undergone vitrectomy for retinal detachment",
+   "frozen_file_hash": "376ce877f7092dc9e9e3124ba155038f4011cd1f51b7f53926d72377935123b2",
+   "condition": {
+    "op": "atom",
+    "prop": "vitrectomy(for_detached_retina)/event/ever"
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT06294847",
+   "rule_id": "E5",
+   "ir_version": 1,
+   "criterion_text": "Pregnant or lactating women",
+   "source_span": "Pregnant or lactating women",
+   "frozen_file_hash": "376ce877f7092dc9e9e3124ba155038f4011cd1f51b7f53926d72377935123b2",
+   "condition": {
+    "op": "or",
+    "args": [
+     {
+      "op": "atom",
+      "prop": "pregnancy/condition/current"
+     },
+     {
+      "op": "atom",
+      "prop": "lactation/condition/current"
+     }
+    ]
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  }
+ ]
+}

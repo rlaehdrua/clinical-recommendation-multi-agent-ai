@@ -1,0 +1,26 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT07369063",
+ "criteria": [
+  {
+   "trial_id": "NCT07369063",
+   "rule_id": "E9",
+   "ir_version": 1,
+   "criterion_text": "Pregnant participants",
+   "source_span": "Pregnant participants",
+   "frozen_file_hash": "1ba3f7d89892139aeb0ab8f591c344af9197d447922df4f1d56c3fae1633872f",
+   "condition": {
+    "op": "atom",
+    "prop": "pregnancy/condition/current"
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  }
+ ]
+}

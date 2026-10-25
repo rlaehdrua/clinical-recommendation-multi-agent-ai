@@ -1,0 +1,184 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT06125405",
+ "criteria": [
+  {
+   "trial_id": "NCT06125405",
+   "rule_id": "I7",
+   "ir_version": 1,
+   "criterion_text": "No rituximab was used within 6 months prior to the enrollment",
+   "source_span": "No rituximab was used within 6 months prior to the enrollment",
+   "frozen_file_hash": "73e46dfeb1a64d2cd4cc279f42454f6f6b54631a80d28596cdba5e7070b3506b",
+   "condition": {
+    "op": "not",
+    "arg": {
+     "op": "atom",
+     "prop": "rituximab/event/w180d-enrollment"
+    }
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "개월 -> 일 환산은 잠긴 기준표 time_window_days 값 사용 (검수 확인). 기준 시점(enrollment)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정)",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT06125405",
+   "rule_id": "I8",
+   "ir_version": 1,
+   "criterion_text": "No tacrolimus was used within 3 months prior to the enrollment",
+   "source_span": "No tacrolimus was used within 3 months prior to the enrollment",
+   "frozen_file_hash": "73e46dfeb1a64d2cd4cc279f42454f6f6b54631a80d28596cdba5e7070b3506b",
+   "condition": {
+    "op": "not",
+    "arg": {
+     "op": "atom",
+     "prop": "tacrolimus/event/w90d-enrollment"
+    }
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "개월 -> 일 환산은 잠긴 기준표 time_window_days 값 사용 (검수 확인). 기준 시점(enrollment)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정)",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT06125405",
+   "rule_id": "I9",
+   "ir_version": 1,
+   "criterion_text": "No mycophenolate mofetil was used within 3 months prior to the enrollment",
+   "source_span": "No mycophenolate mofetil was used within 3 months prior to the enrollment",
+   "frozen_file_hash": "73e46dfeb1a64d2cd4cc279f42454f6f6b54631a80d28596cdba5e7070b3506b",
+   "condition": {
+    "op": "not",
+    "arg": {
+     "op": "atom",
+     "prop": "mycophenolate_mofetil/event/w90d-enrollment"
+    }
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "개월 -> 일 환산은 잠긴 기준표 time_window_days 값 사용 (검수 확인). 기준 시점(enrollment)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정)",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT06125405",
+   "rule_id": "I10",
+   "ir_version": 1,
+   "criterion_text": "No cyclosporine A was used within 3 months prior to the enrollment",
+   "source_span": "No cyclosporine A was used within 3 months prior to the enrollment",
+   "frozen_file_hash": "73e46dfeb1a64d2cd4cc279f42454f6f6b54631a80d28596cdba5e7070b3506b",
+   "condition": {
+    "op": "not",
+    "arg": {
+     "op": "atom",
+     "prop": "cyclosporine/event/w90d-enrollment"
+    }
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "개월 -> 일 환산은 잠긴 기준표 time_window_days 값 사용 (검수 확인). 기준 시점(enrollment)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정)",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT06125405",
+   "rule_id": "I11",
+   "ir_version": 1,
+   "criterion_text": "No cyclophosphamide was used within 3 months prior to the enrollment",
+   "source_span": "No cyclophosphamide was used within 3 months prior to the enrollment",
+   "frozen_file_hash": "73e46dfeb1a64d2cd4cc279f42454f6f6b54631a80d28596cdba5e7070b3506b",
+   "condition": {
+    "op": "not",
+    "arg": {
+     "op": "atom",
+     "prop": "cyclophosphamide/event/w90d-enrollment"
+    }
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "개월 -> 일 환산은 잠긴 기준표 time_window_days 값 사용 (검수 확인). 기준 시점(enrollment)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정)",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT06125405",
+   "rule_id": "I12",
+   "ir_version": 1,
+   "criterion_text": "No ACTH was used within 3 months prior to the enrollment",
+   "source_span": "No ACTH was used within 3 months prior to the enrollment",
+   "frozen_file_hash": "73e46dfeb1a64d2cd4cc279f42454f6f6b54631a80d28596cdba5e7070b3506b",
+   "condition": {
+    "op": "not",
+    "arg": {
+     "op": "atom",
+     "prop": "acth/event/w90d-enrollment"
+    }
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "개월 -> 일 환산은 잠긴 기준표 time_window_days 값 사용 (검수 확인). 기준 시점(enrollment)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정)",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT06125405",
+   "rule_id": "E1",
+   "ir_version": 1,
+   "criterion_text": "Family history of nephrotic syndrome, chronic glomerulonephritis or uremia",
+   "source_span": "Family history of nephrotic syndrome, chronic glomerulonephritis or uremia",
+   "frozen_file_hash": "73e46dfeb1a64d2cd4cc279f42454f6f6b54631a80d28596cdba5e7070b3506b",
+   "condition": {
+    "op": "atom",
+    "prop": "nephrotic_family_history/condition/ever"
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  },
+  {
+   "trial_id": "NCT06125405",
+   "rule_id": "E13",
+   "ir_version": 1,
+   "criterion_text": "Those who have participated in other clinical trials within three months prior to the enrollment",
+   "source_span": "Those who have participated in other clinical trials within three months prior to the enrollment",
+   "frozen_file_hash": "73e46dfeb1a64d2cd4cc279f42454f6f6b54631a80d28596cdba5e7070b3506b",
+   "condition": {
+    "op": "atom",
+    "prop": "clinical_trial_participation/event/w90d-enrollment"
+   },
+   "completeness": "complete",
+   "source_requirement": "self_report_ok",
+   "applicability": null,
+   "anchor_policy": {},
+   "unsupported_parts": [],
+   "notes": "개월 -> 일 환산은 잠긴 기준표 time_window_days 값 사용 (검수 확인). 기준 시점(enrollment)을 평가 시점으로 근사할지 검수 결정 필요 (anchor_policy 미설정 -> 승인돼도 미확정)",
+   "author": "draft-generator (P6, 사람 검수 전)",
+   "review_status": "draft"
+  }
+ ]
+}

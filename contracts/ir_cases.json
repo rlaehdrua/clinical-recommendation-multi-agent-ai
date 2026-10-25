@@ -1,0 +1,2169 @@
+{
+ "format_version": 1,
+ "note": "사실 키는 평가 시점(assessment) 기준. 테스트는 기준 시점 근사를 '가정'으로 적용해 IR 의도만 확인함(승인 아님)",
+ "criteria": {
+  "DEMO-LUNG-001:E2": {
+   "contract_candidates": [
+    "QC-EGFR-ADC-EVER"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "egfr_adc/event/ever",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "egfr_adc/event/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "DEMO-LUNG-001:E3": {
+   "contract_candidates": [
+    "QC-ILD-STEROID-EVER"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "interstitial_lung_disease_steroid/condition/ever",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "interstitial_lung_disease_steroid/condition/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "DEMO-LUNG-001:E4": {
+   "contract_candidates": [
+    "QC-PREGNANT-NOW",
+    "QC-LACTATING-NOW"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "pregnancy/condition/current",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "lactation/condition/current",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "pregnancy/condition/current",
+       false
+      ],
+      [
+       "lactation/condition/current",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "pregnancy/condition/current",
+       false
+      ]
+     ],
+     "expect": "unknown"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "DEMO-LUNG-001:E5": {
+   "contract_candidates": [],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "active_hepatitis_b/condition/current",
+       false
+      ],
+      [
+       "active_hepatitis_c/condition/current",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "active_hepatitis_c/condition/current",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT07087314:E15": {
+   "contract_candidates": [
+    "QC-SURGERY-LAST"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "surgery/event/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "surgery/event/w28d-assessment",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "surgery/event/w28d-assessment",
+       true
+      ]
+     ],
+     "expect": "unknown"
+    },
+    {
+     "facts": [
+      [
+       "surgery/event/ever",
+       true
+      ]
+     ],
+     "expect": "unknown"
+    },
+    {
+     "facts": [
+      [
+       "surgery(major.non_diagnostic)/event/w28d-assessment",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT07087314:E13": {
+   "contract_candidates": [
+    "QC-ANTICD38-EVER"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "anti_cd38_therapy/event/ever",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "anti_cd38_therapy/event/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT07087314:E14": {
+   "contract_candidates": [
+    "QC-LIVE-VACCINE-LAST"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "live_vaccine/event/w28d-assessment",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "live_vaccine/event/w28d-assessment",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "vaccine/event/w28d-assessment",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "vaccine/event/w28d-assessment",
+       true
+      ]
+     ],
+     "expect": "unknown"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT07087314:I11": {
+   "contract_candidates": [
+    "QC-TACROLIMUS-LAST",
+    "QC-CYCLOSPORINE-LAST",
+    "QC-MYCOPHENOLATE-MOFETIL-LAST",
+    "QC-BELIMUMAB-LAST",
+    "QC-LEVAMISOLE-LAST",
+    "QC-AZATHIOPRINE-LAST",
+    "QC-CYCLOPHOSPHAMIDE-LAST"
+   ],
+   "kind": "inclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "tacrolimus/event/w60d-assessment",
+       false
+      ],
+      [
+       "cyclosporine/event/w60d-assessment",
+       false
+      ],
+      [
+       "mycophenolate_mofetil/event/w60d-assessment",
+       false
+      ],
+      [
+       "belimumab/event/w60d-assessment",
+       false
+      ],
+      [
+       "levamisole/event/w60d-assessment",
+       false
+      ],
+      [
+       "azathioprine/event/w60d-assessment",
+       false
+      ],
+      [
+       "cyclophosphamide/event/w60d-assessment",
+       false
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "azathioprine/event/w60d-assessment",
+       true
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "tacrolimus/event/w60d-assessment",
+       false
+      ],
+      [
+       "cyclosporine/event/w60d-assessment",
+       false
+      ],
+      [
+       "mycophenolate_mofetil/event/w60d-assessment",
+       false
+      ],
+      [
+       "belimumab/event/w60d-assessment",
+       false
+      ],
+      [
+       "levamisole/event/w60d-assessment",
+       false
+      ],
+      [
+       "azathioprine/event/w60d-assessment",
+       false
+      ]
+     ],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT07087314:I12": {
+   "contract_candidates": [
+    "QC-ANTICD20-LAST",
+    "QC-RITUXIMAB-LAST",
+    "QC-OBINUTUZUMAB-LAST"
+   ],
+   "kind": "inclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "anti_cd20_antibody/event/w180d-assessment",
+       false
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "rituximab/event/w180d-assessment",
+       true
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "rituximab/event/w180d-assessment",
+       false
+      ]
+     ],
+     "expect": "unknown"
+    },
+    {
+     "facts": [
+      [
+       "rituximab/event/w180d-assessment",
+       false
+      ],
+      [
+       "obinutuzumab/event/w180d-assessment",
+       false
+      ]
+     ],
+     "expect": "yes"
+    }
+   ]
+  },
+  "NCT07087314:E11": {
+   "contract_candidates": [
+    "QC-PRIMARY-IMMUNODEFICIENCY-EVER"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "primary_immunodeficiency/condition/ever",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "primary_immunodeficiency/condition/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT07087314:E1": {
+   "contract_candidates": [
+    "QC-NEPHROTIC-FAMILY-HISTORY"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "nephrotic_family_history/condition/ever",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "nephrotic_family_history/condition/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06391359:E5": {
+   "contract_candidates": [
+    "QC-CHOLECYSTECTOMY-EVER",
+    "QC-SURGERY-LAST"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "cholecystectomy/event/ever",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "cholecystectomy/event/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    },
+    {
+     "facts": [
+      [
+       "surgery/event/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    }
+   ]
+  },
+  "NCT06727604:E1": {
+   "contract_candidates": [
+    "QC-THYROIDECTOMY-EVER"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "total_thyroidectomy/event/ever",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "radioactive_iodine_therapy/event/ever",
+       false
+      ],
+      [
+       "total_thyroidectomy/event/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    }
+   ]
+  },
+  "NCT06294847:E1": {
+   "contract_candidates": [
+    "QC-VITRECTOMY-RD-EVER"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "vitrectomy(for_detached_retina)/event/ever",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "vitrectomy/event/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "vitrectomy/event/ever",
+       true
+      ]
+     ],
+     "expect": "unknown"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06294847:E5": {
+   "contract_candidates": [
+    "QC-PREGNANT-NOW",
+    "QC-LACTATING-NOW"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "pregnancy/condition/current",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "lactation/condition/current",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "pregnancy/condition/current",
+       false
+      ],
+      [
+       "lactation/condition/current",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "pregnancy/condition/current",
+       false
+      ]
+     ],
+     "expect": "unknown"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06080789:E4": {
+   "contract_candidates": [
+    "QC-PANCREATIC-NECROSIS-EVER",
+    "QC-PANCREATIC-NECROSECTOMY-EVER"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "pancreatic_necrosis/condition/ever",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "pancreatic_necrosectomy/event/ever",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "pancreatic_necrosis/condition/ever",
+       false
+      ],
+      [
+       "pancreatic_necrosectomy/event/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "pancreatic_necrosis/condition/ever",
+       false
+      ]
+     ],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06833073:E4": {
+   "contract_candidates": [
+    "QC-MI-LAST"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "myocardial_infarction/condition/w180d-assessment",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "myocardial_infarction/condition/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "myocardial_infarction/condition/ever",
+       true
+      ]
+     ],
+     "expect": "unknown"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06833073:E5": {
+   "contract_candidates": [
+    "QC-ANTICANCER-LAST"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "systemic_anticancer_therapy/event/w28d-assessment",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "systemic_anticancer_therapy/event/w28d-assessment",
+       false
+      ]
+     ],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06833073:E6": {
+   "contract_candidates": [
+    "QC-CANCER-VACCINE-EVER"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "cancer_vaccine/event/ever",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "cancer_vaccine/event/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06833073:E10": {
+   "contract_candidates": [],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "active_tuberculosis/condition/current",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "active_tuberculosis/condition/current",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06833073:E11": {
+   "contract_candidates": [
+    "QC-HIV-EVER"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "hiv_infection/condition/ever",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "hiv_infection/condition/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06833073:E12": {
+   "contract_candidates": [
+    "QC-HIV-EVER",
+    "QC-KAPOSI-CASTLEMAN-EVER"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "hiv_infection/condition/ever",
+       true
+      ],
+      [
+       "kaposi_or_castleman/condition/ever",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "hiv_infection/condition/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "kaposi_or_castleman/condition/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "hiv_infection/condition/ever",
+       true
+      ]
+     ],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06916494:I3": {
+   "contract_candidates": [
+    "QC-CANCER-IMMUNOTHERAPY-EVER",
+    "QC-TARGETED-THERAPY-EVER"
+   ],
+   "kind": "inclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "cancer_immunotherapy/event/ever",
+       false
+      ],
+      [
+       "targeted_anticancer_therapy/event/ever",
+       false
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "cancer_immunotherapy/event/ever",
+       true
+      ]
+     ],
+     "expect": "no"
+    }
+   ]
+  },
+  "NCT04063540:E9": {
+   "contract_candidates": [
+    "QC-PREGNANT-NOW",
+    "QC-LACTATING-NOW"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "pregnancy/condition/current",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "lactation/condition/current",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "pregnancy/condition/current",
+       false
+      ],
+      [
+       "lactation/condition/current",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "pregnancy/condition/current",
+       false
+      ]
+     ],
+     "expect": "unknown"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT04761523:E6": {
+   "contract_candidates": [
+    "QC-PREGNANT-NOW",
+    "QC-LACTATING-NOW"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "pregnancy/condition/current",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "lactation/condition/current",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "pregnancy/condition/current",
+       false
+      ],
+      [
+       "lactation/condition/current",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "pregnancy/condition/current",
+       false
+      ]
+     ],
+     "expect": "unknown"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06756191:E13": {
+   "contract_candidates": [
+    "QC-PREGNANT-NOW",
+    "QC-LACTATING-NOW"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "pregnancy/condition/current",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "lactation/condition/current",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "pregnancy/condition/current",
+       false
+      ],
+      [
+       "lactation/condition/current",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "pregnancy/condition/current",
+       false
+      ]
+     ],
+     "expect": "unknown"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT07369063:E9": {
+   "contract_candidates": [
+    "QC-PREGNANT-NOW"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "pregnancy/condition/current",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "pregnancy/condition/current",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "pregnancy/condition/ever",
+       true
+      ]
+     ],
+     "expect": "unknown"
+    },
+    {
+     "facts": [
+      [
+       "pregnancy/condition/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT00575185:E6": {
+   "contract_candidates": [
+    "QC-LACTATING-NOW"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "lactation/condition/current",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "lactation/condition/current",
+       false
+      ]
+     ],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06468397:E5": {
+   "contract_candidates": [
+    "QC-PREGNANT-NOW",
+    "QC-LACTATING-NOW"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "pregnancy/condition/current",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "pregnancy/condition/current",
+       false
+      ],
+      [
+       "lactation/condition/current",
+       false
+      ]
+     ],
+     "expect": "no"
+    }
+   ]
+  },
+  "NCT06468397:E21": {
+   "contract_candidates": [
+    "QC-RETINAL-DETACHMENT-FAMILY-HISTORY"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "retinal_detachment_family_history/condition/ever",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "retinal_detachment_family_history/condition/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06756191:E1": {
+   "contract_candidates": [
+    "QC-MUCORMYCOSIS-EVER",
+    "QC-AMPHOTERICIN-COURSE"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "pulmonary_mucormycosis/condition/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "pulmonary_mucormycosis/condition/ever",
+       true
+      ],
+      [
+       "amphotericin_b/event/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "pulmonary_mucormycosis/condition/ever",
+       true
+      ],
+      [
+       "amphotericin_b(over_5d)/event/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "pulmonary_mucormycosis/condition/ever",
+       true
+      ],
+      [
+       "amphotericin_b(over_5d)/event/ever",
+       true
+      ]
+     ],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06756191:E10": {
+   "contract_candidates": [
+    "QC-MI-LAST"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "myocardial_infarction/condition/ever",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "myocardial_infarction/condition/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06756191:E11": {
+   "contract_candidates": [
+    "QC-CEREBRAL-INFARCTION-EVER"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "cerebral_infarction/condition/ever",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "cerebral_infarction/condition/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06756191:E12": {
+   "contract_candidates": [
+    "QC-ECMO-NOW"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "ecmo/event/current",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "ecmo/event/current",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "ecmo/event/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "ecmo/event/ever",
+       true
+      ]
+     ],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06908096:E1": {
+   "contract_candidates": [
+    "QC-PREGNANT-NOW",
+    "QC-LACTATING-NOW"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "pregnancy/condition/current",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "pregnancy/condition/current",
+       false
+      ],
+      [
+       "lactation/condition/current",
+       false
+      ]
+     ],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06908096:E3": {
+   "contract_candidates": [],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06908096:E4": {
+   "contract_candidates": [
+    "QC-BLOOD-PRODUCT-LAST"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "blood_product/event/w120d-assessment",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "blood_product/event/w120d-assessment",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "blood_product/event/ever",
+       true
+      ]
+     ],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06908096:E5": {
+   "contract_candidates": [
+    "QC-INVESTIGATIONAL-LAST"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "investigational_agent/event/w30d-assessment",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "investigational_agent/event/w30d-assessment",
+       false
+      ]
+     ],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06908096:E7": {
+   "contract_candidates": [
+    "QC-EBV-VACCINE-TRIAL-EVER"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "ebv_vaccine_trial_participation/event/ever",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "ebv_vaccine_trial_participation/event/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    },
+    {
+     "facts": [
+      [
+       "clinical_trial_participation/event/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    }
+   ]
+  },
+  "NCT06908096:E8": {
+   "contract_candidates": [
+    "QC-FEBRILE-ILLNESS-LAST"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "febrile_illness/condition/w14d-assessment",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "febrile_illness/condition/w14d-assessment",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06908096:E11": {
+   "contract_candidates": [
+    "QC-ANGIOEDEMA-EVER"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "angioedema/condition/ever",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "angioedema/condition/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06908096:E12": {
+   "contract_candidates": [
+    "QC-URTICARIA-LAST"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "idiopathic_urticaria/condition/w365d-assessment",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "idiopathic_urticaria/condition/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "idiopathic_urticaria/condition/ever",
+       true
+      ]
+     ],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06908096:E14": {
+   "contract_candidates": [
+    "QC-DIABETES-TYPE"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "diabetes_type2/condition/ever",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "diabetes_type1/condition/ever",
+       false
+      ],
+      [
+       "diabetes_type2/condition/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "diabetes_gestational/condition/ever",
+       true
+      ]
+     ],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06908096:E22": {
+   "contract_candidates": [
+    "QC-ASPLENIA-NOW"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "asplenia/condition/current",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "asplenia/condition/current",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06908096:E23": {
+   "contract_candidates": [
+    "QC-GBS-EVER"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "guillain_barre_syndrome/condition/ever",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "guillain_barre_syndrome/condition/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06908096:E25": {
+   "contract_candidates": [
+    "QC-HIV-EVER"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "hiv_infection/condition/ever",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "hiv_infection/condition/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT07516951:E1": {
+   "contract_candidates": [
+    "QC-COELIAC-EVER"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "coeliac_disease/condition/ever",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "coeliac_disease/condition/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT07516951:E2": {
+   "contract_candidates": [],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "lower_respiratory_tract_infection/condition/w28d-assessment",
+       false
+      ]
+     ],
+     "expect": "no"
+    }
+   ]
+  },
+  "NCT06125405:I7": {
+   "contract_candidates": [
+    "QC-RITUXIMAB-LAST"
+   ],
+   "kind": "inclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "rituximab/event/w180d-assessment",
+       false
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "rituximab/event/w180d-assessment",
+       true
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "rituximab/event/ever",
+       false
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "rituximab/event/ever",
+       true
+      ]
+     ],
+     "expect": "unknown"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06125405:I8": {
+   "contract_candidates": [
+    "QC-TACROLIMUS-LAST"
+   ],
+   "kind": "inclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "tacrolimus/event/w90d-assessment",
+       false
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "tacrolimus/event/w90d-assessment",
+       true
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "tacrolimus/event/ever",
+       false
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "tacrolimus/event/ever",
+       true
+      ]
+     ],
+     "expect": "unknown"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06125405:I9": {
+   "contract_candidates": [
+    "QC-MYCOPHENOLATE-MOFETIL-LAST"
+   ],
+   "kind": "inclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "mycophenolate_mofetil/event/w90d-assessment",
+       false
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "mycophenolate_mofetil/event/w90d-assessment",
+       true
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "mycophenolate_mofetil/event/ever",
+       false
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "mycophenolate_mofetil/event/ever",
+       true
+      ]
+     ],
+     "expect": "unknown"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06125405:I10": {
+   "contract_candidates": [
+    "QC-CYCLOSPORINE-LAST"
+   ],
+   "kind": "inclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "cyclosporine/event/w90d-assessment",
+       false
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "cyclosporine/event/w90d-assessment",
+       true
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "cyclosporine/event/ever",
+       false
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "cyclosporine/event/ever",
+       true
+      ]
+     ],
+     "expect": "unknown"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06125405:I11": {
+   "contract_candidates": [
+    "QC-CYCLOPHOSPHAMIDE-LAST"
+   ],
+   "kind": "inclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "cyclophosphamide/event/w90d-assessment",
+       false
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "cyclophosphamide/event/w90d-assessment",
+       true
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "cyclophosphamide/event/ever",
+       false
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "cyclophosphamide/event/ever",
+       true
+      ]
+     ],
+     "expect": "unknown"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06125405:I12": {
+   "contract_candidates": [
+    "QC-ACTH-LAST"
+   ],
+   "kind": "inclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "acth/event/w90d-assessment",
+       false
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "acth/event/w90d-assessment",
+       true
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "acth/event/ever",
+       false
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "acth/event/ever",
+       true
+      ]
+     ],
+     "expect": "unknown"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06125405:E1": {
+   "contract_candidates": [
+    "QC-NEPHROTIC-FAMILY-HISTORY"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "nephrotic_family_history/condition/ever",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "nephrotic_family_history/condition/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [],
+     "expect": "unknown"
+    }
+   ]
+  },
+  "NCT06125405:E13": {
+   "contract_candidates": [
+    "QC-TRIAL-PARTICIPATION-LAST"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "clinical_trial_participation/event/w90d-assessment",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "clinical_trial_participation/event/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    },
+    {
+     "facts": [
+      [
+       "ebv_vaccine_trial_participation/event/w90d-assessment",
+       true
+      ]
+     ],
+     "expect": "yes"
+    }
+   ]
+  },
+  "NCT07679893:E25": {
+   "contract_candidates": [
+    "QC-SMOKING-LAST"
+   ],
+   "kind": "exclusion",
+   "cases": [
+    {
+     "facts": [
+      [
+       "smoking/event/current",
+       true
+      ]
+     ],
+     "expect": "yes"
+    },
+    {
+     "facts": [
+      [
+       "smoking/event/ever",
+       false
+      ]
+     ],
+     "expect": "no"
+    }
+   ]
+  }
+ }
+}
