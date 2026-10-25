@@ -14,6 +14,8 @@ from types import SimpleNamespace
 
 import pytest
 
+from outputs_guard import outputs_untouched  # noqa: E402  (P14: outputs/ 쓰기 검사 격리)
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 import prepare_llm_pilot as plp  # noqa: E402
@@ -469,7 +471,7 @@ def test_dry_run_output_redacted_and_no_patient_saving(rep):
     pairs = plp.load_pairs(PARSED, "representative")[1]
     lp.assert_redacted(rep, lp.forbidden_texts(pairs))
     assert all(p["save_patient_data"] is False and p["redact_outputs"] for p in rep["plans"].values())
-    assert not (ROOT / "outputs").exists()
+    assert outputs_untouched()
 
 
 def test_frozen_store_intact():

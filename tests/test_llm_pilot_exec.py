@@ -17,6 +17,8 @@ from types import SimpleNamespace
 
 import pytest
 
+from outputs_guard import outputs_untouched  # noqa: E402  (P14: outputs/ 쓰기 검사 격리)
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 import prepare_llm_pilot as plp  # noqa: E402
@@ -114,7 +116,7 @@ def test_cli_with_every_flag_and_key_still_refused(monkeypatch, capsys, no_sdk_c
     assert out["gate_problems"] == []  # 12개 조건을 모두 갖춰도
     assert "PAID_EXECUTION_ENABLED" in out["refused"] and "result" not in out
     assert no_sdk_client == [] and "sk-ant-test" not in capsys.readouterr().out
-    assert not (ROOT / "outputs").exists()
+    assert outputs_untouched()
 
 
 @pytest.mark.parametrize("env", [
@@ -435,7 +437,7 @@ def test_result_format_fields_and_no_saving_by_default():
               "cost_actual_usd", "cost_estimated_usd", "retries", "failures"):
         assert k in c["usage"]
     assert r["plan_hash"] == lp.plan_hash(_plan("B_question_plan", (COHORT,)))
-    assert r["cost_kind"].startswith("estimate") and not (ROOT / "outputs").exists()
+    assert r["cost_kind"].startswith("estimate") and outputs_untouched()
 
 
 # 판정·추천·Decision Loop·웹·프로파일러는 바뀌지 않음 (llm.py·question_generator.py·config.py의 실행별 격리

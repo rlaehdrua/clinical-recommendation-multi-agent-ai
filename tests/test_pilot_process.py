@@ -17,6 +17,8 @@ from pathlib import Path
 
 import pytest
 
+from outputs_guard import outputs_untouched  # noqa: E402  (P14: outputs/ 쓰기 검사 격리)
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -79,7 +81,7 @@ def test_dedicated_process_fake_e2e(exp):
     assert proc["client_context_after"] is True
     assert out["readiness"]["ready_to_execute"] is False and out["plan"]["confirmation_phrase"] is None
     _no_patient_text(out, FIRST_BATCH)
-    assert not (ROOT / "outputs").exists()
+    assert outputs_untouched()
 
 
 @pytest.mark.parametrize("args, code", [
