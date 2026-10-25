@@ -17,7 +17,7 @@ from __future__ import annotations
 import json
 import re
 
-from .. import config, evidence, evidence_directness, llm
+from .. import answer_verification, config, evidence, evidence_directness, llm
 from ..schemas import (CriterionAssessment, LLMAssessment, MatcherOutput, ParsedTrial, PatientProfile, QAPair, Rule,
                        RuleMeta, TrialMatch)
 from ..tools import rule_engine
@@ -389,11 +389,15 @@ brief_summary: {trial.get('brief_summary', '')[:3000]}
 
 def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
                 reference_date: str | None = None, source_text: str | None = None,
-                input_source: str = "unknown", qa_log: list[QAPair] | None = None) -> TrialMatch:
+                input_source: str = "unknown", qa_log: list[QAPair] | None = None,
+                qa: list[QAPair] | None = None, session_id: str | None = None) -> TrialMatch:
     """source_text: 환자 원문(확인 질문 답변 포함). 주어지면 LLM 판정의 인용 근거를 원문과 대조합니다.
     input_source: 최초 입력의 선언된 출처(evidence.InputSource). 밝히지 않으면 unknown(진료 기록으로 보지 않음).
     qa_log: 확인 질문 기록(질문 ID·대상 기준·답변). 주어지면 짧은 답변(예/아니요)을 그 질문의 대상 기준에 한해 근거로 씀.
-            없으면(현재 Session 기본) 짧은 답변은 근거로 쓰지 않음."""
+            없으면(현재 Session 기본) 짧은 답변은 근거로 쓰지 않음.
+    qa, session_id: Session의 확인 질문 기록과 세션 ID (Session.match가 넘김). 모델 판정이 인용 검증에서 되돌려졌을 때만,
+            이 기준을 겨냥한 예/아니요 답이 같은 대상·기간을 물은 것으로 코드가 검증되면 그 문답을 근거로 인정
+            (answer_verification.py). 검증할 수 없으면 기존대로 판정 불가."""
     ref = reference_date or config.reference_date()
     by_id = {r.rule_id: r for r in parsed.rules}
     results: dict[str, CriterionAssessment] = {}
@@ -426,6 +430,7 @@ def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
             judged = {"holds": a.holds, "applicable": a.applicable, "evidence_type": a.evidence_type,
                       "confidence": a.confidence}
             flags: list[str] = []
+            llm_a = a
             checked = _enforce_evidence(a)
             if checked is not a:
                 flags.append("not_applicable_without_explicit" if not a.applicable else f"{a.evidence_type}_not_confirmable")
@@ -435,6 +440,17 @@ def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
             a, direct = _enforce_directness(quoted, rule, source_text, profile, trial_id=parsed.trial_id,
                                             reference_date=ref, qa_log=qa_log)
             flags += direct.flags
+            # 인용 검증·짧은 답변 연결에서 되돌려진 확정 판정: 이 기준을 겨냥한 예/아니요 답으로 코드가 검증할 수 있을 때만 인정
+            lost = (checked is llm_a and llm_a.applicable and llm_a.holds in ("yes", "no") and a.holds == "unknown"
+                    and ("quote_not_in_source" in flags or "answer_not_linked" in flags))
+            if qa and lost:
+                v = answer_verification.verify(rule, parsed.trial_id, llm_a.holds, qa, source_text,
+                                               session_id=session_id, reference_date=ref)
+                if isinstance(v, answer_verification.Verified):
+                    a = llm_a.model_copy(update={"evidence": v.evidence, "reasoning": f"{v.reason} {llm_a.reasoning}"})
+                    direct, flags = v.check, ["answer_verified"]
+                elif v.reason != "no_answer":
+                    flags.append(f"answer_unverified:{v.reason}")  # 답은 있었으나 근거로 쓸 수 없는 이유
             results[a.rule_id] = CriterionAssessment(
                 rule_id=a.rule_id,
                 kind=rule.kind,
