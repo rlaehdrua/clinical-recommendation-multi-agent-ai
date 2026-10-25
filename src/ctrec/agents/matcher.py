@@ -18,7 +18,7 @@ import json
 import re
 
 from .. import config, evidence, llm
-from ..schemas import (CriterionAssessment, LLMAssessment, MatcherOutput, ParsedTrial, PatientProfile, Rule,
+from ..schemas import (CriterionAssessment, LLMAssessment, MatcherOutput, ParsedTrial, PatientProfile, QAPair, Rule,
                        RuleMeta, TrialMatch)
 from ..tools import rule_engine
 from .criteria_parser import rules_json
@@ -194,17 +194,47 @@ def _profile_field_ref_ok(evidence: str, profile: PatientProfile | None) -> bool
     return bool(refs) and all(known[k.lower()] is not None and known[k.lower()] == v.lower() for k, v in refs)
 
 
+# decision_state.DECLINED_ANSWERS와 같은 값 (decision_state가 이 모듈을 가져오므로 순환 import를 피해 따로 둠. 테스트가 같음을 확인)
+DECLINED_ANSWERS = {"", "모름", "모르겠음", "모르겠어요", "잘 모름", "unknown", "답변 거부", "거부"}
+
+
+def targeted_answers(qa: list[QAPair] | None, trial_id: str) -> dict[str, list[QAPair]]:
+    """이 시험의 규칙을 겨냥한 확인 질문 중 환자가 실제로 답한 것 (rule_id -> 문답). '모름'류와 의료진 참고용 질문은 제외."""
+    out: dict[str, list[QAPair]] = {}
+    for p in qa or []:
+        if p.purpose != "eligibility" or p.answer.strip() in DECLINED_ANSWERS:
+            continue
+        for t in p.target:
+            tid, _, rid = t.partition(":")
+            if tid == trial_id and rid:
+                out.setdefault(rid, []).append(p)
+    return out
+
+
+def qa_quote(p: QAPair) -> str:
+    """원문에 붙은 답변 블록(pipeline.Session.clarify)과 같은 글자: 'Q: 질문 A: 답' (공백은 비교 때 무시됨)"""
+    return f"Q: {p.question} A: {p.answer}"
+
+
 def _enforce_quote(a: LLMAssessment, source_text: str | None,
-                   profile: PatientProfile | None = None) -> LLMAssessment:
+                   profile: PatientProfile | None = None, answered: list[QAPair] | None = None) -> LLMAssessment:
     """확정 판정(yes/no, 해당 없음)의 인용 근거가 환자 원문에 실제로 있는지 코드로 확인.
 
     모델이 evidence_type="explicit"이라고 표시해도 인용이 원문에 없으면(필드 덤프, 번역·의역, 지어낸 인용)
     확정하지 않고 unknown으로 되돌립니다. source_text가 없으면 검사하지 않습니다.
+    answered: 이 규칙을 겨냥한 확인 질문에 환자가 실제로 답한 문답. 인용이 의역이라 원문과 글자가 달라도
+    그 답이 원문(답변 블록)에 있으면 판정을 인정하고, 근거를 그 문답 원문으로 바꿔 출처를 추적할 수 있게 합니다.
     """
     if source_text is None or (a.applicable and a.holds == "unknown"):
         return a
     if evidence_in_source(a.evidence, source_text) or _profile_field_ref_ok(a.evidence, profile):
         return a
+    quotes = [q for q in map(qa_quote, answered or []) if evidence_in_source(q, source_text)]
+    if quotes:
+        return a.model_copy(update={
+            "evidence": " / ".join(quotes),
+            "reasoning": f"[코드 확인: 이 기준을 묻는 확인 질문의 답변을 근거로 사용] {a.reasoning}",
+        })
     label = "해당 없음" if not a.applicable else a.holds
     return a.model_copy(update={
         "applicable": True,
@@ -313,7 +343,18 @@ def needs_record_check(a: CriterionAssessment) -> bool:
     return a.needs_verification
 
 
-def _llm_assess(profile: PatientProfile, parsed: ParsedTrial, trial: dict, rules: list, ref: str) -> MatcherOutput:
+def _answers_block(answered: dict[str, list[QAPair]], rules: list) -> str:
+    """판정할 규칙을 겨냥한 확인 질문 답변을 원문 그대로 보여 줌 (프로필 재추출 과정에서 문장이 바뀌지 않게)"""
+    lines = [f"- [{r.rule_id}] {qa_quote(p)}" for r in rules for p in answered.get(r.rule_id, [])]
+    if not lines:
+        return ""
+    return ("\n\n<clarifying_answers>\n환자가 확인 질문에 직접 답한 내용입니다. 대괄호 안 rule_id를 판정할 때 근거로 쓰고, "
+            "이 답으로 판정하면 evidence에 해당 줄의 \"Q: … A: …\"를 번역·요약 없이 그대로 인용하세요.\n"
+            + "\n".join(lines) + "\n</clarifying_answers>")
+
+
+def _llm_assess(profile: PatientProfile, parsed: ParsedTrial, trial: dict, rules: list, ref: str,
+                answered: dict[str, list[QAPair]] | None = None) -> MatcherOutput:
     pending_parsed = parsed.model_copy(update={"rules": rules})
     user = f"""기준일: {ref}
 
@@ -331,7 +372,7 @@ brief_summary: {trial.get('brief_summary', '')[:3000]}
 
 <rules_to_assess>
 {rules_json(pending_parsed)}
-</rules_to_assess>
+</rules_to_assess>{_answers_block(answered or {}, rules)}
 
 각 규칙의 holds를 판정하세요."""
     return llm.structured(
@@ -344,10 +385,12 @@ brief_summary: {trial.get('brief_summary', '')[:3000]}
 
 def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
                 reference_date: str | None = None, source_text: str | None = None,
-                input_source: str = "unknown") -> TrialMatch:
+                input_source: str = "unknown", qa: list[QAPair] | None = None) -> TrialMatch:
     """source_text: 환자 원문(확인 질문 답변 포함). 주어지면 LLM 판정의 인용 근거를 원문과 대조합니다.
-    input_source: 최초 입력의 선언된 출처(evidence.InputSource). 밝히지 않으면 unknown(진료 기록으로 보지 않음)."""
+    input_source: 최초 입력의 선언된 출처(evidence.InputSource). 밝히지 않으면 unknown(진료 기록으로 보지 않음).
+    qa: 확인 질문 문답. 이 시험의 규칙을 겨냥해 답한 문답은 원문 그대로 판정에 보여 주고 인용 검증에서 근거로 인정합니다."""
     ref = reference_date or config.reference_date()
+    answered = targeted_answers(qa, parsed.trial_id)
     by_id = {r.rule_id: r for r in parsed.rules}
     results: dict[str, CriterionAssessment] = {}
 
@@ -369,12 +412,12 @@ def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
         if attempt:
             retried.extend(r.rule_id for r in pending)
         asked = {r.rule_id for r in pending}
-        for a in _llm_assess(profile, parsed, trial, pending, ref).assessments:
+        for a in _llm_assess(profile, parsed, trial, pending, ref, answered).assessments:
             rule = by_id.get(a.rule_id)
             # 화이트리스트: 이번에 요청하지 않은 rule_id(지어낸 ID 포함)나 중복 응답은 버림
             if rule is None or a.rule_id not in asked or a.rule_id in results:
                 continue
-            a = _enforce_quote(_enforce_evidence(a), source_text, profile)
+            a = _enforce_quote(_enforce_evidence(a), source_text, profile, answered.get(a.rule_id))
             results[a.rule_id] = CriterionAssessment(
                 rule_id=a.rule_id,
                 kind=rule.kind,
