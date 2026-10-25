@@ -291,7 +291,8 @@ class Session:
             self.tracer.log("matcher", "start", trial_id=tid)
             m = matcher.match_trial(self.profile, self.parsed[tid], self.trials[tid],
                                     reference_date=self.reference_date, source_text=self.case.raw_text,
-                                    input_source=self.case.input_source)
+                                    input_source=self.case.input_source,
+                                    qa=list(self.qa_log), session_id=self.session_id)  # 확인 답변 검증용 (answer_verification)
             self.tracer.log("matcher", "done", trial_id=tid, message=m.summary, round=self.rounds, **trace_match(m))
             return tid, m
 
