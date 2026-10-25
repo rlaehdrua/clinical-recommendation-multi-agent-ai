@@ -21,6 +21,8 @@ matcher._enforce_quote는 '인용이 환자 원문에 있는가'만 봅니다. �
 3. unlinked       : 근거가 짧은 답변(예/아니요 등)뿐인데 질문 ID·대상 기준·답변 연결(qa_log)이 확인되지 않음
 4. conflicting    : 같은 대상에 대한 원문 진술의 극성(있음/없음)이 서로 다름 -> 기록 확인(UNVERIFIED)
 5. hedged         : 근거 절에 추측·불확실·모름 표현. '의심·가능성'은 부정 범위 안이면("의심 소견 없음") 추측이 아님
+   (해당 없음)    : 대상 집단 정의가 있는 개념군(임신·수유)은 서로 다른 상태를 묶은 근거는 hedged, 대상 집단 밖임을 정하는
+                    사실(폐경·자궁 적출 등)을 긍정·과거형으로 말하지 않으면 indirect (P14 D1). 아래 6~8은 적용하지 않음
 6. indirect       : 개념군 기준인데 개념어 없음 / 극성이 판정과 반대 / 검사 결과를 요구하는데 검사 언급 없음 /
                     치료 결과(실패·진행 등)를 요구하는데 결과 언급 없음
 7. object_mismatch: 기준의 대상(물질·특정 시술 약어)과 근거의 대상이 맞지 않음
@@ -129,6 +131,8 @@ class Concept:
     direct: re.Pattern  # 근거 절이 이 개념을 말하는가 (후보, 충분조건 아님)
     objects: tuple[ObjectTerm, ...] = ()  # 대상 이름 (구체적인 것부터)
     requires_test: re.Pattern | None = None  # 기준이 검사 결과를 요구하면 근거에도 검사 언급이 필요
+    # '해당 없음'(대상 집단 아님)을 정하는 사실 (후보). 있으면 개념어만으로는 '해당 없음'을 인정하지 않음 (P14 D1)
+    population_exclusion: re.Pattern | None = None
 
 
 _CONTRAST_SUFFIX = r"(?:[\s-]*(?:based\s*)?(?:contrast(?:\s+(?:media|agents?))?|조영제))?"
@@ -148,8 +152,17 @@ CONCEPTS = (
                        r"임신|수유|폐경|자궁\s*적출|난소\s*절제", re.I),
             (ObjectTerm("pregnancy", re.compile(r"pregnan\w*|임신|hcg", re.I)),
              ObjectTerm("lactation", re.compile(r"breast-?feed\w*|lactat\w*|nursing|수유", re.I))),
-            re.compile(r"\btest|hcg|검사", re.I)),
+            re.compile(r"\btest|hcg|검사", re.I),
+            # 가임 대상 집단 밖: 폐경·자궁 적출·양측 난소(난관) 절제. 폐경 '전'·폐경 이행기·난관결찰·"임신 가능성 없음"(자기 평가)은 아님
+            re.compile(r"(?<!pre)(?<!peri)(?<!pre-)(?<!peri-)menopaus|hysterectom|"
+                       r"bilateral\s+(?:salpingo-?)?oophorectom|bilateral\s+salpingectom|"
+                       r"(?:폐경|완경)(?!기?\s*(?:전|이행|주변|여부))|자궁\s*(?:적출|절제)|"
+                       r"양측\s*(?:난관\s*)?(?:난소|난관)\s*(?:절제|적출)", re.I)),
 )
+# '해당 없음' 근거가 서로 다른 상태를 묶음 ("폐경되었거나 임신 가능성이 없음"): 어느 상태인지 모름
+_DISJUNCTION = re.compile(r"거나|또는|혹은|\b(?:or|either)\b", re.I)  # '/'는 약어(s/p, w/o)에 흔해 넣지 않음
+# 앞으로 일어날 일 ("자궁 적출 예정"): 지금 대상 집단 밖이라는 근거가 아님
+_PLANNED = re.compile(r"예정|계획|하려고|할\s*것|\b(?:scheduled|planned|planning|will|plans?\s+to)\b", re.I)
 _PARENT = {o.name: o.parent for c in CONCEPTS for o in c.objects}
 
 
@@ -539,6 +552,15 @@ def check(criterion_text: str, evidence_text: str, source_text: str | None, *, h
     if any(u.polarity == "uncertain" or hedged(u.clause) for u in units):
         return Check("hedged", ["hedged_quote"], cname)
     if not applicable:  # '해당 없음': 대상 집단이 아님을 말하는 근거. 기준 본문의 대상·기간·검사 요건은 적용하지 않음
+        if concept and concept.population_exclusion:
+            # P14 D1: 개념어("임신 가능성")가 있다는 것만으로 대상 집단 밖이라고 보지 않음. 대상 집단 밖임을 정하는 사실을
+            # 근거가 다른 상태와 묶지 않고, 긍정으로(부정형 질문의 예/아니요 제외), 이미 일어난 일로 말해야 함
+            if any(_DISJUNCTION.search(u.context) for u in units):
+                return Check("hedged", ["combined_states"], cname)
+            if not any(concept.population_exclusion.search(u.context) and u.polarity == "positive"
+                       and not _PLANNED.search(u.context) and not (u.linked and _negated(u.question)) for u in units):
+                return Check("indirect", ["population_exclusion_not_stated"], cname)
+            return Check("direct", [], cname)
         if concept and not any(concept.direct.search(u.context) for u in units):
             return Check("indirect", ["indirect_evidence"], cname)
         return Check("direct" if concept else "unchecked", [], cname)
