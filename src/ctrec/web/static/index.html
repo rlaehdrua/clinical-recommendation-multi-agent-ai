@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>나에게 맞는 임상시험 찾기</title>
+<title>Trialog · 나에게 맞는 임상시험 찾기</title>
+<link rel="icon" type="image/svg+xml" href="/static/logo.svg">
 <!-- 모든 자원은 같은 서버에서 (CSP: script-src·style-src·font-src 'self'). 외부 라이브러리: static/VENDOR.md -->
 <link rel="stylesheet" href="/static/app.css">
 <script src="/static/marked.min.js" defer></script>
@@ -16,7 +17,7 @@
 <div class="app">
 <header class="top">
   <div class="bar">
-    <h1 class="brand">나에게 맞는 임상시험 찾기</h1>
+    <h1 class="brand"><img class="logo" src="/static/logo.svg" alt="" width="28" height="28"><span class="word">Trialog</span><span class="tag">대화로 찾는 임상시험</span></h1>
     <span class="badge" id="run-state" role="status" aria-live="polite" aria-label="분석 상태">대기 중</span>
   </div>
   <div class="meta">
@@ -96,18 +97,8 @@
           <label class="hint inline-check"><input type="checkbox" id="search"> 후보가 모두 맞지 않거나 모집이 끝났으면 ClinicalTrials.gov에서 추가 검색 허용</label>
         </div>
       </details>
-      <button class="btn block" id="review" type="button">입력 내용 확인</button>
+      <button class="btn block" id="start" type="button">분석 시작</button>
       <div class="err" id="input-error" role="alert"></div>
-      <!-- 입력 내용 확인 -->
-      <div class="note info" id="review-panel" hidden role="region" aria-labelledby="review-h">
-        <b id="review-h">이 내용으로 찾을까요?</b>
-        <div class="hint mt4 mb6" id="review-meta"></div>
-        <div class="preview" id="review-text" aria-label="분석할 입력 내용"></div>
-        <div class="stack mt10">
-          <button class="btn block" id="start" type="button">분석 시작</button>
-          <button class="btn ghost block" id="edit" type="button">수정하기</button>
-        </div>
-      </div>
       <div class="err" id="start-hint" role="alert"></div>
       <!-- 탭을 닫았다 다시 연 경우: 같은 브라우저의 진행 중 분석 -->
       <div class="note info" id="active-note" hidden role="region" aria-labelledby="active-h">

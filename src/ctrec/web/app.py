@@ -512,7 +512,7 @@ def index() -> FileResponse:
 
 # 화면 정적 파일: 이름을 정해 둔 파일만 (경로 조작 불가). 외부 라이브러리는 VENDOR.md 참고
 STATIC_FILES = {"app.js": "text/javascript", "app.css": "text/css", "marked.min.js": "text/javascript",
-                "purify.min.js": "text/javascript"}
+                "purify.min.js": "text/javascript", "logo.svg": "image/svg+xml"}
 
 
 @app.get("/static/{name}")

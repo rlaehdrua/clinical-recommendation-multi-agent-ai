@@ -130,8 +130,6 @@ async function init() {
   $("#custom").addEventListener("input", onTextInput);
   $("#fill-example").addEventListener("click", fillExample);
   $("#clear-input").addEventListener("click", () => { $("#custom").value = ""; onTextInput(); $("#custom").focus(); });
-  $("#review").addEventListener("click", review);
-  $("#edit").addEventListener("click", () => { $("#review-panel").hidden = true; (state.custom ? $("#custom") : $("#patient")).focus(); });
   $("#start").addEventListener("click", start); $("#cancel").addEventListener("click", cancelRun); $("#new-run").addEventListener("click", newRun);
   document.querySelectorAll("#pages button").forEach(b => b.addEventListener("click", () => showPage(b.dataset.page)));
   ["#final", "#detail"].forEach(s => $(s).addEventListener("click", onResultClick));
@@ -151,7 +149,7 @@ function tabKeys(e) {  // 탭 목록: 왼쪽·오른쪽 화살표로 이동 (WAI
 function onTextInput() {
   const n = $("#custom").value.length, el = $("#char-count");
   el.textContent = `${n.toLocaleString()} / ${MAX_TEXT.toLocaleString()}자`; el.classList.toggle("over", n > MAX_TEXT);
-  $("#review-panel").hidden = true; $("#input-error").textContent = "";
+  $("#input-error").textContent = "";
   $("#custom").removeAttribute("aria-invalid");
 }
 function fillExample() {
@@ -182,13 +180,13 @@ function onPatient() {
   $("#preview").innerHTML = caseHtml(p);
   document.querySelectorAll("#trials input").forEach(i => { i.checked = p.candidate_trials.includes(i.value); });
   const list = $("#trials"); [...list.children].sort((x, y) => y.querySelector("input").checked - x.querySelector("input").checked).forEach(el => list.appendChild(el));
-  list.scrollTop = 0; countTrials(); $("#review-panel").hidden = true;
+  list.scrollTop = 0; countTrials();
 }
 function setCustom(on) {
   state.custom = on; $("#custom-wrap").hidden = !on; $("#preview-wrap").hidden = on;
   $("#to-custom").setAttribute("aria-selected", String(on)); $("#to-list").setAttribute("aria-selected", String(!on));
   $("#to-custom").tabIndex = on ? 0 : -1; $("#to-list").tabIndex = on ? -1 : 0;
-  $("#review-panel").hidden = true; $("#input-error").textContent = "";
+  $("#input-error").textContent = "";
   if (!on) onPatient();
 }
 function selectedTrials() { return [...document.querySelectorAll("#trials input:checked")].map(i => i.value); }
@@ -200,7 +198,6 @@ function countTrials() {
   $("#trial-count").textContent = on ? `(전체 ${state.trials.length}개에서 자동 추림)` : `(${selectedTrials().length}개 선택)`;
   $("#cand-hint").textContent = on ? "전체 임상시험 중 이 환자에게 해당될 만한 시험(최대 5개)을 먼저 추린 뒤 자세히 비교합니다."
     : "비교할 시험을 직접 고릅니다. 예시 사례를 고르면 미리 정해 둔 후보가 선택됩니다.";
-  $("#review-panel").hidden = true;
 }
 function collectRequest() {
   const body = { trial_ids: screenMode() ? [] : selectedTrials(), screen: screenMode(), allow_search: $("#search").checked };
@@ -214,23 +211,8 @@ function collectRequest() {
   if (!body.screen && !body.trial_ids.length && !body.allow_search) return [null, "비교할 임상시험을 하나 이상 선택하세요."];
   return [body, null];
 }
-function review() {
-  const [body, err] = collectRequest();
-  $("#input-error").textContent = err || ""; $("#start-hint").textContent = "";
-  if (!body) {
-    if (state.custom) { $("#custom").setAttribute("aria-invalid", "true"); $("#custom").focus(); } else $("#patient").focus();
-    return;
-  }
-  const pick = state.patients.find(p => p.patient_id === body.patient_id) || {};
-  const text = body.custom_text ?? shownText(pick) ?? "";
-  $("#review-meta").textContent = `${state.custom ? "직접 입력" : "예시 사례 " + body.patient_id} · ${text.length.toLocaleString()}자 · `
-    + (body.screen ? "전체 시험에서 자동 추림" : `직접 선택한 시험 ${body.trial_ids.length}개`) + (body.allow_search ? " · 추가 검색 허용" : "");
-  if (body.custom_text == null) { $("#review-text").className = "case"; $("#review-text").innerHTML = caseHtml(pick); }
-  else { $("#review-text").className = "preview"; $("#review-text").textContent = text.length > 600 ? text.slice(0, 600) + " …" : text; }
-  $("#review-panel").hidden = false; $("#start").focus();
-}
 function lockInput(on) {
-  ["#custom", "#patient", "#to-custom", "#to-list", "#review", "#fill-example", "#clear-input", "#search", "#start", "#edit"].forEach(s => { $(s).disabled = on; });
+  ["#custom", "#patient", "#to-custom", "#to-list", "#fill-example", "#clear-input", "#search", "#start"].forEach(s => { $(s).disabled = on; });
   document.querySelectorAll('input[name="cand-mode"]').forEach(i => { i.disabled = on; });
   document.querySelectorAll("#trials input").forEach(i => { i.disabled = on || screenMode(); });
 }
@@ -246,14 +228,19 @@ function post(url, body) {
 async function detailOf(r) { let d = null; try { d = (await r.json()).detail; } catch (e) { /* 본문 없음 */ } return typeof d === "string" ? d : `요청이 실패했습니다 (${r.status}).`; }
 async function start() {
   if (state.running) return;  // 중복 제출 방지
+  // 확인 단계 없이 바로 시작: 입력 오류는 버튼 아래에 보여 주고 입력 칸으로 포커스
   const [body, err] = collectRequest();
-  if (!body) { $("#start-hint").textContent = err; return; }
+  $("#input-error").textContent = err || ""; $("#start-hint").textContent = "";
+  if (!body) {
+    if (state.custom) { $("#custom").setAttribute("aria-invalid", "true"); $("#custom").focus(); } else $("#patient").focus();
+    return;
+  }
   if (state.es) { state.es.close(); state.es = null; }
   resetView();
   state.running = true; lockInput(true); $("#start-hint").textContent = ""; $("#start").textContent = "분석 요청 중…";
   let r;
   try { r = await post("/api/runs", body); } catch (e) { r = null; }
-  $("#start").textContent = "이 내용으로 분석 시작";
+  $("#start").textContent = "분석 시작";
   if (!r || !r.ok) {
     state.running = false; lockInput(false);
     $("#start-hint").textContent = r ? await detailOf(r) : "서버에 연결하지 못했습니다. 잠시 후 다시 시도하세요.";
@@ -261,7 +248,6 @@ async function start() {
     if (r && r.status === 429) checkActive();  // 다른 탭에서 시작한 분석이 남아 있으면 이어 보기 안내
     return;
   }
-  $("#review-panel").hidden = true;
   connect((await r.json()).run_id, true);
 }
 function connect(runId, fresh) {
