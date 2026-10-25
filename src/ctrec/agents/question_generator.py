@@ -5,10 +5,11 @@ from __future__ import annotations
 import contextlib
 import contextvars
 import json
+import re
 
-from .. import config, llm
-from ..schemas import PatientProfile, QAPair, QuestionSet, TrialMatch
-from .matcher import compact_json
+from .. import config, evidence_directness as ed, llm
+from ..schemas import ClarifyingQuestion, PatientProfile, QAPair, QuestionSet, TrialMatch
+from .matcher import compact_json, is_askable_unknown
 
 SYSTEM = """당신은 임상시험 적격성 판정에 부족한 정보를 확인하는 '질문 생성 에이전트'입니다.
 판정 불가(unknown) 항목 목록을 보고, 환자 또는 보호자에게 물어볼 확인 질문을 만듭니다.
@@ -29,7 +30,7 @@ SYSTEM = """당신은 임상시험 적격성 판정에 부족한 정보를 확�
   예: "EGFR을 표적으로 하는 항체-약물 결합체(ADC, antibody-drug conjugate) 치료를 받은 적이 있나요?"
 - 한 질문에는 하나의 사실만 묻습니다.
 - 답을 통일된 형식으로 받기 위해 가능하면 객관식으로 묻습니다(answer_type).
-  - 있다/없다, 해당/비해당으로 답할 수 있으면 yes_no. 예: "현재 임신 중이거나 수유 중인가요?"
+  - 있다/없다로 답할 수 있고 아래 검증 정책상 예/아니요 단답이 근거가 되는 기준이면 yes_no. 예: "현재 임신 중이거나 수유 중인가요?"
   - 답이 몇 가지 경우 중 하나면 single_choice, 여러 개를 고를 수 있으면 multi_choice로 하고 options에 선택지를 적습니다.
     선택지는 서로 겹치지 않고 가능한 답을 빠짐없이 덮도록 2~6개로 만들고, 필요하면 "해당 없음"이나 "기타(직접 입력)"를 넣습니다.
     예: "마지막 항암치료를 받은 시기는 언제인가요?" -> ["4주 이내", "4주~3개월 전", "3개월 이상 전", "항암치료를 받은 적 없음"]
@@ -42,6 +43,20 @@ SYSTEM = """당신은 임상시험 적격성 판정에 부족한 정보를 확�
 - unverified_document_needed 항목은 이미 답을 받았고 진료 기록(문서)으로 확인할 항목이므로 다시 질문하지 않습니다.
 - 개인 식별 정보(이름, 주민번호, 연락처, 주소 등)는 절대 묻지 않습니다.
 - question_id는 Q1, Q2, ... 로 매깁니다.
+
+답으로 판정을 확정할 수 있는 질문 (코드의 답변 검증 정책):
+코드는 답이 기준의 대상과 기간을 직접 말할 때만 판정 근거로 인정합니다. 아래 형태가 아니면 답을 받아도 판정 불가로 남아 질문 예산만 씁니다.
+- 예/아니요 단답(yes_no)은 임신·수유 여부, 알레르기·금기 기준에만 판정 근거가 됩니다. 그 밖의 기준은 single_choice로 묻고,
+  각 선택지가 기준의 대상과 기간을 담은 완결된 문장이 되게 합니다(질문 없이 답만 읽어도 사실을 알 수 있게).
+  예: "편두통 예방약을 마지막으로 복용한 시기는 언제인가요?" -> ["현재 복용 중", "1개월 이내에 중단", "1~3개월 전에 중단", "3개월 이상 전에 중단", "복용한 적 없음"]
+- 기간 조건이 있는 기준("N개월 이내", "적어도 N개월 동안 사용하지 않음", "최근 N개월 동안 매달")은 질문이나 선택지에 기준과 같은 기간을 적습니다.
+  "현재 ~ 중인가요?"는 "1개월 이상 사용하지 않음"을 확인하지 못하므로, 사용 여부가 아니라 중단 시점을 묻습니다.
+  기간 안의 빈도는 "최근 3개월 동안 조짐이 얼마나 자주 있었나요?" -> ["최근 3개월 동안 매달 1회 이상 있었음", "최근 3개월 중 조짐이 없던 달이 있음", ...]처럼 선택지에도 기간을 적습니다.
+- 선택지 하나에는 한 가지 상태만 적습니다. 서로 다른 상태를 "A거나 B"로 묶지 않습니다(예: "폐경되었거나 임신 가능성이 없음"은 쓰지 않음).
+  "임신 가능성 없음" 같은 자기 평가 대신 폐경, 자궁 적출처럼 대상 집단을 정하는 사실을 묻습니다.
+- 임신·수유 여부, 가임 가능 여부, 피임 방법·기간은 서로 다른 사실입니다. 임신·수유만 묻는 질문의 target에 피임 기준을 넣지 않습니다.
+- target에는 이 질문의 답만으로 판정할 수 있는 기준만 적습니다. 이 질문으로 확인할 수 없는 기준은 target에서 빼고 따로 묻습니다.
+- 코드는 위 형태로 확정할 수 없는 기준을 target에서 빼고, 대상이 모두 빠진 질문은 묻지 않습니다.
 
 정보 확보 단계(<acquisition_plan>):
 - 각 unknown 항목('<trial_id>:<rule_id>')에 이번에 쓸 확보 방식(step)이 정해져 있습니다. 그 방식에 맞게 질문합니다.
@@ -111,8 +126,89 @@ def generate_questions(
         user=user,
         effort=config.EFFORT["question_generator"],
     )
-    qs.questions = [_normalize(q) for q in qs.questions[:max_questions]]
+    # 해소할 수 없는 대상을 뺀 뒤 예산만큼 (LLM이 정한 순서 그대로, 질문 수·예산은 늘리지 않음)
+    qs.questions = screen([_normalize(q) for q in qs.questions], matches)[:max_questions]
     return qs
+
+
+# ---------------------------------------------------------------------------- 생성 후 코드 검사 (P14 Q1)
+# 기준의 기간 조건 ("in the 3 months prior", "for at least 1 month prior", "within 28 days", "4주 이내")
+_C_WINDOW = (re.compile(r"(\d+)\s*(day|week|month|year)s?\b(?!\s*(?:of\s+age|old|or\s+older))"
+                        r"(?=[^.;]{0,15}?\b(?:prior|before|preceding|ago)\b)", re.I),
+             re.compile(r"\b(?:within|last|past|prior|previous|preceding)\s+(?:the\s+)?(?:last\s+|past\s+)?(\d+)\s*"
+                        r"(day|week|month|year)s?\b", re.I),
+             re.compile(r"(\d+)\s*(일|주|개월|달|년)\s*(?:이내|안에|동안|전)"))
+_SPELLED = {w: str(i) for i, w in enumerate("one two three four five six seven eight nine ten eleven twelve".split(), 1)}
+_Q_TIME = re.compile(r"(\d+)\s*(일|주|개월|달|년|days?|weeks?|months?|years?)", re.I)
+_CONTRACEPTION = re.compile(r"contracept|birth\s+control|피임", re.I)
+# 질문이 피임(방법·여부)을 묻는가. 피임약을 약물로 묻는 질문("경구 피임약 등 에스트로겐 약")은 아님
+_ASKS_CONTRACEPTION = re.compile(r"피임(?!약)|contraception|contraceptive\s+method|birth\s+control(?!\s+pill)", re.I)
+
+
+def _days(n: str, unit: str) -> int:
+    u = unit.lower()
+    return int(n) * ed._UNIT_DAYS[u if u in ed._UNIT_DAYS else u.rstrip("s")]
+
+
+def criterion_windows(text: str) -> set[int]:
+    """기준 원문의 기간 조건(일). 영어 수사("three months")·"the past year"도 숫자로 읽음. 못 찾으면 빈 집합(검사 안 함)."""
+    text = re.sub(r"\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b",
+                  lambda m: _SPELLED[m.group(1).lower()], text, flags=re.I)
+    text = re.sub(r"\b(?:the\s+)?(past|last|prior|previous)\s+(day|week|month|year)\b", r"\1 1 \2", text, flags=re.I)
+    # 나이("aged at least 18 years before consent")는 기간 조건이 아님
+    return {_days(m.group(1), m.group(2)) for p in _C_WINDOW for m in p.finditer(text)
+            if not re.search(r"\bage", text[max(0, m.start() - 15):m.start()], re.I)}
+
+
+def unresolvable(q: ClarifyingQuestion, criterion: str) -> str | None:
+    """이 질문의 답으로 이 기준을 확정할 수 없는 이유 (코드가 확인할 수 있는 것만). 확인할 수 없으면 None(그대로 둠).
+
+    판정 근거 검증(evidence_directness·answer_verification)과 같은 정책: 예/아니요 단답은 E9 개념군 기준에만 근거가 되고,
+    기간 조건은 질문·선택지에 같은 기간이 있어야 하며, 피임 기준은 피임(또는 대상 집단을 정하는 사실)을 물어야 함.
+    질문의 의미를 넓혀 대상을 더하지 않고, 빼기만 합니다.
+    """
+    asked = " ".join([q.question, *q.options])
+    concept = next((c for c in ed.CONCEPTS if c.criterion.search(criterion)), None)
+    if q.answer_type == "yes_no" and concept is None:
+        return "yes_no_not_verifiable"  # 기본 Session은 개념군 밖 기준의 예/아니요 단답을 근거로 쓰지 않음 (P12)
+    if (concept and concept.population_exclusion and ed._POPULATION_CLAUSE.search(criterion)
+            and concept.population_exclusion.search(q.question)):
+        return None  # 대상 집단을 정하는 사실(폐경·자궁 적출)을 묻는 질문: '해당 없음' 근거는 기간 조건을 보지 않음 (D1 검사)
+    if _CONTRACEPTION.search(criterion):
+        if not _CONTRACEPTION.search(asked):
+            return "contraception_not_asked"
+    elif _ASKS_CONTRACEPTION.search(q.question):
+        return "different_fact_asked"  # 피임을 묻는 질문은 임신·수유 여부 같은 다른 기준을 정하지 않음
+    elif q.answer_type == "yes_no" and concept and not concept.direct.search(asked):
+        return "concept_not_asked"  # answer_verification도 질문에 개념어가 없으면 예/아니요 답을 쓰지 않음
+    windows = criterion_windows(criterion)
+    if windows and q.answer_type != "date":
+        stated = {_days(n, u) for n, u in _Q_TIME.findall(asked)}
+        # '있음' 기준: 답의 기간이 기준 기간 안이어야 확인됨 (evidence_directness._answer_within) -> 기준보다 넓은 기간은 아님.
+        # '없음' 기준("적어도 1개월 동안 사용하지 않음"): 기준 기간을 덮는 더 넓은 기간도 됨
+        absence = bool(ed._CRITERION_NEGATION.search(criterion))
+        if not any(w - max(1, w // 10) <= s and (absence or s <= w) for s in stated for w in windows):
+            return "time_window_not_asked"
+    return None
+
+
+def screen(questions: list[ClarifyingQuestion], matches: list[TrialMatch]) -> list[ClarifyingQuestion]:
+    """적격성 질문의 target에서 지금 판정 불가인 기준이 아니거나 답으로 확정할 수 없는 기준을 빼고, 대상이 모두 빠진 질문은 버림.
+
+    의사 참고용 질문과 처음부터 target이 없는 질문은 그대로 둡니다(판정 근거로 쓰지 않거나 대상을 확인할 수 없음).
+    """
+    criteria = {f"{m.trial_id}:{a.rule_id}": a.criterion_text for m in matches for a in m.assessments
+                if is_askable_unknown(a)}
+    out = []
+    for q in questions:
+        if q.purpose != "eligibility" or not q.target:
+            out.append(q)
+            continue
+        keep = [t for t in q.target if t in criteria and unresolvable(q, criteria[t]) is None]
+        if keep:
+            q.target = keep
+            out.append(q)
+    return out
 
 
 UNKNOWN_OPTIONS = {"모름", "잘 모름", "모르겠음", "기억 안 남"}

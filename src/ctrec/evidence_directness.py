@@ -26,7 +26,8 @@ matcher._enforce_quote는 '인용이 환자 원문에 있는가'만 봅니다. �
 6. indirect       : 개념군 기준인데 개념어 없음 / 극성이 판정과 반대 / 검사 결과를 요구하는데 검사 언급 없음 /
                     치료 결과(실패·진행 등)를 요구하는데 결과 언급 없음
 7. object_mismatch: 기준의 대상(물질·특정 시술 약어)과 근거의 대상이 맞지 않음
-8. time_unverified: 기간 조건(N일 이내 등)이 있는데 근거 날짜가 기간 안임을 확인할 수 없음
+8. time_unverified: 기간 조건(N일 이내 등)이 있는데 근거 날짜가 기간 안임을 확인할 수 없음. 확인 질문 답변이 기준 기간 안의
+                    상대 기간으로 시작하는 한 절("최근 3개월 동안 매달 있었음")이면 확인된 것으로 봄 (P14 Q1)
 통과: direct(개념군 기준) / unchecked(그 밖의 기준). 구조화 필드 근거는 check_structured.
 """
 
@@ -386,6 +387,7 @@ class _Evidence:
     question: str = ""  # 답변이면 연결된 질문 (대상 범위 보충용, 진술로 쓰지 않음)
     linked: bool = False  # qa_log로 연결된 짧은 답변 (질문 + 답으로 극성을 정할 수 있음)
     non_answer: bool = False  # 답 전체가 모름·거부·미응답 (확정 근거가 될 수 없음)
+    answer: bool = False  # 확인 질문 라운드 머리말 아래 답변 줄에서 온 근거 (처음 입력의 "A:" 줄은 아님)
 
 
 def _evidence_units(hits: list[Hit], key: str | None, qa_log) -> tuple[list[_Evidence], list[str]]:
@@ -421,7 +423,8 @@ def _evidence_units(hits: list[Hit], key: str | None, qa_log) -> tuple[list[_Evi
             continue
         c = _clause(body, h.lo, h.hi)
         q = h.seg.question.body if h.seg.role == "answer" and h.seg.question else ""
-        units.append(_Evidence(c, c, _sentence(body, h.lo), polarity(c), q))
+        units.append(_Evidence(c, c, _sentence(body, h.lo), polarity(c), q,
+                               answer=h.seg.role == "answer" and h.seg.round is not None))
     return units, problems
 
 
@@ -525,6 +528,35 @@ def _within(text: str, days: int, reference_date: str | None) -> bool:
     return True
 
 
+# 확인 질문 답변이 상대 기간으로 시작하는 한 절 ("최근 3개월 동안 매달 1회 이상 있었음", "1개월 이내에 받음"). 선택형 질문의
+# 선택지 형태만 허용(allowlist): 기간 '길이'("6개월간")·다른 사건 기준("항암 후 2주 이내")·다른 시점("어렸을 때")은 맞지 않음
+_RECENT_ANSWER = re.compile(
+    r"\s*(?:(?:최근|지난)\s*(?P<n1>\d+)\s*(?P<u1>일|주|개월|달|년)(?:\s*(?:동안|간|이내|안에))?|"
+    r"(?P<n2>\d+)\s*(?P<u2>일|주|개월|달|년)\s*(?:이내|안에)|"
+    r"(?:in|within|during|over)\s+the\s+(?:last|past)\s+(?P<n3>\d+)\s*(?P<u3>day|week|month|year)s?|"
+    r"within\s+(?P<n4>\d+)\s*(?P<u4>day|week|month|year)s?)(?:에는|에|내에)?[\s,]+(?P<rest>.+)", re.I)
+# 나머지 부분에 있으면 안 되는 시점·사건 표현 (다른 때를 말하거나 앞으로의 일)
+_OTHER_TIME = re.compile(r"\d+\s*(?:일|주|개월|달|년|살|세|월)|전|후|때|무렵|이후|이전|작년|올해|지난|다음|어렸|어릴|"
+                         r"\b(?:ago|after|before|since|when|next|last|previous|days?|weeks?|months?|years?)\b", re.I)
+
+
+def _answer_within(u: "_Evidence", days: int) -> bool:
+    """확인 질문 답변(라운드 머리말 아래)이 기준 기간 안의 상대 기간으로 시작하는 한 절인가 (P14 Q1).
+
+    질문의 기간은 쓰지 않음(답이 다른 때를 말할 수 있음). 날짜가 있으면 _within만 씀. 기간 안의 '있음' 주장에만 쓰이므로
+    나머지 절이 긍정이어야 함. 처음 입력(기록)은 작성 시점을 몰라 쓰지 않음(u.answer는 라운드 머리말 아래 답변만 True).
+    """
+    if _DATE.search(u.sentence):
+        return False
+    m = _RECENT_ANSWER.fullmatch(u.sentence.strip(" ."))
+    if not m:
+        return False
+    n, unit = next((m.group(f"n{i}"), m.group(f"u{i}")) for i in range(1, 5) if m.group(f"n{i}"))
+    rest = m.group("rest")
+    return (int(n) * _UNIT_DAYS[unit.lower()] <= days and polarity(rest) == "positive"
+            and not (_OTHER_TIME.search(rest) or _PLANNED.search(rest) or _CLAUSE_BOUNDARY.search(rest)))
+
+
 # ---------------------------------------------------------------------------- 검사
 def check(criterion_text: str, evidence_text: str, source_text: str | None, *, holds: str = "yes",
           applicable: bool = True, category: str = "other", time_window_days: int | None = None,
@@ -617,7 +649,8 @@ def check(criterion_text: str, evidence_text: str, source_text: str | None, *, h
     if not absence and _OUTCOME.search(criterion_text) and not any(_OUTCOME.search(u.context) for u in units):
         return Check("indirect", ["outcome_not_stated"], cname)
     days = window_days(criterion_text, time_window_days)
-    if days and not absence and not all(_within(u.sentence, days, reference_date) for u in units):
+    if days and not absence and not all(_within(u.sentence, days, reference_date)
+                                        or (u.answer and _answer_within(u, days)) for u in units):
         return Check("time_unverified", ["time_window_unverified"], cname)
     return Check("direct" if concept else "unchecked", [], cname)
 
