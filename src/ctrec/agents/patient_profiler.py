@@ -20,6 +20,21 @@ SYSTEM = """당신은 임상시험 매칭을 위해 환자 정보를 정리하�
 - 사람이 읽는 필드(description, primary_diagnosis, disease_stage, missing_or_ambiguous)는 한국어로 씁니다. 질환·약물명은 필요하면 괄호 안에 원어를 병기합니다(예: 그레이브스병(Graves' disease)). source_quote는 번역하지 않고 원문 그대로, labs.name은 위 규칙대로 영문 표준명으로 둡니다.
 """
 
+# Q&A 정책 contract(qa_guard.policy)에서만 바꾸는 줄: 처음 입력과 확인 답변이 충돌하면 어느 쪽도 고르지 않음.
+# 기본 legacy는 SYSTEM 그대로 (프롬프트·LLM 캐시 키·비용 추정이 기존과 같음)
+_QA_CONFLICT_LEGACY = ("- '[추가 확인 정보]' 섹션은 환자/보호자가 확인 질문에 답한 내용입니다. "
+                       "기존 정보와 충돌하면 더 최근 답변을 우선하되 other_facts에 충돌 사실을 남깁니다.")
+_QA_CONFLICT_CONTRACT = ("- '[추가 확인 정보]' 섹션은 환자/보호자가 확인 질문에 답한 내용입니다. 기존 정보와 충돌하면 "
+                         "어느 쪽도 고르지 말고(최근 답변을 우선하지 않음) 두 내용을 모두 other_facts에 남기고 "
+                         "missing_or_ambiguous에 충돌을 적습니다.")
+
+
+def system_prompt() -> str:
+    from .. import qa_guard
+    if qa_guard.policy() != "contract":
+        return SYSTEM
+    return SYSTEM.replace(_QA_CONFLICT_LEGACY, _QA_CONFLICT_CONTRACT)
+
 
 def profile_patient(patient_id: str, raw_text: str, reference_date: str | None = None) -> PatientProfile:
     user = f"""기준일: {reference_date or config.reference_date()}
@@ -32,7 +47,7 @@ patient_id: {patient_id}
 위 환자 정보를 구조화하세요."""
     profile = llm.structured(
         PatientProfile,
-        system=SYSTEM,
+        system=system_prompt(),
         user=user,
         effort=config.EFFORT["patient_profiler"],
     )

@@ -434,7 +434,8 @@ def _execute_run(run: Run, req: RunRequest, case: PatientCase, trials: dict[str,
         tracer = Tracer(out_dir / "trace.jsonl" if out_dir else None, verbose=False,
                         listener=lambda rec: _forward(run, rec))
         # 웹 UI: 확인 질문이 필요하면 화면에서 사용자가 직접 답변 (가상 환자·답변 없음 모드는 CLI 평가용)
-        session = Session(case=case, trials=trials, answerer=WebAnswerer(run), tracer=tracer,
+        from ..contract_session import session_class  # CTREC_SESSION=contract -> ContractSession
+        session = session_class()(case=case, trials=trials, answerer=WebAnswerer(run), tracer=tracer,
                           max_rounds=req.max_rounds, allow_search=req.allow_search,
                           screen_trials=req.screen and len(trials) > config.SCREEN_MAX_CANDIDATES,
                           decision_loop="diagnostic" if req.decision_diagnostic else "off")

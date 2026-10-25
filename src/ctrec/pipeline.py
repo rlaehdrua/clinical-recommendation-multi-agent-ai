@@ -426,7 +426,8 @@ class Session:
         answers = self.answerer.answer(qs.questions, self.case.patient_id)
         new_pairs = [
             QAPair(round=self.rounds, question_id=q.question_id, question=q.question,
-                   answer=answers.get(q.question_id, "모름"), purpose=q.purpose, target=q.target)
+                   answer=answers.get(q.question_id, "모름"), purpose=q.purpose, target=q.target,
+                   session_id=self.session_id)
             for q in qs.questions
         ]
         self.qa_log.extend(new_pairs)

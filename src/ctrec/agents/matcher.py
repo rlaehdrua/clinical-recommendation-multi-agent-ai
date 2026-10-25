@@ -473,6 +473,10 @@ def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
 
     all_assessments = [_apply_evidence_policy(results[r.rule_id], _meta(parsed, r), source_text, input_source)
                        for r in parsed.rules]
+    # Q&A 정책 (qa_guard.policy): contract면 계약 없는 확인 답변에 기댄 확정을 UNVERIFIED로. 기본 legacy는 기존과 같음
+    from .. import qa_guard
+    if qa_guard.policy() == "contract":
+        all_assessments = qa_guard.guard_assessments(all_assessments, source_text)
     assessments, matched_cohort, cohort_results = _select_cohort(all_assessments, parsed.cohorts)
     other = [a for a in all_assessments if a not in assessments]
     eligibility = decide(assessments)
