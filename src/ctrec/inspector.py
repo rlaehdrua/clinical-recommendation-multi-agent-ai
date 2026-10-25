@@ -231,19 +231,36 @@ def _pick(d: dict | None, fields: dict) -> dict:
 
 _CRITERION_KEYS = ("rule_id", "kind", "criterion_text", "category", "method", "holds", "passes", "applicable",
                    "cohort", "underspecified", "needs_verification", "self_reported_holds", "evidence_source",
-                   "required_evidence", "gap", "evidence_directness", "validation_flags")
+                   "required_evidence", "gap", "evidence_directness", "validation_flags", "llm_judgment")
 
 
 # 라운드 사이 변화로 표시하는 기록 필드. 판정(verdict)과 근거·확인 상태(evidence)를 나눠 셈
 VERDICT_KEYS = ("passes", "holds")
 EVIDENCE_KEYS = ("self_reported_holds", "needs_verification", "evidence_source", "gap")
 _CHANGE_KEYS = VERDICT_KEYS + EVIDENCE_KEYS
+# 근거 직접성 진단 (schemas.CriterionAssessment: matcher._enforce_directness·qa_guard·evaluator가 남긴 값).
+# 판정·근거 상태 변화와 섞지 않고 따로 셈. 이전 형식 기록에는 없음 (없으면 '기록 없음', 'none'과 다름)
+DIRECTNESS_KEYS = ("evidence_directness", "validation_flags", "llm_judgment")
+_LLM_JUDGMENT_KEYS = ("holds", "applicable", "evidence_type", "confidence")  # matcher가 남기는 키만 (그 밖의 키는 읽지 않음)
 _TRIAL_KEYS = ("eligibility", "match_status")
 
 
 def _scalar(v: Any) -> Any:
     """비교·표시용 기록 값: 참거짓·숫자·None·코드만 (자유 문장은 '<text>'로 가림)."""
     return v if v is None or isinstance(v, (bool, int, float)) or _code(v) else "<text>"
+
+
+def _directness_value(k: str, v: Any) -> Any:
+    """직접성 진단 필드의 표시·비교 값: 코드·참거짓만 (자유 문장·형식이 다른 값은 '<text>'). 근거·인용 문장은 읽지 않음."""
+    if v is None:
+        return None
+    if k == "evidence_directness":
+        return _scalar(v)
+    if k == "validation_flags":
+        return [_ident(x) for x in v] if isinstance(v, list) else "<text>"
+    if not isinstance(v, dict):  # llm_judgment
+        return "<text>"
+    return {j: _scalar(v[j]) for j in _LLM_JUDGMENT_KEYS if j in v}
 
 
 def _round(v: Any) -> int | None:
@@ -305,11 +322,24 @@ def _pair_changes(tid: str, prev: dict, cur: dict) -> tuple[list[dict], list[dic
                                  "passes_after": y.get("passes") if "passes" in y else "<missing>", **span})
             elif (k in x) != (k in y):
                 inc.append({"trial_id": tid, "rule_id": rid, "field": k, "reason": "필드가 한쪽 기록에만 있음", **span})
+        for k in DIRECTNESS_KEYS:  # 양쪽 다 없으면(이전 형식·trace에 미기록) 비교하지 않음 - 변화 없음으로 세지 않고 따로 알림
+            if k in x and k in y:
+                p, q = _directness_value(k, x[k]), _directness_value(k, y[k])
+                if p != q:
+                    crit.append({"trial_id": tid, "rule_id": rid, "kind": _code(y.get("kind")), "field": k,
+                                 "group": "directness", "before": p, "after": q,
+                                 "passes_after": y.get("passes") if "passes" in y else "<missing>", **span})
+            elif (k in x) != (k in y):
+                inc.append({"trial_id": tid, "rule_id": rid, "field": k, "reason": "필드가 한쪽 기록에만 있음", **span})
     return trial, crit, inc
 
 
 def _criterion(a: dict) -> dict:
-    return {k: a.get(k) for k in _CRITERION_KEYS if k in a}
+    c = {k: a.get(k) for k in _CRITERION_KEYS if k in a}
+    for k in DIRECTNESS_KEYS:
+        if k in c:
+            c[k] = _directness_value(k, c[k])
+    return c
 
 
 def _trial_titles(ids) -> dict[str, str]:
@@ -743,6 +773,7 @@ def build_view(rec: RunRecord, *, synthetic_details: bool = False) -> dict:
                 "fact_shadow_entries": len(shadows),
                 "verdict_changes": sorted({f"{c['trial_id']}:{c['rule_id']}" for c in into if c["group"] == "verdict"}),
                 "evidence_changes": sorted({f"{c['trial_id']}:{c['rule_id']}" for c in into if c["group"] == "evidence"}),
+                "directness_changes": sorted({f"{c['trial_id']}:{c['rule_id']}" for c in into if c["group"] == "directness"}),
                 "incomparable": sorted({f"{c['trial_id']}:{c['rule_id'] or '(시험)'}" for c in inc}),
                 "comparisons": [p for p in pairs if p["to_round"] == rnd],
                 "trial_changes": [c for c in trial_changes if c["to_round"] == rnd],
@@ -764,10 +795,26 @@ def build_view(rec: RunRecord, *, synthetic_details: bool = False) -> dict:
         return len({(c["trial_id"], c["rule_id"]) for c in rows})
     verdict = [c for c in all_changes if c["group"] == "verdict"]
     evidence = [c for c in all_changes if c["group"] == "evidence"]
-    changes = {"trial": trial_changes, "verdict": verdict, "evidence": evidence, "incomparable": incomparable,
-               "stable_trials": stable, "comparable": bool(pairs),
-               "n_criteria": {"verdict": n_crit(verdict), "evidence": n_crit(evidence),
+    directness = [c for c in all_changes if c["group"] == "directness"]
+    # 직접성 필드가 trace 판정 기록에 있는가 (pipeline.trace_match가 싣지 않으면 라운드 사이 비교 자체가 불가능)
+    directness_in_trace = any(k in x for ev in evals.values() for e in ev for x in e["assessments"] for k in DIRECTNESS_KEYS)
+    directness_in_result = any(k in c for t in trials for c in t["criteria"] for k in DIRECTNESS_KEYS)
+    if pairs and not directness_in_trace:
+        gaps.append("trace 판정 기록에 근거 직접성 필드(evidence_directness·validation_flags·llm_judgment)가 없음: "
+                    "라운드 사이 직접성 변화는 비교할 수 없음 (변화 없음이 아님) - 최종 값(result.json)만 표시")
+    if trials and not directness_in_result:
+        gaps.append("result.json 기준 판정에 근거 직접성 필드 없음 (이전 형식 결과): 직접성 진단을 표시하지 않음")
+    changes = {"trial": trial_changes, "verdict": verdict, "evidence": evidence, "directness": directness,
+               "incomparable": incomparable, "stable_trials": stable, "comparable": bool(pairs),
+               "directness_comparable": bool(pairs) and directness_in_trace,
+               "n_criteria": {"verdict": n_crit(verdict), "evidence": n_crit(evidence), "directness": n_crit(directness),
                               "incomparable": n_crit([c for c in incomparable if c["rule_id"]])}}
+    # 최종 직접성 분포 (result.json 기준 판정의 기록 값 그대로 셈. 필드가 없는 기준은 따로)
+    final_dir: dict[str, int] = {}
+    for t in trials:
+        for c in t["criteria"]:
+            d = c.get("evidence_directness", "<missing>")
+            final_dir[str(d)] = final_dir.get(str(d), 0) + 1
 
     # --- 실행 개요
     if not rec.meta or not isinstance(rec.meta, dict):
@@ -804,6 +851,9 @@ def build_view(rec: RunRecord, *, synthetic_details: bool = False) -> dict:
                     for n, p in sources],
         "n_changes": {k: len(changes[k]) for k in ("trial", "verdict", "evidence", "incomparable")}
         if changes["comparable"] else None,
+        # 직접성 변화는 판정·근거 상태 변화 수치(n_changes)와 따로: None = 비교할 기록 없음 (0건과 다름)
+        "n_directness_changes": len(directness) if changes["directness_comparable"] else None,
+        "directness_final": dict(sorted(final_dir.items())) if directness_in_result else None,
     }
 
     # 계약 판정 출처 (ContractSession result["contract"]): 기준 ID·명제 키·계약·질문·사실 ID·IR 버전·출처·평가 방법.
@@ -888,7 +938,13 @@ _ELIG = {"ELIGIBLE": "적격", "INELIGIBLE": "부적격", "UNCERTAIN": "판정 �
 _GAP = {"ask": "확인 질문", "verify": "문서 확인", "physician": "의사 확인"}
 _FIELD = {"passes": "기준 판정", "holds": "해당 여부", "self_reported_holds": "답변상 해당 여부",
           "needs_verification": "문서 확인 필요", "evidence_source": "근거 출처", "gap": "해소 경로",
-          "eligibility": "시험 판정", "match_status": "외부 상태"}
+          "eligibility": "시험 판정", "match_status": "외부 상태",
+          "evidence_directness": "근거 직접성", "validation_flags": "코드 검증 사유", "llm_judgment": "코드 검증 전 LLM 판정"}
+# schemas.EvidenceDirectness 값의 읽는 이름 (기록 값은 코드 그대로 병기). 목록에 없는 값은 이름 없이 코드만
+_DIRECTNESS = {"direct": "직접 근거", "structured": "구조화 값(규칙 엔진)", "contract": "계약 평가기", "none": "확정 판정 없음",
+               "unchecked": "직접성 검사 대상 밖", "hedged": "추측·불확실 표현", "indirect": "간접 추론",
+               "conflicting": "기록 상충", "question_only": "질문 문장에만 있음", "unlocated": "인용 위치 확인 불가",
+               "unlinked": "답변-질문 연결 확인 불가", "object_mismatch": "대상 불일치", "time_unverified": "기간 확인 불가"}
 _STOP = {"awaiting_user_answers": "사용자 답변 대기", "awaiting_external_input": "외부 입력(문서 등) 대기"}
 CHANGED, SAME, NONE, NA = "▲ 변경", "＝ 변화 없음", "○ 기록 없음", "△ 비교 대상 없음"
 NARRATIVE_FIELDS = {"other_fact"}
@@ -916,7 +972,8 @@ def _calls_card(m: dict | None) -> str:
 def _criteria_change_badge(criteria: list[dict]) -> str:
     """시험 요약 줄: 바뀐 기준 수를 기준 판정 / 근거·확인 상태로 나눠 표시 (같은 기준은 한 번만 셈)."""
     parts = []
-    for group, label in (("verdict", "기준 판정이 변경된 기준"), ("evidence", "근거·확인 상태가 변경된 기준")):
+    for group, label in (("verdict", "기준 판정이 변경된 기준"), ("evidence", "근거·확인 상태가 변경된 기준"),
+                         ("directness", "근거 직접성 진단이 변경된 기준")):
         n = sum(any(x["group"] == group for x in c["changes"]) for c in criteria)
         if n:
             parts.append(f"{_mark(CHANGED)} {label} {n}개")
@@ -935,7 +992,25 @@ def _val(field: str, v: Any) -> str:
         return f'{_badge(v)} <span class="mut">{html.escape(_ELIG.get(v, ""))}</span>'
     if field == "gap" and isinstance(v, str):
         return f'<code>{html.escape(v)}</code> <span class="mut">{html.escape(_GAP.get(v, ""))}</span>'
+    if field == "evidence_directness" and isinstance(v, str):
+        return f'<code>{html.escape(v)}</code> <span class="mut">{html.escape(_DIRECTNESS.get(v, ""))}</span>'
+    if field == "validation_flags" and isinstance(v, list):
+        return " ".join(f"<code>{html.escape(x)}</code>" for x in v) if v else '<span class="mut">없음</span>'
+    if field == "llm_judgment" and isinstance(v, dict):
+        return " · ".join(f'{html.escape(k)}=<code>{_e(x)}</code>' for k, x in v.items()) or '<span class="na">–</span>'
     return _e(v)
+
+
+def _directness_cell(c: dict, field: str) -> str:
+    """기준 상세 표의 직접성 칸. 필드가 없는 이전 형식 기록은 '기록 없음' (값 none/빈 목록과 구분)."""
+    if field not in c:
+        return '<span class="na">기록 없음</span>'
+    s = _val(field, c[field])
+    j = c.get("llm_judgment") if field == "llm_judgment" else None
+    # 기록된 두 값(LLM 원래 해당 여부, 최종 해당 여부)이 다르면 표시만 함 - 다시 판정하지 않음
+    if isinstance(j, dict) and "holds" in j and "holds" in c and j["holds"] != _scalar(c["holds"]):
+        s += f' <span class="chg">▲ 최종 해당 여부 <code>{_e(_scalar(c["holds"]))}</code>와 다름</span>'
+    return s
 
 
 def _elig(v: Any) -> str:
@@ -1014,6 +1089,16 @@ def _span(c: dict) -> str:
     return f'라운드 {_e(c["from_round"])} → {_e(c["to_round"])}'
 
 
+def _directness_card(o: dict) -> str:
+    n, dist = o["n_directness_changes"], o["directness_final"]
+    s = (f'라운드 사이 변경 {n}건' if n is not None
+         else f'{_mark(NONE)} 라운드 사이 비교 기록 없음 <span class="mut">(0건이라는 뜻 아님)</span>')
+    if dist is None:
+        return s + f'<br>{_mark(NONE)} 최종 값 기록 없음 <span class="mut">(이전 형식 결과)</span>'
+    return s + "<br>최종: " + " · ".join(
+        f'<code>{html.escape(k)}</code> {c}' if k != "<missing>" else f'기록 없음 {c}' for k, c in dist.items())
+
+
 def _overview(v: dict) -> str:
     o, run = v["overview"], v["run"]
     out = []
@@ -1058,6 +1143,7 @@ def _overview(v: dict) -> str:
         ("기록 간 불일치·형식 문제", f'<span class="big">{o["n_anomalies"]}</span>'
          + (f' {_mark(CHANGED)}' if o["n_anomalies"] else "")),
         ("연속 평가 기록 비교(계산)", ch),
+        ("근거 직접성 진단 (판정 변화와 별도)", _directness_card(o)),
     ]
     out.append('<div class="kv">' + "".join(f"<div><b>{html.escape(k)}</b>{val}</div>" for k, val in cards) + "</div>")
     out.append('<ul class="src" aria-label="기록 완전성">' + "".join(
@@ -1143,7 +1229,8 @@ def _criteria_line(x: dict) -> str:
     if not x["comparisons"]:
         return _mark(NA) + " (이 라운드로 이어지는 평가 기록 비교 없음)"
     bits = []
-    for label, ids in (("기준 판정", x["verdict_changes"]), ("근거·확인 상태", x["evidence_changes"])):
+    for label, ids in (("기준 판정", x["verdict_changes"]), ("근거·확인 상태", x["evidence_changes"]),
+                       ("근거 직접성", x["directness_changes"])):
         if ids:
             bits.append(f'{_mark(CHANGED)} {label} 바뀐 기준 {len(ids)}개 <code>{_e(ids)}</code>')
     if x["incomparable"]:
@@ -1210,6 +1297,17 @@ def _changes(v: dict) -> str:
         out.append(_table(["시험", "기준", "항목", "사유", "비교 기록"],
                           [[_e(c["trial_id"]), _e(c["rule_id"]), _e(c["field"]), html.escape(c["reason"]), _span(c)]
                            for c in ch["incomparable"]], raw_cols={0, 1, 2, 3, 4}))
+    out.append(f"<h3>⑤ 근거 직접성 진단 변화 <span class=\"mut\">(근거 직접성 · 코드 검증 사유 · 코드 검증 전 LLM 판정) — "
+               + (f"바뀐 기준 {n['directness']}개, 변경 항목 {len(ch['directness'])}건" if ch["directness_comparable"]
+                  else "비교할 기록 없음") + "</span></h3>")
+    out.append('<p class="note">위 ②·③ 수치에 포함하지 않습니다. 코드 검증(근거 직접성 검사)이 남긴 진단 기록이며, '
+               'Inspector가 다시 검사한 결과가 아닙니다.</p>')
+    if not ch["directness_comparable"]:
+        out.append(f"<p>{_mark(NONE)} trace 판정 기록에 직접성 필드가 없어 라운드 사이 변화를 비교할 수 없습니다 "
+                   "(변화 없음이 아님). 최종 값은 D1 기준 표에 있습니다.</p>")
+    else:
+        out.append(_change_rows(ch["directness"], with_verdict=True) if ch["directness"]
+                   else f"<p>{_mark(SAME)} 비교한 기준의 근거 직접성 진단 변화 없음</p>")
     return "\n".join(out)
 
 
@@ -1237,6 +1335,8 @@ def render_html(view: dict) -> str:
         w('<p class="note">추림 사유 문장은 LLM 서술이라 표시하지 않습니다.</p>')
     else:
         w('<p class="note">후보 추림 기록 없음 (추림을 하지 않았거나 기록되지 않음)</p>')
+    w('<p class="note">근거 직접성·코드 검증 사유·코드 검증 전 LLM 판정: result.json에 기록된 최종 값 (코드 검증이 남긴 진단이며 '
+      'Inspector가 다시 검사하지 않음). 근거 문장·인용은 표시하지 않습니다. "기록 없음"은 이 필드가 없는 이전 형식 결과입니다.</p>')
     for t in v["trials"]:
         title = f" · {_e(t['title'])}" if t["title"] else ""
         badge = _criteria_change_badge(t["criteria"])
@@ -1257,9 +1357,12 @@ def render_html(view: dict) -> str:
                          _e(c.get("method")), _passes(c.get("passes")),
                          f'{_mark(CHANGED)}<ul>{chs}</ul>' if chs else "",
                          _gap(c), _e(c.get("evidence_source")), _e(c.get("required_evidence")),
-                         _e(c.get("needs_verification")), _e(c.get("category"))])
+                         _e(c.get("needs_verification")), _directness_cell(c, "evidence_directness"),
+                         _directness_cell(c, "validation_flags"), _directness_cell(c, "llm_judgment"),
+                         _e(c.get("category"))])
         w(_table(["기준", "구분", "기준 원문(공개 시험 정보)", "판정 방법", "최종", "라운드별 변화", "해소 경로", "근거 출처",
-                  "필요 근거", "문서 확인 필요", "분류"], rows, raw_cols=set(range(11))))
+                  "필요 근거", "문서 확인 필요", "근거 직접성", "코드 검증 사유", "코드 검증 전 LLM 판정", "분류"],
+                 rows, raw_cols=set(range(14))))
         w("</details>")
     if v.get("contract"):  # 계약 판정 출처 (ContractSession 기록에만 있음)
         cv = v["contract"]
