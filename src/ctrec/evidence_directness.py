@@ -47,15 +47,49 @@ _EPISTEMIC = re.compile(
 _SOFT = re.compile(r"의심|가능성|\b(?:suspect\w*|suspicio\w*|possib\w*)", re.IGNORECASE)
 _SOFT_NEGATED_AFTER = re.compile(r"^[^,;.!?]{0,10}?(?:없|않|아니)")  # 한국어: 명사 뒤 같은 절의 부정 서술어
 _SOFT_NEGATED_BEFORE = re.compile(r"\b(?:no|not|without|negative\s+for|denies|denied)\b[^,;.!?]{0,30}$", re.IGNORECASE)
-_NEGATION = re.compile(r"\b(?:no|not|none|denies|denied|negative|without|never)\b|없|않|아니|아닙|아님|아닌|음성|부인|"
-                       r"(?<![가-힣])(?:안|못)(?=\s)", re.IGNORECASE)
+# 부정 표현. 한국어는 어절(붙여 쓴 한글 덩어리) 단위로 판별해, 같은 글자열이 다른 낱말의 일부인 경우를 구분함
+# - 영어 부정어와 띄어 쓴 '안'·'못': 낱말 경계로만
+_NEG_WORD = re.compile(r"\b(?:no|not|none|denies|denied|negative|without|never)\b|(?<![가-힣])(?:안|못)(?=\s)",
+                       re.IGNORECASE)
+# - 문법 부정 형태소 없(다)·않(다)·아니(다): 붙여 쓴 기록("이상없음", "임신아님")이 흔해 어절 안 어디서나 부정으로 봄
+_NEG_MORPHEME = re.compile(r"없|않|아니|아닙|아님|아닌")
+# - 단, '없'과 굳어 다른 뜻이 된 부사·형용사(사전 등재어: 끊임없이·틀림없다·변함없이 ...)는 임상 개념의 부재를 말하지 않음
+_LEXICAL_EOPS = re.compile(r"(?:끊임|틀림|어김|빠짐|거침|변함|하염|꾸밈|쉴새|영락|다름)없")
+# - 한자어 부정 명사 否認(부인)·陰性(음성): 같은 글자열이 다른 한자어(婦人: 산부인과·부인과·부인암·부인께서,
+#   音聲: 음성 녹음·음성인식)의 일부일 수 있어, 뒤가 어절 끝이거나 그 명사에 붙는 서술·조사 어미일 때만 부정으로 봄
+_NEG_NOUN = {"부인": re.compile(r"(?:하[가-힣]*|함|했[가-힣]*|한|해[가-힣]*|됨|되[가-힣]*)?"),
+             "음성": re.compile(r"(?:이[가-힣]*|임|입[가-힣]*|인|였[가-힣]*|으로[가-힣]*|을|은|도|"
+                               r"반응[가-힣]*|판정[가-힣]*|소견[가-힣]*)?")}
+_HANGUL_RUN = re.compile(r"[가-힣]+")
+# 대상어 비교에서 뺄 낱말: 낱말 전체가 부정어인 것 (이전 규칙 그대로)
+_NEG_WHOLE = re.compile(r"no|not|none|denies|denied|negative|without|never|없|않|아니|아닙|아님|아닌|음성|부인", re.IGNORECASE)
+
+
+def _negation_token(token: str) -> bool:
+    """한글 어절 하나가 부정 표현을 담고 있는가 (_negated 참고)."""
+    if _NEG_MORPHEME.search(_LEXICAL_EOPS.sub(" ", token)):
+        return True
+    for noun, ending in _NEG_NOUN.items():
+        for m in re.finditer(noun, token):
+            if ending.fullmatch(token[m.end():]):
+                return True
+    return False
+
+
+def _negated(text: str) -> bool:
+    """부정 표현이 있는가. 낱말 안의 같은 글자열(산부인과의 '부인', 음성 녹음의 '음성', 끊임없이의 '없')은 부정이 아님.
+    의미 판정이 아니라 표기 판별입니다: 부정이 무엇을 부정하는지(개념·대상)는 다른 검사(_objects·_covers)가 봅니다."""
+    return bool(_NEG_WORD.search(text)) or any(_negation_token(t) for t in _HANGUL_RUN.findall(text))
 # 기준 문장 자체가 '없음'을 요구하는가 ("No rituximab ...", "without prior ...", "~ 없음"). 'negative'(검사 결과값)는 제외
 _CRITERION_NEGATION = re.compile(
     r"^\s*(?:no|not|none|without|never|absence\s+of|free\s+of)\b|"
     r"\b(?:with\s+no|without|has\s+not|have\s+not|has\s+never|have\s+never|did\s+not|does\s+not|no\s+(?:prior|previous|"
     r"known|history|evidence|use))\b|(?:없음|없는|없을|않은|않음|아닌|아님)\s*\.?\s*$", re.IGNORECASE)
+# P9: 있음·없음 서술 뒤의 대등 연결 어미(-고·-(으)며)도 절 경계 ("페니실린 알레르기는 없고 조영제 알레르기 있음"이
+# 한 절로 묶여 '없'이 조영제 진술의 극성이 되던 문제). '보고'·'사고' 같은 명사의 '고'는 앞 글자 조건으로 제외
 _CLAUSE_BOUNDARY = re.compile(r"[,;]|(?<=[.!?。])\s|\s(?:but|however|although|though|whereas)\s|"
-                              r"(?:는데|한데|인데|던데|지만|으나)(?=\s|$)", re.IGNORECASE)
+                              r"(?:는데|한데|인데|던데|지만|으나)(?=\s|$)|"
+                              r"(?:(?<=없)|(?<=있)|(?<=않)|(?<=아니))(?:고|으며|며)(?=\s)", re.IGNORECASE)
 _SENTENCE_BOUNDARY = re.compile(r"(?<=[.!?。])\s")
 _TOKEN = re.compile(r"[a-z][a-z0-9]*|[가-힣]+", re.IGNORECASE)
 # 대상 비교에서 빼는 일반 단어 (기능어·극성어·서술어·기록 표지). 한국어는 접두로 비교(조사가 붙은 형태)
@@ -157,7 +191,7 @@ def hedged(clause: str) -> bool:
 def polarity(clause: str) -> str:
     if hedged(clause):
         return "uncertain"
-    return "negative" if _NEGATION.search(clause) else "positive"
+    return "negative" if _negated(clause) else "positive"
 
 
 def _flip(p: str) -> str:
@@ -172,10 +206,14 @@ class Segment:
     body_start: int  # 내용 시작 위치 (Q:/A: 다음)
     start: int  # 이어 붙인 원문에서의 시작 위치
     question: "Segment | None" = None  # 답변이면 바로 앞 질문
+    round: int | None = None  # 확인 질문 라운드 ("[추가 확인 정보 - 라운드 N]" 머리말 아래). 처음 입력은 None
 
     @property
     def body(self) -> str:
         return self.text[self.body_start:]
+
+
+_ROUND = re.compile(r"라운드\s*(\d+)")
 
 
 def parse_source(source_text: str) -> tuple[str, list[Segment]]:
@@ -183,6 +221,7 @@ def parse_source(source_text: str) -> tuple[str, list[Segment]]:
     segs: list[Segment] = []
     joined = ""
     last_q: Segment | None = None
+    round_no: int | None = None
     for line in source_text.split("\n"):
         t = _norm(line)
         if not t:
@@ -190,6 +229,8 @@ def parse_source(source_text: str) -> tuple[str, list[Segment]]:
         if t.startswith("[추가 확인 정보"):
             role, body = "header", len(t)
             last_q = None
+            m = _ROUND.search(t)
+            round_no = int(m.group(1)) if m else None
         elif t[:2] in ("q:", "a:"):
             role = "question" if t[0] == "q" else "answer"
             body = len(t) - len(t[2:].lstrip())
@@ -197,7 +238,8 @@ def parse_source(source_text: str) -> tuple[str, list[Segment]]:
             role, body = "record", 0
         if joined:
             joined += " "
-        seg = Segment(role, t, body, len(joined), last_q if role == "answer" else None)
+        seg = Segment(role, t, body, len(joined), last_q if role == "answer" else None,
+                      round_no if role in ("question", "answer") else None)
         if role == "question":
             last_q = seg
         segs.append(seg)
@@ -270,11 +312,48 @@ def _short(answer: str) -> bool:
 
 
 def _linked(seg: Segment, key: str | None, qa_log) -> bool:
-    """답변 줄이 질문 ID·대상 기준(<trial>:<rule>)·답변으로 연결되는가 (Session.qa_log 기록 기준)."""
+    """답변 줄이 qa_log의 한 기록(라운드·질문 ID·질문 문장·답·대상 기준 <trial>:<rule>)과 연결되는가.
+
+    question_id는 라운드마다 Q1부터 다시 매겨지므로 라운드까지 맞아야 같은 기록으로 봄. qa_log는 호출 쪽에서
+    이 세션의 기록만 남긴 것(check의 session_id 필터)이어야 함. (fix/qa-evidence-link의 구조 연결 검사)
+    """
     if not (key and qa_log and seg.question):
         return False
     q, a = seg.question.body, seg.body
-    return any(_norm(p.question) == q and _norm(p.answer) == a and key in p.target and p.question_id for p in qa_log)
+    return any(_norm(p.question) == q and _norm(p.answer) == a and p.question_id
+               and (seg.round is None or p.round == seg.round) for p in eligibility_answers(key, qa_log))
+
+
+def non_answer(answer: str | None) -> bool:
+    """사실을 말하지 않은 답(모름·거부·확인 불가·미응답·공백) 전체. 판별은 question_contract.non_answer 하나이고, 이 이름은
+    fix/qa-evidence-link의 API(evidence_directness.non_answer)를 그대로 쓰는 호출 쪽을 위해 둠."""
+    from .question_contract import non_answer as _non_answer  # 순환 import 방지 (question_contract -> decision_state)
+    return _non_answer(answer)
+
+
+def eligibility_answers(key: str | None, qa_log) -> list:
+    """이 기준(<trial>:<rule>)을 겨냥한 적격성 확인 문답만. 의사 참고용(physician_reference) 문답은 판정 근거가 아님
+    (판정을 바꾸지 않는 참고 정보 수집용). 세션 필터는 호출 쪽(check의 session_id)이 먼저 적용."""
+    if not (key and qa_log):
+        return []
+    return [p for p in qa_log if key in (p.target or []) and getattr(p, "purpose", "eligibility") == "eligibility"]
+
+
+def answers_revised(key: str | None, qa_log) -> bool:
+    """같은 기준을 겨냥한 같은 질문(문장 동일)에 서로 다른 답이 있는가 (답 수정). 모름·거부·미응답은 비교하지 않음.
+
+    fix/qa-evidence-link의 answers_conflict 중 '질문 문장이 같으면 같은 사실' 규칙만 남긴 구조 검사입니다. 질문 주제·
+    기간이 같은지 문자열로 추측하는 규칙(_same_topic·기간 포함 관계)은 옮기지 않음 - 다른 질문 사이의 관계는 질문 계약의
+    명제 키가 정합니다(question_contract). 표기만 다른 같은 답("예"/"네")도 수정으로 봄(확정하지 않는 쪽, 보수적).
+    """
+    seen: dict[str, str] = {}
+    for p in eligibility_answers(key, qa_log):
+        if non_answer(p.answer):
+            continue
+        q, a = _norm(p.question), _norm(p.answer).strip(" .!")
+        if seen.setdefault(q, a) != a:
+            return True
+    return False
 
 
 @dataclass
@@ -286,6 +365,7 @@ class _Evidence:
     polarity: str
     question: str = ""  # 답변이면 연결된 질문 (대상 범위 보충용, 진술로 쓰지 않음)
     linked: bool = False  # qa_log로 연결된 짧은 답변 (질문 + 답으로 극성을 정할 수 있음)
+    non_answer: bool = False  # 답 전체가 모름·거부·미응답 (확정 근거가 될 수 없음)
 
 
 def _evidence_units(hits: list[Hit], key: str | None, qa_log) -> tuple[list[_Evidence], list[str]]:
@@ -299,6 +379,10 @@ def _evidence_units(hits: list[Hit], key: str | None, qa_log) -> tuple[list[_Evi
         if ident in seen:
             continue
         seen.add(ident)
+        if h.seg.role == "answer" and non_answer(body):  # "답변하지 않겠습니다"의 '않'을 부재 진술로 읽지 않음
+            q = h.seg.question.body if h.seg.question else ""
+            units.append(_Evidence(body, body, body, "uncertain", q, non_answer=True))
+            continue
         if h.seg.role == "answer" and _short(body):
             if not _linked(h.seg, key, qa_log):
                 problems.append("answer_not_linked")
@@ -308,9 +392,9 @@ def _evidence_units(hits: list[Hit], key: str | None, qa_log) -> tuple[list[_Evi
             if hedged(ans):
                 pol = "uncertain"
             elif ans in _YES:
-                pol = "negative" if _NEGATION.search(q) else "positive"
+                pol = "negative" if _negated(q) else "positive"
             elif ans in _NO:
-                pol = _flip("negative" if _NEGATION.search(q) else "positive")
+                pol = _flip("negative" if _negated(q) else "positive")
             else:
                 pol = polarity(ans)
             units.append(_Evidence(ans, f"{q} {ans}", ans, pol, q, linked=True))
@@ -333,7 +417,7 @@ def _objects(text: str, concept: Concept | None) -> tuple[set[str], set[str]]:
                 rest = o.pattern.sub(" ", rest)
     words = set()
     for t in _TOKEN.findall(rest):
-        if len(t) < 2 or t in _STOP or t.startswith(_STOP_KO) or _NEGATION.fullmatch(t) or hedged(t):
+        if len(t) < 2 or t in _STOP or t.startswith(_STOP_KO) or _NEG_WHOLE.fullmatch(t) or hedged(t):
             continue
         if concept and (concept.direct.search(t) or concept.criterion.search(t)):
             continue
@@ -424,13 +508,17 @@ def _within(text: str, days: int, reference_date: str | None) -> bool:
 # ---------------------------------------------------------------------------- 검사
 def check(criterion_text: str, evidence_text: str, source_text: str | None, *, holds: str = "yes",
           applicable: bool = True, category: str = "other", time_window_days: int | None = None,
-          reference_date: str | None = None, key: str | None = None, qa_log=None) -> Check:
+          reference_date: str | None = None, key: str | None = None, qa_log=None,
+          session_id: str | None = None) -> Check:
     """확정 판정 근거의 필요조건 검사. 인용이 원문에 있다는 것은 _enforce_quote가 이미 확인했다고 가정.
 
     key: "<trial_id>:<rule_id>" (짧은 답변 연결 확인용), qa_log: Session.qa_log (없으면 짧은 답변은 근거로 쓰지 않음)
+    session_id: 주면 그 세션에서 만든 qa_log 기록만 씀(다른 환자·세션 기록 혼입 방지, session_id 없는 기록도 제외)
     """
     if source_text is None:
         return Check("unchecked", ["no_source_text"])
+    if qa_log and session_id is not None:
+        qa_log = [p for p in qa_log if getattr(p, "session_id", None) == session_id]
     found, hits = locate(evidence_text, source_text)
     if not found:
         return Check("unlocated", ["quote_not_located"])
@@ -444,6 +532,10 @@ def check(criterion_text: str, evidence_text: str, source_text: str | None, *, h
     _, segs = parse_source(source_text)
     if _conflicts(units, segs, concept):
         return Check("conflicting", ["conflicting_evidence"], cname)
+    if answers_revised(key, qa_log):  # 같은 질문에 답을 바꿈: 어느 답으로도 확정하지 않고 기록 확인
+        return Check("conflicting", ["conflicting_answers"], cname)
+    if any(u.non_answer for u in units):
+        return Check("hedged", ["non_answer"], cname)  # 모름·거부·미응답은 어느 쪽 근거도 아님
     if any(u.polarity == "uncertain" or hedged(u.clause) for u in units):
         return Check("hedged", ["hedged_quote"], cname)
     if not applicable:  # '해당 없음': 대상 집단이 아님을 말하는 근거. 기준 본문의 대상·기간·검사 요건은 적용하지 않음
@@ -456,7 +548,7 @@ def check(criterion_text: str, evidence_text: str, source_text: str | None, *, h
     absence = (holds == "no") != negated_criterion
     # 극성 대응은 기준에 부정어·결과값('negative', '음성' 등)이 하나라도 있으면 건너뜀: "Negative pregnancy test"처럼
     # 근거의 '음성'이 충족을 뜻하는 기준을 코드가 구분할 수 없음 (보수적으로 막지 않고 LLM 판정을 둠 - 보고서의 한계)
-    polarity_checkable = not _NEGATION.search(criterion_text)
+    polarity_checkable = not _negated(criterion_text)
     # 연결된 짧은 답변(예/아니요)은 질문과 답으로 극성이 정해지므로 개념군 밖 기준에도 판정과 맞는지 확인
     # (질문이 기준과 반대 방향으로 물었으면 맞지 않는 것으로 보여 보류됨 - 보수적)
     if polarity_checkable and any(
