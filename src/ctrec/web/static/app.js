@@ -925,8 +925,9 @@ function condRow(tid, a, g, said) {
   const name = critLabel(a), [state0, mark] = GROUP_UI[g];
   // 오른쪽 상태 이름은 짧게, 설명은 한 줄 (줄글 대신)
   let stateText = state0, desc = "";
-  if (g === "met") { stateText = "확인됨"; desc = a.method === "rule_engine" ? "규칙으로 계산" : "AI 판정 · 검증된 사실 아님"; }
-  if (g === "not_met") stateText = a.kind === "exclusion" ? "제외 기준 해당" : "맞지 않음";
+  const how = a.method === "rule_engine" ? "규칙으로 계산" : "AI 판정 · 검증된 사실 아님";  // 판정(충족·불충족)은 누가 했는지 표시
+  if (g === "met") { stateText = "확인됨"; desc = how; }
+  if (g === "not_met") { stateText = a.kind === "exclusion" ? "제외 기준 해당" : "맞지 않음"; desc = how; }
   if (g === "record_check") { stateText = "서류 확인 필요"; desc = (said === "yes" ? "답변과 일치 · " : "") + "검사 결과지·진료 기록으로 확정"; }
   if (g === "missing") { stateText = "정보 부족"; desc = a.missing_info ? `필요: ${a.missing_info}` : "불충족 아님"; }
   if (g === "physician_review") { stateText = "연구진 판단"; desc = "기준에 구체적인 값 없음 · 의사가 프로토콜과 대조"; }
