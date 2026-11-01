@@ -39,7 +39,7 @@ from ctrec.decision_state import Action as LegacyAction
 |---|---|---|---|
 | I-1 | `PairKey`, `PairStatus` | patient_alias, trial_id / 7개 상태 | 별칭 형식, 전이 표 `ALLOWED_TRANSITIONS`, `check_transition(before, after, authority)` |
 | I-2 | `CriterionResult` | pair, rule_id, state, adjudication, decided_by, required_evidence, evidence_satisfied, evidence_fact_ids, inputs_used, gap, evaluator_version, criterion_version | 판정 권한 (§2-3) |
-| I-3 | `Action` | action_id, action_type, patient_alias, source_id, target_trial_ids, target_criteria, expected_cost, reason_code, tier, value_score, safety_required, fingerprint, legacy_action_id, policy_version | target_criteria의 시험 ⊆ target_trial_ids, 키 형식 |
+| I-3 | `Action` | action_id, action_type, patient_alias, source_id, target_trial_ids, target_criteria, expected_cost, reason_code, tier, value_score, priority, sequence, safety_required, fingerprint, legacy_action_id, policy_version | target_criteria의 시험 ⊆ target_trial_ids, 키 형식 |
 | I-4 | `ActionOutcome` | action_id, status(succeeded/partial/failed/no_response/not_executed), new_fact_ids, cost_charged, charge_keys, latency_minutes, error_code | 실패·무응답·미실행 → 사실 0개, 실패·무응답 → error_code 필수, 부분 성공 → 사실 ≥1, 미실행 → 비용 0 |
 | I-5 | `InformationSource` | source_id, kind, provides_fields, request_cost, per_item_minutes, can_verify, alternatives | 자기 자신을 대체로 둘 수 없음 |
 | I-6 | `EffortBudget` | coordinator_minutes, clinician_minutes, llm_cost_usd, per_patient_floor_minutes, per_patient_cap_minutes, horizon_steps | floor ≤ cap, floor ≤ 전체 |
@@ -59,7 +59,7 @@ from ctrec.decision_state import Action as LegacyAction
 | BLOCKED_FAILURE | 확보 행동이 실패·무응답으로 소진되어 보류 |
 | NOT_EVALUATED | 평가 실패 (부적격 아님) |
 
-`derive_pair_status(eligibility, gaps, mismatch, exhausted)` — UNCERTAIN일 때 다음에 필요한 작업 종류 순: 확보 소진 > 정보 없음(missing/stale) > 확인 필요(unverified/conflict) > 임상의 판단(physician_review). UNCERTAIN은 어떤 gap 조합으로도 확정 상태가 되지 않습니다(테스트로 전수 확인).
+`derive_pair_status(eligibility, gaps, mismatch, exhausted)` — UNCERTAIN일 때 다음에 필요한 작업 종류 순: 정보 없음(missing/stale) > 확인 필요(unverified/conflict) > 임상의 판단(physician_review). 확보 수단 소진(exhausted)은 INFO_MISSING·VERIFICATION_PENDING만 BLOCKED_FAILURE로 바꿈(임상의 판단 대기는 그대로). UNCERTAIN은 어떤 gap 조합으로도 확정 상태가 되지 않습니다(테스트로 전수 확인).
 
 전이 규칙:
 - 같은 상태 유지는 항상 허용. 열린 상태(INFO_MISSING 등)와 NOT_EVALUATED에서는 어디로든 갈 수 있음

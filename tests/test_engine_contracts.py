@@ -191,6 +191,9 @@ def test_policy_cannot_change_clinical_status():
     ("UNCERTAIN", {"conflict"}, None, False, "VERIFICATION_PENDING"),
     ("UNCERTAIN", {"physician_review"}, None, False, "EXPERT_REVIEW"),
     ("UNCERTAIN", {"missing"}, None, True, "BLOCKED_FAILURE"),
+    ("UNCERTAIN", {"unverified"}, None, True, "BLOCKED_FAILURE"),
+    ("UNCERTAIN", {"physician_review"}, None, True, "EXPERT_REVIEW"),
+    ("ELIGIBLE", set(), None, True, "CONFIRMED_ELIGIBLE"),
     ("UNCERTAIN", set(), None, False, "INFO_MISSING"),
 ])
 def test_derive_pair_status_table(elig, gaps, mismatch, exhausted, expected):

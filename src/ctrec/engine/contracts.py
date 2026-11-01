@@ -121,8 +121,9 @@ def derive_pair_status(eligibility: str, gaps: set[str] | frozenset[str] | list[
                        exhausted: bool = False) -> PairStatus:
     """기존 판정(TrialMatch.eligibility) + 열린 경로의 필수 기준 gap -> PairStatus (02 문서 M5). 판정을 바꾸지 않음.
 
-    UNCERTAIN일 때 우선순위: 확보 소진(BLOCKED_FAILURE) > 정보 없음(missing/stale) > 확인 필요(unverified/conflict)
-    > 임상의 판단만 남음(physician_review) > 그 밖(INFO_MISSING). 다음에 필요한 작업의 종류를 나타냄.
+    UNCERTAIN일 때 우선순위: 정보 없음(missing/stale) > 확인 필요(unverified/conflict) > 임상의 판단만 남음
+    (physician_review) > 그 밖(INFO_MISSING). 다음에 필요한 작업의 종류를 나타냄. 확보 수단이 소진되면(exhausted)
+    INFO_MISSING·VERIFICATION_PENDING만 BLOCKED_FAILURE가 됨 (정책 권한 전이 POLICY_TRANSITIONS와 같은 범위).
     INELIGIBLE이라도 불충족 근거가 문서로 검증되지 않았으면(mismatch=provisional) 확정이 아님.
     """
     g = set(gaps) - {"none"}
@@ -136,15 +137,17 @@ def derive_pair_status(eligibility: str, gaps: set[str] | frozenset[str] | list[
         return PairStatus.CONFIRMED_ELIGIBLE
     if eligibility != "UNCERTAIN":
         raise ValueError(f"알 수 없는 판정 값: {eligibility!r}")
-    if exhausted:
-        return PairStatus.BLOCKED_FAILURE
     if g & {"missing", "stale"}:
-        return PairStatus.INFO_MISSING
-    if g & {"unverified", "conflict"}:
-        return PairStatus.VERIFICATION_PENDING
-    if "physician_review" in g:
-        return PairStatus.EXPERT_REVIEW
-    return PairStatus.INFO_MISSING
+        base = PairStatus.INFO_MISSING
+    elif g & {"unverified", "conflict"}:
+        base = PairStatus.VERIFICATION_PENDING
+    elif "physician_review" in g:
+        base = PairStatus.EXPERT_REVIEW  # 임상의 판단은 정보원 소진과 무관하게 남음
+    else:
+        base = PairStatus.INFO_MISSING
+    if exhausted and base in (PairStatus.INFO_MISSING, PairStatus.VERIFICATION_PENDING):
+        return PairStatus.BLOCKED_FAILURE
+    return base
 
 
 # ---------------------------------------------------------------------------
@@ -260,6 +263,8 @@ class Action(_Frozen):
     reason_code: str = Field(pattern=CODE_PATTERN)
     tier: int = Field(ge=0, le=9)
     value_score: float = 0.0  # 구조적 점수 (확률 아님, 같은 단계 안의 순서에만)
+    priority: float = 0.0  # 작을수록 먼저. 기존 정책의 priority를 그대로 옮김 (0.1 추가 필드)
+    sequence: NonNegativeInt = 0  # 같은 환자 안에서 기존 정책이 정한 순서 (동점 처리, 0.1 추가 필드)
     safety_required: bool = False  # 안전상 필수 확인 (상충 근거 등) - 최적화로 버리지 않음
     fingerprint: str = Field(min_length=1)
     legacy_action_id: str | None = None
