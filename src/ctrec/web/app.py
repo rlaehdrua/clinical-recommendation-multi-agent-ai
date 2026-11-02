@@ -512,7 +512,8 @@ def index() -> FileResponse:
 
 # 화면 정적 파일: 이름을 정해 둔 파일만 (경로 조작 불가). 외부 라이브러리는 VENDOR.md 참고
 STATIC_FILES = {"app.js": "text/javascript", "app.css": "text/css", "marked.min.js": "text/javascript",
-                "purify.min.js": "text/javascript", "logo.svg": "image/svg+xml"}
+                "purify.min.js": "text/javascript", "logo.svg": "image/svg+xml",
+                "cohort.js": "text/javascript", "cohort.css": "text/css"}
 
 
 @app.get("/static/{name}")
@@ -595,6 +596,42 @@ _PATIENTS_KO_FILE = config.DATA_DIR / "i18n" / "patients_ko.json"
 def trials_ko() -> dict:
     """시험 제목·질환·기준 번역. 공개 시험 정보뿐이며 환자 정보 없음 (소유권 확인 불필요)."""
     return json.loads(_KO_FILE.read_text(encoding="utf-8")) if _KO_FILE.exists() else {}
+
+
+# 노벨티 후보 A 연구용 코호트 현황판 (읽기 전용). 합성 데이터만 보여 주며 실제 환자 정보는 없음.
+# 데이터: scripts/build_cohort_benchmark.py generate 출력(data/cache/cohort/<설정 해시>/) 중 가장 최근 세트
+COHORT_DIR = config.CACHE_DIR / "cohort"
+
+
+def _latest_cohort_set() -> tuple[Path, dict] | None:
+    sets = [p for p in COHORT_DIR.glob("*/report.json")] if COHORT_DIR.exists() else []
+    if not sets:
+        return None
+    report = max(sets, key=lambda p: p.stat().st_mtime)
+    return report.parent, json.loads(report.read_text(encoding="utf-8"))
+
+
+@app.get("/cohort")
+def cohort_page() -> FileResponse:
+    return FileResponse(STATIC / "cohort.html", headers={"Cache-Control": "no-cache"})
+
+
+@app.get("/api/cohorts")
+def list_cohorts() -> dict:
+    found = _latest_cohort_set()
+    if found is None:
+        return {"config_hash": None, "generator": None, "cohorts": []}
+    _, report = found
+    return {"config_hash": report.get("config_hash"), "generator": report.get("generator"), "cohorts": report.get("cohorts", [])}
+
+
+@app.get("/api/cohorts/{cohort_id}")
+def get_cohort(cohort_id: str) -> dict:
+    found = _latest_cohort_set()
+    # 보고서에 있는 ID만 (경로 조작 불가)
+    if found is None or cohort_id not in {c.get("cohort_id") for c in found[1].get("cohorts", [])}:
+        raise HTTPException(404, "찾을 수 없습니다.")
+    return json.loads((found[0] / f"{cohort_id}.json").read_text(encoding="utf-8"))
 
 
 @app.post("/api/runs")
