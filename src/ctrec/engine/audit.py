@@ -23,8 +23,8 @@ from typing import Iterable
 
 from pydantic import ValidationError
 
-from .contracts import (DECISION_RECORD_SCHEMA, Action, ActionOutcome, CriterionChange, DecisionRecord, PairKey,
-                        PairStatus, PairTransition)
+from .contracts import (CONFIRMED, DECISION_RECORD_SCHEMA, Action, ActionOutcome, CriterionChange, DecisionRecord,
+                        PairKey, PairStatus, PairTransition)
 
 TRACE_AGENT = "engine"
 TRACE_EVENT = "decision_record_v2"
@@ -48,12 +48,16 @@ def make_record(*, run_id: str, step: int, action: Action, outcome: ActionOutcom
                 pair_before: dict[str, PairStatus | str] | None = None,
                 pair_after: dict[str, PairStatus | str] | None = None,
                 pair_authority: str = "adjudication", policy_version: str, evaluator_version: str | None = None,
-                fact_version_before: str | None = None, fact_version_after: str | None = None) -> DecisionRecord:
+                fact_version_before: str | None = None, fact_version_after: str | None = None,
+                pair_reasons: dict[str, str] | None = None,
+                pair_pending: dict[str, Iterable[str]] | None = None) -> DecisionRecord:
     """판정 계층이 준 전후 상태로 기록을 만듦 (여기서 판정하지 않음).
 
     criteria_*: {"<trial>:<rule>": MET/NOT_MET/UNKNOWN/NEEDS_FULL_EVALUATION}
     reevaluated: 이번에 다시 판정한 기준 키. 나머지 중 전후 기록이 있는 기준은 재사용(reevaluated=False)으로 남김.
     pair_*: {trial_id: PairStatus}. 쌍 키의 환자는 action.patient_alias.
+    pair_reasons: {trial_id: 사유 코드} (0.2). 확정에서 내려가거나 다시 확정할 때 contracts.REVERSAL_REASON_CODES 사용.
+    pair_pending: {trial_id: 남은 작업 종류} (0.2, cohort_state.PairState.pending_kinds).
     """
     cb, ca = dict(criteria_before or {}), dict(criteria_after or {})
     re_set = set(reevaluated)
@@ -70,9 +74,10 @@ def make_record(*, run_id: str, step: int, action: Action, outcome: ActionOutcom
             evaluator_version=evaluator_version if is_re else None,
             evidence_fact_ids=tuple((criterion_evidence or {}).get(key, ()))))
     pb, pa = dict(pair_before or {}), dict(pair_after or {})
+    reasons, pending = dict(pair_reasons or {}), {k: tuple(sorted(v)) for k, v in (pair_pending or {}).items()}
     pairs = [PairTransition(pair=PairKey(patient_alias=action.patient_alias, trial_id=t),
                             before=PairStatus(pb.get(t, pa.get(t))), after=PairStatus(pa.get(t, pb.get(t))),
-                            authority=pair_authority)
+                            authority=pair_authority, reason_code=reasons.get(t), pending_kinds=pending.get(t, ()))
              for t in sorted(set(pb) | set(pa))]
     return DecisionRecord(run_id=run_id, step=step, action=action, outcome=outcome,
                           facts_added=tuple(outcome.new_fact_ids) if outcome else (), criteria=tuple(changes),
@@ -168,7 +173,31 @@ def parse_records(items: Iterable[tuple[int, object]]) -> LoadResult:
     if len({r.run_id for r in out.records}) > 1:
         out.issues.append("multiple_run_ids")
     out.records.sort(key=lambda r: (r.run_id, r.step))
+    out.issues.extend(reversal_issues(out.records))
     return out
+
+
+def reversal_issues(records: Iterable[DecisionRecord]) -> list[str]:
+    """확정 상태 역전 추적 검사 (0.2). 기록을 step 순서로 읽어 쌍마다 마지막 확정 값을 기억합니다.
+
+    - 확정에서 내려갈 때(확정 -> 대기·검토·평가 실패) 사유 코드가 없으면 `unexplained_confirmed_downgrade:<step>`
+    - 반대 확정(이전 확정과 다른 확정)에 도달한 기록이 새 근거 사실 없이(facts_added 비어 있음) 확정하면
+      `reversal_without_new_evidence:<step>` — 반대 확정은 별도 근거 확인 이후에만 가능
+    코드·step만 보고합니다(값 없음). 직접 전이(확정 -> 반대 확정)는 계약(ALLOWED_TRANSITIONS)이 이미 거부합니다.
+    """
+    last_confirmed: dict[str, PairStatus] = {}
+    issues = []
+    for r in sorted(records, key=lambda x: (x.run_id, x.step)):
+        for t in r.pairs:
+            key = f"{r.run_id}|{t.pair.key}"
+            if t.before in CONFIRMED and t.after not in CONFIRMED and t.reason_code is None:
+                issues.append(f"unexplained_confirmed_downgrade:{r.step}")
+            if t.after in CONFIRMED:
+                prev = last_confirmed.get(key)
+                if prev is not None and prev != t.after and t.before != t.after and not r.facts_added:
+                    issues.append(f"reversal_without_new_evidence:{r.step}")
+                last_confirmed[key] = t.after
+    return issues
 
 
 def load_records(path: Path) -> LoadResult:
@@ -260,7 +289,8 @@ def build_v2_view(loaded: LoadResult) -> dict:
                           "reason_code": c.reason_code, "changed": c.before != c.after,
                           "evidence_fact_ids": list(c.evidence_fact_ids)} for c in r.criteria],
             "pairs": [{"pair": t.pair.key, "before": t.before.value, "after": t.after.value,
-                       "changed": t.before != t.after} for t in r.pairs],
+                       "changed": t.before != t.after, "reason_code": t.reason_code,
+                       "pending_kinds": list(t.pending_kinds)} for t in r.pairs],
             "versions": {"policy": r.policy_version, "evaluator": r.evaluator_version,
                          "fact_before": r.fact_version_before, "fact_after": r.fact_version_after,
                          "contract": r.contract_version},

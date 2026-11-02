@@ -15,7 +15,7 @@ from types import MappingProxyType
 
 from ..decision_state import CriterionState as LegacyCriterion
 from ..decision_state import DecisionState
-from .contracts import ALIAS_PATTERN, CriterionResult, PairKey, PairStatus, derive_pair_status
+from .contracts import ALIAS_PATTERN, CriterionResult, PairKey, PairStatus, derive_pair_status, pending_kinds
 
 EVALUATOR_ADAPTER = "legacy_decision_state"
 
@@ -28,6 +28,8 @@ class PairState:
     open: bool  # 모집 중
     criteria: tuple[CriterionResult, ...] = ()
     gaps: frozenset[str] = frozenset()
+    pending_kinds: frozenset[str] = frozenset()  # 0.2: 남은 작업 전체 (status는 우선순위 하나만)
+    mismatch: str | None = None  # 기존 decision_state 불충족 확정 수준 (none/provisional/confirmed)
 
 
 @dataclass(frozen=True)
@@ -44,6 +46,7 @@ class PatientSlice:
     pairs: tuple[PairState, ...]
     fact_version: str
     _legacy: DecisionState = field(repr=False, compare=False)
+    _overrides: MappingProxyType = field(default_factory=lambda: MappingProxyType({}), repr=False, compare=False)
 
     def legacy_copy(self) -> DecisionState:
         return self._legacy.model_copy(deep=True)
@@ -66,20 +69,56 @@ def criterion_result(alias: str, c: LegacyCriterion) -> CriterionResult:
         pair=PairKey(patient_alias=alias, trial_id=c.trial_id), rule_id=c.rule_id, state=state, adjudication=adj,
         decided_by=by, required_evidence=c.required_evidence if c.required_evidence in ("self_report_ok",
                                                                                          "clinical_record")
-        else "clinical_record", evidence_satisfied=state != "UNKNOWN" and c.gap == "none",
+        else "clinical_record", evidence_satisfied=state != "UNKNOWN" and c.gap == "none" and not c.conflict_on_decided,
         evidence_fact_ids=tuple(c.evidence_refs), gap=c.gap,
         inputs_used=tuple(rec.used_fields) if rec and rec.inputs_verified and rec.used_fields else None,
         evaluator_version=f"{EVALUATOR_ADAPTER}:{rec.engine if rec else 'unknown'}",
         criterion_version=rec.criterion_version if rec else None)
 
 
-def _pair_states(alias: str, st: DecisionState, ops: OpsState) -> tuple[PairState, ...]:
+class OverrideError(ValueError):
+    pass
+
+
+def _override(base: CriterionResult, overrides: dict[str, CriterionResult]) -> CriterionResult:
+    """판정 출처를 더 정확한 기록으로 바꿈 (예: engine.contract_bridge의 contract_evaluator 결과).
+
+    판정 값(state)·쌍은 바꿀 수 없음 — 다르면 OverrideError. 이 함수는 판정을 만들지 않고 출처·근거 정보만 보충합니다.
+    """
+    o = overrides.get(base.criterion_key)
+    if o is None:
+        return base
+    if o.pair != base.pair or o.state != base.state:
+        raise OverrideError(f"{base.criterion_key}: 출처 보충이 판정 값을 바꿈 ({base.state} -> {o.state})")
+    return o
+
+
+def required_gaps(t) -> frozenset[str]:
+    """판정에 적용된 기준(required)의 gap. 다른 코호트 기준(alternative_cohort, OR의 다른 갈래)과 절차 기준(waivable)은
+    제외하므로 닫힌 갈래의 gap이 열린 경로를 미해결로 만들지 않음. 확정 판정(MET/NOT_MET)의 근거가 상충하면
+    (conflict_on_decided) 그 기준은 gap이 none이어도 확인이 필요하므로 conflict로 셈 (0.2)."""
+    out = set()
+    for c in t.criteria:
+        if c.requirement != "required":
+            continue
+        if c.gap != "none":
+            out.add(c.gap)
+        if c.conflict_on_decided:
+            out.add("conflict")
+    return frozenset(out)
+
+
+def _pair_states(alias: str, st: DecisionState, ops: OpsState,
+                 overrides: dict[str, CriterionResult] | None = None) -> tuple[PairState, ...]:
     out = []
+    overrides = overrides or {}
     for tid, t in sorted(st.trials.items()):
-        crit = tuple(criterion_result(alias, c) for c in t.criteria)
-        gaps = frozenset(c.gap for c in t.criteria if c.requirement == "required")
-        status = derive_pair_status(t.eligibility, gaps, t.mismatch, exhausted=tid in ops.exhausted_trials)
-        out.append(PairState(PairKey(patient_alias=alias, trial_id=tid), status, t.eligibility, t.open, crit, gaps))
+        crit = tuple(_override(criterion_result(alias, c), overrides) for c in t.criteria)
+        gaps = required_gaps(t)
+        ex = tid in ops.exhausted_trials
+        status = derive_pair_status(t.eligibility, gaps, t.mismatch, exhausted=ex)
+        out.append(PairState(PairKey(patient_alias=alias, trial_id=tid), status, t.eligibility, t.open, crit, gaps,
+                             pending_kinds(t.eligibility, gaps, t.mismatch, exhausted=ex), t.mismatch))
     for tid in sorted(st.not_evaluated_trials):
         out.append(PairState(PairKey(patient_alias=alias, trial_id=tid), PairStatus.NOT_EVALUATED, "NOT_EVALUATED",
                              True))
@@ -93,8 +132,13 @@ class CohortState:
 
     @classmethod
     def from_decision_states(cls, states: dict[str, DecisionState],
-                             ops: dict[str, OpsState] | None = None) -> "CohortState":
-        """{별칭: DecisionState} -> CohortState. 별칭 형식이 아니면 거부 (원래 ID 차단)."""
+                             ops: dict[str, OpsState] | None = None,
+                             criterion_overrides: dict[str, dict[str, CriterionResult]] | None = None
+                             ) -> "CohortState":
+        """{별칭: DecisionState} -> CohortState. 별칭 형식이 아니면 거부 (원래 ID 차단).
+
+        criterion_overrides: {별칭: {"<trial>:<rule>": CriterionResult}} — 판정 출처 보충만 (판정 값이 다르면 거부).
+        """
         ops = dict(ops or {})
         patients = {}
         for alias, st in sorted(states.items()):
@@ -103,7 +147,8 @@ class CohortState:
             copy = st.model_copy(deep=True)
             copy.patient_id = copy.session_id = alias  # 사본 안에도 원래 ID를 남기지 않음
             o = ops.setdefault(alias, OpsState())
-            patients[alias] = PatientSlice(alias, _pair_states(alias, copy, o), copy.fact_version, copy)
+            ov = MappingProxyType(dict((criterion_overrides or {}).get(alias, {})))
+            patients[alias] = PatientSlice(alias, _pair_states(alias, copy, o, ov), copy.fact_version, copy, ov)
         return cls(MappingProxyType(patients), MappingProxyType(ops))
 
     def aliases(self) -> list[str]:
@@ -126,5 +171,5 @@ class CohortState:
         new_ops[alias] = ops
         sl = self.patients[alias]
         patients = dict(self.patients)
-        patients[alias] = replace(sl, pairs=_pair_states(alias, sl._legacy, ops))
+        patients[alias] = replace(sl, pairs=_pair_states(alias, sl._legacy, ops, sl._overrides))
         return CohortState(MappingProxyType(patients), MappingProxyType(new_ops))

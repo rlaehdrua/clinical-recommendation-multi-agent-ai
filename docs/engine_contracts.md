@@ -1,6 +1,7 @@
 # DCV+C 공통 엔진 계약 (WP0) — **PROVISIONAL**
 
-> 상태: **팀 승인 전 임시 계약** (`ctrec.engine.contracts.CONTRACT_STATUS == "PROVISIONAL"`, 버전 `dcvc.engine.contracts/0.1`).
+> 상태: **팀 승인 전 임시 계약** (`ctrec.engine.contracts.CONTRACT_STATUS == "PROVISIONAL"`, 버전 `dcvc.engine.contracts/0.2` 후보, 0.1 기록도 읽음).
+> **0.2 변경 요약은 맨 아래 §7, 자세한 내용은 `docs/dev/contract_v02_changelog.md`.** 아래 §1–§6은 0.1 원문이며, §4의 `derive_pair_status` 설명과 §5의 열린 질문은 §7이 우선합니다.
 > 근거: `docs/audit/03_architecture_and_work_packages.md` §3 (I-1~I-9). 승인 전까지는 필드 **추가만** 하고 의미·이름은 바꾸지 않는 것을 원칙으로 합니다.
 > 코드: `src/ctrec/engine/contracts.py` / 테스트: `tests/test_engine_contracts.py`
 
@@ -78,3 +79,20 @@ from ctrec.decision_state import Action as LegacyAction
 
 - 새 필드는 기본값과 함께 **추가만**. 필드 제거·이름 변경·의미 변경은 `contract_version`을 올리고 모든 WP 검토
 - `DecisionRecord.schema_version`이 다른 기록은 v2 로더가 거부하고 issue로 보고 (`engine.audit.load_records`)
+
+## 7. 0.2 후보 변경 기록 (2026-11-02, PROVISIONAL 유지)
+
+| 영역 | 변경 | 하위 호환 |
+|---|---|---|
+| 버전 | `CONTRACT_VERSION = dcvc.engine.contracts/0.2`, `SUPPORTED_CONTRACT_VERSIONS = {0.1, 0.2}`. 목록 밖 버전의 `DecisionRecord`는 거부 | 0.1 기록 그대로 읽음 |
+| I-1 쌍 상태 | `derive_pair_status` 안전 경계: ELIGIBLE이라도 필수 기준 gap이 있으면 확정 아님(우선순위 정보 없음 > 확인 필요 > 임상의 판단). INELIGIBLE은 `mismatch == "confirmed"`일 때만 확정(None·none·provisional → VERIFICATION_PENDING). 소진 규칙은 모든 판정에 같게 적용. 알 수 없는 gap 값은 거부. 신규 `pending_kinds()` | 의미 변경(확정을 내리기만 함). 0.1 테스트 표의 기대값은 모두 유지 |
+| I-1 코호트 | `cohort_state.required_gaps`: 판정에 적용된 기준만(OR의 다른 갈래·절차 기준 제외) + 확정 판정의 근거 상충(`conflict_on_decided`)을 conflict로 셈. `PairState.pending_kinds`, `PairState.mismatch` | 필드 추가 |
+| I-2 판정 출처 | `decided_by`에 `contract_evaluator`(승인 IR + 질문 계약 명제 사실, LLM 아님). `EvidenceRef`(사실 ID·`prop:<명제 키>`·출처·검증 상태·계약 ID/버전), `CriterionResult.evidence_refs`. 진료 기록 필요 기준은 문서 검증 안 된 근거로 `evidence_satisfied=True` 불가. UNKNOWN은 근거 충족 불가 | 필드 추가(기본 빈 값) |
+| 비용 | 축 5개·단위(분, USD) 고정. 대기 최댓값 합산은 같은 단계 병렬 요청에만 유효(문서화). 순차 경과 시간은 시뮬레이터가 계산 | 변경 없음 |
+| I-5 정보원 | `cost_basis`(assumed 기본 / literature / measured / elicited) + `cost_reference`(가정값이 아니면 필수). 기본 카탈로그는 모두 assumed | 필드 추가. 카탈로그 해시 값은 바뀜 |
+| I-9 실험 | `engine.experiment.require_catalog_hash`·`with_catalog_hash`·`catalog_claims`(가정값이 있으면 상대 비교만) | 신규 함수 |
+| I-3 Action | `purpose`(eligibility 기본 / physician_reference — 정책이 gap으로 정함), `info_key`, `question_contract_id`(적격성 환자 질문 전용). 질문 문장 필드 없음 | 필드 추가 |
+| I-7 기록 | `PairTransition.reason_code`·`pending_kinds`. 한 기록에 같은 쌍 전이 1개만. `audit.reversal_issues`: 확정에서 내려갈 때 사유 없음 / 새 근거 없이 반대 확정 → issue | 필드 추가. 직접 역전 금지(§4)는 그대로 |
+| 연결 계층 | `engine.contract_bridge`(평가기·ContractSession → CriterionResult, 출처 보충), `engine.question_bridge`(Action → 질문, 목적·대상 불변, 검수 계약 우선) | 신규 모듈 |
+
+§5 열린 질문의 처리: 1·2·4·5는 위 표대로 0.2 후보에 반영, 3(정보원 비용 실측값)은 미결정으로 남기고 가정값 표시와 해시 기록으로 대신합니다. 승인 전까지 `CONTRACT_STATUS`는 `PROVISIONAL`입니다.

@@ -29,7 +29,10 @@ from typing import Literal, Protocol, runtime_checkable
 from pydantic import BaseModel, ConfigDict, Field, NonNegativeFloat, NonNegativeInt, field_validator, model_validator
 
 CONTRACT_STATUS = "PROVISIONAL"
-CONTRACT_VERSION = "dcvc.engine.contracts/0.1"
+CONTRACT_VERSION = "dcvc.engine.contracts/0.2"
+# 읽을 수 있는 계약 버전 (0.2는 0.1에 기본값 있는 필드만 추가 + 쌍 상태 파생을 보수적으로 바꿈). 변경 기록은
+# docs/dev/contract_v02_changelog.md
+SUPPORTED_CONTRACT_VERSIONS = frozenset({"dcvc.engine.contracts/0.1", CONTRACT_VERSION})
 DECISION_RECORD_SCHEMA = "ctrec.decision_record/v2"
 
 # 불투명 별칭 형식: 접두사 + 16진수. 원래 ID의 일부(rescue/cleanup, 기준 ID 등)를 담을 수 없음
@@ -114,40 +117,90 @@ def check_transition(before: PairStatus, after: PairStatus, *, authority: Litera
 
 
 GapKind = Literal["none", "missing", "unverified", "physician_review", "conflict", "stale"]
+# 쌍에 남은 작업 종류 (pending_kinds). gap 값 + 불충족 근거 미검증 + 확보 수단 소진
+PendingKind = Literal["missing", "stale", "unverified", "conflict", "physician_review", "exclusion_unverified",
+                      "sources_exhausted"]
+_GAP_INFO = frozenset({"missing", "stale"})  # 정보 없음 -> INFO_MISSING
+_GAP_VERIFY = frozenset({"unverified", "conflict"})  # 확인 필요 -> VERIFICATION_PENDING
+_GAP_EXPERT = frozenset({"physician_review"})  # 임상의 판단 -> EXPERT_REVIEW
+_KNOWN_GAPS = _GAP_INFO | _GAP_VERIFY | _GAP_EXPERT
+
+
+def _gaps(gaps) -> set[str]:
+    g = set(gaps) - {"none"}
+    bad = g - _KNOWN_GAPS
+    if bad:
+        raise ValueError(f"알 수 없는 gap 값 {len(bad)}개")
+    return g
+
+
+def _open_status(g: set[str]) -> PairStatus | None:
+    """남은 gap이 가리키는 다음 작업 (우선순위: 정보 없음 > 확인 필요 > 임상의 판단). gap이 없으면 None."""
+    if g & _GAP_INFO:
+        return PairStatus.INFO_MISSING
+    if g & _GAP_VERIFY:
+        return PairStatus.VERIFICATION_PENDING
+    if g & _GAP_EXPERT:
+        return PairStatus.EXPERT_REVIEW
+    return None
 
 
 def derive_pair_status(eligibility: str, gaps: set[str] | frozenset[str] | list[str] = (),
                        mismatch: Literal["none", "provisional", "confirmed"] | None = None,
                        exhausted: bool = False) -> PairStatus:
-    """기존 판정(TrialMatch.eligibility) + 열린 경로의 필수 기준 gap -> PairStatus (02 문서 M5). 판정을 바꾸지 않음.
+    """기존 판정(TrialMatch.eligibility) + 판정에 적용된 경로의 필수 기준 gap -> PairStatus (M5). 판정을 바꾸지 않음.
 
-    UNCERTAIN일 때 우선순위: 정보 없음(missing/stale) > 확인 필요(unverified/conflict) > 임상의 판단만 남음
-    (physician_review) > 그 밖(INFO_MISSING). 다음에 필요한 작업의 종류를 나타냄. 확보 수단이 소진되면(exhausted)
-    INFO_MISSING·VERIFICATION_PENDING만 BLOCKED_FAILURE가 됨 (정책 권한 전이 POLICY_TRANSITIONS와 같은 범위).
-    INELIGIBLE이라도 불충족 근거가 문서로 검증되지 않았으면(mismatch=provisional) 확정이 아님.
+    gaps는 판정에 적용된 기준(decision_state requirement == "required")의 gap만 넘깁니다. 다른 코호트(OR의 다른 갈래,
+    requirement == "alternative_cohort")와 절차 기준(waivable)의 gap은 넘기지 않습니다 (engine.cohort_state).
+
+    0.2 안전 경계 (확정은 내리기만 하고 올리지 않음)
+    - ELIGIBLE: 필수 기준에 gap이 하나라도 있으면 확정 아님. 상태는 UNCERTAIN과 같은 우선순위
+      (정보 없음 missing/stale > 확인 필요 unverified/conflict > 임상의 판단 physician_review).
+    - INELIGIBLE: 불충족 근거가 문서로 검증됨(mismatch == "confirmed")일 때만 CONFIRMED_INELIGIBLE.
+      provisional·none·None(모름)은 VERIFICATION_PENDING (자기 보고만으로는 확정 부적격이 아님).
+    - UNCERTAIN: 어떤 gap 조합으로도 확정이 되지 않음. gap이 없으면 INFO_MISSING.
+    - 확보 수단 소진(exhausted)은 INFO_MISSING·VERIFICATION_PENDING만 BLOCKED_FAILURE로 바꿈(POLICY_TRANSITIONS와 같은
+      범위). 임상의 판단 대기와 확정 상태는 그대로.
+    여러 사유가 함께 있으면 상태는 우선순위 하나만 나타내므로, 전체 사유는 pending_kinds()로 따로 보존합니다.
     """
-    g = set(gaps) - {"none"}
+    g = _gaps(gaps)
     if eligibility == "NOT_EVALUATED":
         return PairStatus.NOT_EVALUATED
     if eligibility == "INELIGIBLE":
-        return PairStatus.VERIFICATION_PENDING if mismatch == "provisional" else PairStatus.CONFIRMED_INELIGIBLE
-    if eligibility == "ELIGIBLE":
-        if g & {"conflict", "unverified", "stale"}:
-            return PairStatus.VERIFICATION_PENDING
-        return PairStatus.CONFIRMED_ELIGIBLE
-    if eligibility != "UNCERTAIN":
-        raise ValueError(f"알 수 없는 판정 값: {eligibility!r}")
-    if g & {"missing", "stale"}:
-        base = PairStatus.INFO_MISSING
-    elif g & {"unverified", "conflict"}:
+        if mismatch == "confirmed":
+            return PairStatus.CONFIRMED_INELIGIBLE
         base = PairStatus.VERIFICATION_PENDING
-    elif "physician_review" in g:
-        base = PairStatus.EXPERT_REVIEW  # 임상의 판단은 정보원 소진과 무관하게 남음
+    elif eligibility == "ELIGIBLE":
+        base = _open_status(g)
+        if base is None:
+            return PairStatus.CONFIRMED_ELIGIBLE
+    elif eligibility == "UNCERTAIN":
+        base = _open_status(g) or PairStatus.INFO_MISSING
     else:
-        base = PairStatus.INFO_MISSING
+        raise ValueError(f"알 수 없는 판정 값: {eligibility!r}")
     if exhausted and base in (PairStatus.INFO_MISSING, PairStatus.VERIFICATION_PENDING):
         return PairStatus.BLOCKED_FAILURE
     return base
+
+
+def pending_kinds(eligibility: str, gaps: set[str] | frozenset[str] | list[str] = (),
+                  mismatch: Literal["none", "provisional", "confirmed"] | None = None,
+                  exhausted: bool = False) -> frozenset[str]:
+    """쌍에 남은 작업 종류 전체 (derive_pair_status가 우선순위로 하나만 고른 것을 보완). 확정 상태면 빈 집합.
+
+    - INELIGIBLE이고 불충족 근거가 미검증이면 "exclusion_unverified" + 필수 기준 gap
+    - 소진(exhausted)이고 남은 작업이 있으면 "sources_exhausted"
+    """
+    g = _gaps(gaps)
+    status = derive_pair_status(eligibility, g, mismatch, exhausted)
+    if status in CONFIRMED or status == PairStatus.NOT_EVALUATED:
+        return frozenset()
+    out = set(g)
+    if eligibility == "INELIGIBLE":
+        out.add("exclusion_unverified")
+    if exhausted and out:
+        out.add("sources_exhausted")
+    return frozenset(out)
 
 
 # ---------------------------------------------------------------------------
@@ -156,7 +209,37 @@ def derive_pair_status(eligibility: str, gaps: set[str] | frozenset[str] | list[
 
 CriterionState = Literal["MET", "NOT_MET", "UNKNOWN"]
 Adjudication = Literal["rule", "fact_llm", "expert"]
-DecidedBy = Literal["rule_engine", "llm", "clinician", "none"]
+# contract_evaluator (0.2): 승인된 Condition IR + 질문 계약 명제 사실로 판정하는 결정적 평가기 (ctrec.evaluator).
+# LLM이 아님. 기존 기록(decision_state.EvaluationRecord)은 이 경우를 engine="llm"으로 남기므로, 출처 구분은
+# engine.contract_bridge가 평가기 출처(provenance)를 직접 읽어서만 합니다.
+DecidedBy = Literal["rule_engine", "contract_evaluator", "llm", "clinician", "none"]
+SourceType = Literal["clinical_record", "self_report", "unknown"]  # fact_store.SourceType과 같은 값
+VerificationStatus = Literal["unknown", "unverified", "document_verified", "unverifiable"]  # fact_store와 같은 값
+EVIDENCE_FIELD_PATTERN = r"^[A-Za-z0-9_:()./+\-]{1,200}$"
+QUESTION_CONTRACT_PATTERN = r"^QC-[A-Z0-9\-]{1,60}$"  # question_contract.QuestionContract.contract_id 형식
+
+
+class EvidenceRef(_Frozen):
+    """판정 근거 사실 하나의 출처·검증 상태 (0.2). 값·원문은 담지 않음.
+
+    명제 사실(proposition_store)은 field = "prop:<명제 키>"이고 질문 계약 ID·버전을 함께 남깁니다.
+    verified는 verification_status == "document_verified"일 때만 참입니다. 출처가 clinical_record라고 적혀 있어도
+    검증되지 않았으면 검증된 임상 근거가 아닙니다 (fact_store 원칙).
+    """
+    fact_id: str = Field(pattern=ID_PATTERN)
+    field: str = Field(pattern=EVIDENCE_FIELD_PATTERN)
+    source_type: SourceType = "unknown"
+    verification_status: VerificationStatus = "unknown"
+    contract_id: str | None = Field(default=None, pattern=QUESTION_CONTRACT_PATTERN)
+    contract_version: NonNegativeInt | None = None
+
+    @property
+    def verified(self) -> bool:
+        return self.verification_status == "document_verified"
+
+    @property
+    def proposition_key(self) -> str | None:
+        return self.field[len("prop:"):] if self.field.startswith("prop:") else None
 
 
 class CriterionResult(_Frozen):
@@ -172,6 +255,7 @@ class CriterionResult(_Frozen):
     gap: GapKind = "none"
     evaluator_version: str = Field(min_length=1)
     criterion_version: str | None = None
+    evidence_refs: tuple[EvidenceRef, ...] = ()  # 0.2: 근거 사실의 출처·검증 상태 (명제 키 포함). 빈 값 = 모름(0.1)
 
     @property
     def criterion_key(self) -> str:
@@ -188,6 +272,15 @@ class CriterionResult(_Frozen):
             raise ValueError("전문가 판단 기준은 임상의만 확정할 수 있음 (자동 확정 금지)")
         if self.adjudication == "rule" and self.decided_by == "llm":
             raise ValueError("규칙 판정 기준을 LLM이 확정했다고 기록할 수 없음")
+        if not decided and self.evidence_satisfied:
+            raise ValueError("판정되지 않은 기준은 근거 요구를 충족했다고 기록할 수 없음")
+        if self.evidence_refs:
+            ids = {r.fact_id for r in self.evidence_refs}
+            if not ids <= set(self.evidence_fact_ids):
+                raise ValueError("evidence_refs의 사실은 evidence_fact_ids 안에 있어야 함")
+            if (self.required_evidence == "clinical_record" and self.evidence_satisfied
+                    and not all(r.verified for r in self.evidence_refs)):
+                raise ValueError("진료 기록이 필요한 기준은 문서 검증되지 않은 근거로 충족될 수 없음 (미검증 근거 승격 금지)")
         return self
 
 
@@ -196,7 +289,13 @@ class CriterionResult(_Frozen):
 # ---------------------------------------------------------------------------
 
 class EffortCost(_Frozen):
-    """한 행동·정보원의 비용. 능동 작업시간과 대기 시간·LLM 비용을 분리."""
+    """한 행동·정보원의 비용. 능동 작업시간과 대기 시간·LLM 비용을 분리.
+
+    단위: 분(float), USD. 축 5개(코디네이터 분, 임상의 분, LLM 호출 수, LLM USD, 환자 대기 분)는 0.2에서 고정.
+    `+`의 대기 시간 최댓값은 **같은 단계에서 병렬로 보낸 요청**에만 맞는 합산입니다(동시에 기다림). 여러 단계에 걸친
+    순차 경과 시간(달력 시간)은 이 합으로 구하지 말고 시뮬레이터(WP6)가 단계별 대기를 따로 더해 계산합니다.
+    코디네이터·임상의 시간 예산은 engine.cost.EffortLedger, 웹 LLM 비용은 web/budget.py가 관리하며 둘을 합치지 않습니다.
+    """
     coordinator_minutes: NonNegativeFloat = 0.0
     clinician_minutes: NonNegativeFloat = 0.0
     llm_calls: NonNegativeInt = 0
@@ -226,6 +325,16 @@ class InformationSource(_Frozen):
     per_item_minutes: NonNegativeFloat = 0.0  # 같은 요청 안에서 항목(기준)마다 더 드는 코디네이터 시간
     can_verify: bool = False  # 문서 검증(document_verified) 근거가 될 수 있는가
     alternatives: tuple[str, ...] = ()  # 실패·무응답 뒤 시도할 대체 정보원 ID (순서대로)
+    # 0.2: 비용 값의 출처. assumed = 근거 없는 가정값(기본). 가정값으로 낸 분 단위 결과는 상대 비교에만 쓰고
+    # 실제 병원 업무시간 절감을 주장하지 않음 (engine.experiment.catalog_claims)
+    cost_basis: Literal["assumed", "literature", "measured", "elicited"] = "assumed"
+    cost_reference: str | None = Field(default=None, pattern=ID_PATTERN)  # 문헌·측정 기록 ID (값·원문 아님)
+
+    @model_validator(mode="after")
+    def _basis(self):
+        if self.cost_basis != "assumed" and not self.cost_reference:
+            raise ValueError("가정값이 아닌 비용에는 출처 ID(cost_reference)가 필요함")
+        return self
 
     @field_validator("alternatives")
     @classmethod
@@ -269,6 +378,13 @@ class Action(_Frozen):
     fingerprint: str = Field(min_length=1)
     legacy_action_id: str | None = None
     policy_version: str = Field(min_length=1)
+    # 0.2 질문 연결 (모두 기본값 있음, 질문 문장은 계약에 넣지 않음)
+    # purpose: 정책이 판정 메타데이터(gap)로 정함. 렌더러·LLM은 바꿀 수 없음(engine.question_bridge가 검사).
+    #   physician_reference = 원문에 구체 기준이 없는 기준에 대한 의사 참고용 정보 수집. 그 답은 적격성 근거가 아님
+    #   (evidence_directness.eligibility_answers가 제외).
+    purpose: Literal["eligibility", "physician_reference"] = "eligibility"
+    info_key: str | None = Field(default=None, pattern=r"^[A-Za-z0-9._:+\-]{1,160}$")  # decision_state.info_key
+    question_contract_id: str | None = Field(default=None, pattern=QUESTION_CONTRACT_PATTERN)  # 검수된 질문 계약
 
     @field_validator("target_criteria")
     @classmethod
@@ -284,6 +400,13 @@ class Action(_Frozen):
         trials = {k.split(":", 1)[0] for k in self.target_criteria}
         if not trials <= set(self.target_trial_ids):
             raise ValueError("target_criteria의 시험이 target_trial_ids에 없음")
+        if self.purpose == "physician_reference" and self.action_type not in ("ASK_PATIENT", "CLINICIAN_REVIEW"):
+            raise ValueError("의사 참고용 행동은 환자 질문·임상의 검토만 가능")
+        if self.question_contract_id is not None:
+            if self.action_type != "ASK_PATIENT":
+                raise ValueError("질문 계약은 환자 질문 행동에만 붙일 수 있음")
+            if self.purpose != "eligibility":
+                raise ValueError("질문 계약은 적격성 질문 전용 (question_contract.render는 purpose=eligibility)")
         return self
 
     def pairs(self) -> tuple[PairKey, ...]:
@@ -351,15 +474,26 @@ class CriterionChange(_Frozen):
     evidence_fact_ids: tuple[str, ...] = ()
 
 
+# 0.2 확정 상태 변경 사유 코드 (PairTransition.reason_code). 확정에서 내려갈 때와 다시 확정할 때 씀.
+REASON_CONTRADICTING_EVIDENCE = "contradicting_evidence"  # 확정 뒤 반대 근거가 들어와 확인 대기로 내림
+REASON_EVIDENCE_REVERIFIED = "evidence_reverified"  # 별도 근거 확인 뒤 다시 확정 (반대 확정 포함)
+REVERSAL_REASON_CODES = frozenset({REASON_CONTRADICTING_EVIDENCE, REASON_EVIDENCE_REVERIFIED,
+                                   "evidence_withdrawn", "evaluation_failed", "expert_review_requested"})
+
+
 class PairTransition(_Frozen):
     pair: PairKey
     before: PairStatus
     after: PairStatus
     authority: Literal["adjudication", "policy"] = "adjudication"
+    reason_code: str | None = Field(default=None, pattern=CODE_PATTERN)  # 0.2: 상태 변경 사유 (값·원문 아님)
+    pending_kinds: tuple[PendingKind, ...] = ()  # 0.2: 전이 뒤 남은 작업 전체 (상태는 우선순위 하나만 나타냄)
 
     @model_validator(mode="after")
     def _allowed(self):
         check_transition(self.before, self.after, authority=self.authority)
+        if self.after in CONFIRMED and self.pending_kinds:
+            raise ValueError("확정 상태에는 남은 작업이 있을 수 없음")
         return self
 
 
@@ -389,6 +523,11 @@ class DecisionRecord(_Frozen):
             raise ValueError("실행 결과 없이 사실 추가·재평가를 기록할 수 없음")
         if any(p.pair.patient_alias != self.action.patient_alias for p in self.pairs):
             raise ValueError("다른 환자의 쌍 상태를 이 행동 기록에 넣을 수 없음")
+        keys = [p.pair.key for p in self.pairs]
+        if len(keys) != len(set(keys)):  # 0.2: 한 기록 안에서 확정 -> 대기 -> 반대 확정을 잇는 우회 금지
+            raise ValueError("한 행동 기록에 같은 쌍의 전이가 둘 이상 있음")
+        if self.contract_version not in SUPPORTED_CONTRACT_VERSIONS:
+            raise ValueError("지원하지 않는 계약 버전")
         reevaluated = [c for c in self.criteria if c.before != c.after and not c.reevaluated]
         if reevaluated:
             raise ValueError("재평가하지 않은(재사용) 기준의 판정이 바뀔 수 없음")

@@ -19,6 +19,7 @@ LegacyAdapterPolicy
 
 from __future__ import annotations
 
+import re
 from types import MappingProxyType
 
 from ..decision_policy import DEFAULT_POLICY, PolicyConfig, candidates
@@ -29,9 +30,12 @@ from .contracts import (LEGACY_ACTION_TYPES, NON_EXECUTING, ZERO_COST, Action, A
 from .cost import EffortLedger
 
 POLICY_ID = "legacy_adapter_greedy"
-POLICY_VERSION = "0.1-provisional"
+POLICY_VERSION = "0.2-provisional"
 SAFETY_TIER = 1
 VERIFICATION_TYPES = frozenset({"ASK_PATIENT", "REQUEST_DOCUMENT", "VERIFY_RECORD", "CLINICIAN_REVIEW"})
+
+
+_INFO_KEY = re.compile(r"^[A-Za-z0-9._:+\-]{1,160}$")  # contracts.Action.info_key와 같은 형식 (아니면 옮기지 않음)
 
 
 def _code(s: str) -> str:
@@ -52,12 +56,24 @@ class LegacyAdapterPolicy:
         for alias in cohort.aliases():
             st = cohort.patients[alias].legacy_copy()
             ops = cohort.ops.get(alias, OpsState())
+            gaps = {c.key: c.gap for c in st.criteria()}
             legacy, _ = candidates(st, self.cfg, (pending_reevaluation or {}).get(alias))
             for seq, la in enumerate(legacy):
-                out.append(self._convert(alias, seq, la, ops))
+                out.append(self._convert(alias, seq, la, ops, gaps))
         return out
 
-    def _convert(self, alias: str, seq: int, la, ops: OpsState) -> Action:
+    @staticmethod
+    def purpose_of(action_type: str, targets: tuple[str, ...], gaps: dict[str, str]) -> str:
+        """질문 목적 (0.2). 대상 기준이 모두 '원문에 구체 기준 없음'(gap physician_review)일 때만 의사 참고용.
+
+        판정 메타데이터(decision_state gap)로만 정하며 렌더러·LLM이 바꾸지 못함. 섞여 있으면 적격성 질문으로 두되,
+        physician_review 기준은 어차피 임상의만 확정할 수 있음(CriterionResult adjudication=expert).
+        """
+        if action_type not in ("ASK_PATIENT", "CLINICIAN_REVIEW") or not targets:
+            return "eligibility"
+        return "physician_reference" if all(gaps.get(k) == "physician_review" for k in targets) else "eligibility"
+
+    def _convert(self, alias: str, seq: int, la, ops: OpsState, gaps: dict[str, str] | None = None) -> Action:
         atype = LEGACY_ACTION_TYPES[la.action_type]
         source = self.catalog.route(la.action_type, la.required_fact_fields, la.info_key)
         reason = _code(la.reason_code)
@@ -77,7 +93,9 @@ class LegacyAdapterPolicy:
             required_fields=tuple(la.required_fact_fields), evidence_fact_ids=tuple(la.evidence_refs),
             expected_cost=expected, reason_code=reason, tier=la.tier, value_score=la.value_score,
             priority=la.priority, sequence=seq, safety_required=la.tier == SAFETY_TIER and atype not in NON_EXECUTING,
-            fingerprint=la.fingerprint, legacy_action_id=None, policy_version=self.version)
+            fingerprint=la.fingerprint, legacy_action_id=None, policy_version=self.version,
+            purpose=self.purpose_of(atype, tuple(la.target_criterion_ids), gaps or {}),
+            info_key=la.info_key if la.info_key and _INFO_KEY.match(la.info_key) else None)
 
     # ------------------------------------------------------------ select
     @staticmethod
@@ -178,7 +196,8 @@ class LegacyAdapterPolicy:
             if before and after and before.status != after.status:
                 check_transition(before.status, after.status, authority="policy")
                 transitions.append(PairTransition(pair=after.pair, before=before.status, after=after.status,
-                                                  authority="policy"))
+                                                  authority="policy", reason_code="sources_exhausted",
+                                                  pending_kinds=tuple(sorted(after.pending_kinds))))
         return new, tuple(transitions)
 
 
