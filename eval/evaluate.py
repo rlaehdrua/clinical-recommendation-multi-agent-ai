@@ -10,6 +10,8 @@ label은 ELIGIBLE / INELIGIBLE (선택적으로 UNCERTAIN).
 
 label_text_only 열이 있으면 Rescue/Cleanup(숨은 정보로 판정을 바로잡았는가)도 함께 계산합니다.
 False Removal / Premature Match 등 지표 정의는 src/ctrec/metrics.py에 있습니다.
+기존 지표(예측이 있는 쌍만 분모)는 그대로 출력하고, 그 아래에 누락 예측을 오답(NOT_EVALUATED)으로 넣은
+'누락 포함' 지표(metrics.cohort_eligibility_metrics)를 함께 출력합니다. --json 결과에는 "cohort" 키로 추가됩니다.
 
 사용:
     python eval/evaluate.py --labels data/labels/synthetic_labels.csv --outputs outputs
@@ -25,8 +27,25 @@ from pathlib import Path
 
 from ctrec.agents.recommender import is_open
 from ctrec.metrics import (BENCHMARK_LABEL, BENCHMARK_NOTE, CLASSES, accuracy_by_group, baseline_gate,
-                           eligibility_metrics, fact_acquisition_metrics, fmt, load_label_rows, load_labels,
-                           load_predictions, load_reveals, load_usage, screening_metrics)
+                           cohort_baseline_gate, cohort_eligibility_metrics, eligibility_metrics,
+                           fact_acquisition_metrics, fmt, load_label_rows, load_labels, load_predictions,
+                           load_reveals, load_usage, screening_metrics)
+
+
+def cohort_summary(gold: dict, pred: dict, text_only: dict | None = None) -> tuple[dict, list[str]]:
+    """누락 포함 지표(JSON으로 저장 가능한 dict)와 출력 줄. 연결 키는 (원래 patient_id, trial_id)."""
+    c = cohort_eligibility_metrics(gold, pred, text_only)
+    c["confusion"] = {f"{g}->{p}": n for (g, p), n in c["confusion"].items()}
+    lines = ["\n누락 포함 지표 (정답의 모든 쌍이 분모, 예측 없는 쌍 = NOT_EVALUATED 오답)",
+             f"  정답 쌍: {c['pairs']} (예측 누락 {c['missing_predictions']}, 환자 {c['patients_with_missing']}명; "
+             f"정답 밖 예측 {c['extra_predictions']})",
+             f"  전체 정확도:      {fmt(c['accuracy'])}",
+             f"  판정 확정 비율:   {fmt(c['coverage'])}",
+             f"  확정 판정 정확도: {fmt(c['decided_accuracy'])}"]
+    if c["unresolved_alias_predictions"]:
+        lines.append(f"  주의: 별칭(PA-…) 키 예측 {c['unresolved_alias_predictions']}개는 정답과 연결하지 않았습니다 "
+                     "(평가기에서 AliasMap으로 되돌린 뒤 평가해야 함)")
+    return c, lines
 
 
 def main() -> None:
@@ -40,6 +59,9 @@ def main() -> None:
     ap.add_argument("--trials-dir", default="data/trials", help="모집 상태 확인용")
     ap.add_argument("--json", help="지표를 JSON 파일로도 저장")
     ap.add_argument("--baseline", help="기준선 지표 JSON(--json으로 저장한 파일). 정확도가 1%%p 넘게 떨어지면 종료 코드 1")
+    ap.add_argument("--cohort-baseline",
+                    help="기준선 JSON의 'cohort'(누락 포함) 지표와 비교. 누락 포함 정확도가 1%%p 넘게 떨어지거나 "
+                         "오확정이 늘면 종료 코드 1 (--baseline과 별개)")
     args = ap.parse_args()
 
     gold = load_labels(Path(args.labels), args.label_column)
@@ -67,6 +89,8 @@ def main() -> None:
         print("상호작용 지표 (서술만으로 판정 보류였던 쌍, 높을수록 좋음)")
         print(f"  Rescue  (숨은 정보로 적격 후보 회복):     {fmt(m['rescue'])} ({m['rescue_n']})")
         print(f"  Cleanup (숨은 정보로 부적격 시험 제거):   {fmt(m['cleanup'])} ({m['cleanup_n']})")
+    cohort, cohort_lines = cohort_summary(gold, pred, text_only)
+    print("\n".join(cohort_lines))
 
     rows = load_label_rows(Path(args.labels))
     by_type = accuracy_by_group(gold, pred, rows)
@@ -134,11 +158,18 @@ def main() -> None:
         m["usage"] = load_usage(Path(args.outputs))
         m["confusion"] = {f"{g}->{p}": n for (g, p), n in confusion.items()}
         m["benchmark"] = BENCHMARK_LABEL
+        m["cohort"] = cohort  # 추가 키 (기존 키는 그대로)
         Path(args.json).write_text(json.dumps(m, ensure_ascii=False, indent=2), encoding="utf-8")
 
     if args.baseline:
         ok, msg = baseline_gate(m, json.loads(Path(args.baseline).read_text(encoding="utf-8")))
         print(f"\n기준선 비교: {msg}")
+        if not ok:
+            raise SystemExit(1)
+    if args.cohort_baseline:
+        base = json.loads(Path(args.cohort_baseline).read_text(encoding="utf-8")).get("cohort") or {}
+        ok, msg = cohort_baseline_gate(cohort, base)
+        print(f"\n누락 포함 기준선 비교: {msg}")
         if not ok:
             raise SystemExit(1)
 

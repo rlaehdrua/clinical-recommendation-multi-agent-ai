@@ -215,3 +215,8 @@ Phase 4-3부터 정책 후보는 다음 경로로 실행합니다.
 
 - 차이는 누출 방지(별칭·검사)가 아니라 **답변기 공개 범위 변경**에서만 생깁니다. 기존 답변기는 회수율을 과대 추정했습니다(감사 하위 조사: 기준 하나만 맞아도 숨긴 사실 전부 공개).
 - 공개 '횟수'는 단조가 아닙니다. 1라운드에 덜 공개하면 2라운드 질문이 다시 해당 기준을 맞혀 한 번 더 공개될 수 있습니다. 대신 질문마다 공개된 사실이 겨냥한 기준의 범위 안에 있는지를 테스트합니다(`tests/test_eval_entry.py`).
+
+### 누락 포함 적격성 지표 (B-2)
+- `metrics.cohort_eligibility_metrics` / `cohort_baseline_gate`: 정답의 모든 (환자, 시험) 쌍을 분모로 하고 예측이 없는 쌍을 NOT_EVALUATED(오답, 부적격 아님)로 셉니다. 기존 `eligibility_metrics`·`baseline_gate`(예측이 있는 쌍만)는 그대로입니다. `ctrec.cohort_metrics`는 같은 함수를 다시 내보냅니다.
+- `eval/evaluate.py`: 기존 출력·JSON 키는 그대로이고, '누락 포함 지표' 출력과 JSON `cohort` 키, `--cohort-baseline` 게이트가 추가됐습니다.
+- 연결 키는 평가기 쪽 (원래 patient_id, trial_id)입니다. 별칭 키 예측은 되돌리기 전에는 정답과 연결되지 않고 `unresolved_alias_predictions`로 보고됩니다.

@@ -210,3 +210,83 @@ def test_cli_protocol_flags(capsys):
         eqp.main(["--cases", SUBSET[0], "--rounds", "1", *flags])
         h = json.loads(capsys.readouterr().out)["hygiene"]
         assert (h["mode"], h["oracle_scope"]) == (mode, scope), flags
+
+# ------------------------------------------------------------ B-2 누락 포함 지표를 공개 평가 인터페이스로
+ROOT = Path(__file__).resolve().parents[1]
+GOLD = {("P1", "T1"): "ELIGIBLE", ("P1", "T2"): "INELIGIBLE", ("P2", "T1"): "ELIGIBLE", ("P2", "T2"): "INELIGIBLE"}
+
+
+def test_metrics_exposes_cohort_metrics_and_legacy_module_is_same_object():
+    from ctrec import cohort_metrics, metrics
+    assert metrics.cohort_eligibility_metrics is cohort_metrics.cohort_eligibility_metrics
+    assert metrics.cohort_baseline_gate is cohort_metrics.cohort_baseline_gate
+    pred = {("P1", "T1"): "ELIGIBLE", ("P1", "T2"): "INELIGIBLE"}
+    assert metrics.eligibility_metrics(GOLD, pred)["accuracy"] == 1.0  # 기존 함수는 그대로 (내부 조인)
+    m = metrics.cohort_eligibility_metrics(GOLD, pred)
+    assert m["accuracy"] == 0.5 and m["missing_predictions"] == 2 and m["denominator"] == "all_gold_pairs"
+
+
+def test_alias_keyed_predictions_join_only_after_unalias():
+    from ctrec.metrics import cohort_eligibility_metrics
+    amap = AliasMap(salt="t")
+    by_alias = {(amap.alias(p), t): v for (p, t), v in GOLD.items()}
+    raw = cohort_eligibility_metrics(GOLD, by_alias)  # 별칭 키를 그대로 넣으면 정답과 연결되지 않음
+    assert raw["missing_predictions"] == 4 and raw["accuracy"] == 0.0
+    assert raw["extra_predictions"] == 4 and raw["unresolved_alias_predictions"] == 4
+    ok = cohort_eligibility_metrics(GOLD, amap.unalias_keys(by_alias))  # 평가기에서 되돌린 뒤
+    assert ok["accuracy"] == 1.0 and ok["unresolved_alias_predictions"] == 0 and ok["extra_predictions"] == 0
+
+
+def _evaluate(tmp_path, *extra):
+    import os
+    import subprocess
+    env = {k: v for k, v in os.environ.items() if k not in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY")}
+    env["PYTHONPATH"] = str(ROOT / "src")
+    return subprocess.run([sys.executable, str(ROOT / "eval" / "evaluate.py"), "--labels", str(tmp_path / "labels.csv"),
+                           "--outputs", str(tmp_path / "out"), "--trials-dir", str(tmp_path / "trials"), *extra],
+                          cwd=ROOT, env=env, capture_output=True, text=True, encoding="utf-8", timeout=120)
+
+
+def _write_run(tmp_path, preds: dict):
+    (tmp_path / "trials").mkdir(parents=True, exist_ok=True)
+    rows = ["patient_id,trial_id,label"] + [f"{p},{t},{v}" for (p, t), v in GOLD.items()]
+    (tmp_path / "labels.csv").write_text("\n".join(rows) + "\n", encoding="utf-8")
+    by_pid: dict = {}
+    for (p, t), v in preds.items():
+        by_pid.setdefault(p, {})[t] = {"eligibility": v}
+    for p, matches in by_pid.items():
+        d = tmp_path / "out" / p
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "result.json").write_text(json.dumps({"patient_id": p, "matches": matches}), encoding="utf-8")
+
+
+def test_evaluate_cli_keeps_existing_output_and_adds_cohort(tmp_path):
+    from ctrec.metrics import cohort_eligibility_metrics, eligibility_metrics
+    pred = {("P1", "T1"): "ELIGIBLE", ("P1", "T2"): "INELIGIBLE"}  # P2 실행 실패로 결과 없음
+    _write_run(tmp_path, pred)
+    r = _evaluate(tmp_path, "--json", str(tmp_path / "m.json"))
+    assert r.returncode == 0, r.stderr
+    assert "평가 쌍: 2 (예측 누락 2)" in r.stdout and "전체 정확도 (UNCERTAIN·NOT_EVALUATED 예측=오답): 1.000" in r.stdout
+    assert "누락 포함 지표" in r.stdout and "정답 쌍: 4 (예측 누락 2" in r.stdout
+    saved = json.loads((tmp_path / "m.json").read_text(encoding="utf-8"))
+    legacy = eligibility_metrics(GOLD, pred)
+    for k in ("pairs", "missing_predictions", "accuracy", "coverage", "decided_accuracy", "false_removal",
+              "premature_match"):
+        assert saved[k] == legacy[k], k  # 기존 키·값 불변
+    cohort = cohort_eligibility_metrics(GOLD, pred)
+    assert saved["cohort"]["accuracy"] == cohort["accuracy"] == 0.5 and saved["cohort"]["pairs"] == 4
+    # 기존 기준선 게이트는 그대로(내부 조인) 통과, 누락 포함 게이트는 같은 결과끼리 통과
+    assert _evaluate(tmp_path, "--baseline", str(tmp_path / "m.json")).returncode == 0
+    assert _evaluate(tmp_path, "--cohort-baseline", str(tmp_path / "m.json")).returncode == 0
+
+
+def test_evaluate_cli_cohort_gate_catches_dropped_patient(tmp_path):
+    full = dict(GOLD)
+    _write_run(tmp_path / "base", full)
+    assert _evaluate(tmp_path / "base", "--json", str(tmp_path / "base.json")).returncode == 0
+    partial = {k: v for k, v in GOLD.items() if k[0] == "P1"}  # 환자 하나가 빠진 실행
+    _write_run(tmp_path / "cur", partial)
+    legacy_gate = _evaluate(tmp_path / "cur", "--baseline", str(tmp_path / "base.json"))
+    assert legacy_gate.returncode == 0  # 기존 게이트는 누락을 못 봄 (감사 P1-6 재현, 동작 유지)
+    cohort_gate = _evaluate(tmp_path / "cur", "--cohort-baseline", str(tmp_path / "base.json"))
+    assert cohort_gate.returncode == 1 and "불합격" in cohort_gate.stdout
