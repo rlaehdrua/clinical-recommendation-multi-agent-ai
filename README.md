@@ -599,6 +599,10 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 
 수정할 때마다 무엇을 왜 바꿨는지 여기에 기록합니다. 최신 항목이 위에 옵니다.
 
+### 2026-11-02 — 환자 화면 시안 HTML 보관 (프론트엔드)
+
+- `patient-screens/`에 2026-10-24에 만든 환자 화면 정적 시안 4개를 저장소에 추가했습니다: `index.html`(문답), `results.html`(추천 결과), `detail.html`(시험 상세와 내 조건), `upload.html`(서류 확인 완료). 현재 웹 화면(`web/static/`)의 설계 참고용이며 서버가 제공하지 않습니다. 내용은 모두 가상 예시이고 환자 정보는 없습니다(Google Fonts를 외부에서 불러옴).
+
 ### 2026-11-01 — 합성 코호트 생성기 설명 정정 3건 (연구 · 문서·주석만, 동작 변경 없음)
 
 배경: 팀 통합 회의안건(「TRIALOG 통합 연구 제안 — Evidence-Aware Cohort Verification」 5.2·부록 6.3)이 생성기 설계의 근거 세 가지를 지적했고, 검토 결과 모두 타당했습니다.
