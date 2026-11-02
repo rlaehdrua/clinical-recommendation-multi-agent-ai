@@ -921,6 +921,7 @@ function showResult(ev) {
 }
 
 // ------------------------------------------------------------ 상세: 시험 설명과 내 조건 (시안 detail.html)
+const ORIG_MISSING = "이 기준을 확인할 정보 (원문):";
 function condRow(tid, a, g, said) {
   const name = critLabel(a), [state0, mark] = GROUP_UI[g];
   // 오른쪽 상태 이름은 짧게, 설명은 한 줄 (줄글 대신)
@@ -929,7 +930,11 @@ function condRow(tid, a, g, said) {
   if (g === "met") { stateText = "확인됨"; desc = how; }
   if (g === "not_met") { stateText = a.kind === "exclusion" ? "제외 기준 해당" : "맞지 않음"; desc = how; }
   if (g === "record_check") { stateText = "서류 확인 필요"; desc = (said === "yes" ? "답변과 일치 · " : "") + "검사 결과지·진료 기록으로 확정"; }
-  if (g === "missing") { stateText = "정보 부족"; desc = a.missing_info ? `필요: ${a.missing_info}` : "불충족 아님"; }
+  if (g === "missing") {
+    stateText = "정보 부족";
+    // 서버가 일반 문구 대신 넣는 '원문 기준 문장'은 아래 원문 줄·조건 이름과 같아서 다시 쓰지 않음 (display.display_missing_info)
+    desc = !a.missing_info ? "불충족 아님" : a.missing_info.startsWith(ORIG_MISSING) ? "판단할 정보가 입력에 없음 · 불충족 아님" : `필요: ${a.missing_info}`;
+  }
   if (g === "physician_review") { stateText = "연구진 판단"; desc = "기준에 구체적인 값 없음 · 의사가 프로토콜과 대조"; }
   if (g === "procedural") { stateText = "병원에서 확인"; desc = "참여 단계에서 확인 · 지금 준비할 것 없음"; }
   if (g === "unclassified") { stateText = "확인 필요"; desc = "분류 불가 · 의료진 확인"; }
