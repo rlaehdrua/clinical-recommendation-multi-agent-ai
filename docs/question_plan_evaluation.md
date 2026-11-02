@@ -19,8 +19,8 @@
 | 구분 | 내용 |
 |---|---|
 | 정답 | `CaseGroundTruth`: 숨긴 사실 ID, 숨긴 기준 → 규칙 대응, 정답 라벨, 숨긴 사실 원문(답변 시뮬레이터 전용 private 필드) |
-| 모델 입력 | `pipeline._case_from_dict`가 만든 `PatientCase`. `_HIDDEN_KEYS`(oracle_facts, hidden_facts, masked_* 등)를 빼며, 평가 객체에서도 oracle_facts·hidden_details를 지움 |
-| 답변 | `OracleAnswerer`만 정답 원문을 봄. 질문 대상 규칙이 숨긴 기준에 **EXACT**로 대응할 때만 숨긴 사실 원문을 답으로 주고, 그 밖에는 '모름' |
+| 모델 입력 | `pipeline._case_from_dict`가 만든 `PatientCase`. `_HIDDEN_KEYS`(oracle_facts, hidden_facts, masked_* 등)를 빼며, 평가 객체에서도 oracle_facts·hidden_details를 지움. **기본(WP1 이후)은 환자 ID를 불투명 별칭(`PA-…`)으로 바꿔 넘김** (§11) |
+| 답변 | 답변 시뮬레이터만 정답 원문을 봄. 질문 대상 규칙이 숨긴 기준에 **EXACT**로 대응할 때만 숨긴 사실 원문을 답으로 주고, 그 밖에는 '모름'. **기본(WP1 이후)은 범위 제한 답변기**(`eval_hygiene.ScopedOracleAnswerer`)로 그 기준에 대응하는 숨긴 사실만 공개. 기존 `OracleAnswerer`는 EXACT 하나만 맞아도 숨긴 사실 전부를 공개함 (§11) |
 | 답의 기록 | 답은 Session의 '추가 확인 정보'로 들어가 자기 보고 사실이 되며, 검증 상태로 승격되지 않음 |
 
 ## 2. 비교 방식과 공정성
@@ -99,6 +99,7 @@ PYTHONPATH=src python scripts/eval_question_plans.py --validate-only
 PYTHONPATH=src python scripts/eval_question_plans.py --ablation              # 화면 출력만
 PYTHONPATH=src python scripts/eval_question_plans.py --sample 20 --seed 7 --out outputs/eval/qplan
 PYTHONPATH=src python scripts/eval_question_plans.py --dry-run-cost --max-cost-usd 50
+PYTHONPATH=src python scripts/eval_question_plans.py --original-ids            # WP1 이전 프로토콜 재현 (§11)
 ```
 
 - 기본 실행은 파일을 쓰지 않습니다. `--out`을 줄 때만 `summary.json`과 사례별 `cases.csv`를 씁니다. 사례·시험·기준 ID, 숫자, 상태 코드만 담고 원문은 담지 않습니다.
@@ -188,3 +189,29 @@ Phase 4-3부터 정책 후보는 다음 경로로 실행합니다.
 - 표본: 선정·제외 균형, cohort·biomarker·confirmed·shared 포함.
 - 비용: 단가·토큰은 가정값입니다.
 - 실제 호출 경로는 없습니다.
+
+## 11. WP1 평가 위생: 기본 평가 프로토콜 변경 (2026-11-02)
+
+`question_eval.run_evaluation`(과 이를 부르는 `eval_question_plans/priority/fidelity` 스크립트)의 **기본 프로토콜이 바뀌었습니다.** 이전 결과와 수치를 비교할 때는 아래 표의 재현 방법을 쓰세요.
+
+| | `hygiene=True` (기본) | `hygiene=True, oracle_scope="legacy"` | `hygiene=False` (WP1 이전 재현) |
+|---|---|---|---|
+| 모델 입력의 환자 ID | 불투명 별칭 `PA-<16 hex>` (`eval_hygiene.AliasMap`, 실행별 salt) | 별칭 | 원래 케이스 ID (`M-…-rescue-1`, `V-…-I9-single` 등. 정답·대상 기준이 들어 있음) |
+| 프롬프트 누출 검사 | `PromptLeakGuard`: 모든 LLM(대역 포함) 호출을 보내기 **전에** 검사, 원래 ID·정답 토큰·ID 모양이 있으면 차단하고 그 실행을 `status="error"`로 실패 집계 | 같음 | 없음 |
+| 답변 시뮬레이터 | 범위 제한(`ScopedOracleAnswerer`): EXACT로 겨냥한 기준에 대응하는 숨긴 사실만. 기준이 여러 개인 사례에서 대응을 정할 수 없는 사실은 공개 안 함 | 기존 `OracleAnswerer` | 기존 `OracleAnswerer` (EXACT 하나만 맞아도 숨긴 사실 전부) |
+| CLI | (기본) | `--legacy-oracle` | `--original-ids` |
+| 결과 `hygiene` 블록 | `mode="alias_prompt_guard"`, `oracle_scope`, `prompts_scanned`, `prompt_leaks`(종류별 건수), `cases_with_visible_issues` | 같음 | `mode="original_ids"`, limitations에 `ORIGINAL_ID_NOTE` |
+
+- 결과 행·질문 기록의 `case_id`는 정답과 연결해야 하므로 평가기 쪽 **원래 ID**입니다. 별칭 매핑·salt는 결과에 들어가지 않습니다. 별칭을 되돌려야 하면 `alias_map=AliasMap(salt=…)`을 넘기고 평가기에서만 `resolve`/`unalias_keys`를 씁니다.
+- 실제 LLM 경로(`llm_pilot`, `run_llm_pilot`, CLI `ctrec batch`)는 아직 이 기본값을 쓰지 않습니다. 실제 LLM으로 masked/validation 세트를 돌리기 전에 별도 연결이 필요합니다(감사 P0-2).
+
+### 측정한 차이 (오프라인 대역, rounds=2, budget=3, 커밋 시점)
+
+| 데이터 | 비교 | 결과 |
+|---|---|---|
+| masked 101 / validation 100 | 원래 ID ↔ 별칭+검사(답변기 legacy) | 사례 행·질문 기록 **완전 일치**, 검사한 프롬프트 1002 / 834건, 누출 0 |
+| masked 101 | 원래 ID ↔ 기본(범위 제한 답변기) | `revealed_answers` baseline 57→53, candidate 27→23. 사례 행 8개에서 공개·미응답 수, 1개에서 `decision_finals`가 다름. `coverage_exact`·`coverage_exact_or_inferred`·`questions_total`은 같음 |
+| validation 100 | 원래 ID ↔ 기본 | `revealed_answers` baseline 61→60, candidate 45→42. 사례 행 4개에서 공개·미응답 수가 다름. 질문 겨냥 지표는 같음 |
+
+- 차이는 누출 방지(별칭·검사)가 아니라 **답변기 공개 범위 변경**에서만 생깁니다. 기존 답변기는 회수율을 과대 추정했습니다(감사 하위 조사: 기준 하나만 맞아도 숨긴 사실 전부 공개).
+- 공개 '횟수'는 단조가 아닙니다. 1라운드에 덜 공개하면 2라운드 질문이 다시 해당 기준을 맞혀 한 번 더 공개될 수 있습니다. 대신 질문마다 공개된 사실이 겨냥한 기준의 범위 안에 있는지를 테스트합니다(`tests/test_eval_entry.py`).

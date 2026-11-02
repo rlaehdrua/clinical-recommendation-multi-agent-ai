@@ -267,7 +267,7 @@ def load_cases_hygienic(parsed: dict, path: Path | None = None, labels_path: Pat
     from . import question_eval as qe
     path = Path(path or qe.DEFAULT_CASES)
     labels_path = Path(labels_path or qe.DEFAULT_LABELS)
-    amap = alias_map or AliasMap()
+    amap = alias_map if alias_map is not None else AliasMap()  # 빈 AliasMap은 len 0이라 `or`로 쓰면 버려짐
     raw = {r["patient_id"]: r for r in json.loads(path.read_text(encoding="utf-8"))}
     scanner = LeakScanner()
     out = []

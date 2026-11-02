@@ -161,23 +161,30 @@ def test_provisional_questions_kept_but_after_relevant():
                 assert max(rel_c) < min(prov_c), m
 
 
-def test_policies_never_see_ground_truth(monkeypatch, val_subset):
+@pytest.mark.parametrize("hygiene", [True, False])  # 기본(별칭) 경로와 원래 ID 경로 모두
+def test_policies_never_see_ground_truth(monkeypatch, val_subset, hygiene):
+    from ctrec.eval_hygiene import AliasMap
     pick, _ = val_subset
     cases = {g.case_id: g for _, g in qe.load_cases(PARSED, bvs.OUT / "validation_cases.json", only=pick)}
-    seen = []
+    amap = AliasMap(salt="t") if hygiene else None
+    seen, pids = [], []
     real = qp.order_asks
 
     def spy(asks, session, policy):
         blob = session.case.raw_text
-        g = cases[session.case.patient_id]
+        pids.append(session.case.patient_id)
+        g = cases[amap.resolve(session.case.patient_id) if amap is not None else session.case.patient_id]  # 평가기 쪽 역변환
         seen.append(any(t in blob for _, t in g._hidden_texts))
         assert not hasattr(session.case, "oracle_facts") or session.case.oracle_facts is None
         return real(asks, session, policy)
     monkeypatch.setattr(qp, "order_asks", spy)
     factories = {p: qp.generator_factory(p) for p in qp.POLICIES}
-    qe.run_evaluation(PARSED, TRIALS, only=pick[:2], rounds=1, budget=3,
-                      cases_path=bvs.OUT / "validation_cases.json", methods=qp.POLICIES, factories=factories)
+    r = qe.run_evaluation(PARSED, TRIALS, only=pick[:2], rounds=1, budget=3,
+                          cases_path=bvs.OUT / "validation_cases.json", methods=qp.POLICIES, factories=factories,
+                          hygiene=hygiene, alias_map=amap)
+    assert all(m["failed"] == 0 for m in r["methods"].values()), {k: m["failed_cases"] for k, m in r["methods"].items()}  # spy 오류가 실패 실행으로 숨지 않음
     assert seen and not any(seen)  # 라운드 1 정책 입력에는 숨긴 사실이 없음
+    assert all(p.startswith("PA-") for p in pids) == hygiene  # 정책은 별칭만 봄 (기본 경로)
 
 
 def test_frozen_store_unchanged():

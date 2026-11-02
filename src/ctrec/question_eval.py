@@ -620,18 +620,47 @@ def aggregate(rows: list[dict], method: str) -> dict:
 def run_evaluation(parsed: dict, trials: dict, *, only: list[str] | None = None, rounds: int = 2, budget: int = 3,
                    case_timeout_s: float = 30.0, cancel=None, cases_path: Path = DEFAULT_CASES,
                    labels_path: Path = DEFAULT_LABELS, ablation: bool = False, methods: tuple | None = None,
-                   factories: dict | None = None, tie_policies: dict | None = None) -> dict:
-    """오프라인 평가 실행. 결과는 메모리 dict (파일 저장은 save_outputs로 명시적으로)."""
-    cases = load_cases(parsed, cases_path, labels_path, only)
+                   factories: dict | None = None, tie_policies: dict | None = None,
+                   hygiene: bool = True, oracle_scope: str | None = None, alias_map=None) -> dict:
+    """오프라인 평가 실행. 결과는 메모리 dict (파일 저장은 save_outputs로 명시적으로).
+
+    hygiene=True (기본, WP1 B-4): 파이프라인에는 케이스 ID 대신 불투명 별칭(eval_hygiene.AliasMap)만 넘기고,
+      모든 LLM(대역 포함) 프롬프트를 보내기 전에 PromptLeakGuard로 검사해 원래 ID·정답 토큰이 있으면 차단
+      (그 실행은 status="error"로 실패 집계). 결과 행·기록의 case_id는 평가기 쪽 원래 ID (정답과 연결용).
+    hygiene=False: 기존 원래 ID 경로. 디버깅·이전 결과 재현용으로만 명시적으로 지정.
+    oracle_scope: "scoped" = 질문이 EXACT로 겨냥한 기준의 숨긴 사실만 공개 (hygiene 기본값),
+      "legacy" = 기존 OracleAnswerer (EXACT 하나만 맞아도 숨긴 사실 전부 공개, hygiene=False의 유일한 값).
+    alias_map: 평가기 쪽에서 별칭을 되돌릴 때·salt를 고정해 재현할 때 넘김 (없으면 실행별 무작위 salt).
+    """
+    from . import eval_hygiene
+    scope = oracle_scope or ("scoped" if hygiene else "legacy")
+    if scope not in ("scoped", "legacy"):
+        raise ValueError(f"oracle_scope는 scoped / legacy: {scope}")
+    if scope == "scoped" and not hygiene:
+        raise ValueError("범위 제한 답변기(oracle_scope='scoped')는 hygiene=True에서만 씀")
+    if alias_map is not None and not hygiene:
+        raise ValueError("alias_map은 hygiene=True에서만 씀")
+    if hygiene:
+        hcs, _, scanner = eval_hygiene.load_cases_hygienic(parsed, cases_path, labels_path, only, alias_map=alias_map)
+        cases = [(hc.case, hc.gt, hc) for hc in hcs]
+    else:
+        cases = [(c, g, None) for c, g in load_cases(parsed, cases_path, labels_path, only)]
     all_methods = tuple(methods) if methods else METHODS + ((ABLATION,) if ablation else ())
     rows, records, matcher_mismatch, t0 = [], [], [], time.time()
+    scanned, leaks = 0, Counter()
     with OfflineEnvironment(budget) as env:
-        for case, gt in cases:
+        for case, gt, hc in cases:
             runs = {}
             for method in all_methods:
-                runs[method] = run_method(method, case, gt, trials, rounds, budget,
-                                          deadline=time.time() + case_timeout_s, cancel=cancel, factories=factories,
-                                          tie_policy=(tie_policies or {}).get(method))
+                kw = dict(deadline=time.time() + case_timeout_s, cancel=cancel, factories=factories,
+                          tie_policy=(tie_policies or {}).get(method))
+                if hc is None:
+                    runs[method] = run_method(method, case, gt, trials, rounds, budget, **kw)
+                else:
+                    runs[method], guard = eval_hygiene.run_method_hygienic(
+                        method, hc, trials, rounds, budget, scanner, scoped_oracle=scope == "scoped", **kw)
+                    scanned += guard.scanned
+                    leaks.update(guard.leaks)
                 rows.append(case_metrics(gt, runs[method], budget))
                 records.extend({k: v for k, v in q.items() if k != "relevance"} | {"relevance": q["relevance"]}
                                for q in runs[method].questions)
@@ -664,7 +693,12 @@ def run_evaluation(parsed: dict, trials: dict, *, only: list[str] | None = None,
             and agg["candidate"][k]["value"] is not None and agg["baseline"][k]["value"] is not None},
         "round1_matcher_identical": not matcher_mismatch, "round1_matcher_mismatch_cases": matcher_mismatch,
         "case_rows": rows, "case_diffs": diffs, "question_records": records,
-        "limitations": LIMITATIONS,
+        "hygiene": {  # 별칭 매핑·salt·원문은 넣지 않음 (종류별 건수만)
+            "mode": "alias_prompt_guard" if hygiene else "original_ids",
+            "oracle_scope": scope, "prompts_scanned": scanned, "prompt_leaks": dict(leaks),
+            "cases_with_visible_issues": sum(bool(hc.visible_issues) for _, _, hc in cases if hc is not None)},
+        "limitations": LIMITATIONS + ([SCOPED_ORACLE_NOTE] if scope == "scoped" else [ORIGINAL_ID_NOTE] if not hygiene
+                                      else []),
     }
 
 
@@ -676,6 +710,9 @@ LIMITATIONS = [
     "답변 시뮬레이터는 EXACT 대응 질문에만 숨긴 사실을 공개 (질문 문장 품질은 평가하지 않음)",
     "라운드 1은 두 방식이 같은 상태, 라운드 2부터는 각자 받은 답에 따라 상태가 갈라짐",
 ]
+SCOPED_ORACLE_NOTE = ("답변 시뮬레이터 범위 제한: EXACT로 겨냥한 기준에 대응하는 숨긴 사실만 공개. 기준이 여러 개인 사례에서 "
+                      "대응을 정할 수 없는 사실은 공개하지 않으므로 회수율은 과소 추정 쪽 (eval_hygiene.build_fact_scope)")
+ORIGINAL_ID_NOTE = "원래 케이스 ID 경로(hygiene=False): ID가 프롬프트에 들어감. 실제 LLM 평가에 쓰지 않음 (감사 P0-2)"
 
 
 def save_outputs(result: dict, out_dir: Path) -> list[Path]:
