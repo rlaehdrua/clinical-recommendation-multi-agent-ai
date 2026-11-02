@@ -411,7 +411,9 @@ class MethodRun:
 def run_method(method: str, case: PatientCase, gt: CaseGroundTruth, trials: dict, rounds: int, budget: int,
                deadline: float | None = None, cancel: "callable | None" = None,
                factories: dict | None = None, tie_policy: str | None = None,
-               record_candidates: bool = False) -> MethodRun:
+               record_candidates: bool = False, answerer_factory=None) -> MethodRun:
+    """answerer_factory: gt -> 답변 시뮬레이터 (answer(questions, patient_id), log 속성). 기본값 None = OracleAnswerer.
+    모듈 속성을 바꾸지 않고 실행마다 주입하므로 동시 실행에도 서로 영향이 없음 (eval_hygiene.ScopedOracleAnswerer 등)."""
     from . import pipeline
     from .decision_loop import DecisionTracker, LoopConfig
     from .decision_state import Budget
@@ -427,7 +429,7 @@ def run_method(method: str, case: PatientCase, gt: CaseGroundTruth, trials: dict
     else:
         gen = (baseline_generator if method == "baseline" else ablation_generator(ref) if method == ABLATION
                else candidate_generator(ref))
-    answerer = OracleAnswerer(gt)
+    answerer = (answerer_factory or OracleAnswerer)(gt)
     s = Session(case=c, trials={t: trials[t] for t in gt.candidate_trials}, answerer=answerer, tracer=_NullTracer(),
                 max_rounds=rounds, question_budget=None,
                 decision_loop="diagnostic" if method == "candidate" or tie_policy is not None else "off")
