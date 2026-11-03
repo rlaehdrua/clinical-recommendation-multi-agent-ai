@@ -37,7 +37,12 @@
 - **용어 구분**: 단계 상태 `contract_violation`(감사 기록 보류)과 쌍 상태 `PairStatus.BLOCKED_FAILURE`(확보 수단 소진에 따른 운영상 보류)는 다른 개념입니다. BLOCKED_FAILURE 전이는 계약상 정상 전이이며 기록의 `PairTransition`(정책 권한)으로 남습니다.
 - 실행 상태: `OfflineRunResult.complete`는 (실행 성공, 미지원 0, 차단 0, 파일 정합성 문제 0)일 때만 참. 차단이 있으면 `audit_status = "incomplete_contract_violation"`.
 - `verify_run`이 두 파일을 다시 읽어 확인: run_id 일치, 단계 = 질문 수 = 재매칭 라운드 수, 기록 단계 ∪ 위반 단계 = 전체 단계(겹침 없음), 단계별 action_id 일치, 파일 건수 = 생산 결과, 그리고 **실행 중 관찰한 전후 상태와 대조**해 (1) 상태가 바뀐 모든 쌍이 기록의 `PairTransition` 또는 위반 진단에 있는지 (2) 실제 새 사실이 모두 `facts_added` 또는 진단 `fact_ids`에 있는지.
-- **현재 Inspector v2(`load_run_v2`)는 진단 파일을 읽지 않습니다.** 차단 단계를 화면에 띄우려면 `audit.py` 확장이 필요합니다(팀 승인 대기, 이번 단계에서 하지 않음).
+- **Inspector 진단 조회** (`engine/audit_diagnostics.py`)
+  - 구현됨 (Python API): `inspect_run(run_dir, scanner=...)` → 기존 `build_v2_view` 결과 + `diagnostics` + `audit_status`, `render_diagnostics_html(view)` → 기존 v2 HTML 끝에 진단 절 추가. 단계별 상태(`recorded` / `recorded_with_warnings` / `contract_violation`, 불일치 시 `inconsistent` / `diagnostics_without_record`), 진단 항목, 차단된 전이 목록(`blocked_transitions`), 진단 파일 문제를 보여 줍니다.
+  - 차단된 전이는 정상 `pair_history`·`steps[].pairs`에 넣지 않고, 누락된 기록을 복원하지 않습니다. 정상 정책 전이(→ `BLOCKED_FAILURE`)는 기록된 단계의 정상 전이로 그대로 보입니다.
+  - 진단 파일이 없으면 `file_status="absent"`, `audit_status="no_blocking_diagnostics"` (진단 없는 실행과 기능 이전 실행을 구분할 수 없어 '완료'로 단정하지 않음). 손상 줄은 값 없이 줄 번호·필드 경로로 보고하고 제외합니다.
+  - 바뀌지 않음: 기존 `audit.load_run_v2` / `LoadResult` / `build_v2_view` / `render_v2_html`은 진단 파일을 읽지 않으며 `LoadResult.issues`는 '기록 파일 로드 문제' 의미 그대로입니다(`verify_run`이 사용).
+  - **아직 연결하지 않음**: CLI(`ctrec` 명령)와 웹 Inspector 화면에는 v2 기록 보기 진입점 자체가 없고, 이 함수도 연결하지 않았습니다. 화면 연결은 팀 결정 후 별도 작업입니다.
 
 ## 4. 사실 귀속
 
@@ -87,7 +92,7 @@
 ## 8. 팀 요청·결정 사항
 
 1. **서연 (profile_facts)**: 답변에서 나온 사실에 질문별 출처 `source_reference.ref`(예: `qa:round1:Q1`)를 남기도록 요청. 이것이 없으면 정상 기록의 `facts_added`가 항상 비어 추적성이 불완전합니다. 무응답 표지를 사실로 저장하지 않을지도 함께 결정.
-2. **공정현/팀 (audit.py)**: `load_run_v2`가 `decision_record_issues.jsonl`을 함께 읽어 `issues`에 합치는 확장 승인 (Inspector v2에서 차단 단계가 보이도록).
+2. **공정현/팀 (audit.py)**: ~~`load_run_v2`가 진단을 `issues`에 합치는 확장~~ → `audit.py`를 바꾸지 않는 별도 모듈 `engine/audit_diagnostics.py`로 해결 (`issues`의 기존 의미와 `verify_run`이 유지됨). 남은 결정: CLI·웹 Inspector 화면에서 이 함수를 기본으로 쓸지.
 3. **동겸 (WP5 정책) + 팀**: (a) 환자의 "모름"을 연락 실패와 같은 `no_response`로 볼지(현재 WP7 해석), 항목 단위 무응답으로 볼지 (b) 무응답 한 번에 `patient_interview` 전체가 그 환자에 대해 실패 처리되는 규칙이 의도인지. 계약 `OutcomeStatus`에는 '답했지만 모름'이 따로 없음. 오프라인 실험의 질문 수·회수율에 크게 영향.
 4. 직접 역전: 계약 금지 유지 + 차단 진단(현재) vs 계약 변경.
 5. 선택됐지만 묻지 않은 행동의 기록 여부(`proposed`/`not_executed` 지원은 있음, 지금은 건수만).
