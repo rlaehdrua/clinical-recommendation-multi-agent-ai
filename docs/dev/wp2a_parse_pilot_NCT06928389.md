@@ -1,7 +1,7 @@
 # WP2a 파싱 파일럿: NCT06928389 1개 (실측 사용량)
 
 > 2026-11-03 · 작성: 서연 · 브랜치 `feat/wp2a-nsclc-trials`
-> 승인: 공정현, LLM 파싱 비용 상한 $15. 이번 실행은 시험 1개만 했고 배치·전체 실행은 하지 않았습니다.
+> 승인: 선우, LLM 파싱 비용 상한 $15. 이번 실행은 시험 1개만 했고 배치·전체 실행은 하지 않았습니다.
 > **파싱 결과의 의학적 해석은 모두 "검수 필요"**입니다. expert 기준은 정답을 만들지 않고 `EXPERT_REVIEW`로 둡니다.
 > **원칙: 의학적 해석은 임상 검수 전까지 미확정입니다. 검수되지 않은 기준으로는 정답(쌍 라벨·기준 정답)을 생성하지 않습니다.**
 
@@ -164,7 +164,7 @@ PYTHONUTF8=1 ANTHROPIC_API_KEY= PYTHONPATH=src ../../../.venv/Scripts/python.exe
 
 | 수정안 | 파일 | 보호 파일? | 비고 |
 |---|---|---|---|
-| A. 프롬프트: ECOG "0 or 1"·"0-1"은 `operator="<="`, `value="1"`로 적으라고 명시 | `src/ctrec/agents/criteria_parser.py:27` | 아님 (`PROTECTED` 목록 밖) | `team_parallel_start.md` §2 서연 변경 가능 목록에도 없음 → **공정현 확인 권장**. `parser_prompt_hash`가 바뀜(동결 기록은 `trial_hash`로만 최신 판정이라 재컴파일은 일어나지 않음) |
+| A. 프롬프트: ECOG "0 or 1"·"0-1"은 `operator="<="`, `value="1"`로 적으라고 명시 | `src/ctrec/agents/criteria_parser.py:27` | 아님 (`PROTECTED` 목록 밖) | `team_parallel_start.md` §2 서연 변경 가능 목록에도 없음 → **선우 확인 권장**. `parser_prompt_hash`가 바뀜(동결 기록은 `trial_hash`로만 최신 판정이라 재컴파일은 일어나지 않음) |
 | B. 무결성 검사에서 정규화: ecog `in` + 0부터 이어진 정수 목록(`0,1`)이면 `<= max`로 바꿈 | `criteria_parser.py:137-160` (`check_integrity`) | 아님 | 프롬프트 해시 불변. 저장된 3회 파싱을 그대로 다시 쓸 수 있음(§8.5). 같은 소유 확인 필요 |
 | C. 규칙 엔진에 `in`/`not_in` 지원 추가 | `src/ctrec/tools/rule_engine.py:17, 263-267` | 아님 (단, 판정 계층 파일. 동겸 금지 목록에 있음) | 판정 의미가 넓어지므로 가장 큰 변경. 이번 문제에는 A·B로 충분 |
 | D. E8 같은 "목록형 and" 분할 지시 보완 | `criteria_parser.py:17` | 아님 | 선택 사항. medoid로 이미 흡수됨 |
