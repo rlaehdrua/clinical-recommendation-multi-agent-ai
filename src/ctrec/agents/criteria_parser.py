@@ -75,30 +75,67 @@ _locks: dict[str, threading.Lock] = {}
 _locks_guard = threading.Lock()
 
 
+# 선정 기준 원문이 이보다 길면 선정·제외 기준을 따로 요청합니다. 한 번에 받으면 구조화 출력이 max_tokens(16000)를 넘어
+# 잘린 사례가 있었습니다(NCT05255302 7,939자, NCT04892953 10,968자). 그보다 짧은 시험은 지금과 같은 한 번 호출입니다.
+SPLIT_PARSE_CHARS = 6000
+_SPLIT_KINDS = (("inclusion", "선정(Inclusion)"), ("exclusion", "제외(Exclusion)"))
+
+
+def split_parse(trial: dict) -> bool:
+    return len(trial.get("eligibility_criteria") or "") > SPLIT_PARSE_CHARS
+
+
 def parse_trial(trial: dict, *, use_cache: bool = True) -> ParsedTrial:
     rendered = _render_trial(trial)
-    key = hashlib.sha256((config.MODEL + SYSTEM + rendered).encode()).hexdigest()[:16]
+    split = split_parse(trial)
+    key = hashlib.sha256((config.MODEL + SYSTEM + rendered + ("|split" if split else "")).encode()).hexdigest()[:16]
     cache_path = config.CACHE_DIR / "parsed" / f"{trial['trial_id']}_{key}.json"
     # 여러 환자를 동시에 처리할 때 같은 시험을 중복 파싱하지 않도록 시험별 잠금
     with _locks_guard:
         lock = _locks.setdefault(str(cache_path), threading.Lock())
     with lock:
-        parsed = _parse_trial_locked(trial, rendered, cache_path, use_cache)
+        parsed = _parse_trial_locked(trial, rendered, cache_path, use_cache, split)
     # 캐시에는 LLM 원본을 두고, 불러올 때마다 검사 (검사 규칙이 바뀌어도 캐시를 버릴 필요 없음)
     parsed.integrity_issues = check_integrity(parsed, trial)
     return parsed
 
 
-def _parse_trial_locked(trial: dict, rendered: str, cache_path, use_cache: bool) -> ParsedTrial:
+def _parse_split(rendered: str) -> ParsedTrial:
+    """선정·제외 기준을 따로 요청해 합침. 요청하지 않은 종류의 규칙은 버리고 그 수를 메모에 남김."""
+    parts = []
+    for kind, label in _SPLIT_KINDS:
+        parts.append(llm.structured(
+            ParsedTrial,
+            system=SYSTEM,
+            user=rendered + f"\n\n위 임상시험의 {label} 기준만 원자 규칙으로 구조화하세요. 원문이 길어 선정·제외 기준을 "
+                            f"나눠 요청합니다. rules에는 kind=\"{kind}\"인 규칙만 넣고, 나머지 필드는 평소처럼 작성하세요.",
+            effort=config.EFFORT["criteria_parser"],
+        ))
+    inc, exc = parts
+    dropped = sum(r.kind != "inclusion" for r in inc.rules) + sum(r.kind != "exclusion" for r in exc.rules)
+    notes = f"[선정 기준 호출] {inc.parsing_notes}\n[제외 기준 호출] {exc.parsing_notes}"
+    if dropped:
+        notes += f"\n[분할 파싱] 요청하지 않은 종류의 규칙 {dropped}개를 뺌"
+    return inc.model_copy(update={
+        "rules": [r for r in inc.rules if r.kind == "inclusion"] + [r for r in exc.rules if r.kind == "exclusion"],
+        "cohorts": inc.cohorts + [c for c in exc.cohorts if c not in inc.cohorts],
+        "parsing_notes": notes,
+    })
+
+
+def _parse_trial_locked(trial: dict, rendered: str, cache_path, use_cache: bool, split: bool = False) -> ParsedTrial:
     if use_cache and cache_path.exists():
         return ParsedTrial.model_validate_json(cache_path.read_text(encoding="utf-8"))
 
-    parsed = llm.structured(
-        ParsedTrial,
-        system=SYSTEM,
-        user=rendered + "\n\n위 임상시험의 기준을 원자 규칙으로 구조화하세요.",
-        effort=config.EFFORT["criteria_parser"],
-    )
+    if split:
+        parsed = _parse_split(rendered)
+    else:
+        parsed = llm.structured(
+            ParsedTrial,
+            system=SYSTEM,
+            user=rendered + "\n\n위 임상시험의 기준을 원자 규칙으로 구조화하세요.",
+            effort=config.EFFORT["criteria_parser"],
+        )
     parsed.trial_id = trial["trial_id"]
     _renumber(parsed)
 
