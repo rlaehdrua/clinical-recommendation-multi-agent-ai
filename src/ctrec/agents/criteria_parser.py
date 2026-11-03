@@ -154,6 +154,26 @@ def _integrity_problem(rule: Rule, source_numbers: set[float]) -> str | None:
     return None
 
 
+_INT_LIST = re.compile(r"^\s*\d+(?:\s*,\s*\d+)*\s*$")
+
+
+def normalize_engine_fields(rule: Rule) -> str | None:
+    """규칙 엔진이 읽을 수 있는 같은 뜻의 표현으로 바꿈. 바꿨으면 설명, 아니면 None.
+
+    ECOG "0 or 1"을 파서가 operator="in", value="0,1"로 내는 경우가 있는데, 규칙 엔진의 ecog 판정은 숫자 비교만
+    지원합니다. 0부터 빈틈없이 이어진 정수 목록일 때만 "<= 최댓값"으로 바꿉니다(뜻이 같음). 그 밖의 목록은 그대로 두며,
+    이어지는 무결성 검사가 LLM 판정으로 넘깁니다.
+    """
+    if rule.field != "ecog" or rule.operator != "in" or not rule.value or not _INT_LIST.match(rule.value):
+        return None
+    nums = sorted({int(n) for n in rule.value.split(",")})
+    if nums[0] != 0 or nums != list(range(nums[0], nums[-1] + 1)):
+        return None
+    before = f"{rule.field} {rule.operator} {rule.value}"
+    rule.operator, rule.value = "<=", str(nums[-1])
+    return f"{rule.rule_id}: {before} -> {rule.field} {rule.operator} {rule.value}"
+
+
 def demote_engine_fields(rule: Rule) -> None:
     """규칙 엔진 필드를 비워 LLM이 원문으로 판정하게 함. unit도 함께 비워 필드 없이 단위만 남지 않게 함."""
     rule.field = rule.operator = rule.value = rule.unit = None
@@ -168,12 +188,18 @@ def check_integrity(parsed: ParsedTrial, trial: dict) -> list[str]:
     """
     source_numbers = numbers_in(f"{trial.get('minimum_age') or ''} {trial.get('maximum_age') or ''}")
     issues = []
+    normalized = []
     for rule in parsed.rules:
+        change = normalize_engine_fields(rule)
+        if change:
+            normalized.append(change)
         problem = _integrity_problem(rule, source_numbers)
         if problem is None:
             continue
         issues.append(f"{rule.rule_id}: {problem} ({rule.field} {rule.operator} {rule.value}) -> LLM 판정으로 전환")
         demote_engine_fields(rule)
+    if normalized:
+        parsed.parsing_notes += "\n[코드 정규화] " + " / ".join(normalized)
     if issues:
         parsed.parsing_notes += "\n[코드 검증] " + " / ".join(issues)
     return issues
