@@ -89,6 +89,37 @@ ExperimentSpec ──► Runner ────────────────
 - 대응표 자체도 해시해서 `cohort_hash`에 넣습니다(대응이 바뀌면 다른 실험).
 - 생성기 브랜치 작성자와 합의해야 합니다(§8 Q-G1).
 
+### 2.2 계약 필드 대응 (I-4 `ActionOutcome` · I-5 `InformationSource`)
+
+**I-5 `InformationSource` ← 생성기 `SourceSpec` + `ResponseModel` 설정**
+
+| I-5 필드 | WP6에서 채우는 값 | 생성기 쪽 대응 |
+|---|---|---|
+| `source_id` | 엔진 ID (`lab_report` 등) | `S_lab` 등 → §2.1 대응표 |
+| `kind` | document / patient / clinician / system | `evidence`: record → document, self_report → patient, physician → clinician |
+| `provides_fields` | 사실 항목 이름 패턴 | `reveals`(슬롯 패턴) → 슬롯-항목 대응 |
+| `request_cost` | `EffortCost` (능동 분, 예상 대기) | `cost_min` → `coordinator_minutes` (민감도 범위 `cost_range`) |
+| `per_item_minutes` | 엔진 카탈로그 값 | 없음 (생성기는 정보원당 비용만) |
+| `can_verify` | document·clinician = True, patient = False | `evidence == "record"` |
+| `alternatives` | 엔진 카탈로그 값 | 없음 |
+| `cost_basis`, `cost_reference` | `assumed` (문헌 근거가 있으면 `literature` + ID) | `basis` 문자열 (예: Penberthy 2012 인용) → `cost_reference` ID로 옮길지 §8 Q-G1 |
+
+`ResponseModel` 파라미터(성공률·부분·무응답·지연)는 I-5에 넣지 않습니다. I-5는 정책이 보는 카탈로그이고, 응답 확률은 정책에 보이면 안 되는 시뮬레이터 내부 값이기 때문입니다(계약 설계 원칙 5).
+
+**I-4 `ActionOutcome` ← `CohortEnvironment.execute` 결과**
+
+| I-4 필드 | 값 | 규칙 |
+|---|---|---|
+| `action_id` | 실행한 `Action.action_id` | 같아야 함 (계약 검사) |
+| `status` | `ResponseModel` 결과: succeeded / partial / failed / no_response / not_executed | DEFER·FINALIZE는 not_executed |
+| `new_fact_ids` | 드러난 oracle 값으로 만든 사실 ID | failed·no_response·not_executed·"모름"은 빈 값 (계약 검사). partial은 1개 이상 |
+| `cost_charged` | 능동 분 (§3.2.1) | not_executed면 0. 실패·무응답도 청구 |
+| `charge_keys` | `charge_key(alias, source_id)` | 같은 (환자, 정보원) 중복 청구 0 |
+| `latency_minutes` | `ResponseModel`의 지연 | 경과 시간 축 (§3.2.1) |
+| `error_code` | failed·no_response일 때 필수 (예: `source_no_response`, `source_failed`) | "모름"의 코드는 동겸 `answer_unknown` 확정 후 (§7) |
+| `resolved_criteria` | 이 행동으로 값이 확보된 대상 기준 | 판정은 재평가가 정함 (보고만) |
+
+
 ---
 
 ## 3. 시뮬레이션
@@ -115,6 +146,19 @@ ExperimentSpec ──► Runner ────────────────
   생성기의 `derive_seed(base_seed, scenario_id, replicate)`와 같은 방식(해시 기반)을 씁니다.
 - 대체 정보원: 실패·무응답 뒤 `InformationSource.alternatives`의 다음 정보원을 **정책이** 고릅니다. 환경은 대체를 자동으로 실행하지 않습니다.
 - 경과 시간: `EffortCost.__add__`의 대기 최댓값은 같은 단계의 병렬 요청에만 맞습니다. 달력 경과 시간은 **단계별 최대 대기의 합**으로 Runner가 따로 계산합니다(계약 0.2 변경 기록).
+
+### 3.2.1 능동 시간과 경과 시간 분리 (M2)
+
+M2(코디네이터 능동 작업시간 예산)의 원칙대로, 시간은 두 축으로 따로 셉니다. 둘을 더하지 않습니다.
+
+| 축 | 무엇 | 출처 필드 | 예산 차감 | 결과표 열 |
+|---|---|---|---|---|
+| 능동 시간 | 코디네이터·임상의가 실제로 일한 분 | `EffortCost.coordinator_minutes`, `clinician_minutes` (청구는 `ActionOutcome.cost_charged`) | **예** (`EffortBudget.coordinator_minutes`·`clinician_minutes`, `EffortLedger`) | 능동 분 (코디네이터 / 임상의) |
+| 경과 시간 | 요청부터 응답까지 기다린 시간 | `EffortCost.patient_wait_minutes`(예상), `ActionOutcome.latency_minutes`(실제, `ResponseModel`이 정함) | **아니요** | 달력 경과 시간 = 단계별 `max(latency_minutes)`의 합 |
+
+- 실패·무응답도 능동 시간은 청구합니다(요청 작업은 했음). 경과 시간은 무응답 타임아웃까지 셉니다.
+- LLM 비용(`llm_calls`, `llm_cost_usd`)은 세 번째 축이며 오프라인 실행에서는 0입니다. 웹 `web/budget.py` 원장과 합치지 않습니다.
+- 정책 비교표에는 능동 시간과 경과 시간을 각각 보고합니다. "능동 시간을 줄였지만 경과 시간은 늘었다" 같은 맞바꿈이 드러나게 하기 위함입니다.
 
 ### 3.3 오프라인 판정 (LLM 없음)
 
@@ -201,6 +245,10 @@ ExperimentSpec ──► Runner ────────────────
 - `source_catalog_hash` 없음·불일치 → 실행 거부.
 - 실패·무응답·모름 → 새 사실 0, 비용은 청구.
 - 정책·평가기에서 oracle 접근 0 (`oracle_upper` 제외). 별칭 외 환자 ID 누출 0.
+- **oracle import·접근 금지 테스트**: 생성기 `OraclePart`의 세 필드 `hidden`(숨긴 슬롯 실제 값), `truth`(기준 실제 성립), `pair_label`(쌍 정답)은 `CohortEnvironment`와 Runner의 지표 계산만 읽습니다.
+  - 정적 검사: `src/ctrec/sim/baselines.py`, `sim/evaluator.py`, `engine/**`에 `OraclePart`·`Cohort.oracle` import가 없고 `.hidden`·`.truth`·`.pair_label` 속성 참조도 없음(AST 검사). 예외는 `oracle_upper` 클래스 하나이며 허용 목록으로 명시합니다.
+  - 동적 검사: 정책·평가기에는 `policy_view(cohort)`(PublicPart)만 넘깁니다. `PublicPart`에 `hidden`·`truth`·`pair_label` 키가 없음을 확인합니다. 정책이 받은 객체에 oracle 값(숨긴 슬롯 값)이 문자열로도 나타나지 않음을 확인합니다(`PromptLeakGuard`와 같은 방식).
+- seed 고정: 같은 `spec.seed`면 `ResponseModel` 결과가 같고, 정책 순서를 바꿔도 같은 (환자, 정보원, 시도 번호)는 같은 결과(공통 난수, §3.2).
 - 확정 적격 ∧ 정답 부적격 = 0 (기본 정책, 근거 수준 켬).
 - 환자 1명·시험 1개 작은 사례에서 완전탐색 결과와 시뮬레이터 결과 일치(생성기 원칙과 같음).
 - 오프라인 실행 LLM 호출 0건.
