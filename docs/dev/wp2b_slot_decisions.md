@@ -126,6 +126,44 @@
 - 새 행: `dx.liver_mets`(T5·T6), `cm.gilbert`(T5·T6), `med.on_anticoagulant`(T4), `lab.adequate_function`(T1·T4·T7, `unresolved`).
 - `value_range` 등 다른 열은 바꾸지 않았습니다(D1의 3값 구조는 유전자별 구조 결정 뒤 반영). `review_status`는 모두 "검수 필요"입니다.
 
+## 7a. 판정 유형 `rule` 분리: `rule_engine` / `categorical` (2026-11-03 추가)
+
+파싱 파일럿(`docs/dev/wp2a_parse_pilot_NCT06928389.md` §8.2·§10.4)에서 CSV의 `rule`과 파서의 rule이 서로 다른 뜻임을 확인했습니다. 그래서 CSV `adjudication_candidate`의 `rule`을 둘로 나눴습니다. 다른 열은 바꾸지 않았습니다.
+
+| 값 | 정의 | 해당 슬롯 |
+|---|---|---|
+| `rule_engine` | 현재 규칙 엔진 필드로 판정 가능: `age`, `sex`, `ecog`, 절댓값 `lab:*` (`criteria_parser.py:24-29`, `rule_engine.py`). 상대값(×ULN)은 엔진이 지원하지 않음 | `age`, `ecog`, `lab.anc`, `lab.platelets`, `lab.hemoglobin`, `lab.creatinine_clearance`, `lab.qtcf` |
+| `categorical` | 범주·이진·수치 슬롯 값으로 결정적 판정은 가능하지만 엔진 필드가 아님 (명제·질문 계약 경로나 생성기 범주 연결이 맡을 기준) | 그 밖의 기존 `rule` 슬롯 전부. 수치지만 엔진 필드가 아닌 것도 포함: `bm.pdl1_tps`(%), `med.systemic_steroid_dose`(mg), `tx.days_since_last_anticancer`·`proc.days_since_major_surgery`(일), `other.body_weight`(kg), `other.weight_loss_3m`(%), ×ULN 검사(`lab.ast_alt_uln`, `lab.bilirubin_uln`, `lab.inr_aptt_uln`) |
+
+**CSV 재집계 (196행)**
+
+| 유형 | 8개 시험 전체 | 파싱 완료 6개 시험 |
+|---|---|---|
+| rule_engine | 22 | 10 |
+| categorical | 72 | 39 |
+| fact_llm | 83 | 60 |
+| expert | 16 | 10 |
+| unresolved | 3 | 3 |
+| 합계 | 196 | 122 |
+
+(이전 `rule` 94행 = rule_engine 22 + categorical 72. 이 중 4행은 D3에서 추가한 조건 슬롯입니다.)
+
+**파싱 6개 시험과 비교**
+
+| | CSV (122행) | 파싱 (160규칙) | CSV 행과 파싱 규칙 대응 |
+|---|---|---|---|
+| rule_engine / 파서 rule | 10 (8.2%) | 19 (11.9%) | CSV rule_engine 10행이 **모두** 파서 rule과 대응 (ECOG 6, 나이 4). 파서 rule 나머지 9개는 CSV에 없는 성별 4·추가 나이 규칙 5 |
+| categorical | 39 (32.0%) | — | 39행 **모두** 파서 fact_llm과 대응 (파서에는 범주 판정 유형이 없음) |
+| fact_llm | 60 (49.2%) | 131 (81.9%) | 58행 fact_llm, 2행 expert |
+| expert | 10 (8.2%) | 10 (6.2%) | 5행 expert, 5행 fact_llm |
+| unresolved | 3 (2.5%) | — | 2행 expert, 1행 fact_llm |
+
+- 분리한 뒤에는 CSV `rule_engine`과 파서 rule 사이에 불일치가 없습니다. 앞서 본 "rule 11.9% vs 40.2%" 차이는 거의 모두 `categorical` 32.0%에서 나옵니다.
+- 대응은 인용문 토큰 겹침으로 짝지은 근사치입니다(검수 필요).
+- `categorical` 중 수치 슬롯은 엔진 필드를 추가하면 `rule_engine`으로 옮길 수 있는 후보입니다. 이 결정은 회의 안건(`docs/dev/wp2b_wp4_engine_field_agenda.md`)으로 넘깁니다.
+- D6의 rule 47.9% 집계는 분리 전 수치입니다. 분리 후 기준으로는 8개 시험 전체에서 rule_engine 11.2%, categorical 36.7%입니다.
+- 파싱하지 못한 두 시험(NCT05255302, NCT04892953)은 CSV `rule_engine` 12행(숫자 검사·나이·ECOG)을 갖고 있어, 재실행 뒤 수치가 바뀝니다.
+
 ## 8. 남은 결정 (검수 회의)
 
 1. D1 유전자별 3값 구조 채택 여부, 조합 후보 #4 수정.
