@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import csv
 import json
+import re
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -244,3 +245,62 @@ def screening_metrics(rows: list[dict], outputs: Path) -> dict | None:
         "pool_size": pool / n,
         "missed_eligible": missed,
     }
+
+
+# ---------------------------------------------------------------------------
+# 누락 포함 적격성 지표 (WP1 B-2, 감사 P1-6). 기존 eligibility_metrics·baseline_gate는 그대로 둠
+# ---------------------------------------------------------------------------
+# eligibility_metrics는 (환자, 시험) 내부 조인이라 예측이 없는 쌍이 분모에서 빠지고 감점되지 않습니다.
+# cohort_eligibility_metrics는 정답의 모든 쌍을 분모로 하고 예측 없는 쌍을 NOT_EVALUATED(판정 못 함 = 오답,
+# 부적격 아님)로 채웁니다. 정답 밖 예측은 세지 않고 개수만 보고합니다.
+# 연결 키는 평가기 쪽 (원래 patient_id, trial_id)입니다. 별칭(PA-…)으로 남은 예측은 AliasMap.unalias_keys로
+# 먼저 되돌려야 하며, 되돌리지 못한 별칭 키는 정답과 연결되지 않고 extra로만 셉니다(unresolved_alias_predictions).
+
+MISSING_FILL = "NOT_EVALUATED"
+_ALIAS_KEY = re.compile(r"^PA-[0-9a-f]{16}$")  # eval_hygiene.ALIAS_RE와 같은 형식 (import 순환을 피해 따로 둠)
+
+
+def fill_missing(gold: dict, pred: dict) -> tuple[dict, list, list]:
+    """(정답 쌍 전체에 대한 예측, 누락 쌍, 정답 밖 예측 쌍)."""
+    missing = sorted(k for k in gold if k not in pred)
+    extra = sorted(k for k in pred if k not in gold)
+    full = {k: pred.get(k, MISSING_FILL) for k in gold}
+    return full, missing, extra
+
+
+def cohort_eligibility_metrics(gold: dict, pred: dict, text_only: dict | None = None,
+                               confirmed: set | None = None) -> dict:
+    """누락 예측을 분모에 넣는 적격성 지표. 키 이름은 eligibility_metrics와 같고 denominator="all_gold_pairs".
+
+    confirmed_correct_pairs(M3 목적 함수 후보): 정답 ELIGIBLE이고 ELIGIBLE로 확정한 쌍 수(confirmed를 주면 그 쌍만).
+    """
+    full, missing, extra = fill_missing(gold, pred)
+    m = eligibility_metrics(gold, full, text_only)
+    m["missing_predictions"] = len(missing)  # 기존 함수는 채운 뒤라 0이 되므로 다시 기록
+    m["missing_rate"] = len(missing) / len(gold) if gold else None
+    m["extra_predictions"] = len(extra)
+    m["unresolved_alias_predictions"] = sum(bool(_ALIAS_KEY.match(str(p))) for p, _ in extra)
+    m["patients_with_missing"] = len({p for p, _ in missing})
+    ok = [k for k in gold if gold[k] == "ELIGIBLE" and full[k] == "ELIGIBLE" and (confirmed is None or k in confirmed)]
+    wrong = [k for k in gold if gold[k] != "ELIGIBLE" and full[k] == "ELIGIBLE" and (confirmed is None or k in confirmed)]
+    m["confirmed_correct_pairs"] = len(ok)
+    m["confirmed_wrong_pairs"] = len(wrong)
+    m["gold_eligible_pairs"] = sum(v == "ELIGIBLE" for v in gold.values())
+    m["denominator"] = "all_gold_pairs"
+    return m
+
+
+def cohort_baseline_gate(current: dict, baseline: dict, tolerance: float = BASELINE_TOLERANCE) -> tuple[bool, str]:
+    """누락을 감점한 정확도로 비교. 정답 쌍 수가 다르면 비교하지 않음(같은 평가셋이 아님)."""
+    if current.get("denominator") != "all_gold_pairs" or baseline.get("denominator") != "all_gold_pairs":
+        return False, "cohort_eligibility_metrics 결과끼리만 비교할 수 있음"
+    if current.get("pairs") != baseline.get("pairs"):
+        return False, f"정답 쌍 수가 다름 ({current.get('pairs')} vs {baseline.get('pairs')})"
+    cur, base = current.get("accuracy"), baseline.get("accuracy")
+    if cur is None or base is None:
+        return False, "정확도가 없어 기준선과 비교할 수 없음"
+    diff = cur - base
+    ok = diff >= -tolerance - 1e-9 and current.get("confirmed_wrong_pairs", 0) <= baseline.get("confirmed_wrong_pairs", 0)
+    return ok, (f"정확도(누락 포함) {cur:.3f} (기준선 {base:.3f}, 차이 {diff * 100:+.1f}%p), 오확정 "
+                f"{current.get('confirmed_wrong_pairs')} (기준선 {baseline.get('confirmed_wrong_pairs')}) "
+                f"-> {'통과' if ok else '불합격'}")
