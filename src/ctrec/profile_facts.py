@@ -20,6 +20,14 @@
 - source_quote가 없는 단일 값 항목(age, sex, ecog, primary_diagnosis, disease_stage): 인용을 만들지 않고 출처는 unknown.
 - observed_at: 항목의 date가 YYYY, YYYY-MM, YYYY-MM-DD일 때만. 다른 표기는 해석하지 않고 observed_at_text에 보존.
 
+질문별 출처 (qa_pairs, 선택)
+- qa_pairs(확인 질문 문답 기록)를 넘기면, 답변에서 확인된 인용이 정확히 한 문답의 답에만 들어 있을 때 출처 참조를
+  계약 질문 경로와 같은 형식 "q:r<라운드>:<질문ID>"로 남깁니다. 둘 이상이거나 찾지 못하면 "raw_text:answers"(추정하지 않음).
+- 그 문답의 답이 "모름"·거부·미응답이면 사실로 만들지 않습니다(응답 상태이지 의료 사실이 아님).
+- 그 문답이 의사 참고용(purpose="physician_reference")이면 사실로 만들지 않습니다(적격성 판정 근거가 아님, P14 D4).
+  인용이 걸린 문답이 모두 의사 참고용일 때도 같습니다. 적격성 문답과 함께 걸리면 모호하므로 "raw_text:answers".
+- qa_pairs를 넘기지 않으면(None) 이전과 같은 결과입니다.
+
 중복 방지
 같은 환자·세션에 같은 프로필을 다시 넣으면 같은 사실을 또 만들지 않습니다. 같은 근거인지는
 (항목, 값, 단위 표기, 관찰 시점, 출처, 출처 참조) 전체로 판단하므로, 같은 값이라도 관찰 시점·출처·인용이 다르면
@@ -30,11 +38,12 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from typing import Sequence
 
 from . import evidence
 from .fact_store import (_PATIENT_ID, FactStore, FactStoreError, PatientFact, SourceReference, _check_value,
                          _norm_field)
-from .schemas import Fact, LabValue, PatientProfile
+from .schemas import Fact, LabValue, PatientProfile, QAPair
 from .tools.rule_engine import _norm_unit, canonical_lab
 
 _ISO_DATE = re.compile(r"^\d{4}(-\d{2}(-\d{2})?)?$")
@@ -48,10 +57,44 @@ class IngestResult:
     duplicates: list[str] = field(default_factory=list)  # 이미 있어 만들지 않은 사실의 fact_id
     skipped: list[str] = field(default_factory=list)  # 값이 없어 옮기지 않은 항목
     rejected: list[tuple[str, str]] = field(default_factory=list)  # (항목, 사유): 이름·값이 저장소 규칙에 맞지 않아 옮기지 못함
+    # qa_pairs를 넘겼을 때만 채움: 사실로 만들지 않은 항목 (항목, 사유: "non_answer" | "physician_reference")
+    withheld: list[tuple[str, str]] = field(default_factory=list)
 
 
 def _ws(s: str) -> str:
     return re.sub(r"\s+", " ", s).strip()
+
+
+def _qa_ref(pair) -> str:
+    return f"q:r{pair.round}:{pair.question_id}"
+
+
+def _answer_links(quote: str, qa_pairs, session_id: str | None) -> list:
+    """인용이 답에 들어 있는 문답 (같은 세션만, 세션을 모르면 모두)."""
+    q = _ws(quote)
+    return [p for p in qa_pairs
+            if (session_id is None or p.session_id in (None, session_id)) and q and q in _ws(p.answer or "")]
+
+
+def _link_answer(quote: str | None, ref: SourceReference, qa_pairs, session_id: str | None):
+    """답변에서 확인된 인용을 질문 단위로 연결. 반환: (새 SourceReference, 보류 사유 | None)."""
+    from .evidence_directness import declared_purpose  # 지연 import: evidence_directness가 이 모듈보다 무거움
+    from .question_contract import non_answer
+
+    if qa_pairs is None or ref.ref != "raw_text:answers" or not quote:
+        return ref, None
+    links = _answer_links(quote, qa_pairs, session_id)
+    purposes = {declared_purpose(p) for p in links}
+    if links and purposes == {"physician_reference"}:
+        return ref, "physician_reference"
+    if len(links) != 1:
+        return ref, None  # 모호하거나 찾지 못함: raw_text:answers 유지
+    pair = links[0]
+    if non_answer(pair.answer):
+        return ref, "non_answer"
+    if declared_purpose(pair) != "eligibility":
+        return ref, None  # 목적을 밝히지 않은 문답: 질문 단위로 연결하지 않음
+    return SourceReference(kind="answer", ref=_qa_ref(pair), quote=ref.quote), None
 
 
 def _locate(quote: str | None, raw_text: str | None, input_source: str) -> tuple[str, SourceReference]:
@@ -107,11 +150,13 @@ def _items(profile: PatientProfile) -> list[tuple[str, object, str | None, str |
 
 
 def ingest_profile(store: FactStore, profile: PatientProfile, *, raw_text: str | None = None,
-                   input_source: str = "unknown", session_id: str | None = None) -> IngestResult:
+                   input_source: str = "unknown", session_id: str | None = None,
+                   qa_pairs: Sequence[QAPair] | None = None) -> IngestResult:
     """PatientProfile의 사실을 store에 추가. 기존 사실은 바꾸지 않고, 같은 근거는 다시 만들지 않음.
 
     raw_text: 프로필을 만든 환자 원문(확인 질문 답변 포함). 없으면 인용 위치를 확인할 수 없어 출처는 unknown.
     input_source: 처음 입력의 선언된 출처 (PatientCase.input_source).
+    qa_pairs: 확인 질문 문답 기록 (Session.qa_log). 넘기면 답변 인용을 질문 단위로 연결 (모듈 설명 "질문별 출처").
     """
     if input_source not in evidence.INPUT_SOURCES:
         raise ValueError(f"input_source는 {', '.join(evidence.INPUT_SOURCES)} 중 하나: {input_source!r}")
@@ -132,6 +177,10 @@ def ingest_profile(store: FactStore, profile: PatientProfile, *, raw_text: str |
             result.rejected.append((name, str(e)))
             continue
         source_type, ref = _locate(quote, raw_text, input_source)
+        ref, withhold = _link_answer(quote, ref, qa_pairs, session_id)
+        if withhold:
+            result.withheld.append((name, withhold))
+            continue
         observed_at, observed_text = _dates(date)
         probe = PatientFact(fact_id="probe", patient_id=pid, session_id=session_id, field=name, value=value,
                             unit=unit or None, source_type=source_type, source_reference=ref, observed_at=observed_at,
