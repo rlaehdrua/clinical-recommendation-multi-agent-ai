@@ -17,7 +17,7 @@
 |---|---|
 | (a) 확정 판정 변경 | 계약은 이미 "확정 → 반대 확정 직행 금지"를 강제함. 빠진 것은 **사유 코드의 의미 규칙**(언제 어떤 코드가 필수인지)과 **올라갈 때의 근거 요구**. `REVERSAL_REASON_CODES`는 문서용 집합일 뿐 어디서도 검사하지 않음 |
 | (b) 질문별 `source_ref` | 계약 질문 경로(`proposition_store`)는 이미 `q:r<라운드>:<질문ID>`를 남김. **기존 프로필 경로(`profile_facts`)만** 모든 답을 `raw_text:answers` 하나로 뭉침 → 여기를 질문 단위로 나눔 |
-| (c) "모름" | 응답 상태와 의료 사실을 분리. "모름"은 사실 저장소에 값으로 들어가지 않음. `not_tested`(검사 안 함)는 사실, "검사했는지 모름"은 응답 상태 |
+| (c) "모름" | 응답 상태와 의료 사실을 분리. "모름"은 사실 저장소에 값으로 들어가지 않음. 구동 유전자 슬롯은 `positive`/`negative`/`not_tested`(모두 사실, `not_tested`≠음성), "모름"은 응답 상태 |
 | (d) 계약 0.2 의존 | 안건 1(`RuleMeta.adjudication`) 결정 전까지 정할 수 없는 부분은 §4로 분리 |
 | (e) 확인 질문 | §5 (동겸 6개, PR #3 작성자 6개) |
 
@@ -193,25 +193,26 @@ PR #3(`reversal_metrics.py`)은 **상태 이력만** 보고 `reason_code`는 읽
   **위험**: 프로필 추출 LLM이 `A: 모름`을 값으로 해석할 수 있음(예: 바이오마커 "unknown"을 description으로 넣음). `profile_facts`는 `sex="unknown"`만 걸러 냄.
   → 제안: `profile_facts`에서 인용이 답변 블록의 "모름" 답(`DECLINED_ANSWERS`에 속함)과만 겹치는 항목은 사실로 만들지 않고 `skipped`에 사유와 함께 남김. 보호 파일 변경 없이 가능.
 
-### 3.2 WP2b `not_tested` 3값
+### 3.2 WP2b 구동 유전자 3값 (`positive` / `negative` / `not_tested`)
 
-> 주의: WP2b 슬롯 결정 문서(`wp2b_slot_decisions.md`, 오늘 할 일 2번)가 아직 없어 "3값"의 정의를 저장소에서 찾지 못했습니다.
-> WP2a 슬롯 후보(`data/nsclc/cohort/slot_candidates.csv`, 브랜치 `feat/wp2a-nsclc-trials`)에는 `bm.driver_alteration` 값으로 `none … / not_tested`만 있습니다.
-> 아래는 **가정**이며 2번 문서와 맞춰 고쳐야 합니다.
+> 정의 출처: WP2b 슬롯 결정 `docs/dev/wp2b_slot_decisions.md` D1 (브랜치 `feat/wp2a-nsclc-trials`, 커밋 `3f03094`).
+> 구동 유전자 슬롯 값은 `positive` / `negative` / `not_tested` 3개이고, "모름"은 슬롯 값이 아니라 응답 상태입니다.
 
 | 값 | 층 | 저장 | 뜻 |
 |---|---|---|---|
-| `none` (검사함, 음성) | 의료 사실 | 저장 | 검사했고 해당 변이 없음 |
-| `not_tested` (검사 안 함) | 의료 사실 | 저장 | 검사를 하지 않았다는 **사실**. 환자·기록이 그렇게 말했을 때만 |
-| `unknown` (검사 여부 모름) | 응답 상태 | **저장 안 함** | 환자가 검사했는지 모름 → 사실 없음 → 판정 입력에서 "정보 없음"(IM) |
+| `positive` | 의료 사실 | 저장 | 검사했고 해당 변이 있음 (변이 종류는 하위 값) |
+| `negative` | 의료 사실 | 저장 | 검사했고 해당 변이 없음 (기존 CSV의 `none`) |
+| `not_tested` | 의료 사실 | 저장 | 검사를 하지 않았다는 **사실**. 환자·기록이 그렇게 말했을 때만. **음성으로 처리하지 않음** |
+| (모름) | 응답 상태 | **저장 안 함** | 슬롯 값이 아님. 환자가 검사 여부·결과를 모름 → 사실 없음 → 판정 입력에서 "정보 없음"(IM) |
 
-핵심: `not_tested`와 "모름"을 합치면 안 됩니다. "검사 안 함"은 Known 계열 제외 기준을 통과시키는 근거가 될 수 있지만, "모름"은 아무것도 통과시키지 않습니다.
+핵심: `not_tested`를 `negative`로 바꾸지 않고, `not_tested`와 "모름"을 합치지도 않습니다. "검사 안 함"은 Known 계열 제외 기준을 통과시키는 근거가 될 수 있지만(검수 필요), "모름"은 아무것도 통과시키지 않습니다.
+유전자별로 3값을 둘지(EGFR·ALK 각각), 구동 유전자 전체에 하나만 둘지는 WP2b D1의 남은 결정입니다.
 
 ### 3.3 "Known" vs "Absence" 근거 수준
 
 WP2a 교차 충돌 표(`cross_trial_conflicts.md`)에 나온 두 기준 표현의 차이입니다. 근거 수준(어떤 사실이 있어야 기준 상태가 정해지는가)으로 정리하면:
 
-| 기준 표현 (예) | `none` | `not_tested` | "모름" (사실 없음) |
+| 기준 표현 (예) | `negative` | `not_tested` | "모름" (사실 없음) |
 |---|---|---|---|
 | 제외 "Have **known** EGFR or ALK mutations" (NCT07027514) | 제외 안 됨 | 제외 안 됨 (알려진 변이 없음) — **임상 검수 필요** | UNKNOWN → IM. "환자가 모름"은 "의료진이 알고 있는 변이 없음"과 다름 |
 | 포함 "**Absence** of sensitizing EGFR mutations or ALK rearrangements" (NCT07098338 sub-study 1·2) | 충족 | **미정**: 검사 필수로 보면 NOT_MET 후보, 아니면 UNKNOWN — **임상 검수 필요** | UNKNOWN → IM |
