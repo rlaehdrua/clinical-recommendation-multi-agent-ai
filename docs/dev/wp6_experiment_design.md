@@ -39,7 +39,7 @@
 
 | 결정 항목 | 상태 |
 |---|---|
-| 기준 카탈로그 = `engine/bundles.SourceCatalog`, `source_catalog_hash` = 그 `digest()` | 제안 (§2.1) — **TODO: 공정현 확인** |
+| 기준 카탈로그 = `engine/bundles.SourceCatalog`, `source_catalog_hash` = 그 `digest()` | 제안 (§2.1) — **TODO: 선우 확인** |
 | 생성기 `SourceSpec` → 엔진 `InformationSource` 대응표(§2.1 표: `S_phone`→`patient_interview` 등)와 데이터 파일 위치(`data/nsclc/cohort/source_map.json`) | 제안 — **TODO: 생성기 브랜치 작성자 합의 (§8 Q-G1)** |
 | 슬롯 → 사실 항목 이름 대응 (`lab.*` → `lab:<표준 검사명>`, `bm.*` → `biomarker:*` 등) | 제안 — **TODO**. WP2b 슬롯 결정(D1 유전자별 3값 구조)이 정해져야 확정 |
 | `cost_basis`·`cost_reference` (생성기 `basis` 문자열의 문헌 인용을 ID로 옮길지) | **TODO** — 계약 0.2 안건 5(비용 실측·문헌값) 결정 후 |
@@ -262,8 +262,8 @@ M2(코디네이터 능동 작업시간 예산)의 원칙대로, 시간은 두 �
 - **Q-D1 (동겸)** 기준선 정책 클래스(`random`, `patient_order`, `cheapest_first`)를 WP6(`src/ctrec/sim/baselines.py`)에 둬도 되나요, WP5 쪽에 둘까요?
 - **Q-D2 (동겸)** `answer_unknown` 표현이 정해지면 `ResponseModel`의 "모름" 결과를 그대로 맞추겠습니다. 예상 시점이 있나요?
 - **Q-D3 (동겸)** 정책이 대체 정보원을 고를 때 시도 번호(`attempt_no`)를 `Action`에서 알 수 있나요? (공통 난수 스트림 키에 필요)
-- **Q-J1 (공정현)** 오프라인 평가기를 `sim/` 아래 새 모듈로 두는 것이 "결정적 평가기를 다시 만들지 않는다" 규칙과 충돌하나요? 충돌하면 `evaluator.py`를 그대로 쓸 수 있는 범위를 정해 주세요.
-- **Q-J2 (공정현)** NSCLC 시험 저장소 FROZEN 해시를 `frozen_store_hash`에 넣는 방식(별도 `store_dir`)으로 진행해도 되나요?
+- **Q-J1 (선우)** 오프라인 평가기를 `sim/` 아래 새 모듈로 두는 것이 "결정적 평가기를 다시 만들지 않는다" 규칙과 충돌하나요? 충돌하면 `evaluator.py`를 그대로 쓸 수 있는 범위를 정해 주세요.
+- **Q-J2 (선우)** NSCLC 시험 저장소 FROZEN 해시를 `frozen_store_hash`에 넣는 방식(별도 `store_dir`)으로 진행해도 되나요?
 
 ## 9. 테스트 계획 (구현 단계)
 
