@@ -5,6 +5,8 @@
 
     PYTHONPATH=src python scripts/eval_question_plans.py [--cases ID ...] [--rounds 2] [--budget 3] [--out DIR]
     PYTHONPATH=src python scripts/eval_question_plans.py --dry-run-cost [--max-cost-usd 50]
+
+기본은 평가 위생 경로(WP1): 별칭 + 프롬프트 누출 차단 + 범위 제한 답변기. WP1 이전 결과 재현은 --original-ids.
 """
 
 from __future__ import annotations
@@ -37,6 +39,11 @@ def main(argv=None):
     ap.add_argument("--dry-run-cost", action="store_true")
     ap.add_argument("--max-cost-usd", type=float)
     ap.add_argument("--approve-paid-run", action="store_true", help="유료 실행 승인 (이번 단계에서는 실행 경로 없음)")
+    proto = ap.add_mutually_exclusive_group()
+    proto.add_argument("--original-ids", action="store_true",
+                       help="WP1 이전 프로토콜 재현: 원래 케이스 ID + 기존 답변기 (hygiene=False). 실제 LLM 평가에 쓰지 않음")
+    proto.add_argument("--legacy-oracle", action="store_true",
+                       help="별칭·누출 차단은 유지하고 답변기만 기존 방식 (oracle_scope='legacy', 차이 분해용)")
     args = ap.parse_args(argv)
 
     parsed = qe_parsed = load_frozen()
@@ -57,7 +64,8 @@ def main(argv=None):
         only = sorted(random.Random(args.seed).sample(ids, min(args.sample, len(ids))))
     all_trials = load_trials()
     result = qe.run_evaluation(parsed, {t: all_trials[t] for t in parsed}, only=only, rounds=args.rounds,
-                               budget=args.budget, case_timeout_s=args.case_timeout, ablation=args.ablation)
+                               budget=args.budget, case_timeout_s=args.case_timeout, ablation=args.ablation,
+                               hygiene=not args.original_ids, oracle_scope="legacy" if args.legacy_oracle else None)
     view = {k: v for k, v in result.items() if k not in ("case_rows", "case_diffs", "question_records")}
     print(json.dumps(view, ensure_ascii=False, indent=1))
     if args.out:

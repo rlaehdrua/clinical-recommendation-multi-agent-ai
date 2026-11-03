@@ -10,7 +10,8 @@
 - LeakScanner     : 프롬프트 문자열에서 원래 ID·정답 유형 토큰·ID 모양 문자열을 찾음 (찾은 '종류'만 보고, 원문 없음)
 - PromptLeakGuard : 평가 실행 동안 llm.create/structured/plain을 감싸서 보내기 **전에** 검사하고, 누출이면 차단
 - ScopedOracleAnswerer + build_fact_scope : 질문이 EXACT로 겨냥한 기준에 대응하는 숨긴 사실만 공개
-- load_cases_hygienic / run_method_hygienic : question_eval 경로에 위 장치를 연결 (question_eval.py 수정 없음)
+- load_cases_hygienic / run_method_hygienic : question_eval 경로에 위 장치를 연결
+  (답변기는 question_eval.run_method(answerer_factory=...)로 주입, 모듈 속성을 바꾸지 않음)
 
 정답·별칭 매핑은 HygienicCase / AliasMap 안에만 있고, 파이프라인에 넘기는 PatientCase에는 별칭만 들어갑니다.
 """
@@ -22,9 +23,7 @@ import hmac
 import json
 import re
 import secrets
-import threading
 from collections import Counter
-from contextlib import contextmanager
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
@@ -268,7 +267,7 @@ def load_cases_hygienic(parsed: dict, path: Path | None = None, labels_path: Pat
     from . import question_eval as qe
     path = Path(path or qe.DEFAULT_CASES)
     labels_path = Path(labels_path or qe.DEFAULT_LABELS)
-    amap = alias_map or AliasMap()
+    amap = alias_map if alias_map is not None else AliasMap()  # 빈 AliasMap은 len 0이라 `or`로 쓰면 버려짐
     raw = {r["patient_id"]: r for r in json.loads(path.read_text(encoding="utf-8"))}
     scanner = LeakScanner()
     out = []
@@ -280,21 +279,9 @@ def load_cases_hygienic(parsed: dict, path: Path | None = None, labels_path: Pat
     return out, amap, scanner
 
 
-_ORACLE_LOCK = threading.Lock()
-
-
-@contextmanager
-def _scoped_oracle(scope: FactScope):
-    """question_eval.run_method 안의 OracleAnswerer 생성을 ScopedOracleAnswerer로 바꿈 (모듈 속성 교체, 잠금으로 직렬화).
-    question_eval.py에 answerer 주입 인자가 생기면 이 교체는 필요 없음 (docs/dev/integration_handoff.md 제안 B-1)."""
-    from . import question_eval as qe
-    with _ORACLE_LOCK:
-        saved = qe.OracleAnswerer
-        qe.OracleAnswerer = lambda gt: ScopedOracleAnswerer(gt, scope)  # type: ignore[assignment]
-        try:
-            yield
-        finally:
-            qe.OracleAnswerer = saved
+def scoped_answerer_factory(scope: FactScope):
+    """question_eval.run_method(answerer_factory=...)에 넘길 범위 제한 답변기 공장 (B-1: 모듈 속성 교체 없음)."""
+    return lambda gt: ScopedOracleAnswerer(gt, scope)
 
 
 def run_method_hygienic(method: str, hc: HygienicCase, trials: dict, rounds: int, budget: int,
@@ -303,13 +290,15 @@ def run_method_hygienic(method: str, hc: HygienicCase, trials: dict, rounds: int
 
     반환: (MethodRun, PromptLeakGuard). 누출이 한 번이라도 있으면 run.status="error", error_type="PromptLeakError"
     (누출된 프롬프트는 보내지 않음). OfflineEnvironment 안에서 불러야 함 (실제 API 차단).
+    scoped_oracle=False면 기존 OracleAnswerer(숨긴 사실 일괄 공개)를 씀 - 비교용.
     """
-    from contextlib import nullcontext
-
     from . import question_eval as qe
+    if "answerer_factory" in kw:
+        raise TypeError("답변기는 scoped_oracle 인자로 정함 (answerer_factory 직접 지정 불가)")
+    factory = scoped_answerer_factory(hc.scope) if scoped_oracle else None
     guard = PromptLeakGuard(scanner, raise_on_leak=raise_on_leak)
-    with (_scoped_oracle(hc.scope) if scoped_oracle else nullcontext()), guard:
-        run = qe.run_method(method, hc.case, hc.gt, trials, rounds, budget, **kw)
+    with guard:
+        run = qe.run_method(method, hc.case, hc.gt, trials, rounds, budget, answerer_factory=factory, **kw)
     if guard.leaks:  # 파이프라인이 시험 단위 예외를 잡아 NOT_EVALUATED로 남길 수 있으므로 실행 전체를 실패로 표시
         run.status, run.error_type = "error", "PromptLeakError"
     return run, guard

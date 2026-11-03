@@ -55,34 +55,39 @@ def test_pipeline_input_has_no_ground_truth():
         assert case.hidden_details is None and case.oracle_facts is None
 
 
-def test_hidden_text_reaches_models_only_after_simulated_answer(monkeypatch):
+@pytest.mark.parametrize("hygiene", [True, False])  # 기본(별칭) 경로와 원래 ID 경로 모두
+def test_hidden_text_reaches_models_only_after_simulated_answer(monkeypatch, hygiene):
     """모델 입력(프로필 대역·Matcher 대역·질문 생성기)에 숨긴 사실이 들어가는 것은 답변 시뮬레이터가 공개한 뒤뿐."""
+    from ctrec.eval_hygiene import AliasMap, ScopedOracleAnswerer
     cases = _cases(SUBSET)
+    amap = AliasMap(salt="t") if hygiene else None
+    pid_of = {cid: amap.alias(cid) if amap is not None else cid for cid in cases}  # 모델 입력에 보이는 환자 ID
+    cid_of = {p: c for c, p in pid_of.items()}  # 평가기 쪽 역변환
     hidden = {cid: [t for _, t in g._hidden_texts] for cid, (_, g) in cases.items()}
     ids = {cid: list(g.masked_fact_ids) for cid, (_, g) in cases.items()}
     revealed = {"any": False}
     seen = []
-    real_answer = qe.OracleAnswerer.answer
-
-    def answer(self, questions, pid):
-        out = real_answer(self, questions, pid)
-        revealed["any"] |= any(v != "모름" for v in out.values())
-        return out
-    monkeypatch.setattr(qe.OracleAnswerer, "answer", answer)
+    for cls in (qe.OracleAnswerer, ScopedOracleAnswerer):  # 어느 답변기를 쓰든 공개 시점을 기록
+        def answer(self, questions, pid, _real=cls.answer):
+            out = _real(self, questions, pid)
+            revealed["any"] |= any(v != "모름" for v in out.values())
+            return out
+        monkeypatch.setattr(cls, "answer", answer)
     real_profiler, real_structured = qe.stub_profiler, qe.StubLLM.structured
 
     def profiler(pid, raw_text, reference_date=None):  # 사례별: 그 사례의 숨긴 사실만 확인
-        seen.append((revealed["any"], any(h in raw_text for h in hidden[pid])))
+        seen.append((revealed["any"], any(h in raw_text for h in hidden[cid_of[pid]])))
         return real_profiler(pid, raw_text, reference_date)
 
     def structured(self, model_cls, *, system, user, **k):
-        cid = next(c for c in cases if f'"patient_id": "{c}"' in user or f"patient_id={c}" in user)
+        cid = next(c for c, p in pid_of.items() if f'"patient_id": "{p}"' in user or f"patient_id={p}" in user)
         seen.append((revealed["any"], any(h in user or h in system for h in hidden[cid])
                      or any(f'"{i}"' in user for i in ids[cid])))
         return real_structured(self, model_cls, system=system, user=user, **k)
     monkeypatch.setattr(qe, "stub_profiler", profiler)
     monkeypatch.setattr(qe.StubLLM, "structured", structured)
-    qe.run_evaluation(PARSED, TRIALS, only=SUBSET, rounds=2, budget=3)
+    r = qe.run_evaluation(PARSED, TRIALS, only=SUBSET, rounds=2, budget=3, hygiene=hygiene, alias_map=amap)
+    assert all(m["failed"] == 0 for m in r["methods"].values()), {k: m["failed_cases"] for k, m in r["methods"].items()}  # 케이스를 못 찾아 실패로 빠진 실행 없음
     assert seen and revealed["any"]
     assert all(after for after, leaked in seen if leaked)  # 누출로 보이는 입력은 모두 공개 이후
 
