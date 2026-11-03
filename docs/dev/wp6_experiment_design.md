@@ -21,6 +21,32 @@
 
 **WP6을 다시 만들지 않는 것**: 정책 엔진(WP5), 명제·질문 계약·결정적 평가기, 코호트 생성기 본체. WP6은 이것들을 연결하는 **환경과 실행기**만 만듭니다(`team_parallel_start.md` §1).
 
+### 0.1 구현 전 선행 조건 (2026-11-03 추가)
+
+아래 두 가지가 정해지기 전에는 WP6 코드를 시작하지 않습니다. 정해지지 않은 항목은 TODO로 둡니다.
+
+**(1) 동겸 WP5 `answer_unknown` 정책** — WP6 `ResponseModel`의 "모름" 결과와 `ActionOutcome` 기록 방식이 여기에 달려 있습니다.
+
+| 결정 항목 | WP6에서 쓰는 곳 | 상태 |
+|---|---|---|
+| "모름"을 `ActionOutcome`에 어떻게 기록할지 (`status="no_response"` / `succeeded` + 새 사실 0 / `error_code="answer_unknown"`) | §2.2 I-4 표의 `status`·`error_code`, §3.1 단계 3 | **TODO (동겸)** |
+| 항목 단위 소진: 단위가 `info_key`인지 기준(`<trial>:<rule>`)인지, 쌍 단위 `exhausted`로 어떻게 합칠지 | `policy.apply_outcome` 뒤 쌍 상태(BF 전이), §4 진척 지표 | **TODO (동겸)** |
+| 같은 항목을 다른 문장으로 다시 물을 수 있는지, 몇 번째 "모름"에서 소진인지 | `ResponseModel`의 시도 번호(`attempt_no`) 스트림, §3.2 | **TODO (동겸)** |
+| "모름" 뒤 대체 정보원(문서 요청)으로 넘어가는 규칙 | §3.2 대체 정보원 | **TODO (동겸)**. 대체는 정책이 고르고 환경은 자동 실행하지 않음(확정) |
+| "모름"은 의료 사실로 저장하지 않음 | 환경이 새 사실을 만들지 않음 | **확정** (WP3 설계 §3.1, WP2b D1) |
+
+**(2) 정보원 카탈로그 대응표 (I-5 `InformationSource`)** — 비용·청구·해시는 엔진 카탈로그 하나로 정하고, 생성기 카탈로그는 슬롯 공개 범위에만 씁니다(§2.1).
+
+| 결정 항목 | 상태 |
+|---|---|
+| 기준 카탈로그 = `engine/bundles.SourceCatalog`, `source_catalog_hash` = 그 `digest()` | 제안 (§2.1) — **TODO: 공정현 확인** |
+| 생성기 `SourceSpec` → 엔진 `InformationSource` 대응표(§2.1 표: `S_phone`→`patient_interview` 등)와 데이터 파일 위치(`data/nsclc/cohort/source_map.json`) | 제안 — **TODO: 생성기 브랜치 작성자 합의 (§8 Q-G1)** |
+| 슬롯 → 사실 항목 이름 대응 (`lab.*` → `lab:<표준 검사명>`, `bm.*` → `biomarker:*` 등) | 제안 — **TODO**. WP2b 슬롯 결정(D1 유전자별 3값 구조)이 정해져야 확정 |
+| `cost_basis`·`cost_reference` (생성기 `basis` 문자열의 문헌 인용을 ID로 옮길지) | **TODO** — 계약 0.2 안건 5(비용 실측·문헌값) 결정 후 |
+| `per_item_minutes`, `alternatives` (생성기 카탈로그에 없음) | 엔진 카탈로그 값을 그대로 씀 — 제안 |
+
+그 밖의 선행 조건(§7)도 그대로 유효합니다: 계약 0.2 안건 1, 생성기 브랜치 통합, PR #3 병합(역전 지표 열), WP4 부분 재평가.
+
 ---
 
 ## 1. 구성 요소
