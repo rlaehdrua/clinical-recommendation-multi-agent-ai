@@ -2,6 +2,7 @@
 
 > 2026-11-03 · 작성: 서연 · 브랜치 `feat/wp2a-nsclc-trials`
 > 대상: 임상 검수자 (호흡기내과·종양내과). 검수 전 모든 해석은 **"검수 필요"** 상태이며, 생성기와 판정에 기본값으로 쓰지 않습니다.
+> **원칙: 의학적 해석은 임상 검수 전까지 미확정입니다. 검수되지 않은 기준으로는 정답(쌍 라벨·기준 정답)을 생성하지 않습니다.**
 > 출처: `docs/dev/wp2b_slot_decisions.md`(D1–D6), `data/nsclc/cohort/cross_trial_conflicts.md`, `slot_combination_candidates.md`(#1–#22), `lab_panels.md`,
 > WP3 설계 `docs/dev/wp3_verdict_transition_design.md` §3.3 (브랜치 `docs/wp3-verdict-transition`).
 > 인용은 CT.gov 원문 그대로입니다(마크다운 이스케이프 역슬래시만 뺌).
