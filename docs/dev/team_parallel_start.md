@@ -1,13 +1,13 @@
 # 팀 병렬 개발 시작 안내 — `integration/dcvc` 기준 (계약 0.2 후보)
 
 > 2026-11-02. 공통 기반: 브랜치 `integration/dcvc` (기준 `origin/integration/midterm-1026` `448a8c5` + DCV+C 5커밋 + 0.2 커밋).
-> **현재 로컬 전용입니다(원격에 없음).** 공정현이 push하기 전까지 서연·동겸은 이 브랜치를 받을 수 없습니다 → §0.
+> **현재 로컬 전용입니다(원격에 없음).** 선우가 push하기 전까지 서연·동겸은 이 브랜치를 받을 수 없습니다 → §0.
 
 ## 0. 시작 전 공통 선행 조건
-1. 공정현: 팀 확인 뒤 `integration/dcvc`를 원격에 push(이번 작업에서는 하지 않음). PR 대상은 `integration/midterm-1026`(midterm이 main에 들어간 뒤라면 main).
+1. 선우: 팀 확인 뒤 `integration/dcvc`를 원격에 push(이번 작업에서는 하지 않음). PR 대상은 `integration/midterm-1026`(midterm이 main에 들어간 뒤라면 main).
 2. 각자: `git fetch origin` → `git switch -c <내 브랜치> origin/integration/dcvc` (또는 별도 worktree). 모든 PR은 `integration/dcvc`로.
 3. 테스트는 API 키 없이: `env -u ANTHROPIC_API_KEY python -m pytest -q -p no:cacheprovider` (기대: 1996 passed, 7 skipped 이상, 실패 0).
-4. 계약 0.2는 **PROVISIONAL**. 계약 필드가 더 필요하면 직접 고치지 말고 공정현에게 "추가 요청"(기본값 있는 필드 추가만 가능).
+4. 계약 0.2는 **PROVISIONAL**. 계약 필드가 더 필요하면 직접 고치지 말고 선우에게 "추가 요청"(기본값 있는 필드 추가만 가능).
 
 ## 1. 모두가 지킬 규칙
 - **정책 엔진을 다시 만들지 않습니다.** 행동 후보·선택은 `ctrec.engine.policy.LegacyAdapterPolicy`(`propose` / `select` / `apply_outcome`)와 `contracts.PolicyEngine` 프로토콜만 씁니다. 새 알고리즘은 같은 프로토콜의 **새 클래스**로 추가하고 `tests/test_engine_policy.py`의 조건(예산 초과 0, 중복 청구 0, 결정성, 환자 1명 동등성, 안전 행동 보존)을 통과해야 합니다.
@@ -116,7 +116,7 @@ src/ctrec/contract_session.py를 읽어라.
 - 커밋은 작업 단위로, push·PR은 하지 않는다. 끝나면 docs/dev/에 보고서를 남긴다.
 ```
 
-## 4. 공정현 — WP0 계약 승인·WP7 Inspector 검토·최종 품질
+## 4. 선우 — WP0 계약 승인·WP7 Inspector 검토·최종 품질
 1. `integration/dcvc` 검토 후 push (팀 확인).
 2. 계약 0.2 승인 회의: `docs/dev/contract_v02_changelog.md` §9 안건 6개.
 3. WP7: Inspector v1 화면에 v2 섹션(사유·남은 작업·`reversal_issues`)을 붙일지 결정. v1 렌더 결과 불변 테스트 유지.
@@ -124,8 +124,8 @@ src/ctrec/contract_session.py를 읽어라.
 
 ## 5. 병렬 순서
 ```
-지금        서연 B-1·B-4·B-2, WP2 조사      동겸 WP5 인수, WP8 골격(legacy 기본)      공정현 push·0.2 승인
+지금        서연 B-1·B-4·B-2, WP2 조사      동겸 WP5 인수, WP8 골격(legacy 기본)      선우 push·0.2 승인
 0.2 승인 뒤  서연 WP3 adjudication           동겸 WP8 engine 모드 + 화면
-WP3 뒤      서연 WP4 → DecisionRecord 생산   공정현 WP7 연결 검토
+WP3 뒤      서연 WP4 → DecisionRecord 생산   선우 WP7 연결 검토
 WP2·WP5 뒤  서연 WP6 실험                   동겸 WP8 마무리
 ```
