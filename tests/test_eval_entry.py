@@ -242,6 +242,8 @@ def _evaluate(tmp_path, *extra):
     import subprocess
     env = {k: v for k, v in os.environ.items() if k not in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY")}
     env["PYTHONPATH"] = str(ROOT / "src")
+    # 아래에서 출력을 utf-8로 읽으므로 자식 프로세스의 표준 입출력도 utf-8로 맞춤 (Windows 파이프 기본값은 cp949)
+    env["PYTHONIOENCODING"] = "utf-8"
     return subprocess.run([sys.executable, str(ROOT / "eval" / "evaluate.py"), "--labels", str(tmp_path / "labels.csv"),
                            "--outputs", str(tmp_path / "out"), "--trials-dir", str(tmp_path / "trials"), *extra],
                           cwd=ROOT, env=env, capture_output=True, text=True, encoding="utf-8", timeout=120)
