@@ -87,7 +87,7 @@
 ## 8. 팀 요청·결정 사항
 
 1. **서연 (profile_facts)**: 답변에서 나온 사실에 질문별 출처 `source_reference.ref`(예: `qa:round1:Q1`)를 남기도록 요청. 이것이 없으면 정상 기록의 `facts_added`가 항상 비어 추적성이 불완전합니다. 무응답 표지를 사실로 저장하지 않을지도 함께 결정.
-2. **선우/팀 (audit.py)**: `load_run_v2`가 `decision_record_issues.jsonl`을 함께 읽어 `issues`에 합치는 확장 승인 (Inspector v2에서 차단 단계가 보이도록).
+2. **공정현/팀 (audit.py)**: `load_run_v2`가 `decision_record_issues.jsonl`을 함께 읽어 `issues`에 합치는 확장 승인 (Inspector v2에서 차단 단계가 보이도록).
 3. **동겸 (WP5 정책) + 팀**: (a) 환자의 "모름"을 연락 실패와 같은 `no_response`로 볼지(현재 WP7 해석), 항목 단위 무응답으로 볼지 (b) 무응답 한 번에 `patient_interview` 전체가 그 환자에 대해 실패 처리되는 규칙이 의도인지. 계약 `OutcomeStatus`에는 '답했지만 모름'이 따로 없음. 오프라인 실험의 질문 수·회수율에 크게 영향.
 4. 직접 역전: 계약 금지 유지 + 차단 진단(현재) vs 계약 변경.
 5. 선택됐지만 묻지 않은 행동의 기록 여부(`proposed`/`not_executed` 지원은 있음, 지금은 건수만).
