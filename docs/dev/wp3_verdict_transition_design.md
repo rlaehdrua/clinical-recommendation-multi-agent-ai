@@ -158,9 +158,9 @@ PR #3(`reversal_metrics.py`)은 **상태 이력만** 보고 `reason_code`는 읽
 1. **qa_log를 넘김 (권장)**: `ingest_profile(..., qa_pairs: Sequence[QAPair] | None = None)` 인자를 추가하고, 인용이 들어 있는 답이
    **정확히 하나**일 때만 `q:r<라운드>:<질문ID>`를 붙입니다. 둘 이상이거나 못 찾으면 지금처럼 `raw_text:answers`(추정하지 않음).
    - `profile_facts.py` 변경은 서연 범위. **호출하는 쪽 `pipeline.py`의 `_shadow_record`에 `qa_pairs=self.qa_log` 한 줄을 넣는 것은
-     보호 파일 수정 → 선우 승인(2026-11-03) + `pipeline.py` 소유자인 리뷰어(동겸) 승인(PR 리뷰)(아래 조건)**. 수정안:
+     보호 파일 수정 → 선우(리뷰어) 승인 2026-11-03(아래 조건)**. 수정안:
      ```text
-     # pipeline.py Session._shadow_record (보호 파일 · 선우·동겸(리뷰어) 승인 · 이 한 줄만)
+     # pipeline.py Session._shadow_record (보호 파일 · 선우(2026-11-03) 승인 · 이 한 줄만)
      r = profile_facts.ingest_profile(self.fact_store, self.profile.model_copy(deep=True),
                                       raw_text=self.case.raw_text, input_source=self.case.input_source,
                                       session_id=self.session_id, qa_pairs=self.qa_log)   # ← 추가
@@ -168,7 +168,7 @@ PR #3(`reversal_metrics.py`)은 **상태 이력만** 보고 `reason_code`는 읽
    - 기본값이 None이므로 승인 전에도 `profile_facts`만 먼저 바꿀 수 있고 동작은 그대로입니다.
 2. 원문만으로 나눔: 블록의 라운드 번호와 Q/A 순서(`q:r2:#3`)만 남김. 질문 ID가 아니라 순번이라 qa_log와 조인할 때 순서 가정이 필요함 → 권장하지 않음.
 
-**승인 (선우 2026-11-03 · 리뷰어 동겸 — `pipeline.py` 소유자, PR 리뷰): `pipeline.py` `_shadow_record`에 `qa_pairs=self.qa_log` 인자 전달 한 줄.** 승인 조건은 다음과 같습니다.
+**승인 (선우 2026-11-03, 리뷰어): `pipeline.py` `_shadow_record`에 `qa_pairs=self.qa_log` 인자 전달 한 줄.** 승인 조건은 다음과 같습니다.
 
 | 조건 | 내용 |
 |---|---|
@@ -310,5 +310,5 @@ WP2a 교차 충돌 표(`cross_trial_conflicts.md`)에 나온 두 기준 표현�
 
 ### 선우 (참고 · 승인 필요 항목)
 
-- `pipeline.py` `_shadow_record`에 `qa_pairs=self.qa_log` 추가 (§2.3) — **승인됨 (선우 2026-11-03 · 리뷰어 동겸)**. 인자 전달 한 줄만.
+- `pipeline.py` `_shadow_record`에 `qa_pairs=self.qa_log` 추가 (§2.3) — **승인됨 (선우 2026-11-03)**. 인자 전달 한 줄만.
 - `REVERSAL_REASON_CODES` 확장과 하강 사유 필수화 (§1.2) — `contracts.py` 추가 요청. **미승인 · 계약 0.2 확정 후**.
