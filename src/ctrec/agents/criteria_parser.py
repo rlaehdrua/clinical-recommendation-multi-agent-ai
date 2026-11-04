@@ -82,7 +82,40 @@ _SPLIT_KINDS = (("inclusion", "선정(Inclusion)"), ("exclusion", "제외(Exclus
 
 
 def split_parse(trial: dict) -> bool:
-    return len(trial.get("eligibility_criteria") or "") > SPLIT_PARSE_CHARS
+    """선정·제외 기준을 나눠 요청할지.
+
+    동결 시험(data/parsed/FROZEN.json)은 길어도 나누지 않습니다. 동결 기준표는 한 번 호출로 만들어졌으므로,
+    --unfreeze로 다시 컴파일할 때도 같은 호출 방식·캐시 키를 써야 동결본과 비교할 수 있습니다
+    (예: NCT06908096 6,801자 > SPLIT_PARSE_CHARS).
+    """
+    if len(trial.get("eligibility_criteria") or "") <= SPLIT_PARSE_CHARS:
+        return False
+    from .. import trial_store  # 지연 import: trial_store가 이 모듈을 import함
+
+    return not trial_store.is_frozen(trial["trial_id"])
+
+
+def parse_mode(trial: dict) -> str:
+    """저장소 메타에 남기는 파싱 방식: "split"(선정·제외 따로) 또는 "single". parser_prompt_hash에는 잡히지 않음."""
+    return "split" if split_parse(trial) else "single"
+
+
+# 분할 파싱에서 요청하지 않은 종류라 뺀 규칙 한 줄 (parsing_notes에 남기고 check_integrity가 integrity_issues로 올림).
+# 캐시·실행 파일에는 LLM 원본(메모 포함)만 있고 integrity_issues는 불러올 때마다 다시 계산하므로, 메모에서 되살립니다.
+SPLIT_DROP_TAG = "[분할 파싱 제외]"
+_SPLIT_DROP = re.compile(r"^\[분할 파싱 제외\] (inclusion|exclusion) 호출 #(\d+) \(rule_id=(.*?), kind=(\w+)\): (.*)$")
+
+
+def split_drop_issues(parsed: ParsedTrial) -> list[str]:
+    """parsing_notes에 남은 분할 파싱 제외 규칙 -> integrity_issues 줄 ("<키>: <문제>")."""
+    out = []
+    for line in (parsed.parsing_notes or "").splitlines():
+        m = _SPLIT_DROP.match(line.strip())
+        if m:
+            call, n, rid, kind, text = m.groups()
+            out.append(f"split_{call}_{n}: 분할 파싱 {call} 호출이 kind={kind} 규칙(rule_id={rid})을 냄 -> 병합에서 뺌, "
+                       f"원문 대조 필요 ({text})")
+    return out
 
 
 def parse_trial(trial: dict, *, use_cache: bool = True) -> ParsedTrial:
@@ -101,7 +134,10 @@ def parse_trial(trial: dict, *, use_cache: bool = True) -> ParsedTrial:
 
 
 def _parse_split(rendered: str) -> ParsedTrial:
-    """선정·제외 기준을 따로 요청해 합침. 요청하지 않은 종류의 규칙은 버리고 그 수를 메모에 남김."""
+    """선정·제외 기준을 따로 요청해 합침. 요청하지 않은 종류의 규칙은 버리고 메모에 남김.
+
+    버린 규칙은 한 줄씩(SPLIT_DROP_TAG) 메모에 남겨 check_integrity가 integrity_issues에도 올립니다.
+    """
     parts = []
     for kind, label in _SPLIT_KINDS:
         parts.append(llm.structured(
@@ -112,10 +148,15 @@ def _parse_split(rendered: str) -> ParsedTrial:
             effort=config.EFFORT["criteria_parser"],
         ))
     inc, exc = parts
-    dropped = sum(r.kind != "inclusion" for r in inc.rules) + sum(r.kind != "exclusion" for r in exc.rules)
+    dropped = [(kind, r) for (kind, _), part in zip(_SPLIT_KINDS, parts) for r in part.rules if r.kind != kind]
     notes = f"[선정 기준 호출] {inc.parsing_notes}\n[제외 기준 호출] {exc.parsing_notes}"
     if dropped:
-        notes += f"\n[분할 파싱] 요청하지 않은 종류의 규칙 {dropped}개를 뺌"
+        notes += f"\n[분할 파싱] 요청하지 않은 종류의 규칙 {len(dropped)}개를 뺌"
+        seq = {"inclusion": 0, "exclusion": 0}
+        for call, r in dropped:
+            seq[call] += 1
+            text = " ".join(r.text.split())[:120]
+            notes += f"\n{SPLIT_DROP_TAG} {call} 호출 #{seq[call]} (rule_id={r.rule_id}, kind={r.kind}): {text}"
     return inc.model_copy(update={
         "rules": [r for r in inc.rules if r.kind == "inclusion"] + [r for r in exc.rules if r.kind == "exclusion"],
         "cohorts": inc.cohorts + [c for c in exc.cohorts if c not in inc.cohorts],
@@ -239,7 +280,7 @@ def check_integrity(parsed: ParsedTrial, trial: dict) -> list[str]:
         parsed.parsing_notes += "\n[코드 정규화] " + " / ".join(normalized)
     if issues:
         parsed.parsing_notes += "\n[코드 검증] " + " / ".join(issues)
-    return issues
+    return issues + split_drop_issues(parsed)  # 분할 파싱에서 뺀 규칙 (메모에는 이미 있으므로 다시 적지 않음)
 
 
 def rules_json(parsed: ParsedTrial) -> str:

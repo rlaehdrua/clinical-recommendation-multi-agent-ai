@@ -1,0 +1,151 @@
+{
+  "trial_id": "NCT07098338",
+  "title": "A Study of Novel Combinations in Non-Small Cell Lung Cancer (NSCLC)",
+  "official_title": "An Open-Label, Multi-Drug, Multi-Centre, Phase II Study to Evaluate the Safety, Tolerability, Pharmacokinetics, Immunogenicity, and Antitumour Activity of Novel Combinations in Participants With Locally Advanced or Metastatic Non-Small Cell Lung Cancer (LIBRA)",
+  "overall_status": "RECRUITING",
+  "phases": [
+    "PHASE2"
+  ],
+  "study_type": "INTERVENTIONAL",
+  "conditions": [
+    "Non-Small Cell Lung Cancer"
+  ],
+  "keywords": [
+    "Non-Small Cell Lung Cancer(NSCLC)",
+    "Antibody-Drug Conjugates (ADCs)",
+    "T-cell immunoreceptor with Ig and Immunoreceptor Tyrosine-based Inhibition Motif (ITIM) domains (TIGIT)",
+    "Programmed death-ligand 1 (PD-L1)"
+  ],
+  "interventions": [
+    {
+      "type": "DRUG",
+      "name": "Rilvegostomig",
+      "description": "Rilvegostomig will be administered as IV infusion."
+    },
+    {
+      "type": "DRUG",
+      "name": "Ramucirumab",
+      "description": "Ramucirumab will be administered as IV infusion."
+    },
+    {
+      "type": "DRUG",
+      "name": "Dato-DXd",
+      "description": "Dato-DXd will be administered as IV infusion."
+    }
+  ],
+  "brief_summary": "This is a Phase II, multi-center, open-label platform study evaluating novel combination treatment options in participants with locally advanced or metastatic NSCLC. The study will consist of several sub-studies, each evaluating the safety, tolerability, and preliminary antitumour activity of various treatment combinations. This study will be conducted in approximately 80 centers globally across 10 countries.",
+  "detailed_description": "The master protocol will include 3 sub-studies, each focused on a specific disease population.\n\n* Sub-study 1 will investigate rilvegostomig± ramucirumab in 1L non-actionable genomic alterations (AGA) NSCLC with PD-L1 ≥50%.\n* Sub-study 2 will investigate rilvegostomig + ramucirumab in 1L non-actionable genomic alterations (AGA) NSCLC with PD-L1 1-49%.\n* Sub-study 3 will investigate Dato-DXd + ramucirumab ± rilvegostomig in 2/3L AGA+\n\nEach sub-study may include 2 parts (unless stated in the individual sub study protocols): Part A: one or more Safety Run-in cohort(s), and Part B: one or more Dose Expansion cohort(s).",
+  "eligibility_criteria": "Inclusion Criteria for All Sub-studies:\n\n* Participant must be ≥ 18 years of age at the time of signing the ICF\n* WHO/ECOG performance status of 0 or 1\n* At least 1 lesion that qualifies as a RECIST 1.1 Target Lesion (TL) at baseline.\n* Adequate bone marrow and organ function\n* Life expectancy ≥ 12 weeks\n* Provision of acceptable tumour tissue\n\nSpecific Inclusion Criteria for Sub-Study 1 and Sub-Study 2:\n\n* Histologically or cytologically documented advanced or metastatic NSCLC\n* PD-L1 TC ≥ 1% (TC≥ 50% for sub-study 1, 1-49% for sub-study 2)\n* Absence of sensitizing EGFR mutations or ALK rearrangements. No known other Actionable Genomic Alterations(AGAs)\n\nSpecific Inclusion Criteria for Sub-Study 3:\n\n* Histologically or cytologically documented advanced or metastatic non-squamous NSCLC\n* Documented positive AGA and had progressed on prior targeted therapy\n\nExclusion Criteria for All Sub-studies:\n\n* As judged by the investigator, any severe or uncontrolled systemic diseases, in the investigator's opinion, makes it undesirable for the participant to participate in the study or that would jeopardise compliance with the protocol\n* Active or prior documented autoimmune or inflammatory disorders\n* Persistent toxicities (CTCAE Grade ≥ 2) (NCI CTCAE v5.0) caused by previous anti cancer therapy, excluding alopecia.\n* Spinal cord compression or leptomeningeal carcinomatosis for sub-study 1 and sub-study 2. Unstable spinal cord compression for sub-study 3\n* Unstable brain metastases\n* History of another primary malignancy.\n* Active infection, including TB and infections with HIV, HBV (verified by known positive HBsAg result), HCV.\n* Uncontrolled or significant cardiac disease\n* Receipt of prior systemic chemotherapy/chemoradiation/immunotherapy for advanced NSCLC for sub-study 1 and sub-study 2.\n* Prior exposure to immune-mediated therapy\n* History of uncontrolled hypertension, and active bleeding diseases, and high risks of bleeding and disorders of coagulation\n* Any concurrent anti-cancer treatment.\n* Receipt of live, attenuated vaccine within 30 days prior to the first dose of study intervention.",
+  "sex": "ALL",
+  "minimum_age": "18 Years",
+  "maximum_age": null,
+  "healthy_volunteers": false,
+  "locations": [
+    {
+      "facility": "Research Site",
+      "city": "Santa Monica",
+      "country": "United States"
+    },
+    {
+      "facility": "Research Site",
+      "city": "Santa Rosa",
+      "country": "United States"
+    },
+    {
+      "facility": "Research Site",
+      "city": "Atlanta",
+      "country": "United States"
+    },
+    {
+      "facility": "Research Site",
+      "city": "Baltimore",
+      "country": "United States"
+    },
+    {
+      "facility": "Research Site",
+      "city": "Houston",
+      "country": "United States"
+    },
+    {
+      "facility": "Research Site",
+      "city": "Fairfax",
+      "country": "United States"
+    },
+    {
+      "facility": "Research Site",
+      "city": "Heidelberg",
+      "country": "Australia"
+    },
+    {
+      "facility": "Research Site",
+      "city": "Nedlands",
+      "country": "Australia"
+    },
+    {
+      "facility": "Research Site",
+      "city": "Woodville",
+      "country": "Australia"
+    },
+    {
+      "facility": "Research Site",
+      "city": "Toronto",
+      "country": "Canada"
+    },
+    {
+      "facility": "Research Site",
+      "city": "Changsha",
+      "country": "China"
+    },
+    {
+      "facility": "Research Site",
+      "city": "Chengdu",
+      "country": "China"
+    },
+    {
+      "facility": "Research Site",
+      "city": "Deyang",
+      "country": "China"
+    },
+    {
+      "facility": "Research Site",
+      "city": "Dongguan",
+      "country": "China"
+    },
+    {
+      "facility": "Research Site",
+      "city": "Fuzhou",
+      "country": "China"
+    },
+    {
+      "facility": "Research Site",
+      "city": "Guangzhou",
+      "country": "China"
+    },
+    {
+      "facility": "Research Site",
+      "city": "Guangzhou",
+      "country": "China"
+    },
+    {
+      "facility": "Research Site",
+      "city": "Hangzhou",
+      "country": "China"
+    },
+    {
+      "facility": "Research Site",
+      "city": "Hefei",
+      "country": "China"
+    },
+    {
+      "facility": "Research Site",
+      "city": "Linyi",
+      "country": "China"
+    }
+  ],
+  "source": {
+    "name": "ClinicalTrials.gov (U.S. National Library of Medicine)",
+    "url": "https://clinicaltrials.gov/study/NCT07098338",
+    "retrieved_at": "2026-11-02T16:15:35+00:00"
+  },
+  "synthetic": false
+}

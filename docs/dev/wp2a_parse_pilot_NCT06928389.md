@@ -5,13 +5,25 @@
 > **파싱 결과의 의학적 해석은 모두 "검수 필요"**입니다. expert 기준은 정답을 만들지 않고 `EXPERT_REVIEW`로 둡니다.
 > **원칙: 의학적 해석은 임상 검수 전까지 미확정입니다. 검수되지 않은 기준으로는 정답(쌍 라벨·기준 정답)을 생성하지 않습니다.**
 
+> **저장 위치 정리 (2026-11-04, PR #8 리뷰 반영)** — 실행마다 나뉘어 있던 저장소(`v1`·`v2`·`full_v2`)를 기준 디렉터리 하나로 합쳤습니다. 아래 본문의 경로도 새 위치로 고쳤습니다.
+>
+> | 무엇 | 기준 위치 | 이전 위치 |
+> |---|---|---|
+> | 시험 원문 JSON (8개, `trial_hash` 재현용) | `data/nsclc/trials/` | `parsed_trial_run/trials/`, `full_v2/trials/` (커밋 안 했음) |
+> | 기준 저장소 (시험당 기록 하나, 지금 6개) | `data/nsclc/parsed/` (`--store`) | NCT06928389: `parsed_trial_run/v2/store/` · 나머지 5개: `full_v2/store/` |
+> | 실행별 파싱 (`--runs-dir`) | `data/nsclc/parse_runs/` | `v2/runs/`, `full_v2/runs/` |
+> | 호출별 usage | `data/nsclc/parse_runs/usage_calls_{pilot_v1,v2_NCT06928389,full_v2}.jsonl` | 각 실행 폴더의 `usage_calls.jsonl` |
+> | 대체된 기록 | git 기록에만: v1 저장소·실행(`639d429`의 `parsed_trial_run/store/`, `runs/`). 한 번 호출로 만든 NCT05255302 1회차는 `data/nsclc/parse_runs/superseded/NCT05255302_run1_single.json` (분할 재실행과 섞이지 않게 `--runs-dir` 밖) | `full_v2/runs/NCT05255302_run1.json` |
+>
+> 6개 기록 모두 `data/nsclc/trials/`의 원문으로 `trial_hash`가 같음을 확인했습니다(`trial_store.is_current`). 재컴파일 명령: `python scripts/compile_trials.py --trials-dir data/nsclc/trials --store data/nsclc/parsed --runs-dir data/nsclc/parse_runs`.
+
 ## 1. 실행 조건
 
 | 항목 | 값 |
 |---|---|
 | 경로 | `scripts/compile_trials.py` (기존 코드, 수정 없음) |
-| 입력 | `data/nsclc/parsed_trial_run/trials/NCT06928389.json` (`data/cache/ctgov/` 원본 복사) |
-| 출력 | `--store data/nsclc/parsed_trial_run/store`, `--runs-dir data/nsclc/parsed_trial_run/runs` |
+| 입력 | `data/nsclc/trials/NCT06928389.json` (`data/cache/ctgov/` 원본 복사. 실행 당시 위치는 `parsed_trial_run/trials/`) |
+| 출력 | v1(이 절): 실행 당시 `--store data/nsclc/parsed_trial_run/store`, `--runs-dir …/runs` → 정리 후 git 기록(`639d429`)에만 있음. 지금 기준 기록은 v2(§9) `data/nsclc/parsed/NCT06928389.json` |
 | 보호 경로 | 보호 경로는 `data/parsed/`(`FROZEN.json` 포함)와 `data/trials/`이며 둘 다 쓰지 않음. 출력 위치 `data/nsclc/**`는 서연 수정 가능 경로(`team_parallel_start.md` §2 "`data/nsclc/**`(별도 store_dir)"). 부수 효과로 `criteria_parser`가 `data/cache/parsed/`(git 무시 경로)에 캐시 1건을 씀 |
 | 옵션 | `--only NCT06928389 --runs 3 --workers 1 --force` |
 | 모델 | `claude-sonnet-5` (`.env`의 `CTREC_MODEL`). 서버측 fallback 켜짐(`CTREC_FALLBACKS=1`), **실제 fallback 발생 0** (4회 모두 응답 model = `claude-sonnet-5`, stop_reason = `end_turn`) |
@@ -33,7 +45,7 @@
 - 공시 단가 (`claude-sonnet-5`): 입력 $2, 출력 $10, 캐시 쓰기 $2.50, 캐시 읽기 $0.20 (1M 토큰당). 보수 단가: 입력 $3, 출력 $15, 캐시 쓰기 $3.75, 캐시 읽기 $0.30.
 - 비용의 약 83%가 출력 토큰입니다(13,576 × $10/1M = $0.136).
 - 시스템 프롬프트(약 4.1k 토큰)는 2·3회차에서 캐시로 읽혔습니다.
-- 호출별 원자료: `data/nsclc/parsed_trial_run/usage_calls.jsonl`, 실행 로그: `run_log.txt` (커밋하지 않음).
+- 호출별 원자료: `data/nsclc/parse_runs/usage_calls_pilot_v1.jsonl`, 실행 로그: `run_log.txt` (커밋하지 않음).
 
 ## 3. 예상 대비
 
@@ -91,10 +103,10 @@
 
 | 파일 | 크기 | 커밋 |
 |---|---|---|
-| `data/nsclc/parsed_trial_run/store/NCT06928389.json` | 14.6 KB | 커밋 (`639d429`) — 대표 실행 + 검증 결과 + rule_meta |
-| `data/nsclc/parsed_trial_run/runs/NCT06928389_run{1,2,3}.json` | 8–9 KB | 커밋 — 실행별 파싱 |
-| `data/nsclc/parsed_trial_run/usage_calls.jsonl` | 1.3 KB | 커밋 — 호출별 usage |
-| `data/nsclc/parsed_trial_run/trials/NCT06928389.json` | 3.3 KB | **제외** — WP2a 선정 기록(`data/nsclc/selection/candidates.csv`: 1,320자, 선정 9·제외 8 항목, `retrieved_at 2026-11-02T16:15:35+00:00`)과 일치하고, `data/cache/ctgov/` 원본과 바이트 단위로 같음. 원문 JSON 자체는 WP2a에서도 커밋하지 않았음(캐시는 git 무시) |
+| v1 저장소 `parsed_trial_run/store/NCT06928389.json` | 14.6 KB | 커밋 (`639d429`) — 대표 실행 + 검증 결과 + rule_meta. **v2로 대체되어 정리 때 삭제**(git 기록에만) |
+| v1 실행 `parsed_trial_run/runs/NCT06928389_run{1,2,3}.json` | 8–9 KB | 커밋 (`639d429`) — 실행별 파싱. v2로 대체되어 정리 때 삭제 |
+| `data/nsclc/parse_runs/usage_calls_pilot_v1.jsonl` | 1.3 KB | 커밋 — 호출별 usage (이전 `parsed_trial_run/usage_calls.jsonl`) |
+| `data/nsclc/trials/NCT06928389.json` | 3.3 KB | **커밋 (PR #8 리뷰, 2026-11-04)** — `trial_hash` 재현용. 처음에는 제외했음(WP2a 선정 기록 `candidates.csv`의 1,320자·`retrieved_at 2026-11-02T16:15:35+00:00`와 일치, `data/cache/ctgov/` 원본과 바이트 단위로 같음) |
 | `run_log.txt`, `run_log_attempt1_401.txt` | — | 제외 (실행 로그) |
 
 - 커밋 전 키 검사: `sk-ant`, `api_key`, `x-api-key`, `bearer`, `auth_token`, `.env` 패턴 grep 결과 매치 0.
@@ -194,7 +206,7 @@ PYTHONUTF8=1 ANTHROPIC_API_KEY= PYTHONPATH=src ../../../.venv/Scripts/python.exe
 
 - v1 `runs/`에는 이미 무결성 검사를 거친 결과가 저장돼 있습니다. `parse_trial`(`criteria_parser.py:87-88`)이 검사를 마친 결과를 돌려주고, `compile_trials.py`가 그것을 저장하기 때문입니다. 그래서 저장된 실행으로는 새 정규화를 확인할 수 없고, §8.5의 "B만이면 검증 호출 1회(약 $0.035)" 추정은 틀렸습니다. 재파싱이 필요했습니다.
 
-### 9.2 재파싱 결과 (출력 `data/nsclc/parsed_trial_run/v2/`)
+### 9.2 재파싱 결과 (출력: 지금 `data/nsclc/parsed/NCT06928389.json`, `data/nsclc/parse_runs/NCT06928389_run{1,2,3}.json` — 실행 당시 `parsed_trial_run/v2/`)
 
 | 항목 | v1 | v2 |
 |---|---|---|
@@ -234,7 +246,7 @@ PYTHONUTF8=1 ANTHROPIC_API_KEY= PYTHONPATH=src ../../../.venv/Scripts/python.exe
 ## 10. 8개 전체 파싱 (full_v2)
 
 > 실행: 2026-11-03. 대상 7개는 새로 파싱하고, NCT06928389는 v2 결과를 재사용했습니다(재실행 없음). 예비 시험은 실행하지 않았습니다.
-> 출력: `data/nsclc/parsed_trial_run/full_v2/`. `data/parsed/`, `data/trials/`, `FROZEN.json`에는 쓰지 않았습니다.
+> 출력: 지금 `data/nsclc/parsed/`(저장소)·`data/nsclc/parse_runs/`(실행) — 실행 당시 `data/nsclc/parsed_trial_run/full_v2/`. `data/parsed/`, `data/trials/`, `FROZEN.json`에는 쓰지 않았습니다.
 > 조건: `d00e4fe`(ECOG 정규화) 포함, `claude-sonnet-5`, `--runs 3`, SDK `max_retries=1`.
 > 중단선: 시험별로 예상(v2 실측 × 원문 길이 비율)의 2배, 누적은 이번 실행 $6 또는 전체 $10.
 > **의학적 해석은 모두 "검수 필요"**입니다. expert 기준은 `EXPERT_REVIEW`이며 정답을 만들지 않습니다.
@@ -254,7 +266,7 @@ PYTHONUTF8=1 ANTHROPIC_API_KEY= PYTHONPATH=src ../../../.venv/Scripts/python.exe
 
 - 이번 실행 **$1.728 (보수 $2.593)**, 전체 누적 **$2.066 (보수 $3.100)**입니다. 중단선($6 / $10)과 시험별 2배 중단선에는 걸리지 않았습니다.
 - 재시도 0, fallback 0. 모든 성공 호출의 model은 `claude-sonnet-5`입니다.
-- 원자료: `full_v2/usage_calls.jsonl`(커밋). 진행 기록 `progress.log`와 실행 로그는 커밋하지 않았습니다.
+- 원자료: `data/nsclc/parse_runs/usage_calls_full_v2.jsonl`(커밋). 진행 기록 `progress.log`와 실행 로그는 커밋하지 않았습니다.
 
 ### 10.2 실패 2건: 출력 잘림
 
@@ -377,8 +389,8 @@ WP2b D6 원칙: WP4 부분 재평가는 rule 기준만 대상이고, fact_llm �
 
 ### 10.7 산출물과 다음 단계
 
-- 커밋(`3628ab4`): `full_v2/store/`(5개), `full_v2/runs/`(16개: 5개 시험 × 3 + NCT05255302 1회차), `full_v2/usage_calls.jsonl`. 키 패턴 grep 매치 0.
-- 제외: `full_v2/trials/`(캐시 원문 복사, 7개 모두 WP2a 선정 기록과 글자 수·수집 시각 일치), `plan.json`, `progress.log`, `run_log.txt`.
+- 커밋(`3628ab4`): 저장소 5개(지금 `data/nsclc/parsed/`), 실행 16개(5개 시험 × 3 → `data/nsclc/parse_runs/`, NCT05255302 1회차 → `data/nsclc/parse_runs/superseded/`), usage(`usage_calls_full_v2.jsonl`). 키 패턴 grep 매치 0.
+- 원문: 처음에는 제외했다가 PR #8 리뷰로 `data/nsclc/trials/`에 커밋(7개 모두 WP2a 선정 기록과 글자 수·수집 시각 일치). `plan.json`, `progress.log`, `run_log.txt`는 계속 제외.
 - 다음 단계 (결정 필요):
   1. 출력 잘림 수정(T1+T2) 후 NCT05255302·NCT04892953 재실행. 예상 약 $1.1–1.3입니다.
   2. CSV `rule`을 `rule_engine` / `categorical`로 나누기(`data/nsclc/**`, 코드 영향 없음).
@@ -400,14 +412,17 @@ WP2b D6 원칙: WP4 부분 재평가는 rule 기준만 대상이고, fact_llm �
 - `SPLIT_PARSE_CHARS = 6000`: 원문이 이보다 길 때만 나눠 호출합니다. 파싱을 마친 6개 시험(최대 4,258자)은 호출 방식과 캐시 키가 예전과 같아서 기존 결과·캐시가 그대로 유효합니다. 시스템 프롬프트가 바뀌지 않아 `parser_prompt_hash`도 같습니다.
 - 합치는 규칙: 선정 호출의 선정 규칙 + 제외 호출의 제외 규칙을 씁니다. 요청하지 않은 종류의 규칙은 버리고 수를 메모에 남깁니다. 코호트 목록은 합집합이고, 메모는 두 호출을 구분해 이어 붙입니다. 분할 결과는 별도 캐시 키(`|split`)로 저장합니다.
 - 영향 범위: 호출 지점은 `trial_store.py:130` 하나입니다(동결 저장소에 없는 시험을 실행 중에 파싱할 때). 6,000자를 넘는 시험만 호출이 2회로 늘어납니다.
-- 테스트: `tests/test_criteria_parser_split.py` 3개(짧은 시험 1회 호출 유지, 긴 시험 분할·병합, 분할 캐시).
+- 테스트: `tests/test_criteria_parser_split.py` 6개(짧은 시험 1회 호출 유지, 긴 시험 분할·병합, 분할 캐시, 동결 시험 제외, `parse_mode` 메타, 뺀 규칙의 `integrity_issues`).
+- **동결 시험은 분할하지 않음 (PR #8 리뷰)**: 동결 저장소(`data/parsed/FROZEN.json`, 26개)의 NCT06908096은 6,801자라 그대로면 `--unfreeze` 재컴파일 때 분할 모드로 들어갑니다. 동결본은 한 번 호출로 만들어졌으므로 `split_parse`가 동결 시험은 길이와 관계없이 `False`를 돌려줍니다(호출 방식·캐시 키가 동결본과 같음). 동결 저장소에서 6,000자를 넘는 시험은 지금 이 하나입니다.
+- **저장소 메타 `parse_mode` (PR #8 리뷰)**: `parser_prompt_hash`는 모델+시스템 프롬프트만 보므로 분할 여부가 잡히지 않습니다. `trial_store.save`가 `parse_mode`(`single` | `split`)를 함께 씁니다. 이 필드가 없는 기존 기록(`data/parsed/*`, `data/nsclc/parsed/*`)은 분할 도입 전 기록이라 모두 `single`입니다.
+- **뺀 규칙은 `integrity_issues`에도 (PR #8 리뷰)**: 요청하지 않은 종류라 버린 규칙은 메모에 한 줄씩(`[분할 파싱 제외] <호출> 호출 #n (rule_id=…, kind=…): 원문`) 남기고, `check_integrity`가 이를 `split_<호출>_<n>: …` 항목으로 `integrity_issues`에 올립니다. 캐시·실행 파일에서 다시 불러오거나 `compile_trials`가 무결성 검사를 다시 돌려도 남고, 저장소 `validation.deterministic`에도 들어갑니다.
 - 한계: 선정·제외를 따로 읽으므로 두 부분에 걸친 해석(예: 코호트 이름 표기)이 어긋날 수 있습니다. 합집합으로 받고 검수 때 확인합니다.
 
 ### 11.2 재실행 계획 (대기)
 
 | 시험 | 방법 | 예상 (공시) |
 |---|---|---|
-| NCT05255302 | 3회 모두 분할 파싱(새 `runs` 폴더). 기존 1회차는 한 번 호출 방식이라 섞지 않음 | 약 $0.55–0.65 |
+| NCT05255302 | 3회 모두 분할 파싱(`data/nsclc/parse_runs/`). 기존 1회차는 한 번 호출 방식이라 섞지 않음(`superseded/`로 옮겨 `--runs-dir`에서 뺌) | 약 $0.55–0.65 |
 | NCT04892953 | 3회 분할 파싱 | 약 $0.75–0.85 |
 | **합계** | 검증 호출 포함 | **약 $1.3–1.5** (보수 약 $2.0–2.3) |
 
@@ -416,9 +431,9 @@ WP2b D6 원칙: WP4 부분 재평가는 rule 기준만 대상이고, fact_llm �
 
 ## 12. 현재 상태 (2026-11-03 마감)
 
-- **8개 중 6개 파싱 완료.** NCT07098338, NCT07027514, NCT07416058, NCT06216301, NCT07680790은 단일 호출(`full_v2/`)로, NCT06928389는 단일 호출 v2(`v2/`)로 파싱했습니다.
+- **8개 중 6개 파싱 완료.** NCT07098338, NCT07027514, NCT07416058, NCT06216301, NCT07680790은 단일 호출(실행 당시 `full_v2/`)로, NCT06928389는 단일 호출 v2(실행 당시 `v2/`)로 파싱했습니다. 6개 모두 지금 `data/nsclc/parsed/`에 있습니다.
 - **2개(NCT05255302, NCT04892953)는 재실행 보류.** 분할 파싱(`ebcfcd0`)으로 다시 돌렸지만 첫 호출부터 API 크레딧 잔액 부족으로 거절됐습니다(`400 invalid_request_error: Your credit balance is too low`). 성공한 호출이 없어 **비용은 $0**이고, 전체 누적은 $2.066(보수 $3.100)으로 그대로입니다.
-  - 시도 흔적은 `split_v2/`(입력 복사본·`plan.json`·`progress.log`·로그)에 있고, 커밋하지 않았습니다.
+  - 시도 흔적은 로컬 `parsed_trial_run/split_v2/`(입력 복사본·`plan.json`·`progress.log`·로그)에 있고, 커밋하지 않았습니다. 재실행 출력은 기준 위치(`data/nsclc/parsed/`, `data/nsclc/parse_runs/`)에 씁니다.
   - 크레딧이 확보되면 같은 설정으로 다시 돌립니다. 분할 파싱 3회씩, 중단선은 두 시험 합계 $2입니다.
-- **파싱 방식 차이:** 6개는 단일 호출, 남은 2개는 분할 호출(선정·제외를 따로 요청)로 파싱할 예정입니다. 두 방식의 결과를 합쳐 비교할 때는 방식 차이를 표시해야 합니다(§11.1 한계).
+- **파싱 방식 차이:** 6개는 단일 호출, 남은 2개는 분할 호출(선정·제외를 따로 요청)로 파싱할 예정입니다. 두 방식의 결과를 합쳐 비교할 때는 방식 차이를 표시해야 합니다(§11.1 한계). 재실행 기록에는 `parse_mode: "split"`이 남습니다.
 - 8개 전체 합계, rule 비율, 회의 안건 수치 갱신은 재실행 뒤에 합니다(§10.4–10.5는 6개 시험 기준).

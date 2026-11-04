@@ -126,6 +126,7 @@
 - `note` 열: 위 D1(`bm.driver_alteration` 10행), D2(`lab.creatinine_clearance` 2행), D3(`lab.ast_alt_uln`·`lab.bilirubin_uln`·`lab.inr_aptt_uln`·`med.anticoagulant` T4 행), D5(`ecog` 8행)의 결정을 적었습니다. 기존 메모는 앞에 그대로 두고 ` · WP2b: …`로 덧붙였습니다.
 - 새 행: `dx.liver_mets`(T5·T6), `cm.gilbert`(T5·T6), `med.on_anticoagulant`(T4), `lab.adequate_function`(T1·T4·T7, `unresolved`).
 - `value_range` 등 다른 열은 바꾸지 않았습니다(D1의 3값 구조는 유전자별 구조 결정 뒤 반영). `review_status`는 모두 "검수 필요"입니다.
+- **`info_sources` 열 (2026-11-04, PR #8 리뷰)**: 슬롯마다 그 값을 드러내는 I-5 정보원(`engine/bundles.DEFAULT_SOURCES`의 `source_id`)을 **패턴(`lab.*`)이 아닌 슬롯 단위로** 적었습니다. `;`로 구분하고 첫 값이 기본 정보원, 나머지는 대체 후보입니다(예: `lab.platelets` → `lab_report;medical_record`). 모든 (정보원, 사실 항목) 조합이 엔진 카탈로그 `provides_fields` 안에 드는지 확인했습니다. 마지막 열로 덧붙였고 다른 열은 바꾸지 않았습니다. 같은 대응을 WP6 설계 `docs/dev/wp6_experiment_design.md` §2.1(PR #9)에도 씁니다. **제안 · 임상 검수 전.**
 
 ## 7a. 판정 유형 `rule` 분리: `rule_engine` / `categorical` (2026-11-03 추가)
 
