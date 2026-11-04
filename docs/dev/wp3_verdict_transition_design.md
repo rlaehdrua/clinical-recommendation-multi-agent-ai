@@ -98,7 +98,7 @@ PR #3(`reversal_metrics.py`)은 **상태 이력만** 보고 `reason_code`는 읽
 | 적격확정 → 부적격확정 | `confirmed_eligible_to_ineligible`, `ReversalEvent.direction == "eligible_to_ineligible"` | CE → (중간 1개 이상) → CI | 내려갈 때 1.2 하강 코드 → 올라갈 때 `evidence_reverified` | 경유 유형과 관계없는 합계 |
 | 부적격확정 → 적격확정 | `confirmed_ineligible_to_eligible` | CI → (중간) → CE | 같음 | |
 | 검증 대기 경유 | `reversals_by_path[*]["verification_only"]` | via ⊆ {VP, ER} | `contradicting_evidence`/`evidence_withdrawn`/`answer_corrected` → VP → `evidence_reverified`, 또는 `expert_review_requested` → ER → `clinician_adjudicated` | 정상 검증 경로 |
-| 정보 재확보 경유 | `reversals_by_path[*]["via_info_missing"]` | via에 IM 포함, BF·NE 없음 | 하강 코드 → VP(또는 ER) → (IM) → `evidence_reverified` | CE→IM 직행이 금지라 IM 앞에는 반드시 VP/ER/NE가 있음. 정보를 새로 받아 확정했으므로 `facts_added`가 비어 있으면 안 됨 |
+| 정보 재확보 경유 | `reversals_by_path[*]["via_info_missing"]` | via에 IM 포함, BF·NE 없음 | 하강 코드 → VP(또는 ER) → (IM) → `evidence_reverified` | CE→IM 직행이 금지라 IM 앞에 중간 상태가 하나 있어야 함. NE가 끼면 `failure_or_not_evaluated`로 분류되므로(우선순위 최상) **이 유형에서 IM 앞에 올 수 있는 값은 VP/ER뿐**. 정보를 새로 받아 확정했으므로 `facts_added`가 비어 있으면 안 됨 |
 | 실패·미평가 경유 | `reversals_by_path[*]["failure_or_not_evaluated"]` | via에 BF 또는 NE 포함 (우선순위 최상) | `evaluation_failed` → NE → … 또는 … → `sources_exhausted` → BF → … → `evidence_reverified` | **정상 검증 경유로 보고하지 않음**. NE를 거친 확정은 사실상 처음부터 다시 평가한 것이라 같은 근거로 반대 확정이 나왔는지 따로 봐야 함 |
 | 직접 역전 계약 위반 | `direct_reversal_violations`, `direct_violations_by_direction` | CE ↔ CI 한 단계 | 해당 없음 (정상 기록 없음) | 진단 `direct_confirmed_reversal`(차단)만 셈. 정상 지표와 합치지 않음 |
 | (참고) 역전 대기 | `downgraded_pending_from_*` | 이력 끝이 중간 상태 | 하강 코드만 있음 | 역전 확정 아님 |
@@ -114,11 +114,11 @@ PR #3(`reversal_metrics.py`)은 **상태 이력만** 보고 `reason_code`는 읽
 
 | 항목 | 합의 | 관련 질문 |
 |---|---|---|
-| `via_info_missing` 경유 유형 | **별도 분류 유지**. CE/CI→IM 직행이 금지라 IM 앞에 VP/ER/NE가 있지만, 정보 재확보를 거친 역전은 따로 봄 | Q-P1 |
+| `via_info_missing` 경유 유형 | **별도 분류 유지**. CE/CI→IM 직행이 금지라 IM 앞에 VP/ER가 있지만(NE가 끼면 `failure_or_not_evaluated`), 정보 재확보를 거친 역전은 따로 봄 | Q-P1 |
 | `reason_code` 연쇄 검증 | **후속 작업**. WP3 구현(판정 계층이 `pair_reasons`를 넘기는 경로)이 연결된 뒤 추가 | Q-P2 |
 | 사유 없는 확정 하강 | `unexplained_confirmed_downgrade` 경고를 **별도로 집계**(정상 역전 지표와 섞지 않음) | Q-P3 |
 | 새 근거 없는 역전 | `facts_added`만으로 **위반을 확정하지 않음**. 문서 재검증(`VerificationEvent`) 등 사실 추가 없이 근거가 강해지는 경우를 고려. 정보용 수치로 유지하고 위반 후보로만 표시 | Q-P4 |
-| "모름"만 입력된 단계 | 다른 근거 없이(`facts_added` 없음, 응답 상태 unknown) 확정 상태가 바뀌면 **진단 대상** | Q-P5 |
+| "모름"만 입력된 단계 | 다른 근거 없이(`facts_added` 없음, 응답 상태 `no_answer`) 확정 상태가 바뀌면 **진단 대상** | Q-P5 |
 
 §1.2의 "`evidence_reverified` 조건(새 사실 1개 이상 또는 문서 검증)"은 위 합의에 맞춰 위반 규칙이 아니라 **진단 기준**으로 읽습니다. 계약에 넣는 것은 계약 0.2 확정 뒤 다시 정합니다.
 
@@ -158,9 +158,9 @@ PR #3(`reversal_metrics.py`)은 **상태 이력만** 보고 `reason_code`는 읽
 1. **qa_log를 넘김 (권장)**: `ingest_profile(..., qa_pairs: Sequence[QAPair] | None = None)` 인자를 추가하고, 인용이 들어 있는 답이
    **정확히 하나**일 때만 `q:r<라운드>:<질문ID>`를 붙입니다. 둘 이상이거나 못 찾으면 지금처럼 `raw_text:answers`(추정하지 않음).
    - `profile_facts.py` 변경은 서연 범위. **호출하는 쪽 `pipeline.py`의 `_shadow_record`에 `qa_pairs=self.qa_log` 한 줄을 넣는 것은
-     보호 파일 수정 → 2026-11-03 선우 승인(아래 조건)**. 수정안:
+     보호 파일 수정 → 선우 승인(2026-11-03) + `pipeline.py` 소유자인 리뷰어(동겸) 승인(PR 리뷰)(아래 조건)**. 수정안:
      ```text
-     # pipeline.py Session._shadow_record (보호 파일 · 2026-11-03 승인됨 · 이 한 줄만)
+     # pipeline.py Session._shadow_record (보호 파일 · 선우·동겸(리뷰어) 승인 · 이 한 줄만)
      r = profile_facts.ingest_profile(self.fact_store, self.profile.model_copy(deep=True),
                                       raw_text=self.case.raw_text, input_source=self.case.input_source,
                                       session_id=self.session_id, qa_pairs=self.qa_log)   # ← 추가
@@ -168,7 +168,7 @@ PR #3(`reversal_metrics.py`)은 **상태 이력만** 보고 `reason_code`는 읽
    - 기본값이 None이므로 승인 전에도 `profile_facts`만 먼저 바꿀 수 있고 동작은 그대로입니다.
 2. 원문만으로 나눔: 블록의 라운드 번호와 Q/A 순서(`q:r2:#3`)만 남김. 질문 ID가 아니라 순번이라 qa_log와 조인할 때 순서 가정이 필요함 → 권장하지 않음.
 
-**승인 (2026-11-03, 선우): `pipeline.py` `_shadow_record`에 `qa_pairs=self.qa_log` 인자 전달 한 줄.** 승인 조건은 다음과 같습니다.
+**승인 (선우 2026-11-03 · 리뷰어 동겸 — `pipeline.py` 소유자, PR 리뷰): `pipeline.py` `_shadow_record`에 `qa_pairs=self.qa_log` 인자 전달 한 줄.** 승인 조건은 다음과 같습니다.
 
 | 조건 | 내용 |
 |---|---|
@@ -205,19 +205,19 @@ PR #3(`reversal_metrics.py`)은 **상태 이력만** 보고 `reason_code`는 읽
 ### 3.1 원칙
 
 1. **응답 상태와 의료 사실은 다른 층입니다.**
-   - 응답 상태: `answered` / `unknown`("모름") / `declined`(거부) / `no_response`(무응답). 질문·행동 기록(qa_log, `ActionOutcome.status`)에 남김.
+   - 응답 상태: `answered` / `no_answer`(항목 단위 "모름"·답하지 않음) / 정보원 단위 `unreachable`(연락·접근 불가)·`declined_all`(확인 자체 거부). 질문·행동 기록(qa_log, `ActionOutcome.status`·`error_code`)에 남김. `no_answer`는 `record_producer.NO_ANSWER_ERROR`를 그대로 씀(새 코드 만들지 않음).
    - 의료 사실: 사실 저장소의 값. "모름"은 **사실값으로 저장하지 않습니다**.
 2. "모름"은 새 근거가 아니므로 **판정 상태를 바꾸는 사유가 될 수 없습니다.** 확정 상태에서 "모름" 답 때문에 내려가는 전이는 만들지 않고,
    역전의 "새 근거"(§1.2 `evidence_reverified` 조건)로도 세지 않습니다.
-3. "모름"은 그 항목에 대한 **정보원(환자) 소진 신호**일 수 있습니다. 판정이 아니라 정책 쪽 정보입니다(§3.4).
+3. "모름"(`no_answer`)은 그 **(정보원, 항목) 단위 소진 신호**일 수 있습니다. 정보원 전체 소진(`unreachable`/`declined_all`)이 아니며, 판정이 아니라 정책 쪽 정보입니다(§3.4).
 
 현재 상태:
 - 계약 경로: `question_contract.map_answer`가 "모름·거부·미응답"을 `non_answer`로 분류하고, `PropositionLedger.record`는 `option`만 사실로 만듦 → 원칙과 맞음.
   계약 검사기는 "'모름' 같은 미응답은 선택지로 넣지 않음"을 이미 강제함(`question_contract.py:113`).
 - 기존 경로: 답이 없으면 `"모름"`으로 채워(`pipeline.py` `answers.get(q.question_id, "모름")`) `A: 모름`이 원문에 붙고, 프로필을 다시 추출합니다.
-  `decision_state.DECLINED_ANSWERS`, `record_producer._declined`가 같은 집합으로 무응답을 판별합니다.
+  `decision_state.DECLINED_ANSWERS`, `record_producer.is_declined`가 같은 집합으로 무응답을 판별합니다.
   **위험**: 프로필 추출 LLM이 `A: 모름`을 값으로 해석할 수 있음(예: 바이오마커 "unknown"을 description으로 넣음). `profile_facts`는 `sex="unknown"`만 걸러 냄.
-  → 제안: `profile_facts`에서 인용이 답변 블록의 "모름" 답(`DECLINED_ANSWERS`에 속함)과만 겹치는 항목은 사실로 만들지 않고 `skipped`에 사유와 함께 남김. 보호 파일 변경 없이 가능.
+  → 제안: `profile_facts`에서 인용이 답변 블록의 "모름" 답(`DECLINED_ANSWERS`에 속함)과만 겹치는 항목은 사실로 만들지 않고 `withheld`에 사유(`non_answer`)와 함께 남김(PR #7 `IngestResult.withheld`와 같은 이름). 보호 파일 변경 없이 가능.
 
 ### 3.2 WP2b 구동 유전자 3값 (`positive` / `negative` / `not_tested`)
 
@@ -247,14 +247,14 @@ WP2a 교차 충돌 표(`cross_trial_conflicts.md`)에 나온 두 기준 표현�
 - `not_tested`로 기준이 정해지는 칸은 모두 임상 검수 질문(오늘 할 일 4번)으로 넘깁니다.
 - 자기 보고만으로 불충족이 되면 0.2 경계상 CI가 아니라 VP입니다(`derive_pair_status`: `mismatch != "confirmed"` → VP).
 
-### 3.4 동겸 WP5 `answer_unknown` 항목 단위 소진과의 연결점
+### 3.4 동겸 WP5 항목 단위 "모름"(`no_answer`) 소진과의 연결점
 
-`answer_unknown`은 저장소 어디에도 아직 없습니다(전 브랜치 검색). 연동 지점만 남깁니다.
+용어 (모든 PR·문서 공통): 항목 단위 "모름"은 `no_answer` — `record_producer.NO_ANSWER_ERROR`를 그대로 쓰고 새 코드를 만들지 않습니다. 정보원 단위 실패는 `unreachable`(연락·접근 불가) / `declined_all`(확인 자체 거부). 이전 초안의 임시 코드 이름은 더 쓰지 않습니다. 정보원 단위 코드와 `failure_scope`는 동겸 PR #10(`feat/wp5-item-level-failure`, `engine/contracts.py` 0.2 후보)에 있습니다.
 
 | 연동 지점 | 현재 | 연결 (확정 전 TODO) |
 |---|---|---|
-| 응답 상태 → 행동 결과 | `ActionOutcome.status` ∈ succeeded/partial/failed/no_response/not_executed. "모름"을 나타내는 값 없음 | TODO(동겸·answer_unknown): "모름"을 `no_response`로 볼지, `succeeded` + 새 사실 0으로 볼지, 새 `error_code`(예: `answer_unknown`)로 둘지 |
-| 항목 단위 소진 | `derive_pair_status(..., exhausted=)`는 쌍 단위 bool. `pending_kinds`에 `sources_exhausted` | TODO(동겸·answer_unknown): 항목(info_key/기준) 단위 소진을 쌍 단위 `exhausted`로 어떻게 합칠지. 일부 항목만 소진이면 BF가 아님 |
+| 응답 상태 → 행동 결과 | `ActionOutcome.status` ∈ succeeded/partial/failed/no_response/not_executed. 오프라인 기록(`offline_records.py`)은 "모름"을 `status="no_response"` + `error_code=record_producer.NO_ANSWER_ERROR`(`no_answer`)로 남김 | 웹·시뮬레이터 경로도 같은 코드를 씀(공통 용어 규칙). 정보원 단위면 `unreachable`/`declined_all` (Q-D1) |
+| 항목 단위 소진 | `derive_pair_status(..., exhausted=)`는 쌍 단위 bool. `pending_kinds`에 `sources_exhausted` | 동겸(`no_answer`): 항목(info_key/기준) 단위 소진을 쌍 단위 `exhausted`로 합치는 규칙은 PR #10. 일부 항목만 소진이면 BF가 아님 (Q-D2) |
 | 대체 정보원 | `InformationSource.alternatives` | TODO: 환자 "모름" 뒤 문서 요청(`REQUEST_DOCUMENT`)으로 넘어가는 규칙. 이 경우 IM 유지, BF 아님 |
 | 판정 쪽 | "모름"은 사실 0 → 재평가해도 판정 불변 | 판정 계층은 바꿀 것 없음. 단, §3.1의 `profile_facts` 걸러내기는 WP3 쪽에서 함 |
 | 역전 지표 | "모름" 단계는 `facts_added` 없음 | "모름" 단계에서 확정 상태가 바뀌면 기록 생산 오류로 봄 (PR #3에 진단 추가할지 §5 Q-P5) |
@@ -278,7 +278,7 @@ WP2a 교차 충돌 표(`cross_trial_conflicts.md`)에 나온 두 기준 표현�
 
 ### 동겸 (WP5 · WP8)
 
-- **Q-D1** `answer_unknown`은 `ActionOutcome`의 어느 필드로 표현할 계획인가요? (`status="no_response"` / `succeeded` + 새 사실 0 / `error_code="answer_unknown"`)
+- **Q-D1** 항목 단위 "모름"(`no_answer`)은 `ActionOutcome`의 어느 필드로 표현할 계획인가요? (`status="no_response"` + `error_code="no_answer"` / `succeeded` + 새 사실 0)
 - **Q-D2** 항목 단위 소진은 `info_key` 단위인가요, 기준(`<trial>:<rule>`) 단위인가요? 쌍 단위 `exhausted`로는 어떻게 합치나요?
 - **Q-D3** "모름" 뒤 같은 항목을 다른 문장으로 다시 묻는 것을 허용하나요? 허용하면 소진 판정은 몇 번째 "모름"에서 하나요?
 - **Q-D4** WP8 실행기에서 `Action.action_id` ↔ 질문 ID(`QAPair.question_id`) 매핑을 기록하나요? 질문별 `source_ref`(§2.4)와 감사에서 맞춰 볼 때 필요합니다.
@@ -287,14 +287,14 @@ WP2a 교차 충돌 표(`cross_trial_conflicts.md`)에 나온 두 기준 표현�
 
 ### PR #3 작성자 (WP7 역전 지표)
 
-- **Q-P1** CE/CI → IM 직행이 금지라 `via_info_missing` 사건에는 IM 앞에 항상 VP/ER/NE가 있습니다. 이 경로를 별도 유형으로 나눌 필요가 있나요, 아니면 지금처럼 IM 포함 여부만 보면 되나요?
+- **Q-P1** CE/CI → IM 직행이 금지라 `via_info_missing` 사건에는 IM 앞에 항상 VP/ER가 있습니다(NE가 끼면 `failure_or_not_evaluated`로 분류). 이 경로를 별도 유형으로 나눌 필요가 있나요, 아니면 지금처럼 IM 포함 여부만 보면 되나요?
 - **Q-P2** `ReversalEvent`에 내려갈 때·올라갈 때 `reason_code`를 넣어 "사유 연쇄가 규칙과 맞는 역전 수"를 낼 수 있을까요? (§1.4 빈칸 2)
 - **Q-P3** `unexplained_confirmed_downgrade` 경고 수도 요약에 넣을 수 있을까요? (§1.4 빈칸 1)
 - **Q-P4** `reversals_without_new_evidence`를 정보용에서 위반 후보로 올리는 데(§1.2 `evidence_reverified` 근거 요구) 동의하나요? 새 근거를 `facts_added`만으로 볼지, 문서 검증 이벤트도 포함할지요?
-- **Q-P5** "모름" 단계(`facts_added` 없음, 응답 상태 unknown)에서 확정 상태가 바뀌는 경우를 진단으로 따로 셀까요?
+- **Q-P5** "모름" 단계(`facts_added` 없음, 응답 상태 `no_answer`)에서 확정 상태가 바뀌는 경우를 진단으로 따로 셀까요?
 - **Q-P6** PR #3의 최신 커밋이 `80aa90b`인가요? (로컬에 `gh`가 없어 브랜치 `origin/feat/wp7-reversal-metrics`를 기준으로 작성함)
 
 ### 선우 (참고 · 승인 필요 항목)
 
-- `pipeline.py` `_shadow_record`에 `qa_pairs=self.qa_log` 추가 (§2.3) — **승인됨 (2026-11-03)**. 인자 전달 한 줄만.
+- `pipeline.py` `_shadow_record`에 `qa_pairs=self.qa_log` 추가 (§2.3) — **승인됨 (선우 2026-11-03 · 리뷰어 동겸)**. 인자 전달 한 줄만.
 - `REVERSAL_REASON_CODES` 확장과 하강 사유 필수화 (§1.2) — `contracts.py` 추가 요청. **미승인 · 계약 0.2 확정 후**.
