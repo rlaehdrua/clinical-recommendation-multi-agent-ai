@@ -118,6 +118,7 @@ def test_violation_step_marks_run_incomplete_and_keeps_every_change(tmp_path, mo
     내게 함. 위반 단계는 정상 기록으로 쓰지 않고, 그 단계의 실제 전이·사실은 진단에 모두 남아야 함 (verify_run 정합)."""
     import dataclasses
 
+    _source_level_failures(monkeypatch)
     real = rp.build_step
 
     def tampered(obs):
@@ -144,9 +145,18 @@ def test_violation_step_marks_run_incomplete_and_keeps_every_change(tmp_path, mo
     assert hit >= 1
 
 
-def test_coverage_check_detects_dropped_transition(runs, monkeypatch):
+def _source_level_failures(monkeypatch):
+    """무응답을 연락 불가(정보원 단위)로 기록하게 함. WP5 이후 "모름"(no_answer)은 항목 단위 실패라 masked 사례에서
+    정보원 소진 -> BLOCKED_FAILURE 정책 전이가 생기지 않으므로, 정책 전이가 있는 실행이 필요한 테스트는 이 경로로 만듦."""
+    from ctrec.engine import contracts as C
+    monkeypatch.setattr(rp, "NO_ANSWER_ERROR", C.UNREACHABLE)  # offline_records.settle과 생산기가 같은 상수를 읽음
+
+
+def test_coverage_check_detects_dropped_transition(tmp_path, monkeypatch):
     """누락 검사 자체가 동작하는지: 정책 전이를 빼고 쓴 기록은 pair_transition_missing으로 잡힘."""
-    _, results = runs
+    _source_level_failures(monkeypatch)
+    hcs, _, sc = _load()
+    results = [orc.record_case(hc, TRIALS, sc, tmp_path / f"c{i}") for i, hc in enumerate(hcs)]
     r = next(x for x in results if x.rounds and x.rounds[0].policy_transitions)
     rec = audit.load_run_v2(r.run_dir).records[0]
     stripped = rec.model_copy(update={"pairs": ()})
