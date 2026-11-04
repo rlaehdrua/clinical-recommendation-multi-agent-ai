@@ -226,7 +226,7 @@ git -C $WT push -u origin integration/dcvc
 
 ### 4.0 공통 규칙
 - **정책 엔진을 다시 만들지 않습니다.** 행동 후보·선택은 `ctrec.engine.policy.LegacyAdapterPolicy`(`propose/select/apply_outcome`)와 `PolicyEngine` 프로토콜만 씁니다. 새 알고리즘은 같은 프로토콜의 **다른 구현 클래스**로 추가하고 `tests/test_engine_policy.py` 조건(예산 초과 0, 중복 청구 0, 결정성, 1명 동등성, 안전 행동 보존)을 통과해야 합니다.
-- 계약(`engine/contracts.py`)은 PROVISIONAL: 필드 **추가만**, 의미·이름 변경은 선우 승인 + `contract_version` 상승.
+- 계약(`engine/contracts.py`)은 PROVISIONAL: 필드 **추가만**, 의미·이름 변경은 공정현 승인 + `contract_version` 상승.
 - 모든 작업 브랜치는 `integration/dcvc`에서 분기하고 PR도 `integration/dcvc`로.
 - 테스트는 `ANTHROPIC_API_KEY` 없이 실행. 실제 LLM·유료 API 호출 금지(별도 승인 없이는).
 - 보호 파일 테스트(`test_frozen_store_and_policy_files_unchanged`): 보호 목록(pipeline.py, matcher.py, patient_profiler.py, recommender.py, decision_*.py, question_priority.py, web/access.py, web/retention.py, status.py, data/)을 **커밋 전 로컬에서 수정하는 동안 실패**합니다(감사 03 §7, `62f744e` 기준 [확인] / midterm 기준 목록 [미확인]).
@@ -238,7 +238,7 @@ git -C $WT push -u origin integration/dcvc
 | 필요한 공통 계약 | I-1(`derive_pair_status`, 전이 표), I-2(`CriterionResult` 권한 규칙), I-5(정보원·자리표시 비용), I-7(`make_record` 입력: criteria_before/after·reevaluated), I-9(`ExperimentSpec`·`DataVersion`), `eval_hygiene`(AliasMap, LeakScanner, PromptLeakGuard, run_method_hygienic), `cohort_metrics` |
 | 선행 조건 | 계약 검토 Q1·Q5·A-1·A-2·A-3·A-4 결정. `integration/dcvc` 생성. **실제 LLM으로 masked/validation을 돌리기 전 B-1·B-4 반영 필수** |
 | 변경 가능 파일 | `question_eval.py`(B-1 `answerer_factory` 인자 추가), `metrics.py`(B-2, 함수 추가만), `eval/evaluate.py`·sweep 스크립트(B-4 기본값을 별칭 경로로), `scripts/build_masked_benchmark.py`(B-3), `data/nsclc/**`(WP2, 별도 store_dir), 신규 `src/ctrec/engine/adjudication.py`(WP3), 신규 `src/ctrec/agents/criterion_assessor.py`(WP4), `dependency_graph.py`(추가만), 신규 `src/ctrec/sim/**`·`scripts/run_cohort_experiment.py`(WP6), `schemas.RuleMeta`(기본값 있는 필드 추가만), `eval_hygiene.py`·`cohort_metrics.py`(B-1/B-2 뒤 소유 이관) |
-| 변경 금지 파일 | `engine/contracts.py`(추가 요청은 선우에게), `engine/policy.py`·`cost.py`·`bundles.py`·`cohort_state.py`(정책 재구현 금지), `inspector.py` v1 경로, `web/**`, `pipeline.py`(WP8 주입 지점은 동겸), 기존 `data/parsed/*`·`FROZEN.json`(store_patch 절차 외) |
+| 변경 금지 파일 | `engine/contracts.py`(추가 요청은 공정현에게), `engine/policy.py`·`cost.py`·`bundles.py`·`cohort_state.py`(정책 재구현 금지), `inspector.py` v1 경로, `web/**`, `pipeline.py`(WP8 주입 지점은 동겸), 기존 `data/parsed/*`·`FROZEN.json`(store_patch 절차 외) |
 | 테스트 조건 | 기존 전체 테스트 회귀 없음. 신규: 별칭 경로 누출 0(`test_eval_hygiene.py`), WP3 expert 기준 자동 확정 불가·gate 단방향, WP4 `compare_states` 동등 100%·영향 밖 기준 LLM 호출 0, WP6 같은 spec 2회 결과 해시 동일·`source_catalog_hash` 필수, WP2 생성기 결정성·FROZEN 해시 테스트 불변 |
 
 ### 4.2 동겸 — WP5 인수·WP8 웹 통합·프론트엔드
@@ -250,7 +250,7 @@ git -C $WT push -u origin integration/dcvc
 | 변경 금지 파일 | `engine/contracts.py`(추가 요청만), `engine/policy.py`의 선택 규칙(바꾸려면 새 `PolicyEngine` 구현 클래스로), `engine/cost.py`의 청구 규칙, 판정 계층(`agents/matcher.py`, `tools/rule_engine.py`, `evidence.py`, `evaluator.py`), `web/budget.py`와 `EffortLedger` 통합 금지(W-5), `eval_hygiene.py` |
 | 테스트 조건 | `policy_mode="legacy"`(기본)에서 기존 웹 테스트 전부 통과. engine 모드: 같은 `DecisionState` → 오프라인과 같은 행동 ID 순서(골든), orchestrator LLM 호출 0, `safety_unfunded`가 있으면 그 환자의 다른 행동 미진행, 실패·무응답 결과로 사실 0개, `apply_outcome` 뒤 판정 불변, SSE/화면에 원래 환자 ID·별칭 매핑 미노출 |
 
-### 4.3 선우 — WP0 계약 승인·WP7 Inspector 검토·최종 품질 확인
+### 4.3 공정현 — WP0 계약 승인·WP7 Inspector 검토·최종 품질 확인
 | 항목 | 내용 |
 |---|---|
 | 필요한 공통 계약 | 전체 I-1~I-9, `docs/engine_contracts.md`, 이 두 문서 |
@@ -260,9 +260,9 @@ git -C $WT push -u origin integration/dcvc
 | 테스트 조건 | 계약 테스트(경계 조합 전수 추가), v1 Inspector 회귀 없음(`test_inspector.py`), v2 기록 로드·검증, 각 PR마다 전체 테스트·누출 검사·보호 파일 테스트 확인 |
 
 ### 4.4 병렬 순서
-1. 즉시: 선우(계약 0.2 PR), 서연(B-1·B-2·B-4, WP2 데이터 수집) — 파일이 겹치지 않음
+1. 즉시: 공정현(계약 0.2 PR), 서연(B-1·B-2·B-4, WP2 데이터 수집) — 파일이 겹치지 않음
 2. 계약 0.2 승인 뒤: 서연 WP3, 동겸 W-1·W-3(engine 모드 골격, legacy 기본)
-3. WP3 뒤: 서연 WP4 → DecisionRecord 실제 생산(B-8) → 선우 WP7 연결 검토
+3. WP3 뒤: 서연 WP4 → DecisionRecord 실제 생산(B-8) → 공정현 WP7 연결 검토
 4. WP5·WP2 뒤: 서연 WP6. 마지막: 동겸 WP8 마무리
 
 ---
