@@ -285,6 +285,20 @@ WP2a 교차 충돌 표(`cross_trial_conflicts.md`)에 나온 두 기준 표현�
 - **Q-D5** 사실의 `ref` 형식이 `raw_text:answers` → `q:r<n>:<qid>`로 바뀌면 웹 쪽(Inspector·결과 화면)에 영향이 있나요?
 - **Q-D6** engine 모드에서 확정 하강 시 `pair_reasons`를 실행기가 넘기나요, 판정 계층(WP4)이 넘기나요?
 
+#### 동겸 질문의 현재 상태 — PR #10 코드 기준 (리뷰어 확인 전)
+
+> 2026-11-04 기록. 아래는 **리뷰어 답변이 아니라** 동겸 PR #10(`origin/feat/wp5-item-level-failure` `617156b`)과
+> `origin/integration/dcvc` 코드에서 확인한 현재 동작입니다. 리뷰어 답변이 오면 이 표를 그 답으로 바꿉니다.
+
+| 질문 | 코드 기준 현재 상태 | 근거 | 남은 것 |
+|---|---|---|---|
+| Q-D1 | `status="no_response"` + `error_code="no_answer"`. `contracts.failure_scope`는 status가 failed·no_response일 때만 실패 범위를 보므로 "`succeeded` + 새 사실 0" 방식은 쓰지 않음 | `offline_records.py`(`rp.NO_ANSWER_ERROR`), PR #10 `engine/contracts.py` `failure_scope` | 리뷰어 확인 |
+| Q-D2 | `info_key` 단위(`decision_state.info_key`, 시험 사이에서 공유. 없으면 행동 지문 `fp:<fingerprint>`). 쌍은 판정에 필요한 기준의 남은 gap이 모두 얻을 수 있는 정보(missing·stale·unverified)이고 그 항목이 전부 소진됐을 때만 `BLOCKED_FAILURE`. 일부만 소진, 임상의 판단·상충이 남으면 소진 아님 | PR #10 `cohort_state.items_exhausted`, `OpsState.failed_items`·`exhausted_items` (커밋 메시지에 Q-D2 명시) | 리뷰어 확인 |
+| Q-D3 | "모름" 1회로 그 (정보원, 항목)을 막음 → 같은 환자에게 같은 항목을 다른 문장으로 다시 묻지 않음. 같은 항목은 문서 정보원으로 요청(`alternative_source_after_no_answer`), 남은 문서 정보원이 없으면 그 항목만 `DEFER(item_sources_exhausted)`. 같은 정보원의 다른 항목 질문은 계속 | PR #10 `engine/policy.py` | 다른 문장 재질문을 허용할지는 정책 결정 (코드로 정해지지 않음) |
+| Q-D4 | **확인 불가**. `integration/dcvc`와 PR #10에 WP8 실행기(`web/engine_runner.py`)가 없음 | — | 미결 |
+| Q-D5 | Inspector는 영향 없음: `inspector._code`가 `[A-Za-z0-9_.:\-]{1,64}`만 통과시키는데 `q:r1:Q1`, `q:r2:CQ-ecog_1` 모두 그대로 표시됨 | `inspector.py:169-171`, `:476` | 결과 화면(웹)은 미확인 |
+| Q-D6 | **확인 불가**. engine 모드 웹 코드가 아직 없음 | — | 미결 |
+
 ### PR #3 작성자 (WP7 역전 지표)
 
 - **Q-P1** CE/CI → IM 직행이 금지라 `via_info_missing` 사건에는 IM 앞에 항상 VP/ER가 있습니다(NE가 끼면 `failure_or_not_evaluated`로 분류). 이 경로를 별도 유형으로 나눌 필요가 있나요, 아니면 지금처럼 IM 포함 여부만 보면 되나요?
