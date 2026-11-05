@@ -1,0 +1,534 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT06928389",
+ "trial_hash": "699a518660451ca4",
+ "parser_prompt_hash": "2e69d96de0305d7b",
+ "model": "claude-sonnet-5",
+ "compiled_at": "2026-11-03T11:47:51+00:00",
+ "runs": 3,
+ "canonical_run": 1,
+ "parsed": {
+  "trial_id": "NCT06928389",
+  "title": "Ivonescimab in Combination With Docetaxel in Advanced Non-Small Cell Lung Cancer",
+  "target_population": "PD-(L)1 inhibitor-based therapy 이후 진행된 국소 진행성 또는 전이성 비소세포폐암(NSCLC) 성인 환자",
+  "intervention_summary": "Ivonescimab + docetaxel vs Placebo + docetaxel (Phase 3, randomized, double-blind)",
+  "key_conditions": [
+   "Non-Small Cell Lung Cancer"
+  ],
+  "cohorts": [],
+  "rules": [
+   {
+    "rule_id": "I1",
+    "kind": "inclusion",
+    "text": "Be able and willing to provide written informed consent and to comply with all requirements of study participation (including all study procedures).",
+    "category": "consent_or_logistics",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I2",
+    "kind": "inclusion",
+    "text": "Age ≥ 18 years old at the time of randomization.",
+    "category": "demographic",
+    "field": "age",
+    "operator": ">=",
+    "value": "18",
+    "unit": "years",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I3",
+    "kind": "inclusion",
+    "text": "Age ≤ 75 years old at the time of randomization.",
+    "category": "demographic",
+    "field": "age",
+    "operator": "<=",
+    "value": "75",
+    "unit": "years",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I4",
+    "kind": "inclusion",
+    "text": "Eastern Cooperative Oncology Group (ECOG) performance status of 0 or 1.",
+    "category": "performance_status",
+    "field": "ecog",
+    "operator": "<=",
+    "value": "1",
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I5",
+    "kind": "inclusion",
+    "text": "Expected life expectancy of at least 3 months.",
+    "category": "other",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I6",
+    "kind": "inclusion",
+    "text": "Histologically or cytologically confirmed diagnosis of NSCLC.",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I7",
+    "kind": "inclusion",
+    "text": "Locally advanced or metastatic NSCLC (American Joint Committee on Cancer [AJCC] 8th edition).",
+    "category": "disease_stage",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I8",
+    "kind": "inclusion",
+    "text": "Previously received systemic platinum-based chemotherapy.",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I9",
+    "kind": "inclusion",
+    "text": "Previously received PD-1/L1 inhibitors.",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I10",
+    "kind": "inclusion",
+    "text": "At least one measurable lesion according to Response Evaluation Criteria in Solid Tumors (RECIST) 1.1.",
+    "category": "procedure",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I11",
+    "kind": "inclusion",
+    "text": "Adequate organ function.",
+    "category": "lab",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   },
+   {
+    "rule_id": "E1",
+    "kind": "exclusion",
+    "text": "Histologic or cytopathologic evidence of the presence of small cell lung carcinoma.",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E2",
+    "kind": "exclusion",
+    "text": "Other malignancies within 3 years prior to randomization.",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 1095,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E3",
+    "kind": "exclusion",
+    "text": "Known actionable genomic alterations.",
+    "category": "biomarker",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E4",
+    "kind": "exclusion",
+    "text": "Prior administration of any immunotherapy targeting immune mechanisms other than PD-1/PD-L1 inhibitors.",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E5",
+    "kind": "exclusion",
+    "text": "Previous treatment with docetaxel.",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E6",
+    "kind": "exclusion",
+    "text": "History of severe bleeding tendency or coagulation dysfunction.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E7",
+    "kind": "exclusion",
+    "text": "Active autoimmune disease requiring systemic therapy within 2 years prior to randomization.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 730,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E8",
+    "kind": "exclusion",
+    "text": "History of myocarditis.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E9",
+    "kind": "exclusion",
+    "text": "History of cardiomyopathy.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E10",
+    "kind": "exclusion",
+    "text": "History of malignant arrhythmia.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   }
+  ],
+  "parsing_notes": "구조화 연령/성별 필드는 본문 기준과 동일하여 I2,I3에 반영함. 'Previously received systemic platinum-based chemotherapy and PD-1/L1 inhibitors'는 두 개의 개별 치료이력 조건(I8,I9)으로 분리함. 'myocarditis, cardiomyopathy, and malignant arrhythmia'는 각각 별도 병력 조건(E8~E10)으로 분리함. 'Adequate organ function'은 구체적 수치가 제시되지 않아 underspecified=true로 표시함. ECOG 0 또는 1은 in 연산자로 두 값을 모두 포함.\n[코드 정규화] I4: ecog in 0,1 -> ecog <= 1"
+ },
+ "rule_meta": {
+  "I1": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I2": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I3": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I4": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I5": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_suspected",
+   "added_by_validator": false
+  },
+  "I6": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I7": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I8": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I9": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I10": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I11": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_confirmed",
+   "added_by_validator": false
+  },
+  "E1": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E2": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E3": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E4": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E5": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E6": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E7": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E8": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E9": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E10": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  }
+ },
+ "validation": {
+  "deterministic": {},
+  "risk": {
+   "I1": [
+    "절차 선정 기준 (미확인이어도 적격을 막지 않음)"
+   ],
+   "I4": [
+    "규칙 엔진 확정 판정 (검사·ECOG)"
+   ],
+   "I5": [
+    "category=other (근거 수준을 유형으로 정할 수 없음)"
+   ],
+   "I10": [
+    "category=other (근거 수준을 유형으로 정할 수 없음)"
+   ],
+   "I11": [
+    "underspecified (파서 한 번의 판단)"
+   ]
+  },
+  "coverage_gaps": [],
+  "llm_checked": [
+   "I1",
+   "I10",
+   "I11",
+   "I4",
+   "I5"
+  ],
+  "changes": [
+   "I10: category other -> procedure"
+  ],
+  "review": {},
+  "added_rules": [],
+  "evidence_conflicts": [
+   "I10: 유형 규칙(procedure: self_report_ok)과 검증 제안(clinical_record)이 달라 clinical_record 적용"
+  ],
+  "notes": [
+   "I5: 원문이 애매할 수 있음(적용 안 함) - 기대 생존기간 3개월 이상은 구체적 측정 기준 없이 의사의 판단에 의존하므로 모호하며 임상 기록이 필요하다."
+  ],
+  "llm_output": {
+   "checks": [
+    {
+     "rule_id": "I1",
+     "meaning_ok": true,
+     "raw_is_vague": false,
+     "category": "consent_or_logistics",
+     "structured_ok": true,
+     "required_evidence": "self_report_ok",
+     "note": "서면 동의 및 연구 절차 준수는 명확한 행정적 요건으로 원문과 일치하며 환자 응답으로 확인 가능하다."
+    },
+    {
+     "rule_id": "I4",
+     "meaning_ok": true,
+     "raw_is_vague": false,
+     "category": "performance_status",
+     "structured_ok": true,
+     "required_evidence": "clinical_record",
+     "note": "ECOG 0 또는 1이라는 구체적 기준이 operator<=1로 정확히 구조화되었으며 임상 평가 기록이 필요하다."
+    },
+    {
+     "rule_id": "I5",
+     "meaning_ok": true,
+     "raw_is_vague": true,
+     "category": "other",
+     "structured_ok": true,
+     "required_evidence": "clinical_record",
+     "note": "기대 생존기간 3개월 이상은 구체적 측정 기준 없이 의사의 판단에 의존하므로 모호하며 임상 기록이 필요하다."
+    },
+    {
+     "rule_id": "I10",
+     "meaning_ok": true,
+     "raw_is_vague": false,
+     "category": "procedure",
+     "structured_ok": true,
+     "required_evidence": "clinical_record",
+     "note": "RECIST 1.1 기준의 측정 가능 병변 여부는 영상 평가 절차로 명확히 정의되어 있어 모호하지 않다."
+    },
+    {
+     "rule_id": "I11",
+     "meaning_ok": true,
+     "raw_is_vague": true,
+     "category": "lab",
+     "structured_ok": true,
+     "required_evidence": "clinical_record",
+     "note": "적절한 장기 기능이라는 표현은 구체적 수치나 기준이 없어 판정이 모호하며 검사 기록이 필요하다."
+    }
+   ],
+   "missing": []
+  }
+ }
+}
