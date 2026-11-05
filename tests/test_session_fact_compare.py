@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from ctrec import fact_compare, store_patch
 
-from test_session_fact_shadow import _outputs, _run, calls  # noqa: F401 - calls는 pytest fixture
+from test_session_fact_shadow import _outputs, _run
 
 
 def _reset(calls):

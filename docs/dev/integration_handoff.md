@@ -69,6 +69,12 @@ pred = amap.unalias_keys(pred_by_alias)   # 지표 계산 전에 평가기에서
 | `engine/audit.py` | 선우 | — |
 | `engine/cohort_state.py`, `cost.py`, `bundles.py`, `policy.py`, `fairness.py` | 선우(기반) → 동겸(WP8 연결) | `select` 알고리즘 교체는 `PolicyEngine` 프로토콜을 지키고 `tests/test_engine_policy.py` 통과 조건 유지 |
 
+### 5.1 이후 작업에서 소유를 정한 파일
+
+| 파일 | 소유 | 다른 사람이 바꿀 때 |
+|---|---|---|
+| `src/ctrec/profile_facts.py` | 서연 (WP3, PR #7) | 질문별 출처(`qa_pairs`)·"모름"(`non_answer`) 보류·중복 판정 규칙 변경은 PR 리뷰로. 호출 지점 `pipeline.py`(보호 파일)는 인자 전달 한 줄만 선우 승인(2026-11-03) |
+
 ## 6. 통합 순서 제안
 
 1. 이 브랜치를 PR-1(WP0) / PR-2(WP1) / PR-7(WP7) / PR-5(WP5)로 나누거나, 신규 파일뿐이므로 한 PR로 묶어 `integration/dcvc`에 넣기 (커밋이 Phase별로 나뉘어 있어 cherry-pick으로 나누기 쉬움)
