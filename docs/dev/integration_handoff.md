@@ -1,6 +1,6 @@
 # 통합 인수인계 — 공통 계약·평가 위생·감사 v2·정책 엔진 기반
 
-> 브랜치 `feat/dcvc-backend-foundation` (base `62f744e`). 작성: 공정현 담당 영역(백엔드·Inspector) 야간 작업.
+> 브랜치 `feat/dcvc-backend-foundation` (base `62f744e`). 작성: 선우 담당 영역(백엔드·Inspector) 야간 작업.
 > 계약은 **PROVISIONAL**입니다. 아래 요청은 제안이며 각 담당자의 판단이 우선합니다.
 > 기존 파일은 하나도 바꾸지 않았습니다. 아래 "제안" 항목은 각 담당 파일에 넣으면 좋을 변경입니다.
 
@@ -64,10 +64,10 @@ pred = amap.unalias_keys(pred_by_alias)   # 지표 계산 전에 평가기에서
 
 | 파일 | 소유 제안 | 다른 사람이 바꿀 때 |
 |---|---|---|
-| `engine/contracts.py`, `docs/engine_contracts.md` | 공정현 (아키텍트) | 필드 추가는 PR 리뷰로, 의미 변경은 전원 검토 |
-| `eval_hygiene.py`, `cohort_metrics.py` | 공정현 → 서연에게 이관 가능 | B-1/B-2 반영 뒤 서연 소유로 옮기는 것을 제안 |
-| `engine/audit.py` | 공정현 | — |
-| `engine/cohort_state.py`, `cost.py`, `bundles.py`, `policy.py`, `fairness.py` | 공정현(기반) → 동겸(WP8 연결) | `select` 알고리즘 교체는 `PolicyEngine` 프로토콜을 지키고 `tests/test_engine_policy.py` 통과 조건 유지 |
+| `engine/contracts.py`, `docs/engine_contracts.md` | 선우 (아키텍트) | 필드 추가는 PR 리뷰로, 의미 변경은 전원 검토 |
+| `eval_hygiene.py`, `cohort_metrics.py` | 선우 → 서연에게 이관 가능 | B-1/B-2 반영 뒤 서연 소유로 옮기는 것을 제안 |
+| `engine/audit.py` | 선우 | — |
+| `engine/cohort_state.py`, `cost.py`, `bundles.py`, `policy.py`, `fairness.py` | 선우(기반) → 동겸(WP8 연결) | `select` 알고리즘 교체는 `PolicyEngine` 프로토콜을 지키고 `tests/test_engine_policy.py` 통과 조건 유지 |
 
 ## 6. 통합 순서 제안
 
