@@ -599,6 +599,19 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 
 수정할 때마다 무엇을 왜 바꿨는지 여기에 기록합니다. 최신 항목이 위에 옵니다.
 
+### 2026-11-05 — 평가할 기준이 0개인 시험을 적격 확정으로 올리지 않음 (DCV+C 엔진 안전 수정)
+
+배경: 선우가 실제 Session 점검에서 보고한 안전 문제. 기존 Matcher(`matcher.decide`)는 판정할 기준 목록이 비면(파싱 실패, 코호트 기준만 있음 등) `ELIGIBLE`을 돌려주고, 엔진은 남은 gap이 없으므로 그 쌍을 `CONFIRMED_ELIGIBLE`로 만들었습니다. 평가한 기준 없이 적격 확정이 나는 경로였습니다(M3 안전 제약: 거짓 적격 금지).
+
+| # | 변경 | 파일 |
+|---|---|---|
+| 1 | `derive_pair_status`·`pending_kinds`에 `required_criteria`(판정에 적용된 필수 기준 수). ELIGIBLE인데 0개면 `NOT_EVALUATED`(평가하지 못함, 부적격 아님). `None`(개수를 모르는 호출)은 이전과 같음. 판정 값(eligibility)은 바꾸지 않음 | `src/ctrec/engine/contracts.py` |
+| 2 | 코호트 상태가 쌍마다 required 기준 수(`required_count`)를 넘김. 다른 코호트 기준(alternative_cohort)·절차 기준(waivable)만 있는 시험도 0개로 셈 | `src/ctrec/engine/cohort_state.py` |
+| 3 | 테스트 1개: 계약 수준(0개·1개·None, 다른 판정 값은 그대로)과 코호트 상태 수준(기준 없음·required 없음·required 1개) | `tests/test_engine_contract_v02.py` |
+| 4 | 계약 문서 | `docs/engine_contracts.md` §7, `docs/dev/contract_v02_changelog.md` §2 |
+
+- 보호 파일 `agents/matcher.py`는 건드리지 않았습니다(엔진 상태 계산에서 차단). 기존 결과 화면(`status.py`)의 적격 표시는 이 PR 범위 밖입니다.
+
 ### 2026-11-05 — 통합 문서의 소유표 소제목 중복 정리 (PR #7·#8 병합 뒤)
 
 PR #7(`profile_facts.py`)과 #8(`criteria_parser.py`)이 `docs/dev/integration_handoff.md`에 같은 소제목 `### 5.1 이후 작업에서 소유를 정한 파일`을 각각 추가해, 병합 뒤 소제목·표 머리가 두 번 나왔습니다(충돌 표시 없음). 소제목과 표 머리를 하나로 두고 두 행을 한 표에 남겼습니다. 행 내용은 바꾸지 않았습니다(승인자 표기 정정은 서연 후속 PR).

@@ -85,7 +85,7 @@ from ctrec.decision_state import Action as LegacyAction
 | 영역 | 변경 | 하위 호환 |
 |---|---|---|
 | 버전 | `CONTRACT_VERSION = dcvc.engine.contracts/0.2`, `SUPPORTED_CONTRACT_VERSIONS = {0.1, 0.2}`. 목록 밖 버전의 `DecisionRecord`는 거부 | 0.1 기록 그대로 읽음 |
-| I-1 쌍 상태 | `derive_pair_status` 안전 경계: ELIGIBLE이라도 필수 기준 gap이 있으면 확정 아님(우선순위 정보 없음 > 확인 필요 > 임상의 판단). INELIGIBLE은 `mismatch == "confirmed"`일 때만 확정(None·none·provisional → VERIFICATION_PENDING). 소진 규칙은 모든 판정에 같게 적용. 알 수 없는 gap 값은 거부. 신규 `pending_kinds()` | 의미 변경(확정을 내리기만 함). 0.1 테스트 표의 기대값은 모두 유지 |
+| I-1 쌍 상태 | `derive_pair_status` 안전 경계: ELIGIBLE이라도 필수 기준 gap이 있으면 확정 아님(우선순위 정보 없음 > 확인 필요 > 임상의 판단). INELIGIBLE은 `mismatch == "confirmed"`일 때만 확정(None·none·provisional → VERIFICATION_PENDING). 소진 규칙은 모든 판정에 같게 적용. 알 수 없는 gap 값은 거부. 판정에 적용된 필수 기준이 0개(`required_criteria=0`)면 ELIGIBLE이라도 NOT_EVALUATED(2026-11-05). 신규 `pending_kinds()` | 의미 변경(확정을 내리기만 함). 0.1 테스트 표의 기대값은 모두 유지 |
 | I-1 코호트 | `cohort_state.required_gaps`: 판정에 적용된 기준만(OR의 다른 갈래·절차 기준 제외) + 확정 판정의 근거 상충(`conflict_on_decided`)을 conflict로 셈. `PairState.pending_kinds`, `PairState.mismatch` | 필드 추가 |
 | I-2 판정 출처 | `decided_by`에 `contract_evaluator`(승인 IR + 질문 계약 명제 사실, LLM 아님). `EvidenceRef`(사실 ID·`prop:<명제 키>`·출처·검증 상태·계약 ID/버전), `CriterionResult.evidence_refs`. 진료 기록 필요 기준은 문서 검증 안 된 근거로 `evidence_satisfied=True` 불가. UNKNOWN은 근거 충족 불가 | 필드 추가(기본 빈 값) |
 | 비용 | 축 5개·단위(분, USD) 고정. 대기 최댓값 합산은 같은 단계 병렬 요청에만 유효(문서화). 순차 경과 시간은 시뮬레이터가 계산 | 변경 없음 |

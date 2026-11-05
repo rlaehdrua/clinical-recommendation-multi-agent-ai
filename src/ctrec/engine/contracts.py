@@ -147,7 +147,7 @@ def _open_status(g: set[str]) -> PairStatus | None:
 
 def derive_pair_status(eligibility: str, gaps: set[str] | frozenset[str] | list[str] = (),
                        mismatch: Literal["none", "provisional", "confirmed"] | None = None,
-                       exhausted: bool = False) -> PairStatus:
+                       exhausted: bool = False, required_criteria: int | None = None) -> PairStatus:
     """기존 판정(TrialMatch.eligibility) + 판정에 적용된 경로의 필수 기준 gap -> PairStatus (M5). 판정을 바꾸지 않음.
 
     gaps는 판정에 적용된 기준(decision_state requirement == "required")의 gap만 넘깁니다. 다른 코호트(OR의 다른 갈래,
@@ -158,6 +158,9 @@ def derive_pair_status(eligibility: str, gaps: set[str] | frozenset[str] | list[
       (정보 없음 missing/stale > 확인 필요 unverified/conflict > 임상의 판단 physician_review).
     - INELIGIBLE: 불충족 근거가 문서로 검증됨(mismatch == "confirmed")일 때만 CONFIRMED_INELIGIBLE.
       provisional·none·None(모름)은 VERIFICATION_PENDING (자기 보고만으로는 확정 부적격이 아님).
+    - ELIGIBLE인데 판정에 적용된 필수 기준이 0개(required_criteria == 0): 확정 근거가 없으므로 NOT_EVALUATED.
+      기존 Matcher는 기준 목록이 비면(파싱 실패·코호트 기준만 있음 등) ELIGIBLE을 돌려주므로 여기서 막음.
+      None은 개수를 모르는 호출(이전 호출 방식)이며 이 검사를 하지 않음.
     - UNCERTAIN: 어떤 gap 조합으로도 확정이 되지 않음. gap이 없으면 INFO_MISSING.
     - 확보 수단 소진(exhausted)은 INFO_MISSING·VERIFICATION_PENDING만 BLOCKED_FAILURE로 바꿈(POLICY_TRANSITIONS와 같은
       범위). 임상의 판단 대기와 확정 상태는 그대로.
@@ -171,6 +174,8 @@ def derive_pair_status(eligibility: str, gaps: set[str] | frozenset[str] | list[
             return PairStatus.CONFIRMED_INELIGIBLE
         base = PairStatus.VERIFICATION_PENDING
     elif eligibility == "ELIGIBLE":
+        if required_criteria == 0:
+            return PairStatus.NOT_EVALUATED  # 평가한 필수 기준이 없음: 적격 확정 근거 없음
         base = _open_status(g)
         if base is None:
             return PairStatus.CONFIRMED_ELIGIBLE
@@ -185,14 +190,14 @@ def derive_pair_status(eligibility: str, gaps: set[str] | frozenset[str] | list[
 
 def pending_kinds(eligibility: str, gaps: set[str] | frozenset[str] | list[str] = (),
                   mismatch: Literal["none", "provisional", "confirmed"] | None = None,
-                  exhausted: bool = False) -> frozenset[str]:
+                  exhausted: bool = False, required_criteria: int | None = None) -> frozenset[str]:
     """쌍에 남은 작업 종류 전체 (derive_pair_status가 우선순위로 하나만 고른 것을 보완). 확정 상태면 빈 집합.
 
     - INELIGIBLE이고 불충족 근거가 미검증이면 "exclusion_unverified" + 필수 기준 gap
     - 소진(exhausted)이고 남은 작업이 있으면 "sources_exhausted"
     """
     g = _gaps(gaps)
-    status = derive_pair_status(eligibility, g, mismatch, exhausted)
+    status = derive_pair_status(eligibility, g, mismatch, exhausted, required_criteria)
     if status in CONFIRMED or status == PairStatus.NOT_EVALUATED:
         return frozenset()
     out = set(g)

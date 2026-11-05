@@ -130,6 +130,11 @@ def required_gaps(t) -> frozenset[str]:
     return frozenset(out)
 
 
+def required_count(t) -> int:
+    """판정에 적용된 필수 기준(required) 수. 0이면 적격 확정 근거가 없음 (contracts.derive_pair_status)."""
+    return sum(c.requirement == "required" for c in t.criteria)
+
+
 def _pair_states(alias: str, st: DecisionState, ops: OpsState,
                  overrides: dict[str, CriterionResult] | None = None) -> tuple[PairState, ...]:
     out = []
@@ -138,9 +143,11 @@ def _pair_states(alias: str, st: DecisionState, ops: OpsState,
         crit = tuple(_override(criterion_result(alias, c), overrides) for c in t.criteria)
         gaps = required_gaps(t)
         ex = tid in ops.exhausted_trials or items_exhausted(t, ops.exhausted_items)
-        status = derive_pair_status(t.eligibility, gaps, t.mismatch, exhausted=ex)
+        n = required_count(t)
+        status = derive_pair_status(t.eligibility, gaps, t.mismatch, exhausted=ex, required_criteria=n)
         out.append(PairState(PairKey(patient_alias=alias, trial_id=tid), status, t.eligibility, t.open, crit, gaps,
-                             pending_kinds(t.eligibility, gaps, t.mismatch, exhausted=ex), t.mismatch))
+                             pending_kinds(t.eligibility, gaps, t.mismatch, exhausted=ex, required_criteria=n),
+                             t.mismatch))
     for tid in sorted(st.not_evaluated_trials):
         out.append(PairState(PairKey(patient_alias=alias, trial_id=tid), PairStatus.NOT_EVALUATED, "NOT_EVALUATED",
                              True))
