@@ -63,6 +63,7 @@ WP7 감사 기록(DecisionRecord v2)에서 (run_id, 환자 별칭, 시험) 쌍�
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from collections import defaultdict
@@ -143,13 +144,22 @@ class ReversalSummary:
     reversals_without_new_evidence: int = 0  # 확인된 역전 중 새 확정 기록에 facts_added가 없던 것 (정보용)
     events: list[ReversalEvent] = field(default_factory=list)
 
-    def to_dict(self) -> dict:
+    def to_dict(self, *, identifiers: bool = False) -> dict:
+        """기본 출력에는 원시 식별자가 없음: 사건은 pair_ref(같은 쌍이면 같은 값)로만 구분합니다.
+
+        identifiers=True는 분석자가 원본 실행 폴더를 함께 볼 때만 씁니다. pair_ref는 구분용이며 비식별화를 보장하지 않습니다."""
         d = {k: v for k, v in self.__dict__.items() if k != "events"}
-        d["events"] = [{"run_id": e.run_id, "patient_alias": e.patient_alias, "trial_id": e.trial_id,
+        d["events"] = [{**_event_identity(e, identifiers),
                         "direction": e.direction, "anchor_step": e.anchor_step, "step": e.step, "via": list(e.via),
                         "path_kind": e.path_kind, "new_evidence": e.new_evidence, "verified": e.verified,
                         "unverified_reason": e.unverified_reason} for e in self.events]
         return d
+
+
+def _event_identity(e: ReversalEvent, identifiers: bool) -> dict:
+    if identifiers:
+        return {"run_id": e.run_id, "patient_alias": e.patient_alias, "trial_id": e.trial_id}
+    return {"pair_ref": hashlib.sha256("\0".join((e.run_id, e.patient_alias, e.trial_id)).encode("utf-8")).hexdigest()[:12]}
 
 
 def _dedup(records: Iterable[DecisionRecord], s: ReversalSummary,
@@ -436,7 +446,13 @@ def compute_for_runs(run_dirs: Iterable[Path]) -> tuple[ReversalSummary, list[st
 
 def write_metrics(summary: ReversalSummary, path: Path, problems: Iterable[str] = ()) -> None:
     """지표 JSON 저장. compute_for_runs의 문제는 load_problems로 함께 남겨 손상·누락이 파일에서 사라지지 않게 함."""
-    data = {**summary.to_dict(), "load_problems": list(problems)}
+    folders: dict[str, str] = {}  # 폴더 이름에 run_id·별칭이 들어갈 수 있어 순번으로 바꿈
+
+    def anonymous(problem: str) -> str:
+        name, sep, code = problem.partition(":")
+        return f"{folders.setdefault(name, f'run-{len(folders) + 1}')}:{code}" if sep else problem
+
+    data = {**summary.to_dict(), "load_problems": [anonymous(p) for p in problems]}
     Path(path).write_text(json.dumps(data, ensure_ascii=False, indent=1, default=str), encoding="utf-8")
 
 

@@ -25,7 +25,8 @@ write_metrics(summary, path, problems)           # problems는 load_problems 키
 | `history_gaps` | 이력 끊김 수 (원인 무관) |
 | `gaps_withheld_by_violation` | `history_gaps` 중 보류 전이 진단으로 연결된 끊김. 역전에 도달하지 않은 끊김도 포함 |
 | `duplicate_records_ignored` / `conflicting_steps` | 내용이 같은 중복 줄 수 / 내용이 달라 제외한 단계 수 |
-| `load_problems` | `write_metrics`에 넘긴 로드 문제 (§6) |
+| `load_problems` | `write_metrics`에 넘긴 로드 문제 (§6). 폴더 이름은 `run-<순번>`으로 바뀜 |
+| `events[].pair_ref` | 같은 (run_id, 환자, 시험)이면 같은 값. 원시 식별자는 `to_dict(identifiers=True)`로만 나옴 |
 
 ## 3. `pairs_observed`는 분모가 아닙니다
 
