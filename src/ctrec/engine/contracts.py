@@ -582,8 +582,11 @@ class PolicyEngine(Protocol):
     def propose(self, state) -> list[Action]:  # state: engine.cohort_state.CohortState
         ...
 
-    def select(self, candidates: list[Action], budget: EffortBudget, ledger=None) -> Plan:
-        ...
+    def select(self, candidates: list[Action], budget: EffortBudget, ledger=None, cohort=None) -> Plan:
+        ...  # cohort: 쌍 상태가 필요한 선택(환자별 최소 배정·코호트 점수)에 씀. 없으면 후보만으로
+
+    def apply_outcome(self, cohort, action: Action, outcome: "ActionOutcome") -> tuple:
+        ...  # (새 CohortState, 정책 권한 PairTransition들). 운영 상태만 바꾸고 사실·판정은 바꾸지 않음
 
 
 # ---------------------------------------------------------------------------

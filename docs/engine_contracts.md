@@ -45,7 +45,7 @@ from ctrec.decision_state import Action as LegacyAction
 | I-5 | `InformationSource` | source_id, kind, provides_fields, request_cost, per_item_minutes, can_verify, alternatives | 자기 자신을 대체로 둘 수 없음 |
 | I-6 | `EffortBudget` | coordinator_minutes, clinician_minutes, llm_cost_usd, per_patient_floor_minutes, per_patient_cap_minutes, horizon_steps | floor ≤ cap, floor ≤ 전체 |
 | I-7 | `DecisionRecord` (+ `CriterionChange`, `PairTransition`) | schema_version `ctrec.decision_record/v2`, run_id, step, action, outcome, facts_added, criteria, pairs, policy_version, evaluator_version, fact_version_before/after | outcome.action_id = action.action_id, facts_added ⊆ outcome.new_fact_ids, 결과 없이 재평가 금지, 재사용 기준은 판정 불변, 다른 환자 쌍 금지, 전이 표 |
-| I-8 | `PolicyEngine` (Protocol), `Plan`, `SkippedAction` | `propose(state) -> list[Action]`, `select(candidates, budget, ledger) -> Plan` | `runtime_checkable` |
+| I-8 | `PolicyEngine` (Protocol), `Plan`, `SkippedAction` | `propose(state) -> list[Action]`, `select(candidates, budget, ledger, cohort) -> Plan`, `apply_outcome(cohort, action, outcome) -> (CohortState, transitions)` (2026-11-05: 실제 구현과 맞춤) | `runtime_checkable` |
 | I-9 | `ExperimentSpec`, `DataVersion` | experiment_id, policy_id/version, policy_config, data_version(FROZEN 해시, 코호트 해시), seed, budget, ablations | `spec_hash()`는 experiment_id 제외·ablation 정렬 후 해시 |
 
 ## 4. PairStatus

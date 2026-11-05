@@ -158,6 +158,32 @@ def test_default_mode_is_legacy_and_changes_nothing(monkeypatch):
     assert er.policy_mode() == "legacy"
 
 
+def test_policy_comes_from_the_shared_registry(monkeypatch):
+    from ctrec.engine.dcvc import FullDCVCPolicy
+    monkeypatch.delenv(er.ENV_POLICY_ID, raising=False)
+    assert er.policy_from_env().policy_id == "legacy_adapter_greedy"
+    monkeypatch.setenv(er.ENV_POLICY_ID, "full_dcvc")
+    assert isinstance(er.policy_from_env(), FullDCVCPolicy)
+    monkeypatch.setenv(er.ENV_POLICY_ID, "nope")
+    with pytest.raises(ValueError):
+        er.policy_from_env()
+
+
+def test_full_dcvc_runs_in_a_real_session():
+    from ctrec.engine.dcvc import FullDCVCPolicy
+    hc = _case()
+    c = hc.case
+    with qe.OfflineEnvironment(3):
+        s = Session(case=PatientCase(patient_id=c.patient_id, raw_text=c.raw_text, input_source=c.input_source,
+                                     candidate_trials=list(c.candidate_trials or [])),
+                    trials={t: TRIALS[t] for t in hc.gt.candidate_trials}, answerer=_Answerer(lambda q: "모름"),
+                    tracer=_Tracer(), max_rounds=3)
+        with er.activate(s, policy=FullDCVCPolicy()) as r:
+            s.run_fixed()
+    assert r.asked and len(s.qa_log) == len(r.asked)
+    assert any(rec[2].get("policy_id") == "full_dcvc" for rec in s.tracer.recs if rec[:2] == ("engine", "start"))
+
+
 def test_entry_points_use_the_same_runner():
     for path in (WEB / "web" / "app.py", WEB / "cli.py"):
         assert "engine_runner.for_mode(session)" in path.read_text(encoding="utf-8"), path

@@ -60,6 +60,8 @@ class LegacyAdapterPolicy:
     policy_id = POLICY_ID
     version = POLICY_VERSION
 
+    recovery = True  # 실패 뒤 대체 정보원 탐색 (False: 실패한 정보원·항목은 바로 보류, full_dcvc의 recovery 스위치)
+
     def __init__(self, cfg: PolicyConfig = DEFAULT_POLICY, catalog: SourceCatalog | None = None):
         self.cfg = cfg
         self.catalog = catalog or SourceCatalog()
@@ -105,7 +107,12 @@ class LegacyAdapterPolicy:
         source = self.catalog.route(la.action_type, la.required_fact_fields, la.info_key)
         reason = _code(la.reason_code)
         item = item_key(la.info_key if la.info_key and _INFO_KEY.match(la.info_key) else None, la.fingerprint)
-        if source is not None and source in ops.failed_sources:
+        if not self.recovery:  # 회복 제거(ablation): 대체 정보원을 찾지 않고 바로 보류. 기존 정책의 "모름" 보류는 그대로
+            if source is not None and source in ops.failed_sources:
+                atype, source, reason = "DEFER", None, "sources_exhausted"
+            elif source is not None and (source, item) in ops.failed_items:
+                atype, source, reason = "DEFER", None, "item_sources_exhausted"
+        elif source is not None and source in ops.failed_sources:
             alts = [s for s in self.catalog.alternatives(source, ops.failed_sources) if (s, item) not in ops.failed_items]
             if alts:
                 source, reason = alts[0], "alternative_source_after_failure"
@@ -189,7 +196,7 @@ class LegacyAdapterPolicy:
                 done.add(a.action_id)
         rest = [a for a in rest if a.action_id not in done]
 
-        floor = budget.per_patient_floor_minutes  # 2) 환자별 최소 배정
+        floor = self.floor_minutes(budget)  # 2) 환자별 최소 배정
         if floor > 0:
             eligible = sorted({a.patient_alias for a in rest}
                               & ({x for x in cohort.aliases() if cohort.open_pairs(x)} if cohort else
@@ -207,15 +214,25 @@ class LegacyAdapterPolicy:
                         nxt = next((a for a in rest if a.patient_alias == alias and a.action_id not in done), None)
                     if nxt is not None:
                         progress = True
-        for a in rest:  # 3) 나머지
+        self.fill([a for a in rest if a.action_id not in done], led, take, skipped, done, cohort)  # 3) 나머지
+        selected.sort(key=self.order_key)
+        return Plan(policy_id=self.policy_id, policy_version=self.version, selected=tuple(selected),
+                    skipped=tuple(skipped), held=held, total_cost=led.total, safety_unfunded=tuple(unfunded))
+
+    def floor_minutes(self, budget: EffortBudget) -> float:
+        """환자별 최소 배정(분). 하위 정책이 끌 수 있음 (full_dcvc의 fairness_floor 스위치)."""
+        return budget.per_patient_floor_minutes
+
+    def fill(self, rest: list[Action], led: EffortLedger, take, skipped: list, done: set,
+             cohort: CohortState | None) -> None:
+        """안전·최소 배정 뒤 남은 예산을 채우는 단계. 기본: order_key 순서대로 들어가는 것만.
+        하위 정책은 순서(order_key)나 이 단계(동적 선택)만 바꾸고, 안전 필수·중복·예산 규칙은 그대로 씁니다."""
+        for a in rest:
             if a.action_id in done:
                 continue
             if not take(a):
                 skipped.append(SkippedAction(action_id=a.action_id, reason_code="over_budget"))
                 done.add(a.action_id)
-        selected.sort(key=self.order_key)
-        return Plan(policy_id=self.policy_id, policy_version=self.version, selected=tuple(selected),
-                    skipped=tuple(skipped), held=held, total_cost=led.total, safety_unfunded=tuple(unfunded))
 
     # ------------------------------------------------------------ outcome
     def apply_outcome(self, cohort: CohortState, action: Action,
@@ -235,15 +252,15 @@ class LegacyAdapterPolicy:
         reason = "sources_exhausted"
         if scope == "source" and action.source_id:
             failed.add(action.source_id)
-            if not self.catalog.alternatives(action.source_id, frozenset(failed)):
+            if not self.recovery or not self.catalog.alternatives(action.source_id, frozenset(failed)):
                 exhausted.update(action.target_trial_ids)
         elif scope == "item" and action.source_id:
             item = item_key(action.info_key, action.fingerprint)
             failed_items.add((action.source_id, item))
             reason = "item_sources_exhausted"
-            if action.info_key and not self.item_alternatives(action.source_id, action.required_fields,
-                                                              action.info_key, item, frozenset(failed),
-                                                              frozenset(failed_items)):
+            if action.info_key and (not self.recovery or not self.item_alternatives(
+                    action.source_id, action.required_fields, action.info_key, item, frozenset(failed),
+                    frozenset(failed_items))):
                 exhausted_items.add(action.info_key)
         new_ops = OpsState(frozenset(failed), MappingProxyType(attempts), frozenset(exhausted),
                            frozenset(failed_items), frozenset(exhausted_items))

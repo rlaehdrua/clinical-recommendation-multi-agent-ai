@@ -258,6 +258,14 @@ def test_policy_engine_protocol_runtime_check():
         def propose(self, state):
             return []
 
-        def select(self, candidates, budget, ledger=None):
+        def select(self, candidates, budget, ledger=None, cohort=None):
             return C.Plan(policy_id="x", policy_version="1")
+
+        def apply_outcome(self, cohort, action, outcome):
+            return cohort, ()
     assert isinstance(P(), C.PolicyEngine)
+
+    class NoOutcome:  # 결과 반영(apply_outcome)이 없으면 실행기가 운영 상태를 갱신할 수 없음 -> 정책 엔진 아님
+        policy_id, version = "x", "1"
+        propose, select = P.propose, P.select
+    assert not isinstance(NoOutcome(), C.PolicyEngine)
