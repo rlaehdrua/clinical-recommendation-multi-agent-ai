@@ -120,7 +120,7 @@ def test_non_answer_mixed_with_real_answer_stays_ambiguous():
     s = FactStore()
     r = ingest_profile(s, _answer_fact("모름"), raw_text=raw, session_id="S1",
                        qa_pairs=[_qa("Q1", answer="모름"), _qa("Q2", answer=real, rnd=2)])
-    assert r.withheld == [] and _other(s)[0].source_reference.ref == "raw_text:answers"
+    assert r.withheld == [("other_fact", "uncertain_answer")] and _other(s) == []
 
 
 # f) 같은 질문 ID를 r1·r2에서 다른 답으로: 라운드가 출처를 가름

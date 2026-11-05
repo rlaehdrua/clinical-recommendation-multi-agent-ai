@@ -134,3 +134,15 @@ def test_nothing_to_check():
     assert vg.ground("age", None, "x") is None
     assert vg.ground("age", 62, None) is None
     assert vg.ground_lab("hemoglobin", 12.0, "q", None) is None
+
+
+@pytest.mark.parametrize("text", ["글쎄요", "글쎄", "모름. 기억 안 남", "모르겠어요, 기억이 안 나요", "글쎄요, 잘 기억이 안 나네요", "잘 기억이 안 나요"])
+def test_compound_non_answers_are_recognized(text):
+    from ctrec.question_contract import non_answer
+    assert non_answer(text)
+
+
+@pytest.mark.parametrize("text", ["글쎄요, 62세", "모르겠어요 62세인가", "BCG 치료를 거부했습니다", "62세입니다", "손목 수술은 했는데 종류는 몰라요"])
+def test_answers_with_content_are_not_non_answers(text):
+    from ctrec.question_contract import non_answer
+    assert not non_answer(text)

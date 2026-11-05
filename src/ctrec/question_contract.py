@@ -35,7 +35,7 @@ _TOPIC = r"(?:[가-힣]{1,6}(?:\s+[가-힣]{1,6})?(?:은|는|건|에|에는|에\
 _REFUSE_PRED = (r"(?:을|은|는|도)?\s*(?:하지\s*않[가-힣]*|안\s*함|없음|불가|하고\s*싶지\s*않[가-힣]*|"
                 r"원하지\s*않[가-힣]*|드리(?:기|고\s*싶지)\s*(?:싫|어렵|않)[가-힣]*|하기\s*(?:싫|어렵|곤란)[가-힣]*)")
 _NON_ANSWER = re.compile(
-    r"^(?:잘\s*)?(?:모름|모르겠[가-힣]*|모릅니다|몰라요?)$|^기억(?:이)?\s*(?:안\s*[가-힣]+|나지\s*않[가-힣]*)$|"
+    r"^(?:잘\s*)?(?:모름|모르겠[가-힣]*|모릅니다|몰라요?)$|^(?:잘\s*)?기억(?:이)?\s*(?:안\s*[가-힣]+|나지\s*않[가-힣]*)$|^글쎄(?:요|다)?$|"
     r"^확실하지\s*않[가-힣]*$|"
     rf"^{_TOPIC}(?:답변\s*)?거부(?:합니다|할게요|해요|함)?$|"
     rf"^{_TOPIC}(?:답변|대답|응답|답){_REFUSE_PRED}$|^(?:무|미)응답$|"
@@ -55,7 +55,10 @@ def non_answer(answer: str | None) -> bool:
     from .decision_state import DECLINED_ANSWERS
     a = _norm(answer).strip(" .!~")
     base = re.sub(r"\s*\([^)]*\)\s*$", "", a).strip(" .!~")  # "모름(답변 없음)"
-    return not base or a in DECLINED_ANSWERS or base in DECLINED_ANSWERS or bool(_NON_ANSWER.match(base))
+    if not base or a in DECLINED_ANSWERS or base in DECLINED_ANSWERS or _NON_ANSWER.match(base):
+        return True
+    parts = [p.strip() for p in re.split(r"[.,!…~]+", base) if p.strip()]  # "모름. 기억 안 남"처럼 절마다 답하지 않은 경우
+    return len(parts) > 1 and all(p in DECLINED_ANSWERS or _NON_ANSWER.match(p) for p in parts)
 
 
 @dataclass
