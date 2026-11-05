@@ -1,4 +1,5 @@
 // 코호트 현황판 (연구용, 읽기 전용). /api/cohorts의 가장 최근 생성 세트를 보여 줌.
+// 쌍 상태는 서버가 엔진 계약 0.2의 7가지 PairStatus로 계산해 board로 보냄 (web/cohort_board.py). 화면은 판정 규칙을 갖지 않음.
 // 기본 화면은 정책이 보는 정보(public)만 쓰고, '정답 보기'를 켰을 때만 시뮬레이터 정답(oracle)을 함께 표시.
 // 데이터는 모두 textContent로 넣음 (innerHTML 없음).
 "use strict";
@@ -22,6 +23,30 @@ const SLOT_KO = {
   "judge.investigator_unsuitable": "연구자 판단",
 };
 const EVIDENCE_KO = { record: "진료 기록", self_report: "자기 보고", physician: "의사 판단" };
+// 쌍 상태 7가지 (engine.contracts.PairStatus). 순서는 서버의 status_order를 따름
+const STATUS_UI = {
+  CONFIRMED_ELIGIBLE: { cls: "ok", label: "적격 확정", desc: "필수 기준을 모두 근거로 확인" },
+  CONFIRMED_INELIGIBLE: { cls: "bad", label: "부적격 확정", desc: "기록으로 확인된 불충족 기준이 있음" },
+  VERIFICATION_PENDING: { cls: "warn", label: "확인 대기", desc: "값은 있으나 기록 확인·상충 해소 필요" },
+  INFO_MISSING: { cls: "info", label: "정보 부족", desc: "판정에 필요한 정보가 없거나 검사가 오래됨" },
+  EXPERT_REVIEW: { cls: "violet", label: "의료진 검토", desc: "임상의 판단이 필요한 기준이 남음" },
+  BLOCKED_FAILURE: { cls: "muted", label: "확보 실패 보류", desc: "확인 수단을 모두 써도 정보를 얻지 못함" },
+  NOT_EVALUATED: { cls: "", label: "미평가", desc: "평가하지 못함 (부적격 아님)" },
+};
+const GAP_KO = { missing: "정보 없음", stale: "검사 오래됨", unverified: "기록 확인 필요", conflict: "정보 상충",
+  physician_review: "의료진 판단 필요" };
+// 정보원 이름: 생성기 ID(S_*)와 엔진 계약 I-5 ID를 모두 표시 (Q-G1 통일 전후 공통)
+const SOURCE_KO = {
+  S_lab: "혈액검사 결과지", S_path: "병리·유전자 결과지", S_med: "처방 목록", S_summary: "진료·퇴원 요약",
+  S_chart: "전체 진료기록", S_phone: "환자 전화", S_md: "담당의 문의",
+  patient_interview: "환자 문진", lab_report: "검사 결과지", pathology_report: "병리·유전자 결과지",
+  medication_list: "처방 목록", medical_record: "진료기록", clinician_review: "의료진 검토",
+  system_check: "시스템 확인", system_reparse: "재추출", trial_registry: "시험 등록 정보",
+};
+const sourceName = (id) => {
+  const [base, slot] = String(id).split(":");
+  return (SOURCE_KO[base] || base) + (slot ? ` · ${slotName(slot)}` : "");
+};
 const HOLDS_KO = { yes: "성립", no: "불성립", unknown: "미확인" };
 
 let list = [];
@@ -54,18 +79,18 @@ async function getJSON(url) {
   return r.json();
 }
 
-// 정책이 아는 정보만으로 본 쌍 상태: 확인된 기준 하나라도 불통과면 부적격 확정, 미확인이 남으면 미확정
+// 서버가 계산한 쌍 상태 (정책이 지금 아는 정보 = public만 사용). 미확정이면 남은 기준 수를 붙임
 function pairStatus(c, pid, t) {
-  let unknown = 0, fail = false;
-  for (const r of c.public.rules[t]) {
-    const h = c.public.initial_holds[`${pid}|${t}|${r.rule_id}`];
-    if (h === "unknown") unknown++;
-    else if (passes(r.kind, h) === false) fail = true;
-  }
-  if (fail) return { cls: "bad", label: "부적격 확정", unknown };
-  if (unknown) return { cls: "warn", label: `미확정 · ${unknown}개 미확인`, unknown };
-  return { cls: "ok", label: "적격 확정", unknown };
+  const b = c.board.pairs[`${pid}|${t}`];
+  const ui = STATUS_UI[b.status] || { cls: "", label: b.status };
+  const open = b.rules.filter((r) => r.gap !== "none").length;
+  const confirmed = b.status.startsWith("CONFIRMED_");
+  return { ...ui, status: b.status, open, label: open && !confirmed ? `${ui.label} · ${open}개` : ui.label };
 }
+const ruleGap = (c, pid, t, rid) => {
+  const r = c.board.pairs[`${pid}|${t}`].rules.find((x) => x.rule_id === rid);
+  return r ? r.gap : "none";
+};
 
 function fillSelectors() {
   const scenarios = [...new Set(list.map((c) => c.cohort_id.replace(/-r\d+$/, "")))];
@@ -110,19 +135,16 @@ function tile(label, value, sub, cls = "") {
 
 function renderTiles() {
   const c = current;
-  let ok = 0, bad = 0, open = 0, pairs = 0, trueEligible = 0;
+  let pairs = 0, trueEligible = 0;
   for (const p of c.public.patients) for (const t of p.candidate_trials) {
     pairs++;
-    const s = pairStatus(c, p.patient_id, t);
-    if (s.cls === "ok") ok++; else if (s.cls === "bad") bad++; else open++;
     if (c.oracle.pair_label[`${p.patient_id}|${t}`] === "ELIGIBLE") trueEligible++;
   }
+  const counts = c.board.status_counts;
   const kids = [
     tile("환자", c.public.patients.length, `시험 ${c.public.trials.length}개`),
-    tile("환자–시험 쌍", pairs),
-    tile("적격 확정", ok, "지금 정보로", "ok"),
-    tile("부적격 확정", bad, "지금 정보로", "bad"),
-    tile("미확정", open, "확인이 필요한 쌍", "warn"),
+    tile("환자–시험 쌍", pairs, "상태 기준: 지금 정보"),
+    ...c.board.status_order.map((s) => tile(STATUS_UI[s].label, counts[s] || 0, STATUS_UI[s].desc, `st ${STATUS_UI[s].cls}`)),
     tile("확인 수단", Object.keys(c.public.sources).length, "소스 수"),
   ];
   if (showOracle()) kids.push(tile("실제 적격", trueEligible, `정답 기준 · ${pairs ? Math.round((trueEligible / pairs) * 100) : 0}%`));
@@ -136,7 +158,7 @@ function renderUnbound() {
   $("unbound-note").hidden = !total;
   if (!total) return;
   $("unbound-note").replaceChildren(el("b", { text: `검수 전 기준 ${total}개는 정답에서 빠져 있습니다. ` }),
-    `정답 계산에 쓰인 기준은 ${bound}개(나이·성별·검사 수치 등 자동 연결)이며, 나머지는 '충족'으로 간주했습니다. ` +
+    `정답 계산에 쓰인 기준은 ${bound}개(자동 연결 + 사람 검수 완료)이며, 나머지는 '충족'으로 간주했습니다. ` +
     "슬롯 사전 검수가 끝나면 적격률이 낮아지고 확인 수단도 다양해집니다.");
 }
 
@@ -183,11 +205,12 @@ function renderDetail() {
     const slots = [r.slot, ...(r.extra_slots || [])];
     const has = (s) => Object.prototype.hasOwnProperty.call(p.known, s);
     const ps = passes(r.kind, h);
-    const cls = ps === true ? "ok" : ps === false ? "bad" : "warn";
+    const gap = ruleGap(c, pid, t, r.rule_id);
+    const cls = ps === true ? "ok" : ps === false ? "bad" : gap === "physician_review" ? "violet" : "info";
     const li = el("li", {},
       el("span", { class: "rid", text: r.rule_id }),
       el("span", { class: "badge", text: r.kind === "inclusion" ? "선정" : "제외" }),
-      el("span", { class: `badge ${cls}`, text: h === "unknown" ? "미확인" : ps ? "통과" : "불통과" }),
+      el("span", { class: `badge ${cls}`, text: h === "unknown" ? `미확인 · ${GAP_KO[gap] || gap}` : ps ? "통과" : "불통과" }),
       el("span", { class: "slot", text: slots.map(slotName).join(" + ") }),
       el("span", { class: "val", text: slots.map((s) => (has(s) ? `${slotName(s)} ${fmt(p.known[s], s)}` : `${slotName(s)} 모름`)).join(" · ") }));
     if (r.time_window_days != null) {
@@ -205,8 +228,13 @@ function renderDetail() {
     return li;
   });
   const ub = c.public.unbound_rules[t] || [];
+  const st = pairStatus(c, pid, t);
+  const kinds = c.board.pairs[`${pid}|${t}`].pending_kinds;
   $("detail").replaceChildren(...[
     el("p", { class: "m0", text: `${pid} · ${t} ${trialTitle(t) !== t ? "· " + trialTitle(t) : ""}` }),
+    el("p", { class: "m0 mt6" }, el("span", { class: `badge ${st.cls}`, text: STATUS_UI[st.status] ? STATUS_UI[st.status].label : st.status }),
+      " ", el("span", { class: "faint", text: (STATUS_UI[st.status] || {}).desc || "" }),
+      kinds.length ? el("span", { class: "faint", text: ` · 남은 작업: ${kinds.map((k) => GAP_KO[k] || k).join(", ")}` }) : null),
     el("ul", { class: "rules mt10" }, ...items),
     ub.length ? el("p", { class: "faint mt10", text: `검수 전이라 정답에서 빠진 기준 ${ub.length}개: ${ub.join(", ")}` }) : null,
   ].filter(Boolean));
@@ -216,7 +244,7 @@ function renderDetail() {
 
 function renderSources() {
   const rows = Object.values(current.public.sources).map((s) =>
-    el("tr", {}, el("td", { text: s.source_id }), el("td", { text: `${s.cost_min}분` }),
+    el("tr", {}, el("td", { text: sourceName(s.source_id), title: s.source_id }), el("td", { text: `${s.cost_min}분` }),
       el("td", { text: EVIDENCE_KO[s.evidence] || s.evidence }), el("td", { text: s.reveals.map(slotName).join(", ") })));
   $("sources").replaceChildren(
     el("thead", {}, el("tr", {}, ...["소스", "비용", "근거 수준", "드러나는 정보"].map((h) => el("th", { scope: "col", text: h })))),

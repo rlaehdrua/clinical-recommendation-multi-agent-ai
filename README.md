@@ -599,6 +599,20 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 
 수정할 때마다 무엇을 왜 바꿨는지 여기에 기록합니다. 최신 항목이 위에 옵니다.
 
+### 2026-11-05 — 코호트 생성기를 integration/dcvc에 합치고, /cohort 현황판을 엔진 계약의 7가지 쌍 상태로 (연구 · 오프라인)
+
+배경: 연구용 `/cohort` 현황판은 `research/cohort-generator` 브랜치에만 있었고, 쌍 상태를 화면(JS)이 자체 규칙으로 3가지(적격 확정·부적격 확정·미확정)만 나눴습니다. 엔진 계약 0.2의 7가지 `PairStatus`와 기준이 달라 같은 쌍을 시뮬레이터·웹 엔진과 다르게 부를 수 있었습니다(통합 PR 리뷰의 의미 충돌 ③).
+
+| # | 변경 | 파일 |
+|---|---|---|
+| 1 | `research/cohort-generator`(dfd3790)를 그대로 병합(충돌 0). 생성기 코드는 바꾸지 않음 — 이후 정보원 ID 통일·임상의 판단 기준 처리(의미 충돌 ①②)는 생성기 소유자(서연)가 이 위에서 진행 | `src/ctrec/cohort/**`, `data/cohort/**`, `scripts/build_cohort_benchmark.py`, `tests/test_cohort_generator.py`, `patient-screens/` |
+| 2 | **쌍 상태를 서버에서 엔진 계약으로 계산**: 코호트 JSON의 public 부분만 읽어 기준별 gap(정보 없음·검사 오래됨·임상의 판단)을 정하고 `contracts.derive_pair_status`·`pending_kinds`에 넘김. oracle은 쓰지 않음 | `src/ctrec/web/cohort_board.py` (신규), `web/app.py` (`/api/cohorts/{id}` 응답에 `board` 추가) |
+| 3 | 현황판: 상태 7가지(적격 확정·부적격 확정·확인 대기·정보 부족·의료진 검토·확보 실패 보류·미평가) 타일·범례·배지, 상세 화면에 쌍 상태와 남은 작업, 미확인 기준의 이유. 화면은 판정 규칙을 갖지 않음. 정보원은 생성기 ID(`S_*`)와 엔진 I-5 ID를 모두 이름으로 표시(통일 전후 공통) | `web/static/cohort.js`·`cohort.html`·`cohort.css` |
+| 4 | 테스트 11개: 상태별 사례(적격 확정, 불충족 하나로 부적격 확정, 정보 부족, 검사 오래됨, 임상의 판단 3가지 경로, 우선순위), 엔진 계약과 일치, oracle을 지워도 같은 결과, API 응답, 화면이 자체 판정 규칙을 갖지 않음 | `tests/test_cohort_board.py` |
+
+- 정적 생성 데이터에는 확보 실패 보류·미평가가 생기지 않습니다(실제 확인을 진행하는 시뮬레이터·웹에서 생김). 같은 7가지 체계로 0건을 표시합니다.
+- 화면 확인: 1280px(라이트)·390px(다크) 가로 넘침 0, 콘솔 오류 없음.
+
 ### 2026-11-02 — 환자 화면 시안 HTML 보관 (프론트엔드)
 
 - `patient-screens/`에 2026-10-24에 만든 환자 화면 정적 시안 4개를 저장소에 추가했습니다: `index.html`(문답), `results.html`(추천 결과), `detail.html`(시험 상세와 내 조건), `upload.html`(서류 확인 완료). 현재 웹 화면(`web/static/`)의 설계 참고용이며 서버가 제공하지 않습니다. 내용은 모두 가상 예시이고 환자 정보는 없습니다(Google Fonts를 외부에서 불러옴).

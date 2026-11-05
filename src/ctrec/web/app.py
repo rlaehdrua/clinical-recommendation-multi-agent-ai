@@ -43,7 +43,7 @@ from ..schemas import ClarifyingQuestion
 from ..status import MATCH_NOTE
 from ..tools import ctgov
 from ..trace import Tracer
-from . import access, budget, display, paid_gate, retention
+from . import access, budget, cohort_board, display, paid_gate, retention
 
 STATIC = Path(__file__).parent / "static"
 log = logging.getLogger("ctrec.web")
@@ -631,7 +631,10 @@ def get_cohort(cohort_id: str) -> dict:
     # 보고서에 있는 ID만 (경로 조작 불가)
     if found is None or cohort_id not in {c.get("cohort_id") for c in found[1].get("cohorts", [])}:
         raise HTTPException(404, "찾을 수 없습니다.")
-    return json.loads((found[0] / f"{cohort_id}.json").read_text(encoding="utf-8"))
+    data = json.loads((found[0] / f"{cohort_id}.json").read_text(encoding="utf-8"))
+    # 쌍 상태는 엔진 계약 0.2의 7가지 PairStatus로 서버에서 계산 (public만 사용, 화면은 판정 규칙을 갖지 않음)
+    data["board"] = cohort_board.board(data)
+    return data
 
 
 @app.post("/api/runs")
