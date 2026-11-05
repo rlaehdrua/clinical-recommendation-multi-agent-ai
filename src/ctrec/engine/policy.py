@@ -7,6 +7,9 @@ LegacyAdapterPolicy
   항목 단위 실패("모름" = no_answer)는 그 (정보원, 항목)만 막고 같은 항목을 문서 정보원으로 요청
   (alternative_source_after_no_answer). 남은 문서 정보원도 없으면 그 항목만 DEFER(item_sources_exhausted).
   같은 정보원의 다른 항목 질문은 그대로 계속합니다.
+  실제 Session에서는 "모름" 뒤 기존 정책이 그 항목을 다시 묻지 않고 DEFER(user_declined_or_exhausted)를 내므로,
+  그 보류도 같은 항목의 실패 기록(ops.failed_items)이 있으면 같은 규칙으로 문서 정보원 요청으로 바꿈
+  (실패 기록이 없는 보류 - 엔진 밖에서 생긴 거부 등 - 는 그대로 보류).
 - select(candidates, budget, ledger): 결정적 탐욕 기준선.
     1) 안전 필수(tier 1: 상충 확인·상태 재계산) 먼저. 예산이 모자라면 버리지 않고 safety_unfunded로 보고하고,
        그 환자의 나머지 행동은 실행하지 않음(blocked_by_unfunded_safety).
@@ -37,6 +40,7 @@ from .cost import EffortLedger
 POLICY_ID = "legacy_adapter_greedy"
 POLICY_VERSION = "0.2-provisional"
 SAFETY_TIER = 1
+LEGACY_DECLINED_DEFER = "user_declined_or_exhausted"  # decision_policy가 "모름"·거부 뒤 내는 보류 사유
 VERIFICATION_TYPES = frozenset({"ASK_PATIENT", "REQUEST_DOCUMENT", "VERIFY_RECORD", "CLINICIAN_REVIEW"})
 
 
@@ -114,6 +118,16 @@ class LegacyAdapterPolicy:
                 atype, source, reason = "REQUEST_DOCUMENT", alts[0], "alternative_source_after_no_answer"
             else:
                 atype, source, reason = "DEFER", None, "item_sources_exhausted"
+        elif atype == "DEFER" and reason == LEGACY_DECLINED_DEFER:
+            # 기존 정책은 "모름" 뒤 같은 항목을 다시 제안하지 않고 보류함 -> 엔진이 기록한 항목 실패가 있으면 대체 문서로
+            failed = sorted(s for s, it in ops.failed_items if it == item)
+            if failed:
+                alts = list(dict.fromkeys(a for f in failed for a in self.item_alternatives(
+                    f, la.required_fact_fields, la.info_key, item, ops.failed_sources, ops.failed_items)))
+                if alts:
+                    atype, source, reason = "REQUEST_DOCUMENT", alts[0], "alternative_source_after_no_answer"
+                else:
+                    reason = "item_sources_exhausted"
         n_items = max(len(la.target_criterion_ids), 1)
         src = self.catalog.get(source)
         expected = ZERO_COST if src is None else src.request_cost.model_copy(update={

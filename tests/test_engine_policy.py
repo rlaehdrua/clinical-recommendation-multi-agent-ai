@@ -16,7 +16,7 @@ from ctrec.decision_policy import candidates  # noqa: E402
 from ctrec.decision_state import build_state  # noqa: E402
 from ctrec.engine import contracts as C  # noqa: E402
 from ctrec.engine.bundles import SourceCatalog, bundle, charge_key  # noqa: E402
-from ctrec.engine.cohort_state import CohortState  # noqa: E402
+from ctrec.engine.cohort_state import CohortState, OpsState  # noqa: E402
 from ctrec.engine.cost import BudgetExceeded, EffortLedger  # noqa: E402
 from ctrec.engine.fairness import allocation_report, gini  # noqa: E402
 from ctrec.engine.policy import LegacyAdapterPolicy, plan_and_charge, plan_cohort  # noqa: E402
@@ -417,3 +417,38 @@ def test_one_non_answer_detector_for_all_executors():
         assert answers.answer_outcome(text) == ("no_response", C.NO_ANSWER), text
     for text in ("네", "ECOG 1이에요", "아니요"):
         assert answers.answer_outcome(text) == ("succeeded", None), text
+
+
+def _declined_state(info_key: str):
+    """실제 Session처럼 "모름" 답이 기록된 상태: 기존 정책은 그 항목을 다시 묻지 않고 DEFER(user_declined_or_exhausted)."""
+    st = _state_missing()
+    for t in st.trials.values():
+        for c in t.criteria:
+            if c.info_key == info_key:
+                c.asked, c.declined = 1, True
+    return st
+
+
+def test_legacy_decline_defer_becomes_document_request_after_engine_item_failure():
+    """실제 Session 경로 (선우 보고): "모름" 뒤 기존 정책은 문진을 다시 제안하지 않고 보류를 냄. 엔진이 그 항목의 실패를
+    기록했으면 그 보류도 대체 문서 요청으로 바꿔야 함. 실패 기록이 없으면(엔진 밖의 거부) 보류 그대로."""
+    pol = LegacyAdapterPolicy()
+    legacy = [a for a in candidates(_declined_state("ecog"), pol.cfg)[0] if a.info_key == "ecog"]
+    assert [(a.action_type, a.reason_code) for a in legacy] == [("DEFER", "user_declined_or_exhausted")]
+
+    plain = CohortState.from_decision_states({PA: _declined_state("ecog")})
+    held = next(a for a in pol.propose(plain) if a.info_key == "ecog")
+    assert (held.action_type, held.reason_code) == ("DEFER", "user_declined_or_exhausted")  # 실패 기록 없음
+
+    ops = {PA: OpsState(failed_items=frozenset({("patient_interview", "ecog")}))}  # 엔진이 기록한 항목 실패
+    co = CohortState.from_decision_states({PA: _declined_state("ecog")}, ops=ops)
+    moved = next(a for a in pol.propose(co) if a.info_key == "ecog")
+    assert (moved.action_type, moved.reason_code, moved.source_id) == (
+        "REQUEST_DOCUMENT", "alternative_source_after_no_answer", "medical_record")
+    assert moved.purpose == "eligibility" and moved.target_criteria == held.target_criteria
+
+    co2, tr = pol.apply_outcome(co, moved, _no_answer(moved))  # 문서에서도 못 얻음 -> 그 항목만 소진
+    assert co2.ops[PA].exhausted_items == frozenset({"ecog"})
+    last = next(a for a in pol.propose(co2) if a.info_key == "ecog")
+    assert (last.action_type, last.reason_code, last.source_id) == ("DEFER", "item_sources_exhausted", None)
+    assert co2.pair(PA, "T1").status != C.PairStatus.BLOCKED_FAILURE  # EGFR가 남아 있음

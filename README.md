@@ -599,6 +599,21 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 
 수정할 때마다 무엇을 왜 바꿨는지 여기에 기록합니다. 최신 항목이 위에 옵니다.
 
+### 2026-11-05 — WP8: 실제 Session(웹·CLI)의 확인 질문을 정책 엔진이 고르게 연결, "모름" 뒤 대체 문서 요청이 실제로 동작하도록 수정
+
+배경: 선우가 실제 Session 점검에서 "'모름' 뒤 대체 정보원 전환이 동작하지 않음"을 보고했습니다. 확인해 보니 (1) 웹·CLI의 Session은 정책 엔진을 전혀 거치지 않고 기존 LLM 질문 생성기로 질문을 만들었고(엔진은 오프라인 기록기에서만 사용), (2) 엔진에서도 "모름" 뒤 기존 정책이 그 항목을 다시 제안하지 않고 `DEFER(user_declined_or_exhausted)`를 내서, WP5의 대체 문서 요청 규칙(같은 질문이 다시 제안될 때만 동작)이 한 번도 실행되지 않았습니다. 단위 테스트는 질문이 다시 제안되는 상태를 직접 만들어 이 경로를 놓쳤습니다.
+
+| # | 변경 | 파일 |
+|---|---|---|
+| 1 | **엔진 실행기 (W-1~W-7)**: `question_generator.use_generator`(실행별 생성기 교체 장치)로 Session.clarify의 질문 생성 자리만 바꿈. 라운드마다 직전 답 → `answer_outcome` → `apply_outcome`(운영 상태만), Session → CohortState(실행별 salt 별칭) → `propose/select` → 질문화. 환자 문진·의사 참고용 질문은 `render_action`, 문서 요청은 화면 사용자에게 "기록에서 확인해 입력"(입력값은 자기 보고 수준 그대로, 문서 검증으로 올리지 않음). 안전 필수 행동이 예산 부족이면 그 라운드는 질문하지 않고 알림. trace에는 행동 유형·정보원·사유 코드·건수만(행동 ID·별칭·환자 값 없음). 질문 문구는 기준 원문을 넣은 결정적 문장(LLM 없음) | `src/ctrec/web/engine_runner.py` (신규) |
+| 2 | 진입점: `CTREC_POLICY_MODE=engine`일 때만 엔진 모드 (기본 legacy = 기존 동작 그대로). 보호 파일 `pipeline.py`는 고치지 않음 | `src/ctrec/web/app.py`, `src/ctrec/cli.py` |
+| 3 | 정책: 기존 정책의 "모름" 보류(`user_declined_or_exhausted`)도 엔진이 기록한 항목 실패가 있으면 대체 문서 요청(`alternative_source_after_no_answer`)으로, 남은 문서가 없으면 `item_sources_exhausted`. 실패 기록이 없는 보류(엔진 밖의 거부)는 그대로 | `src/ctrec/engine/policy.py` |
+| 4 | 테스트: 정책 단위 1개 + 실행기 9개. 실제 Session.run_fixed(오프라인 대역) E2E — 엔진이 질문을 고르고 LLM 질문 생성기는 부르지 않음, "모름" 뒤 다른 항목 질문 계속·같은 항목 재질문 없음, 그 항목은 문서 정보원으로 이어지고 문서도 못 얻으면 그 항목만 보류, 다른 항목이 남은 동안 BLOCKED 없음, 답한 질문은 실패 아님, 질문 대상·목적 불변, trace에 별칭·환자 ID 없음, 안전 확인 미실행 시 질문 중단, 기본 legacy | `tests/test_engine_policy.py`, `tests/test_engine_runner.py` |
+
+- 이 브랜치는 PR #10(WP5)과 #14(기준 0개 시험 확정 차단)를 포함합니다. 두 PR이 먼저 병합되면 이 PR의 diff는 위 변경만 남습니다. `cohort_state._pair_states`의 두 PR 충돌은 여기서 함께 정리했습니다.
+- 남은 것: 웹 화면의 엔진 모드 표시·실행 모드 선택 UI(지금은 환경 변수), 엔진 결정 기록(DecisionRecord) 생산 연결(W-4 `audit.to_trace`), 질문 문구 다듬기(지금은 기준 원문 그대로), 코디네이터 작업시간 예산 입력.
+- 전체 테스트 2,229 통과 / 0 실패 / 5 건너뜀.
+
 ### 2026-11-05 — 평가할 기준이 0개인 시험을 적격 확정으로 올리지 않음 (DCV+C 엔진 안전 수정)
 
 배경: 선우가 실제 Session 점검에서 보고한 안전 문제. 기존 Matcher(`matcher.decide`)는 판정할 기준 목록이 비면(파싱 실패, 코호트 기준만 있음 등) `ELIGIBLE`을 돌려주고, 엔진은 남은 gap이 없으므로 그 쌍을 `CONFIRMED_ELIGIBLE`로 만들었습니다. 평가한 기준 없이 적격 확정이 나는 경로였습니다(M3 안전 제약: 거짓 적격 금지).
