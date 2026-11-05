@@ -1,0 +1,701 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT07416058",
+ "trial_hash": "7827d6c2859e74c0",
+ "parser_prompt_hash": "2e69d96de0305d7b",
+ "model": "claude-sonnet-5",
+ "compiled_at": "2026-11-03T12:48:27+00:00",
+ "runs": 3,
+ "canonical_run": 3,
+ "parsed": {
+  "trial_id": "NCT07416058",
+  "title": "PHOENIX: QL1706 Plus Chemotherapy and Bevacizumab in AGA-Resistant, PD-L1 ≥50% Non-Squamous NSCLC",
+  "target_population": "Adults aged 18-75 with TKI-refractory, driver-gene positive, PD-L1 TPS≥50% locally advanced or metastatic non-squamous NSCLC",
+  "intervention_summary": "QL1706 (anti-PD-1/CTLA-4 bispecific antibody) plus bevacizumab and platinum-based chemotherapy (pemetrexed + cisplatin/carboplatin) induction followed by QL1706 + bevacizumab maintenance",
+  "key_conditions": [
+   "Lung Adenocarcinoma",
+   "Non-Small Cell Lung Cancer",
+   "Driver-gene positive NSCLC"
+  ],
+  "cohorts": [],
+  "rules": [
+   {
+    "rule_id": "I1",
+    "kind": "inclusion",
+    "text": "adult patients (aged 18-75 years)",
+    "category": "demographic",
+    "field": "age",
+    "operator": ">=",
+    "value": "18",
+    "unit": "years",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I2",
+    "kind": "inclusion",
+    "text": "adult patients (aged 18-75 years)",
+    "category": "demographic",
+    "field": "age",
+    "operator": "<=",
+    "value": "75",
+    "unit": "years",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I3",
+    "kind": "inclusion",
+    "text": "histologically confirmed locally advanced or metastatic NSCLC (AJCC 9th Edition, Stage IIIB-IVB)",
+    "category": "disease_stage",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I4",
+    "kind": "inclusion",
+    "text": "harbor confirmed actionable driver mutations for which targeted therapies are available; stratified as EGFR (19del, L858R); ALK, ROS1, RET fusions; KRAS G12C; BRAF V600; and HER2 exon 20 insertions",
+    "category": "biomarker",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I5",
+    "kind": "inclusion",
+    "text": "Patients must have disease progression following at least one line of TKI therapy",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I6",
+    "kind": "inclusion",
+    "text": "a 2-week washout period is required for prior TKI therapy or chemotherapy",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 14,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I7",
+    "kind": "inclusion",
+    "text": "Prior immunotherapy is not permitted",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I8",
+    "kind": "inclusion",
+    "text": "PD-L1 tumor proportion score (TPS) ≥ 50%, as confirmed by central laboratory testing using the 22C3 or SP263 clone on fresh or archival tumor tissue (collected within 2 years)",
+    "category": "biomarker",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 730,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I9",
+    "kind": "inclusion",
+    "text": "Patients must have an Eastern Cooperative Oncology Group (ECOG) Performance Status of 0 or 1",
+    "category": "performance_status",
+    "field": "ecog",
+    "operator": "<=",
+    "value": "1",
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I10",
+    "kind": "inclusion",
+    "text": "presence of at least one measurable lesion per Response Evaluation Criteria in Solid Tumors (RECIST) Version 1.1",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I11",
+    "kind": "inclusion",
+    "text": "structured eligibility: sex=ALL",
+    "category": "demographic",
+    "field": "sex",
+    "operator": "==",
+    "value": "all",
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E1",
+    "kind": "exclusion",
+    "text": "Prior treatment with QL1706 or other investigational PD-1/PD-L1/CTLA-4 antibodies, unless allowed by the protocol",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E2",
+    "kind": "exclusion",
+    "text": "Untreated or symptomatic central nervous system (CNS) metastases. Participants with previously treated, stable, and asymptomatic CNS metastases off steroids for at least 2 weeks before first dose may be eligible.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E3",
+    "kind": "exclusion",
+    "text": "History of severe allergic reactions or hypersensitivity to monoclonal antibodies, platinum agents, pemetrexed, bevacizumab, or any excipients of the study drugs",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E4",
+    "kind": "exclusion",
+    "text": "Uncontrolled hypertension despite optimal medical management",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E5",
+    "kind": "exclusion",
+    "text": "New York Heart Association (NYHA) class III or IV heart failure",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E6",
+    "kind": "exclusion",
+    "text": "Unstable angina, myocardial infarction, or stroke within 6 months prior to enrollment",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 180,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E7",
+    "kind": "exclusion",
+    "text": "Significant arrhythmias requiring anti-arrhythmic therapy",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E8",
+    "kind": "exclusion",
+    "text": "Active or history of autoimmune disease that has required systemic treatment in the past 2 years (e.g., with disease-modifying agents, corticosteroids, or immunosuppressive drugs), except for conditions such as vitiligo, resolved childhood asthma/atopy, or hypothyroidism on stable replacement therapy",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 730,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E9",
+    "kind": "exclusion",
+    "text": "Active infection requiring systemic therapy, including known active hepatitis B, hepatitis C, or human immunodeficiency virus (HIV) infection, unless well controlled according to protocol-defined criteria",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   },
+   {
+    "rule_id": "E10",
+    "kind": "exclusion",
+    "text": "Significant hemoptysis (e.g., ≥ 2.5 mL of bright red blood) within 3 months prior to enrollment",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 90,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E11",
+    "kind": "exclusion",
+    "text": "any evidence of high-risk bleeding or coagulation disorder that would contraindicate bevacizumab",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   },
+   {
+    "rule_id": "E12",
+    "kind": "exclusion",
+    "text": "Major surgery within 4 weeks before first dose of study treatment",
+    "category": "procedure",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 28,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E13",
+    "kind": "exclusion",
+    "text": "anticipated need for major surgery during the study",
+    "category": "procedure",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E14",
+    "kind": "exclusion",
+    "text": "Pregnant women",
+    "category": "reproductive",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E15",
+    "kind": "exclusion",
+    "text": "breastfeeding women",
+    "category": "reproductive",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E16",
+    "kind": "exclusion",
+    "text": "Any other serious medical condition, uncontrolled intercurrent illness, psychiatric illness, or social circumstance that, in the opinion of the investigator, would compromise the participant's safety, interfere with study evaluations, or preclude informed consent",
+    "category": "other",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   },
+   {
+    "rule_id": "E17",
+    "kind": "exclusion",
+    "text": "Clinically significant cardiovascular disease, including but not limited to:",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   }
+  ],
+  "parsing_notes": "Age range split into two atomic rules (I1 lower bound, I2 upper bound). ECOG 0 or 1 represented as ecog<=1. PD-L1 TPS and driver mutation biomarker criteria kept non-structured since biomarker types other than the specified lab list aren't mapped to field='lab:...'. CNS metastasis exclusion kept as single rule including the stated exception clause. E9 (infection) and E11 (bleeding/coagulation) marked underspecified due to reliance on unspecified 'protocol-defined criteria' / vague 'high-risk' threshold. E16 marked underspecified as a pure investigator-judgment catch-all without concrete criteria. No distinct cohorts/arms were described in eligibility text (single-arm, multi-cohort study design mentioned in summary refers to future expansion, not differentiated eligibility)."
+ },
+ "rule_meta": {
+  "I1": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I2": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I3": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I4": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I5": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I6": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I7": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I8": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I9": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I10": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I11": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E1": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E2": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E3": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E4": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E5": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E6": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E7": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E8": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E9": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_confirmed",
+   "added_by_validator": false
+  },
+  "E10": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E11": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_confirmed",
+   "added_by_validator": false
+  },
+  "E12": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E13": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E14": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E15": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E16": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_confirmed",
+   "added_by_validator": false
+  },
+  "E17": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": true
+  }
+ },
+ "validation": {
+  "deterministic": {},
+  "risk": {
+   "I8": [
+    "다른 파싱 실행과 다름(engine)"
+   ],
+   "I9": [
+    "규칙 엔진 확정 판정 (검사·ECOG)"
+   ],
+   "I10": [
+    "category=other (근거 수준을 유형으로 정할 수 없음)"
+   ],
+   "E9": [
+    "underspecified (파서 한 번의 판단)",
+    "다른 파싱 실행과 다름(underspecified)"
+   ],
+   "E11": [
+    "underspecified (파서 한 번의 판단)",
+    "다른 파싱 실행과 다름(underspecified)"
+   ],
+   "E16": [
+    "underspecified (파서 한 번의 판단)",
+    "category=other (근거 수준을 유형으로 정할 수 없음)"
+   ]
+  },
+  "coverage_gaps": [
+   "[exclusion] Clinically significant cardiovascular disease, including but not limited to:"
+  ],
+  "llm_checked": [
+   "E11",
+   "E16",
+   "E9",
+   "I10",
+   "I8",
+   "I9"
+  ],
+  "changes": [
+   "I10: category other -> diagnosis"
+  ],
+  "review": {},
+  "added_rules": [
+   "E17: Clinically significant cardiovascular disease, including but not limited to:"
+  ],
+  "evidence_conflicts": [
+   "E9: 유형 규칙(comorbidity: self_report_ok)과 검증 제안(clinical_record)이 달라 clinical_record 적용",
+   "E11: 유형 규칙(comorbidity: self_report_ok)과 검증 제안(clinical_record)이 달라 clinical_record 적용"
+  ],
+  "notes": [],
+  "llm_output": {
+   "checks": [
+    {
+     "rule_id": "I8",
+     "meaning_ok": true,
+     "raw_is_vague": false,
+     "category": "biomarker",
+     "structured_ok": true,
+     "required_evidence": "clinical_record",
+     "note": "PD-L1 TPS 50% 이상 기준과 검사 방법(클론, 조직 수집 기간)이 구체적으로 명시되어 중앙검사실 병리 결과가 필요하다."
+    },
+    {
+     "rule_id": "I9",
+     "meaning_ok": true,
+     "raw_is_vague": false,
+     "category": "performance_status",
+     "structured_ok": true,
+     "required_evidence": "clinical_record",
+     "note": "ECOG 0 또는 1이라는 명확한 수치 기준이며 임상의 평가 기록이 필요하다."
+    },
+    {
+     "rule_id": "I10",
+     "meaning_ok": true,
+     "raw_is_vague": false,
+     "category": "diagnosis",
+     "structured_ok": true,
+     "required_evidence": "clinical_record",
+     "note": "RECIST v1.1 기준의 측정 가능 병변 존재 여부는 영상 판독 기록이 필요한 진단적 기준으로 category는 other보다 diagnosis가 더 적절하다."
+    },
+    {
+     "rule_id": "E9",
+     "meaning_ok": true,
+     "raw_is_vague": true,
+     "category": "comorbidity",
+     "structured_ok": true,
+     "required_evidence": "clinical_record",
+     "note": "'well controlled according to protocol-defined criteria'라는 비공개 기준이 있어 공개 원문만으로는 판정 불가하다."
+    },
+    {
+     "rule_id": "E11",
+     "meaning_ok": true,
+     "raw_is_vague": true,
+     "category": "comorbidity",
+     "structured_ok": true,
+     "required_evidence": "clinical_record",
+     "note": "'고위험 출혈 또는 응고장애'에 대한 구체적 기준값이 없어 연구자 판단에 의존하는 모호한 기준이다."
+    },
+    {
+     "rule_id": "E16",
+     "meaning_ok": true,
+     "raw_is_vague": true,
+     "category": "other",
+     "structured_ok": true,
+     "required_evidence": "clinical_record",
+     "note": "연구자의 주관적 판단에 전적으로 의존하는 포괄적 안전성 조항으로 공개 기준만으로는 판정 불가하다."
+    }
+   ],
+   "missing": [
+    {
+     "kind": "exclusion",
+     "text": "Clinically significant cardiovascular disease, including but not limited to:",
+     "category": "comorbidity"
+    }
+   ]
+  }
+ }
+}

@@ -20,6 +20,7 @@
 | INELIGIBLE + provisional / confirmed | VP / CONFIRMED | 같음 | |
 | (INELIGIBLE 미확정 / ELIGIBLE 미확정) + exhausted | VP 또는 확정 | **BLOCKED_FAILURE** (INFO_MISSING·VP일 때) | 소진 규칙을 모든 판정에 같게 |
 | 알 수 없는 gap 문자열 | 무시 | **ValueError** | 오타가 확정으로 새지 않게 |
+| ELIGIBLE + 판정에 적용된 필수 기준 0개 (`required_criteria=0`, 2026-11-05 추가) | CONFIRMED_ELIGIBLE | **NOT_EVALUATED** | 기존 Matcher는 기준 목록이 비면 ELIGIBLE을 돌려줌 -> 근거 없는 적격 확정 차단. `cohort_state`가 required 기준 수를 넘김. 개수를 모르는 호출(None)은 이전과 같음 |
 
 - 신규 `pending_kinds(eligibility, gaps, mismatch, exhausted)`: 우선순위로 가려진 사유까지 전체 반환. 추가 종류 `exclusion_unverified`(불충족 근거 미검증), `sources_exhausted`. 확정·평가 실패면 빈 집합.
 - `cohort_state.required_gaps(trial)`: 판정에 적용된 기준(`requirement == "required"`)만. **OR의 다른 갈래(`alternative_cohort`)와 절차 기준(`waivable`)은 제외** — 닫힌 갈래의 gap이 열린 경로를 미해결로 만들지 않음. 확정 판정의 근거 상충(`conflict_on_decided`)은 gap이 none이어도 `conflict`로 셈(0.1에서는 놓침).

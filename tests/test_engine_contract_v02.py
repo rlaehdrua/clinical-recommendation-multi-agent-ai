@@ -110,6 +110,31 @@ def test_closed_or_branch_gap_does_not_reopen_pair():
     assert C.derive_pair_status("ELIGIBLE", required_gaps(t2)) == C.PairStatus.VERIFICATION_PENDING
 
 
+def test_eligible_without_any_required_criterion_is_not_confirmed():
+    """기존 Matcher는 기준 목록이 비면 ELIGIBLE을 돌려줌 -> 평가한 필수 기준이 0개면 확정 근거가 없으므로 NOT_EVALUATED."""
+    assert C.derive_pair_status("ELIGIBLE", set(), required_criteria=0) == C.PairStatus.NOT_EVALUATED
+    assert C.pending_kinds("ELIGIBLE", set(), required_criteria=0) == frozenset()
+    assert C.derive_pair_status("ELIGIBLE", set(), required_criteria=1) == C.PairStatus.CONFIRMED_ELIGIBLE
+    assert C.derive_pair_status("ELIGIBLE", set()) == C.PairStatus.CONFIRMED_ELIGIBLE  # 개수를 모르는 이전 호출
+    for elig, expect in (("INELIGIBLE", "VERIFICATION_PENDING"), ("UNCERTAIN", "INFO_MISSING")):
+        assert C.derive_pair_status(elig, set(), required_criteria=0) == C.PairStatus(expect)  # 확정이 아닌 값은 그대로
+
+    from ctrec.decision_state import CriterionState, DecisionState, TrialState
+    crit = lambda tid, rid, req: CriterionState(trial_id=tid, rule_id=rid, kind="inclusion", category="clinical",  # noqa
+                                                cohort=None, requirement=req, status="MET", info_key="age")
+    st = DecisionState(session_id="S", patient_id="P", fact_version="v1", trials={
+        "T0": TrialState(trial_id="T0", eligibility="ELIGIBLE", match_status=None, open=True),  # 기준 0개
+        "T1": TrialState(trial_id="T1", eligibility="ELIGIBLE", match_status=None, open=True,
+                         criteria=[crit("T1", "I1", "alternative_cohort"), crit("T1", "I2", "waivable")]),
+        "T2": TrialState(trial_id="T2", eligibility="ELIGIBLE", match_status=None, open=True,
+                         criteria=[crit("T2", "I1", "required")])})
+    co = CohortState.from_decision_states({A1: st})
+    status = {p.pair.trial_id: p.status for p in co.pairs()}
+    assert status == {"T0": C.PairStatus.NOT_EVALUATED, "T1": C.PairStatus.NOT_EVALUATED,
+                      "T2": C.PairStatus.CONFIRMED_ELIGIBLE}
+    assert all(p.eligibility == "ELIGIBLE" for p in co.pairs())  # 판정 값은 그대로 복사만 함
+
+
 # ------------------------------------------------------------ 5.5 확정 역전
 def test_direct_confirmed_reversal_forbidden_for_every_authority():
     for a, b in (("CONFIRMED_ELIGIBLE", "CONFIRMED_INELIGIBLE"), ("CONFIRMED_INELIGIBLE", "CONFIRMED_ELIGIBLE")):

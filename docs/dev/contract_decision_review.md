@@ -14,7 +14,7 @@
 | Q2 | EffortCost 축·단위 | 5개 축·단위(분, USD) **유지**. `patient_wait_minutes` 합산 의미(병렬 최댓값)를 문서로 명시, 순차 경과 시간은 실험 지표로 따로 | 축·단위는 **지금**, 대기 합산 규칙은 추후 가능 | 서연(WP6 지표), 동겸(W-5) |
 | Q3 | DEFAULT_SOURCES 비용 값 | 값 자체는 **실험 파라미터**로 다룸(민감도 분석). 대신 "카탈로그 해시를 ExperimentSpec에 반드시 기록"을 지금 정함 | 값은 **추후**, 기록 규칙은 **지금** | 서연(WP2·WP6) |
 | Q4 | 웹 Action→질문 변환 추가 필드 | `purpose`, `info_key`, `question_contract_id`를 기본값 있는 필드로 **추가**. 질문 문장은 계약에 넣지 않음 | `purpose`는 **지금**(안전), 나머지 추후 | 동겸(W-1·W-3) |
-| Q5 | 확정→반대 확정 직접 전이 금지 | **유지**. 대신 "반대 근거로 확정이 뒤집힌 경우" 기록용 사유 코드를 정함 | **지금** | 서연(WP3·WP4), 공정현(WP7) |
+| Q5 | 확정→반대 확정 직접 전이 금지 | **유지**. 대신 "반대 근거로 확정이 뒤집힌 경우" 기록용 사유 코드를 정함 | **지금** | 서연(WP3·WP4), 선우(WP7) |
 | 추가 | 문서에 없던 미결정 9건 (§6) | 가장 중요: midterm 브랜치의 **명제·질문 계약·결정적 평가기**와 엔진 계약의 정렬 (A-4) | A-1·A-2·A-4는 **지금** | 전원 |
 
 원칙 유지 확인: 아래 어떤 권장안도 (1) 임상 판정 권한을 정책 계층에 주지 않고, (2) 근거 검증 요구를 낮추지 않으며, (3) 원래 환자 ID를 계약에 넣지 않고, (4) 공유 예산(`EffortLedger`)을 웹 LLM 비용 원장과 섞지 않으며, (5) 안전 필수 행동(`safety_required`, `safety_unfunded`)을 최적화로 버리지 않습니다.
@@ -66,7 +66,7 @@
 ### 7) 영향
 - 서연: M3 `confirmed_correct_pairs`·M5 지표가 이 정의를 따릅니다. WP3에서 경로별 gap(열린 경로만)을 넘기는 방법을 정해야 함.
 - 동겸: 화면 상태 라벨 7개 + "추가로 남은 확인" 표시(pending_kinds).
-- 공정현: 경계 테스트 추가(ELIGIBLE×각 gap, INELIGIBLE×mismatch 3값).
+- 선우: 경계 테스트 추가(ELIGIBLE×각 gap, INELIGIBLE×mismatch 3값).
 
 ---
 
@@ -210,7 +210,7 @@ M4(충돌 관리)·M5(검증 필요 상태)와 5-A가 맞음. midterm의 결정�
 
 ### 7) 영향
 - 서연: WP3/WP4 재평가가 반대 확정을 만들면 VERIFICATION_PENDING으로 내려야 함.
-- 공정현: WP7 Inspector에서 "확정 → 확인 대기" 전이를 강조 표시.
+- 선우: WP7 Inspector에서 "확정 → 확인 대기" 전이를 강조 표시.
 - 동겸: 화면에서 확정이 "확인 대기"로 바뀌는 경우 안내 문구.
 
 ---
@@ -219,17 +219,17 @@ M4(충돌 관리)·M5(검증 필요 상태)와 5-A가 맞음. midterm의 결정�
 
 | ID | 내용 | 근거 | 권장 | 시점 | 담당 |
 |---|---|---|---|---|---|
-| A-1 | ELIGIBLE + missing/physician_review → CONFIRMED_ELIGIBLE | [확인] 직접 실행 | Q1 1-B에 포함 | 지금 | 공정현 |
-| A-2 | INELIGIBLE + mismatch none/None → CONFIRMED_INELIGIBLE | [확인] 직접 실행. `derive_pair_status`의 `mismatch` 기본값이 None | mismatch가 `confirmed`일 때만 확정 | 지금 | 공정현 |
-| A-3 | 기준의 판정 방식(adjudication) 분류가 **결과에서 역추정**됨: UNKNOWN+physician_review면 expert, `record.engine`이 rule_engine이 아니면 모두 fact_llm/llm (engine 값 `review`·`conflict`·`unknown`도 llm으로 기록됨) | [확인] `cohort_state._adjudication`. `EvaluationRecord.engine` 값은 rule_engine/llm/review/conflict/unknown | 기준 성격은 기준 메타데이터(M12 `RuleMeta.adjudication`, WP3)에서 받고, engine이 review/conflict이면 decided_by를 llm으로 쓰지 않음. 그전까지 Inspector v2는 이 값을 "추정 분류"로 표시 | WP3 시작 전 | 서연(WP3), 공정현 |
-| A-4 | **midterm 브랜치의 계약 재설계와 엔진 계약의 정렬**: `origin/integration/midterm-1026`에 `propositions.py`(명제 키), `question_contract.py`, `evaluator.py`(결정적 평가기, LLM 없음), `contract_session.py`(`ContractSession`), 루트 `contracts/ir/*.json`이 있음. 엔진 계약은 이를 모르고 `62f744e` 기준으로 설계됨 | [확인] 파일 존재·docstring. 동작 세부는 [미확인] | (1) `CriterionResult.decided_by`에 결정적 평가기 값(예: `contract_evaluator`) 추가 또는 rule_engine으로 매핑 규칙 결정 (2) 명제 사실 ID(`prop:<키>`)를 `evidence_fact_ids`에 그대로 쓰는지 결정 (3) 웹 연결(WP8)은 `Session`이 아니라 `ContractSession` 기준 (4) 이름 혼동 방지: "engine contracts" vs "question contract"/`contracts/` 디렉터리 — 문서에서 용어 구분 | **지금**(WP3·WP8 착수 전) | 공정현(계약), 서연(평가기 연결), 동겸(WP8) |
-| A-5 | 0.1에서 `priority`·`sequence`를 추가했지만 `CONTRACT_VERSION`은 그대로이고 변경 기록이 없음 | [확인] | 승인 시 `0.2`로 올리고 `docs/engine_contracts.md`에 변경 기록 절 추가 | 승인 시 | 공정현 |
+| A-1 | ELIGIBLE + missing/physician_review → CONFIRMED_ELIGIBLE | [확인] 직접 실행 | Q1 1-B에 포함 | 지금 | 선우 |
+| A-2 | INELIGIBLE + mismatch none/None → CONFIRMED_INELIGIBLE | [확인] 직접 실행. `derive_pair_status`의 `mismatch` 기본값이 None | mismatch가 `confirmed`일 때만 확정 | 지금 | 선우 |
+| A-3 | 기준의 판정 방식(adjudication) 분류가 **결과에서 역추정**됨: UNKNOWN+physician_review면 expert, `record.engine`이 rule_engine이 아니면 모두 fact_llm/llm (engine 값 `review`·`conflict`·`unknown`도 llm으로 기록됨) | [확인] `cohort_state._adjudication`. `EvaluationRecord.engine` 값은 rule_engine/llm/review/conflict/unknown | 기준 성격은 기준 메타데이터(M12 `RuleMeta.adjudication`, WP3)에서 받고, engine이 review/conflict이면 decided_by를 llm으로 쓰지 않음. 그전까지 Inspector v2는 이 값을 "추정 분류"로 표시 | WP3 시작 전 | 서연(WP3), 선우 |
+| A-4 | **midterm 브랜치의 계약 재설계와 엔진 계약의 정렬**: `origin/integration/midterm-1026`에 `propositions.py`(명제 키), `question_contract.py`, `evaluator.py`(결정적 평가기, LLM 없음), `contract_session.py`(`ContractSession`), 루트 `contracts/ir/*.json`이 있음. 엔진 계약은 이를 모르고 `62f744e` 기준으로 설계됨 | [확인] 파일 존재·docstring. 동작 세부는 [미확인] | (1) `CriterionResult.decided_by`에 결정적 평가기 값(예: `contract_evaluator`) 추가 또는 rule_engine으로 매핑 규칙 결정 (2) 명제 사실 ID(`prop:<키>`)를 `evidence_fact_ids`에 그대로 쓰는지 결정 (3) 웹 연결(WP8)은 `Session`이 아니라 `ContractSession` 기준 (4) 이름 혼동 방지: "engine contracts" vs "question contract"/`contracts/` 디렉터리 — 문서에서 용어 구분 | **지금**(WP3·WP8 착수 전) | 선우(계약), 서연(평가기 연결), 동겸(WP8) |
+| A-5 | 0.1에서 `priority`·`sequence`를 추가했지만 `CONTRACT_VERSION`은 그대로이고 변경 기록이 없음 | [확인] | 승인 시 `0.2`로 올리고 `docs/engine_contracts.md`에 변경 기록 절 추가 | 승인 시 | 선우 |
 | A-6 | 엔진 `Action`에 `info_key`가 없음 → 같은 정보(예: `biomarker:EGFR`)를 묻는 행동을 시험 사이에 묶는 기존 구조가 엔진에서 사라짐(묶음은 정보원+기준 단위만) | [확인] `policy._convert` | Q4 4-B에서 `info_key` 추가 | 추후 | 동겸 |
 | A-7 | 환자별 floor/cap과 공정성 지표가 **코디네이터 분만** 봄. 임상의 분 배분은 감시되지 않음 | [확인] `cost.fits`, `fairness.allocation_report` | M13 확장 때 임상의 분 열 추가(관측만) | 추후 | 동겸 |
 | A-8 | `ExperimentSpec`의 `source_catalog_hash`가 선택 필드, `seed`가 정책에서 쓰이지 않음(결정적 정책) | [확인] | Q3 규칙: WP6 실행기에서 필수로 검사. seed는 ResponseModel(M9) 전용임을 문서화 | WP6 착수 시 | 서연 |
-| A-9 | 웹 실행에서 `AliasMap` salt의 수명(실행별/세션별)과 저장 위치, 재접속 시 같은 환자의 별칭 유지 여부 | [미확인] 웹 코드 미검토 | 실행별 salt, 서버 메모리에만, trace에는 별칭만 — W-2/W-4와 함께 결정 | WP8 착수 시 | 동겸, 공정현 |
+| A-9 | 웹 실행에서 `AliasMap` salt의 수명(실행별/세션별)과 저장 위치, 재접속 시 같은 환자의 별칭 유지 여부 | [미확인] 웹 코드 미검토 | 실행별 salt, 서버 메모리에만, trace에는 별칭만 — W-2/W-4와 함께 결정 | WP8 착수 시 | 동겸, 선우 |
 
 ## 7. 승인 절차 제안
 1. 이 문서의 "지금 확정" 항목(Q1, Q2 축·단위, Q3 기록 규칙, Q4 purpose, Q5, A-1, A-2, A-4)을 팀 회의에서 결정.
-2. 결정 결과를 `docs/engine_contracts.md` §5에 반영하고 `CONTRACT_VERSION`을 `0.2`로, 승인되면 `CONTRACT_STATUS="APPROVED"`(별도 PR, 공정현).
+2. 결정 결과를 `docs/engine_contracts.md` §5에 반영하고 `CONTRACT_VERSION`을 `0.2`로, 승인되면 `CONTRACT_STATUS="APPROVED"`(별도 PR, 선우).
 3. A-1·A-2 경계 수정과 테스트는 계약 PR에 함께 포함(코드 변경은 이 검토 범위 밖이라 아직 하지 않음).

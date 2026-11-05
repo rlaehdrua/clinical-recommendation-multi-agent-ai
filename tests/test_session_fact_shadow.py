@@ -9,8 +9,6 @@ import json
 import sys
 from pathlib import Path
 
-import pytest
-
 sys.path.insert(0, str(Path(__file__).parent))
 
 from ctrec import config, pipeline, profile_facts
@@ -75,9 +73,8 @@ def _fake_matcher_llm(model, system, user, **k):
     return MatcherOutput(assessments=out)
 
 
-@pytest.fixture()
-def calls(monkeypatch):
-    """질문 생성·추천 에이전트가 받은 입력을 기록 (병행 기록 전후 비교용)."""
+def record_calls(monkeypatch) -> dict:
+    """질문 생성·추천 에이전트가 받은 입력을 기록 (병행 기록 전후 비교용). 픽스처 `calls`(conftest.py)가 부름."""
     captured = {"questions": [], "recommend": []}
 
     def gen(profile, matches, qa_log, n, acquisition_plan=None):

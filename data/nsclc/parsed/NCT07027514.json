@@ -1,0 +1,895 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT07027514",
+ "trial_hash": "c58a6dd0ade78b16",
+ "parser_prompt_hash": "2e69d96de0305d7b",
+ "model": "claude-sonnet-5",
+ "compiled_at": "2026-11-03T12:45:32+00:00",
+ "runs": 3,
+ "canonical_run": 2,
+ "parsed": {
+  "trial_id": "NCT07027514",
+  "title": "A Study of Tolododekin Alfa (ANK-101) in Combination With an Anti-PD-1/PD-L1 Antibody in Participants With Advanced Non-Small Cell Lung Cancer",
+  "target_population": "Adults with confirmed locally advanced or metastatic non-small cell lung cancer (NSCLC); Cohort A: progressed on prior anti-PD-1/PD-L1 antibody plus platinum-based chemotherapy; Cohort B: treatment-naïve for locally advanced/metastatic NSCLC",
+  "intervention_summary": "Tolododekin alfa (ANK-101) administered in combination with an anti-PD-1/PD-L1 antibody (Cetrelimab or standard of care agent)",
+  "key_conditions": [
+   "Non-Small Cell Lung Cancer"
+  ],
+  "cohorts": [
+   "Cohort A",
+   "Cohort B"
+  ],
+  "rules": [
+   {
+    "rule_id": "I1",
+    "kind": "inclusion",
+    "text": "minimum_age=18 Years",
+    "category": "demographic",
+    "field": "age",
+    "operator": ">=",
+    "value": "18",
+    "unit": "years",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I2",
+    "kind": "inclusion",
+    "text": "sex=ALL",
+    "category": "demographic",
+    "field": "sex",
+    "operator": "==",
+    "value": "all",
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I3",
+    "kind": "inclusion",
+    "text": "Have confirmed locally advanced or metastatic NSCLC",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I4",
+    "kind": "inclusion",
+    "text": "Thyroid-stimulating hormone (TSH) within normal limits",
+    "category": "lab",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I5",
+    "kind": "inclusion",
+    "text": "Have measurable disease per Response Evaluation Criteria in Solid Tumors version 1.1 (RECIST v1.1)",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I6",
+    "kind": "inclusion",
+    "text": "Eastern Cooperative Oncology Group performance status (ECOG PS) 0 to 1",
+    "category": "performance_status",
+    "field": "ecog",
+    "operator": "<=",
+    "value": "1",
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I7",
+    "kind": "inclusion",
+    "text": "Have a life expectancy > 12 weeks",
+    "category": "other",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I8",
+    "kind": "inclusion",
+    "text": "Have baseline electrocardiogram (ECG) without evidence of acute ischemia or prolonged QT interval",
+    "category": "other",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I9",
+    "kind": "inclusion",
+    "text": "Heterosexually active women of childbearing potential (WOCBP) must agree to use highly effective methods of contraception",
+    "category": "reproductive",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I10",
+    "kind": "inclusion",
+    "text": "Male participants who are not sterile must commit to the use of a reliable method of birth control or abstinence",
+    "category": "reproductive",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I11",
+    "kind": "inclusion",
+    "text": "Human immunodeficiency virus (HIV)-infected participants must be on anti-retroviral therapy (ART) and have well-controlled HIV infection/disease",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I12",
+    "kind": "inclusion",
+    "text": "Resolution of all prior anticancer therapy toxicities prior to C1D1",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I13",
+    "kind": "inclusion",
+    "text": "Willingness to provide fresh tumor biopsy specimens",
+    "category": "procedure",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I14",
+    "kind": "inclusion",
+    "text": "Capable of understanding and complying with protocol requirements",
+    "category": "consent_or_logistics",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I15",
+    "kind": "inclusion",
+    "text": "Provides written informed consent for the study",
+    "category": "consent_or_logistics",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E1",
+    "kind": "exclusion",
+    "text": "Cohort A only: Participants with toxic effects to manage adverse events from previous treatment with immunotherapy",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Cohort A"
+   },
+   {
+    "rule_id": "E2",
+    "kind": "exclusion",
+    "text": "Cohort B only: Prior therapy with an immune checkpoint inhibitor",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Cohort B"
+   },
+   {
+    "rule_id": "E3",
+    "kind": "exclusion",
+    "text": "Have known EGFR or ALK mutations",
+    "category": "biomarker",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E4",
+    "kind": "exclusion",
+    "text": "Have had prior treatment with recombinant interleukin-12 (IL-12)",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E5",
+    "kind": "exclusion",
+    "text": "Have received short-term systemic therapy with immunosuppressive agents prior to C1D1",
+    "category": "medication",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E6",
+    "kind": "exclusion",
+    "text": "Have active autoimmune disease or medical conditions requiring chronic steroid or other immunosuppressive therapy prior to C1D1",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E7",
+    "kind": "exclusion",
+    "text": "Have received live vaccines prior to C1D1",
+    "category": "medication",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E8",
+    "kind": "exclusion",
+    "text": "Have primary or acquired immunodeficient states",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E9",
+    "kind": "exclusion",
+    "text": "Female participant who is pregnant or breastfeeding",
+    "category": "reproductive",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E10",
+    "kind": "exclusion",
+    "text": "Have a history of allogeneic tissue/solid organ transplant",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E11",
+    "kind": "exclusion",
+    "text": "Has active hepatitis B virus (HBV) or hepatitis C virus (HCV)",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E12",
+    "kind": "exclusion",
+    "text": "HIV-infected participants with a history of Kaposi sarcoma and/or Multicentric Castleman Disease",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E13",
+    "kind": "exclusion",
+    "text": "Have known active central nervous system metastases",
+    "category": "disease_stage",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E14",
+    "kind": "exclusion",
+    "text": "Have congestive heart failure, active coronary artery disease, unevaluated new onset angina, unstable angina, or clinically significant cardiac arrhythmias",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E15",
+    "kind": "exclusion",
+    "text": "Have uncontrolled bleeding disorders prior to C1D1",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E16",
+    "kind": "exclusion",
+    "text": "Participants on coumadin (warfarin), due to potential for increased bleeding risk associated with surgery",
+    "category": "medication",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E17",
+    "kind": "exclusion",
+    "text": "History of noninfectious pneumonitis",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E18",
+    "kind": "exclusion",
+    "text": "Cohort A only: History of allergy to protein-based therapies, history of any significant drug allergy, or known allergies, hypersensitivity, or intolerance to cetrelimab excipients",
+    "category": "other",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Cohort A"
+   },
+   {
+    "rule_id": "E19",
+    "kind": "exclusion",
+    "text": "Cohort B only: Hypersensitivity to any component of the anti-PD-1/PD-L1 antibody selected as standard of care",
+    "category": "other",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Cohort B"
+   },
+   {
+    "rule_id": "E20",
+    "kind": "exclusion",
+    "text": "Have other systemic conditions or organ abnormalities that may interfere with the conduct of the study",
+    "category": "other",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   },
+   {
+    "rule_id": "E21",
+    "kind": "exclusion",
+    "text": "Have any acute or chronic psychiatric problems or substance abuse disorder that make the participant unsuitable for participation",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   }
+  ],
+  "parsing_notes": "TSH 정상 범위 기준(I4)은 구체적 수치가 원문에 없어 lab 필드만 지정하고 값은 비움. ECOG 범위 0-1은 '<=1'로 단순화. 코호트별 제외 기준(E1,E2,E18,E19)은 cohort 필드로 구분. E18/E19는 원문에서 'OR'로 연결된 서로 다른 코호트 조건이라 별도 규칙으로 분리. E20(기타 전신 상태/장기 이상)과 E21(정신과적/약물남용 문제로 '참여 부적합')은 구체적 기준값이나 목록이 없어 연구자 판단에 의존하므로 underspecified=true로 표시. 나머지 제외 기준은 구체적 질환명·약물명·시점이 명시되어 있어 underspecified=false로 처리."
+ },
+ "rule_meta": {
+  "I1": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I2": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I3": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I4": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I5": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I6": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I7": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I8": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_suspected",
+   "added_by_validator": false
+  },
+  "I9": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I10": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I11": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I12": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I13": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I14": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_suspected",
+   "added_by_validator": false
+  },
+  "I15": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E1": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E2": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E3": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E4": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E5": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E6": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E7": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E8": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E9": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E10": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E11": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E12": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E13": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E14": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E15": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E16": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E17": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E18": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": "vague_suspected",
+   "added_by_validator": false
+  },
+  "E19": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E20": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_confirmed",
+   "added_by_validator": false
+  },
+  "E21": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_confirmed",
+   "added_by_validator": false
+  }
+ },
+ "validation": {
+  "deterministic": {
+   "I4": [
+    "규칙 엔진이 처리하지 않는 연산자 'None' -> LLM 판정으로 전환"
+   ]
+  },
+  "risk": {
+   "I6": [
+    "규칙 엔진 확정 판정 (검사·ECOG)"
+   ],
+   "I7": [
+    "category=other (근거 수준을 유형으로 정할 수 없음)"
+   ],
+   "I8": [
+    "category=other (근거 수준을 유형으로 정할 수 없음)"
+   ],
+   "I14": [
+    "절차 선정 기준 (미확인이어도 적격을 막지 않음)"
+   ],
+   "I15": [
+    "절차 선정 기준 (미확인이어도 적격을 막지 않음)"
+   ],
+   "E18": [
+    "category=other (근거 수준을 유형으로 정할 수 없음)"
+   ],
+   "E19": [
+    "category=other (근거 수준을 유형으로 정할 수 없음)"
+   ],
+   "E20": [
+    "underspecified (파서 한 번의 판단)",
+    "category=other (근거 수준을 유형으로 정할 수 없음)"
+   ],
+   "E21": [
+    "underspecified (파서 한 번의 판단)"
+   ]
+  },
+  "coverage_gaps": [],
+  "llm_checked": [
+   "E18",
+   "E19",
+   "E20",
+   "E21",
+   "I14",
+   "I15",
+   "I6",
+   "I7",
+   "I8"
+  ],
+  "changes": [],
+  "review": {},
+  "added_rules": [],
+  "evidence_conflicts": [
+   "I14: 유형 규칙(consent_or_logistics: self_report_ok)과 검증 제안(clinical_record)이 달라 clinical_record 적용",
+   "E21: 유형 규칙(comorbidity: self_report_ok)과 검증 제안(clinical_record)이 달라 clinical_record 적용"
+  ],
+  "notes": [
+   "I8: 원문이 애매할 수 있음(적용 안 함) - 급성 허혈이나 QT 연장의 구체적 수치 기준이 제시되지 않아 공개 원문만으로는 판정 기준이 불명확하다.",
+   "I14: 원문이 애매할 수 있음(적용 안 함) - 프로토콜 이해·준수 가능 여부는 연구자의 주관적 판단에 의존하는 모호한 기준이다.",
+   "E18: 원문이 애매할 수 있음(적용 안 함) - 단백질 치료제 알레르기나 cetrelimab 부형제에 대한 과민반응은 구체적이나 '중대한 약물 알레르기'는 기준이 모호하다."
+  ],
+  "llm_output": {
+   "checks": [
+    {
+     "rule_id": "I6",
+     "meaning_ok": true,
+     "raw_is_vague": false,
+     "category": "performance_status",
+     "structured_ok": true,
+     "required_evidence": "clinical_record",
+     "note": "ECOG 0~1은 명확한 수치 범위로 의사 평가가 필요한 기준이다."
+    },
+    {
+     "rule_id": "I7",
+     "meaning_ok": true,
+     "raw_is_vague": false,
+     "category": "other",
+     "structured_ok": true,
+     "required_evidence": "clinical_record",
+     "note": "12주 초과 생존 기대는 의사의 임상적 판단이 필요하지만 기준 자체는 명확하다."
+    },
+    {
+     "rule_id": "I8",
+     "meaning_ok": true,
+     "raw_is_vague": true,
+     "category": "other",
+     "structured_ok": true,
+     "required_evidence": "clinical_record",
+     "note": "급성 허혈이나 QT 연장의 구체적 수치 기준이 제시되지 않아 공개 원문만으로는 판정 기준이 불명확하다."
+    },
+    {
+     "rule_id": "I14",
+     "meaning_ok": true,
+     "raw_is_vague": true,
+     "category": "consent_or_logistics",
+     "structured_ok": true,
+     "required_evidence": "clinical_record",
+     "note": "프로토콜 이해·준수 가능 여부는 연구자의 주관적 판단에 의존하는 모호한 기준이다."
+    },
+    {
+     "rule_id": "I15",
+     "meaning_ok": true,
+     "raw_is_vague": false,
+     "category": "consent_or_logistics",
+     "structured_ok": true,
+     "required_evidence": "self_report_ok",
+     "note": "서면 동의 제공 여부는 환자 본인의 행위로 명확히 확인 가능하다."
+    },
+    {
+     "rule_id": "E18",
+     "meaning_ok": true,
+     "raw_is_vague": true,
+     "category": "other",
+     "structured_ok": true,
+     "required_evidence": "self_report_ok",
+     "note": "단백질 치료제 알레르기나 cetrelimab 부형제에 대한 과민반응은 구체적이나 '중대한 약물 알레르기'는 기준이 모호하다."
+    },
+    {
+     "rule_id": "E19",
+     "meaning_ok": true,
+     "raw_is_vague": false,
+     "category": "other",
+     "structured_ok": true,
+     "required_evidence": "self_report_ok",
+     "note": "표준치료로 선택된 항-PD-1/PD-L1 항체 성분에 대한 과민반응은 특정 약물 기반으로 판정 가능한 기준이다."
+    },
+    {
+     "rule_id": "E20",
+     "meaning_ok": true,
+     "raw_is_vague": true,
+     "category": "other",
+     "structured_ok": true,
+     "required_evidence": "clinical_record",
+     "note": "연구 수행에 방해가 될 수 있는 전신 질환이나 장기 이상이라는 표현은 구체적 기준이 없어 모호하다."
+    },
+    {
+     "rule_id": "E21",
+     "meaning_ok": true,
+     "raw_is_vague": true,
+     "category": "comorbidity",
+     "structured_ok": true,
+     "required_evidence": "clinical_record",
+     "note": "참여에 부적합하게 만드는 정신과적 문제나 약물남용 장애라는 표현은 구체적 기준 없이 연구자 판단에 맡겨져 모호하다."
+    }
+   ],
+   "missing": []
+  }
+ }
+}

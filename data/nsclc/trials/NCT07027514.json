@@ -1,0 +1,96 @@
+{
+  "trial_id": "NCT07027514",
+  "title": "A Study of Tolododekin Alfa (ANK-101) in Combination With an Anti-PD-1/PD-L1 Antibody in Participants With Advanced Non-Small Cell Lung Cancer",
+  "official_title": "A Phase 1b, Two-Part Study of Tolododekin Alfa (ANK-101) in Combination With an Anti-PD-1/PD-L1 Antibody in Participants With Advanced Non-Small Cell Lung Cancer",
+  "overall_status": "RECRUITING",
+  "phases": [
+    "PHASE1"
+  ],
+  "study_type": "INTERVENTIONAL",
+  "conditions": [
+    "Non Small Cell Lung Cancer"
+  ],
+  "keywords": [],
+  "interventions": [
+    {
+      "type": "DRUG",
+      "name": "tolododekin alfa",
+      "description": "Participants will receive tolododekin alfa as an intratumoral injection every 3 weeks (Q3W)."
+    },
+    {
+      "type": "DRUG",
+      "name": "Cetrelimab",
+      "description": "Participants will receive cetrelimab Q3W."
+    }
+  ],
+  "brief_summary": "A study of tolododekin alfa (also known as ANK-101) administered in combination with an anti-programmed cell death protein 1 (PD-1)/programmed cell death ligand 1 (PD-L1) antibody in participants with advanced or metastatic non-small cell lung cancer (NSCLC). Cohort A will enroll participants who have progressed on prior standard of care treatment with an anti-PD-1/PD-L1 antibody and a platinum-based chemotherapy regimen. Cohort B will enroll participants who are treatment-naïve for locally advanced or metastatic NSCLC.",
+  "detailed_description": "",
+  "eligibility_criteria": "Inclusion Criteria:\n\n1. Have confirmed locally advanced or metastatic NSCLC\n2. Thyroid-stimulating hormone (TSH) within normal limits\n3. Have measurable disease per Response Evaluation Criteria in Solid Tumors version 1.1 (RECIST v1.1)\n4. Eastern Cooperative Oncology Group performance status (ECOG PS) 0 to 1\n5. Have a life expectancy \\> 12 weeks\n6. Have baseline electrocardiogram (ECG) without evidence of acute ischemia or prolonged QT interval\n7. Heterosexually active women of childbearing potential (WOCBP) must agree to use highly effective methods of contraception\n8. Male participants who are not sterile must commit to the use of a reliable method of birth control or abstinence\n9. Human immunodeficiency virus (HIV)-infected participants must be on anti-retroviral therapy (ART) and have well-controlled HIV infection/disease\n10. Resolution of all prior anticancer therapy toxicities prior to C1D1.\n11. Willingness to provide fresh tumor biopsy specimens\n12. Capable of understanding and complying with protocol requirements\n13. Provides written informed consent for the study\n\nExclusion Criteria:\n\n1. Cohort A only: Participants with toxic effects to manage adverse events from previous treatment with immunotherapy\n2. Cohort B only: Prior therapy with an immune checkpoint inhibitor.\n3. Have known EGFR or ALK mutations\n4. Have had prior treatment with recombinant interleukin-12 (IL-12)\n5. Have received short-term systemic therapy with immunosuppressive agents prior to C1D1\n6. Have active autoimmune disease or medical conditions requiring chronic steroid or other immunosuppressive therapy prior to C1D1\n7. Have received live vaccines prior to C1D1\n8. Have primary or acquired immunodeficient states\n9. Female participant who is pregnant or breastfeeding\n10. Have a history of allogeneic tissue/solid organ transplant\n11. Has active hepatitis B virus (HBV) or hepatitis C virus (HCV).\n12. HIV-infected participants with a history of Kaposi sarcoma and/or Multicentric Castleman Disease\n13. Have known active central nervous system metastases\n14. Have congestive heart failure, active coronary artery disease, unevaluated new onset angina, unstable angina, or clinically significant cardiac arrhythmias.\n15. Have uncontrolled bleeding disorders prior to C1D1\n16. Participants on coumadin (warfarin), due to potential for increased bleeding risk associated with surgery\n17. History of noninfectious pneumonitis\n18. Cohort A only: History of allergy to protein-based therapies, history of any significant drug allergy, or known allergies, hypersensitivity, or intolerance to cetrelimab excipients OR Cohort B only: Hypersensitivity to any component of the anti-PD-1/PD-L1 antibody selected as standard of care\n19. Have other systemic conditions or organ abnormalities that may interfere with the conduct of the study\n20. Have any acute or chronic psychiatric problems or substance abuse disorder that make the participant unsuitable for participation",
+  "sex": "ALL",
+  "minimum_age": "18 Years",
+  "maximum_age": null,
+  "healthy_volunteers": false,
+  "locations": [
+    {
+      "facility": "University of Miami",
+      "city": "Coral Gables",
+      "country": "United States"
+    },
+    {
+      "facility": "Mayo Clinic",
+      "city": "Jacksonville",
+      "country": "United States"
+    },
+    {
+      "facility": "OSF Healthcare System; Saint Francis Medical Center",
+      "city": "Peoria",
+      "country": "United States"
+    },
+    {
+      "facility": "Community Health Network",
+      "city": "Indianapolis",
+      "country": "United States"
+    },
+    {
+      "facility": "Barbara Ann Karmanos Cancer Hospital",
+      "city": "Detroit",
+      "country": "United States"
+    },
+    {
+      "facility": "Mayo Clinic",
+      "city": "Rochester",
+      "country": "United States"
+    },
+    {
+      "facility": "Roswell Park Comprehensive Cancer Center",
+      "city": "Buffalo",
+      "country": "United States"
+    },
+    {
+      "facility": "Icahn School of Medicine at Mount Sinai",
+      "city": "New York",
+      "country": "United States"
+    },
+    {
+      "facility": "FirstHealth of the Carolinas",
+      "city": "Pinehurst",
+      "country": "United States"
+    },
+    {
+      "facility": "Thomas Jefferson University",
+      "city": "Philadelphia",
+      "country": "United States"
+    },
+    {
+      "facility": "Vanderbilt University",
+      "city": "Nashville",
+      "country": "United States"
+    }
+  ],
+  "source": {
+    "name": "ClinicalTrials.gov (U.S. National Library of Medicine)",
+    "url": "https://clinicaltrials.gov/study/NCT07027514",
+    "retrieved_at": "2026-11-02T16:15:35+00:00"
+  },
+  "synthetic": false
+}
