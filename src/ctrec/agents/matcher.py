@@ -10,6 +10,8 @@
       원문에 구체 기준이 없는 underspecified 기준의 unknown은 '의사 확인 필요'로 분류하되 ELIGIBLE을 막음 -
       파서 LLM의 분류 하나로 미확인 기준이 통과 처리되지 않도록)
    - 모두 통과하면 ELIGIBLE
+   - 평가할 기준이 없으면 ELIGIBLE이 아님: 시험 전체는 NOT_EVALUATED(부적격 아님), decide([])는 UNCERTAIN
+     (docs/dev/e1_empty_criteria_safety.md)
 """
 
 from __future__ import annotations
@@ -84,6 +86,8 @@ def needs_physician_review(a: CriterionAssessment) -> bool:
 
 
 def decide(assessments: list[CriterionAssessment]) -> str:
+    if not assessments:  # 근거가 없으면 확정하지 않음 (부적격도 아님). match_trial을 거치지 않는 호출의 방어선
+        return "UNCERTAIN"
     if any(a.passes is False for a in assessments):
         return "INELIGIBLE"
     if any(is_blocking_unknown(a) for a in assessments):
@@ -390,6 +394,29 @@ brief_summary: {trial.get('brief_summary', '')[:3000]}
     )
 
 
+# 평가할 기준이 없는 시험의 evaluation_error. 코드만 남기고 시험 원문·환자 정보는 넣지 않음
+CRITERIA_PARSE_EMPTY = "criteria_parse_empty"  # 원문·구조화 조건이 있는데 파싱 결과가 빔
+NO_SOURCE_CRITERIA = "no_source_criteria"  # 원문에도 평가할 조건이 없음
+
+
+def _empty_criteria_code(trial: dict) -> str:
+    """rules가 빈 원인. 파서는 CT.gov 구조화 나이·성별도 규칙으로 만들므로 이 값이 있으면 원문이 있는 것으로 봅니다."""
+    sex = str(trial.get("sex") or "ALL").strip().upper()
+    has_source = (str(trial.get("eligibility_criteria") or "").strip() or trial.get("minimum_age")
+                  or trial.get("maximum_age") or sex != "ALL")
+    return CRITERIA_PARSE_EMPTY if has_source else NO_SOURCE_CRITERIA
+
+
+def _no_criteria_match(profile: PatientProfile, parsed: ParsedTrial, trial: dict) -> TrialMatch:
+    """평가할 기준이 없는 시험: 근거가 없으므로 적격·부적격 어느 쪽으로도 확정하지 않음.
+
+    NOT_EVALUATED이므로 추천에서 빠지고, 정책은 기존 경로로 담당자 검토 행동을 만듭니다."""
+    code = _empty_criteria_code(trial)
+    return TrialMatch(patient_id=profile.patient_id, trial_id=parsed.trial_id, eligibility="NOT_EVALUATED",
+                      assessments=[], n_pass=0, n_fail=0, n_unknown=0, evaluation_error=code,
+                      summary=f"NOT_EVALUATED: 평가할 기준이 없어 판정하지 못함(부적격 아님) - {code}")
+
+
 def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
                 reference_date: str | None = None, source_text: str | None = None,
                 input_source: str = "unknown", qa_log: list[QAPair] | None = None,
@@ -401,6 +428,8 @@ def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
     qa, session_id: Session의 확인 질문 기록과 세션 ID (Session.match가 넘김). 모델 판정이 인용 검증에서 되돌려졌을 때만,
             이 기준을 겨냥한 예/아니요 답이 같은 대상·기간을 물은 것으로 코드가 검증되면 그 문답을 근거로 인정
             (answer_verification.py). 검증할 수 없으면 기존대로 판정 불가."""
+    if not parsed.rules:
+        return _no_criteria_match(profile, parsed, trial)
     ref = reference_date or config.reference_date()
     by_id = {r.rule_id: r for r in parsed.rules}
     results: dict[str, CriterionAssessment] = {}
