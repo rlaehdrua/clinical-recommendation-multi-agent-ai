@@ -16,7 +16,9 @@ from decision_scenarios import load_trials  # noqa: E402
 
 from ctrec import config, offline_records as orc  # noqa: E402
 from ctrec.engine import audit  # noqa: E402
+from ctrec.engine import contracts as C  # noqa: E402
 from ctrec.engine import record_producer as rp  # noqa: E402
+from ctrec.engine.policy import LegacyAdapterPolicy  # noqa: E402
 from ctrec.eval_hygiene import AliasMap, load_cases_hygienic  # noqa: E402
 
 PARSED = load_frozen()
@@ -118,7 +120,6 @@ def test_violation_step_marks_run_incomplete_and_keeps_every_change(tmp_path, mo
     내게 함. 위반 단계는 정상 기록으로 쓰지 않고, 그 단계의 실제 전이·사실은 진단에 모두 남아야 함 (verify_run 정합)."""
     import dataclasses
 
-    _source_level_failures(monkeypatch)
     real = rp.build_step
 
     def tampered(obs):
@@ -131,7 +132,7 @@ def test_violation_step_marks_run_incomplete_and_keeps_every_change(tmp_path, mo
     hcs, _, sc = _load()
     hit = 0
     for i, hc in enumerate(hcs):
-        r = orc.record_case(hc, TRIALS, sc, tmp_path / f"v{i}")
+        r = orc.record_case(hc, TRIALS, sc, tmp_path / f"v{i}", policy=_UnreachablePolicy())
         if not (r.rounds and r.rounds[0].policy_transitions):
             continue
         hit += 1
@@ -145,18 +146,24 @@ def test_violation_step_marks_run_incomplete_and_keeps_every_change(tmp_path, mo
     assert hit >= 1
 
 
-def _source_level_failures(monkeypatch):
-    """무응답을 연락 불가(정보원 단위)로 기록하게 함. WP5 이후 "모름"(no_answer)은 항목 단위 실패라 masked 사례에서
-    정보원 소진 -> BLOCKED_FAILURE 정책 전이가 생기지 않으므로, 정책 전이가 있는 실행이 필요한 테스트는 이 경로로 만듦."""
-    from ctrec.engine import contracts as C
-    monkeypatch.setattr(rp, "NO_ANSWER_ERROR", C.UNREACHABLE)  # offline_records.settle과 생산기가 같은 상수를 읽음
+class _UnreachablePolicy(LegacyAdapterPolicy):
+    """실행기가 넘긴 무응답 결과를 연락 불가(정보원 단위) ActionOutcome으로 바꿔 정책에 넣음.
+
+    WP5 이후 "모름"(no_answer)은 항목 단위 실패라 masked 사례에서 정보원 소진 -> BLOCKED_FAILURE 정책 전이가 생기지
+    않으므로, 정책 전이가 있는 실행이 필요한 테스트는 실제 unreachable 결과로 그 전이를 만듦 (내부 상수를 바꾸지 않음).
+    기록의 행동 결과(outcome)는 실행기가 관찰한 그대로(no_answer)이며, 이 테스트들은 정책 전이 기록만 검사합니다."""
+
+    def apply_outcome(self, cohort, action, outcome):
+        if outcome.error_code == C.NO_ANSWER:
+            outcome = outcome.model_copy(update={"error_code": C.UNREACHABLE})
+        return super().apply_outcome(cohort, action, outcome)
 
 
-def test_coverage_check_detects_dropped_transition(tmp_path, monkeypatch):
+def test_coverage_check_detects_dropped_transition(tmp_path):
     """누락 검사 자체가 동작하는지: 정책 전이를 빼고 쓴 기록은 pair_transition_missing으로 잡힘."""
-    _source_level_failures(monkeypatch)
     hcs, _, sc = _load()
-    results = [orc.record_case(hc, TRIALS, sc, tmp_path / f"c{i}") for i, hc in enumerate(hcs)]
+    results = [orc.record_case(hc, TRIALS, sc, tmp_path / f"c{i}", policy=_UnreachablePolicy())
+               for i, hc in enumerate(hcs)]
     r = next(x for x in results if x.rounds and x.rounds[0].policy_transitions)
     rec = audit.load_run_v2(r.run_dir).records[0]
     stripped = rec.model_copy(update={"pairs": ()})

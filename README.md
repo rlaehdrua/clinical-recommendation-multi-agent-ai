@@ -609,7 +609,7 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 | 2 | 운영 상태에 항목 단위 실패(`failed_items`)와 소진 항목(`exhausted_items`). 쌍은 남은 항목이 모두 소진됐을 때만 `BLOCKED_FAILURE` | `src/ctrec/engine/cohort_state.py` |
 | 3 | 정책: "모름" 뒤 그 항목만 문서 정보원으로 요청(`alternative_source_after_no_answer`), 남은 정보원이 없으면 그 항목만 보류(`item_sources_exhausted`). 같은 정보원의 다른 항목 질문은 계속 | `src/ctrec/engine/policy.py` |
 | 4 | 무응답 판별 통일: `engine.answers.answer_outcome`(= `question_contract.non_answer`). "잘 모르겠어요"·"기억이 안 나요"도 무응답 | `src/ctrec/engine/answers.py` |
-| 5 | 테스트 6개 추가(실패 범위 코드, 항목만 막고 다른 질문 계속, 모든 항목 소진 시에만 쌍 소진, 연락 불가·확인 거부는 정보원 전체, 판별기 하나). WP7 오프라인 테스트 2개는 "모름"으로 만들던 정책 전이를 연락 불가 경로로 재현하도록 조정 | `tests/test_engine_policy.py`, `tests/test_offline_records.py` |
+| 5 | 테스트 6개 추가(실패 범위 코드, 항목만 막고 다른 질문 계속, 모든 항목 소진 시에만 쌍 소진, 연락 불가·확인 거부는 정보원 전체, 판별기 하나). WP7 오프라인 테스트 2개는 "모름"으로 만들던 정책 전이를 연락 불가 경로로 재현하도록 조정(선우 리뷰 반영: 내부 상수를 바꾸지 않고, 정책에 실제 `unreachable` 행동 결과를 넣는 테스트용 정책으로) | `tests/test_engine_policy.py`, `tests/test_offline_records.py` |
 
 - masked 101건 오프라인 비교(같은 salt): `BLOCKED_FAILURE` 전이 104 → 0, 문진 정보원 전체가 막힌 환자 101 → 0, 실제 질문 109 → 202(2라운드 모두 사용), 최종 쌍 상태 BLOCKED 104·정보 부족 30·확인 대기 6 → 정보 부족 133·확인 대기 7. 확정 판정 수는 두 경우 모두 0으로, 오프라인 답변 대역이 대부분 "모름"을 돌려주기 때문입니다(이 PR 범위 밖).
 - 전체 테스트 2,058 통과 / 0 실패 / 5 건너뜀 (macOS, `.env` 없는 worktree, `ANTHROPIC_API_KEY=` 빈 값).
