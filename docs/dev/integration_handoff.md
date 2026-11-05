@@ -74,11 +74,6 @@ pred = amap.unalias_keys(pred_by_alias)   # 지표 계산 전에 평가기에서
 | 파일 | 소유 | 다른 사람이 바꿀 때 |
 |---|---|---|
 | `src/ctrec/profile_facts.py` | 서연 (WP3, PR #7) | 질문별 출처(`qa_pairs`)·"모름"(`non_answer`) 보류·중복 판정 규칙 변경은 PR 리뷰로. 호출 지점 `pipeline.py`(보호 파일)는 인자 전달 한 줄만 선우 승인(2026-11-03) |
-
-### 5.1 이후 작업에서 소유를 정한 파일
-
-| 파일 | 소유 | 다른 사람이 바꿀 때 |
-|---|---|---|
 | `src/ctrec/agents/criteria_parser.py` | 서연 (WP2a, PR #8) | 분할 파싱(`SPLIT_PARSE_CHARS`, 동결 시험 제외)·무결성 검사 변경은 PR 리뷰로. 시스템 프롬프트(`SYSTEM`) 변경은 `parser_prompt_hash`가 바뀌어 동결 저장소 재컴파일과 묶이므로 팀 검토 |
 
 ## 6. 통합 순서 제안
