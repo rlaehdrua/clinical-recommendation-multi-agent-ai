@@ -78,6 +78,12 @@ def test_missing_info_outranks_expert_review():
     assert _status(c)["status"] == "INFO_MISSING"  # 계약 우선순위: 정보 없음 > 확인 필요 > 임상의 판단
 
 
+def test_trial_without_any_bound_rule_is_not_confirmed():
+    """연결된 기준이 0개인 시험: 전부 통과처럼 보여도 확정 근거가 없으므로 NOT_EVALUATED (엔진 #14와 같은 규칙)."""
+    s = _status(_cohort([], {}, {"age": 60}))
+    assert s["eligibility"] == "ELIGIBLE" and s["status"] == "NOT_EVALUATED" and s["pending_kinds"] == []
+
+
 def test_board_uses_engine_contract_and_only_public_data():
     for c in _cohorts():
         data = json.loads(json.dumps(c.model_dump(mode="json")))
@@ -87,7 +93,8 @@ def test_board_uses_engine_contract_and_only_public_data():
                                                                           for p in data["public"]["patients"])
         for v in b["pairs"].values():
             gaps = {r["gap"] for r in v["rules"]} - {"none"}
-            expect = derive_pair_status(v["eligibility"], gaps, "confirmed" if v["eligibility"] == "INELIGIBLE" else None)
+            expect = derive_pair_status(v["eligibility"], gaps, "confirmed" if v["eligibility"] == "INELIGIBLE" else None,
+                                        required_criteria=len(v["rules"]))
             assert v["status"] == expect.value
         garbled = copy.deepcopy(data)
         garbled["oracle"] = {"hidden": {}, "truth": {}, "pair_label": {}}

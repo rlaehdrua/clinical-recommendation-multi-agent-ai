@@ -11,6 +11,7 @@ oracle(숨긴 값·정답·쌍 라벨)은 쓰지 않습니다 - 상태는 '정�
   - 값은 공개돼 있지만 검사가 유효 기간보다 오래됨(time_window_days < lab_age_days): stale
   - 그 밖: missing
 쌍의 판정 값: 아는 기준 하나라도 불통과면 INELIGIBLE, 모두 알고 모두 통과면 ELIGIBLE, 그 밖에는 UNCERTAIN.
+연결된 기준이 하나도 없는 시험은 확정 근거가 없으므로 NOT_EVALUATED (엔진과 같은 규칙, required_criteria=0).
 정적 생성 데이터에는 확보 실패(BLOCKED_FAILURE)·평가 실패(NOT_EVALUATED)가 없지만, 같은 7가지 상태 체계로 보여 줍니다.
 """
 
@@ -71,9 +72,10 @@ def pair_board(public: dict, patient: dict, trial_id: str, expert_slots: frozens
     eligibility = "INELIGIBLE" if fail else "UNCERTAIN" if unknown else "ELIGIBLE"
     gaps = {x["gap"] for x in rules} - {"none"}
     mismatch = "confirmed" if fail else None  # 공개 값은 기록 출처 -> 불충족은 문서 검증된 불충족
-    status = derive_pair_status(eligibility, gaps, mismatch)
+    n = len(rules)  # 이 시험에서 판정에 쓰는 (슬롯에 연결된) 기준 수. 0개면 적격 확정 근거가 없음 -> NOT_EVALUATED
+    status = derive_pair_status(eligibility, gaps, mismatch, required_criteria=n)
     return {"status": status.value, "eligibility": eligibility,
-            "pending_kinds": sorted(pending_kinds(eligibility, gaps, mismatch)), "rules": rules}
+            "pending_kinds": sorted(pending_kinds(eligibility, gaps, mismatch, required_criteria=n)), "rules": rules}
 
 
 def board(cohort: dict) -> dict:
