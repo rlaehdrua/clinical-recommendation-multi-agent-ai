@@ -15,7 +15,7 @@ from ctrec import incremental, store_patch
 from ctrec.agents import matcher
 
 import test_session_fact_shadow as harness
-from test_session_fact_shadow import _outputs, _run, calls  # noqa: F401 - calls는 pytest fixture
+from test_session_fact_shadow import _outputs, _run
 
 
 def _reset(calls):

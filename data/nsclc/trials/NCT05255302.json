@@ -1,0 +1,157 @@
+{
+  "trial_id": "NCT05255302",
+  "title": "De-escalation Immunotherapy mAintenance Duration Trial for Stage IV Lung Cancer Patients With Disease Control After Chemo-immunotherapy Induction",
+  "official_title": "A Phase II-III Randomized Trial Evaluating Maintenance Pembrolizumab (± Pemetrexed) Until Progression Versus Observation (± Pemetrexed) After 6 Months of Platinum-based Doublet Chemotherapy Plus Pembrolizumab Induction Treatment in Patients With Stage IV Non-Small Cell Lung Cancer (NSCLC)",
+  "overall_status": "RECRUITING",
+  "phases": [
+    "PHASE2",
+    "PHASE3"
+  ],
+  "study_type": "INTERVENTIONAL",
+  "conditions": [
+    "Metastatic NSCLC"
+  ],
+  "keywords": [
+    "IFCT",
+    "DIAL",
+    "NSCLC",
+    "Immunotherapy duration"
+  ],
+  "interventions": [
+    {
+      "type": "DRUG",
+      "name": "Pembrolizumab before randomization",
+      "description": "Pembrolizumab 200 mg every 3 weeks before randomization"
+    },
+    {
+      "type": "DRUG",
+      "name": "Chemotherapy",
+      "description": "Platinum doublet - 4 cycles: either paclitaxel-carboplatin for patient with SCC or pemetrexed-platinum salt followed by 2 cycles of pemetrexed until reaching the 6 months time-point for randomization Carboplatin AUC 5 for non-squamous cell carcinoma and AUC6 for squamous cell carcinoma every 3 weeks or cisplatin 75 mg/m² every 3 weeks Pemetrexed 500 mg/m² every 3 weeks or paclitaxel 175 mg/m² every 3 weeks"
+    },
+    {
+      "type": "DRUG",
+      "name": "Pemetrexed",
+      "description": "Maintenance pemetrexed after randomization Pemetrexed 500 mg/m² every 3 weeks"
+    },
+    {
+      "type": "DRUG",
+      "name": "Pembrolizumab after randomization",
+      "description": "Pembrolizumab 200 mg every 3 weeks after randomization"
+    }
+  ],
+  "brief_summary": "Immunotherapeutic approaches recently have demonstrated clinical efficacy in several cancer types, including melanoma and NSCLC. As a matter of fact, first registration trials of immune-checkpoints inhibitors (ICI) in second-line settings (pembrolizumab as well as nivolumab or atezolizumab) had stated that ICI could be continued until disease progression or not tolerable toxicity, up to 5 years. This is only for the first-line registration studies that the arbitrary maximal duration of treatment of 2 years was set up by the Companies sponsoring such trials.\n\nThe aim is to study a de-escalation scheme of treatment from 2 years of immunotherapy to 6 months (27-weeks), in patients with controlled disease.",
+  "detailed_description": "This is a phase II-III randomized, open-labelled, multicentre study for NSCLC patients who are naive of treatment for advanced disease. Patients will be given first-line chemotherapy + pembrolizumab: platinum doublet for at least 3 cycles, either paclitaxel-carboplatin for patient with SCC or 3 cycles of pemetrexed-platinum salt followed by 2 cycles of pemetrexed and 6 cycles of pembrolizumab.\n\nOnly patients with disease control, confirmed at 6 months (27-weeks) without drug-related toxicity imposing treatment discontinuation will be randomized 1:1 either to continuation of pembrolizumab (± pemetrexed for non-SCC) until disease progression or unacceptable toxicity or 2 years, or observation (± pemetrexed for non-SCC).\n\nPatients will be stratified by performance status (0 versus 1), histology (SCC versus non-SCC), PD-L1 (PD-L1 \\< 1% versus 49%≥PD-L1 ≥ 1% versus PD-L1\\>49%), sex and response at randomization (partial response versus stabilisation).",
+  "eligibility_criteria": "Inclusion Criteria:\n\n1. Signed Written Informed Consent:\n\n   * Subjects must have signed and dated an IRB/IEC approved written informed consent form in accordance with regulatory and institutional guidelines. This must be obtained before the performance of any protocol related procedures that are not part of normal subject care.\n   * Subjects must be willing and able to comply with scheduled visits, treatment schedule, and laboratory testing.\n2. Patients with histologically confirmed metastatic NSCLC (Stage IV accordingly to 8th classification TNM, UICC 2015). A cytologically-proven NSCLC is allowed if a cytoblock has been prepared.\n3. PD-L1 tumor content as assessed locally by the investigator center.\n4. Eastern Cooperative Oncology Group Performance Status (ECOG PS) of 0 or 1.\n5. Weight loss\\< 10% within 3 months of study entry.\n6. No prior systemic anticancer therapy (including EGFR or ALK inhibitors) given as primary therapy for advanced or metastatic disease.\n7. Age≥ 18 years, \\<75 years\n8. Life expectancy \\> 3 months\n9. Measurable tumor disease by CT or MRI per RECIST 1.1 criteria\n10. The Investigator must confirm prior to enrolment that the patient has adequate tumor tissue available. Tumor biopsy should be exploitable for molecular analysis. If archival tissue is either insufficient or unavailable, the patient may still be eligible upon discussion with IFCT.\n\n    Note: Tumor tissue collected after the patient was diagnosed with metastatic disease is preferred.\n\n    Tumor tissue sample must not be from locations previously radiated. Tumor sample must be 1 block or at least 7 unstained slides of analyzable tissue.\n11. Adequate biological functions:\n\n    Creatinine Clearance ≥ 45 mL/min (Cockcroft or MDRD or CKD-epi); neutrophils≥ 1500/mm3 ; platelets ≥100 000/mm3 ; Hemoglobin≥ 9g/dL ; AST and ALT\\< 3x ULN, total bilirubin \\< 2xULN (patients with hepatic metastases or Gilbert's syndrome must have AST and ALT ≤ 5 x ULN and a baseline total bilirubin ≤ 2xULN).\n12. Women of childbearing potential (WOCBP) and sexually active should use an efficacious contraception method within the 28 days preceding the first dose and during the 6 months following the last dose of treatment. Women must have a negative serum or urine pregnancy test (minimum sensitivity 25 IU/L or equivalent units of HCG) prior to the start of study drug.\n13. For Male subjects who are sexually active with WOCBP, an efficacious contraception method should be used during the treatment and during the 6 months following the last dose.\n14. Patient has national health insurance coverage.\n\nExclusion Criteria:\n\n1. Small cell lung cancer or tumors with mixed histology including a SCLC component.\n\n   Note : Sarcomatoid histology is allowed. Neuro-endocrine large cell lung cancer with molecular features of small-cell lung cancer (i.e; Rb loss associated with TP53 mutation) will not be eligible. Other neuro-endocrine large cell subtypes, i.e. with adenocarcinoma features (STK11 or K-Ras mutations) will be eligible. In case of doubt, please contact the sponsor.\n2. Known EGFR activating tumor mutation (deletion LREA in exon 19, L858R ou L861X mutations in exon 21, G719A/S mutation in exon 18, exon 20 insertion) or HER2 exon 20 insertion (either tissue or plasma cfDNA mutation).\n3. Known ALK, ROS1, Ret, NTRK, NRG1 gene rearrangement as assessed by immunohistochemistry, FISH or NGS (ADN or ARN) sequencing by local genetics and/or pathology laboratory.\n4. Previous or active cancer within the previous 3 years (except for treated carcinoma in situ of the cervix, or basal cell skin cancer treated or not). Patients with a prostate adenocarcinoma history within the previous 3 years could be included in case of localized prostate cancer, with good prognostic factors according to d'Amico classification (≤T2a, score de Gleason ≤ 6 and PSA ≤ 10 (ng/ml)) provided they were treated in a curative way (surgery or radiotherapy, without any chemotherapy).\n5. Superior vena cava syndrome persisting despite VCS stenting.\n6. Radiotherapy needed at initiation of tumour treatment, except bone palliative radiotherapy on a painful or compressive metastasis, respecting 1 week delay between the end of radiotherapy and the beginning of treatment\n7. Symptomatic untreated brain metastasis (without previous whole brain radiotherapy or stereotactic ablative brain radiotherapy or without surgical resection). At least 2 weeks delay between the end of radiotherapy and the beginning of induction immunotherapy treatment should be respected. Asymptomatic brain metastasis, not needing corticosteroids greater than 10 mg prednisone equivalent daily or mannitol infusions, are allowed.\n8. History of previous primary immunodeficiency, organ transplantation needing an immunosuppressive treatment, any immunosuppressive drug within 28 days before randomization date, or history of severe toxicity (grade 3/4) by immune mechanism linked to another immunotherapy treatment.\n9. Systemic treatment with corticosteroids with greater dose than 10 mg prednisone equivalent daily, within 14 days before initiation of the immunotherapy induction. Inhaled, nasal or topic corticosteroids are allowed.\n10. History of active autoimmune disease including but not limited to rheumatoid polyarthritis, myasthenia, autoimmune hepatitis, systemic Lupus, Wegener's granulomatosis, vascular thrombosis associated with antiphospholipid syndrome, Sjogren's syndrome with interstitial pulmonary disease, recent Guillain-Barré syndrome, multiple sclerosis, vasculitis, or glomerulonephritis.\n\n    Patients with type I diabetes, or hypothyroidism, or immune cutaneous disease (vitiligo, psoriasis, alopecia) or benign rheumatoid polyarthritis not needing any immunosuppressive systemic treatment, or benign sicca syndrome (Sjogren) without interstitial pulmonary disease, or history of past Guillain-Barre syndrome, totally reversible with no sequelae, no systemic immunosuppressive treatment during the last 20 years, are allowed to be included.\n11. Active inflammatory intestinal disease (Crohn disease, Hemorrhagic recto-colitis, coeliac disease) or any serious chronic intestinal disease with uncontrolled diarrhea.\n12. Active uncontrolled infection including tuberculosis, known acute viral hepatitis B and C according to serological tests. Patients with serological sequelae of cured viral hepatitis are allowed to be included. Past primary pulmonary tuberculosis in youth does not consist of a contra-indication. Past tuberculosis disease history does not consist of a contra-indication provided the patient was treated during at least 6 months by anti-tuberculosis antibiotic treatment.\n13. Known HIV infection\n14. Living attenuated vaccine received within the 30 previous days\n15. Previous treatment with anti-PD-1, anti-PD-L1, Anti-CTLA4 or any ICI antibody\n16. Previous treatment with chemotherapy for lung cancer. However, if a patient has a lung adenocarcinoma, previous cisplatin treatment for another cancer type with squamous histology (Head and Neck, bladder) may be allowed provided the sponsor accepts, and provided blood tests are normal (see above).\n17. General serious condition such as congestive uncontrolled cardiac failure, uncontrolled cardiac arrythmia, uncontrolled ischemic cardiac disease (unstable angina or history of myocardial infarction within the previous 6 months), history or stroke within the 6 previous months. Patients with a significant cardiac history, even if controlled, should have a LVEF \\> 50%.\n18. Pre-existing moderate or severe lung interstitial disease as assessed by the diagnosis CT-scan.\n19. Inability to comply with study and/or follow-up procedures for family, social, geographic or psychological reasons.\n20. Pregnant, lactating, or breastfeeding women.\n21. Patients deprived of liberty by judicial or administrative decision\n22. Patient who is subject to legal protection or who is unable to express his will",
+  "sex": "ALL",
+  "minimum_age": "18 Years",
+  "maximum_age": "74 Years",
+  "healthy_volunteers": false,
+  "locations": [
+    {
+      "facility": "Aix-en-Provence - CH",
+      "city": "Aix-en-Provence",
+      "country": "France"
+    },
+    {
+      "facility": "Amiens - Clinique de l'Europe",
+      "city": "Amiens",
+      "country": "France"
+    },
+    {
+      "facility": "Angers - CHU",
+      "city": "Angers",
+      "country": "France"
+    },
+    {
+      "facility": "Avignon - CH",
+      "city": "Avignon",
+      "country": "France"
+    },
+    {
+      "facility": "Besançon - CHU",
+      "city": "Besançon",
+      "country": "France"
+    },
+    {
+      "facility": "Bordeaux - Polyclinique",
+      "city": "Bordeaux",
+      "country": "France"
+    },
+    {
+      "facility": "CHU de Bordeaux",
+      "city": "Bordeaux",
+      "country": "France"
+    },
+    {
+      "facility": "Caen - CHU Côte de Nacre",
+      "city": "Caen",
+      "country": "France"
+    },
+    {
+      "facility": "Cannes - CH",
+      "city": "Cannes",
+      "country": "France"
+    },
+    {
+      "facility": "Chauny - Centre Hospitalier",
+      "city": "Chauny",
+      "country": "France"
+    },
+    {
+      "facility": "CH",
+      "city": "Colmar",
+      "country": "France"
+    },
+    {
+      "facility": "Centre Georges François Leclerc",
+      "city": "Dijon",
+      "country": "France"
+    },
+    {
+      "facility": "CHRU Grenoble",
+      "city": "Grenoble",
+      "country": "France"
+    },
+    {
+      "facility": "La Roche Sur Yon - CH",
+      "city": "La Roche-sur-Yon",
+      "country": "France"
+    },
+    {
+      "facility": "CH de Versailles",
+      "city": "Le Chesnay",
+      "country": "France"
+    },
+    {
+      "facility": "Centre Hospitalier - Pneumologie",
+      "city": "Le Mans",
+      "country": "France"
+    },
+    {
+      "facility": "CHRU de Lille",
+      "city": "Lille",
+      "country": "France"
+    },
+    {
+      "facility": "CHU de Limoges",
+      "city": "Limoges",
+      "country": "France"
+    },
+    {
+      "facility": "Lyon - Hôpital Jean Mermoz",
+      "city": "Lyon",
+      "country": "France"
+    },
+    {
+      "facility": "Marseille - Hôpital Européen",
+      "city": "Marseille",
+      "country": "France"
+    }
+  ],
+  "source": {
+    "name": "ClinicalTrials.gov (U.S. National Library of Medicine)",
+    "url": "https://clinicaltrials.gov/study/NCT05255302",
+    "retrieved_at": "2026-11-02T16:15:35+00:00"
+  },
+  "synthetic": false
+}

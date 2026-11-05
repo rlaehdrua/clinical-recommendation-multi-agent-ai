@@ -81,6 +81,9 @@ def save(trial: dict, parsed: ParsedTrial, meta: dict[str, RuleMeta], report: Va
         "trial_id": trial["trial_id"],
         "trial_hash": trial_hash(trial),
         "parser_prompt_hash": parser_prompt_hash(),
+        # 선정·제외 분할 호출 여부 (parser_prompt_hash는 시스템 프롬프트만 보므로 분할 여부가 잡히지 않음).
+        # 이 필드가 없는 기존 기록은 분할 파싱 도입 전 기록이라 모두 single
+        "parse_mode": criteria_parser.parse_mode(trial),
         "model": config.MODEL,
         "compiled_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         **(extra or {}),

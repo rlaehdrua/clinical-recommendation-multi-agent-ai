@@ -117,6 +117,22 @@ def test_integrity_accepts_ranges_commas_and_structured_age():
     assert check_integrity(_parsed(rules), {"minimum_age": "18 Years"}) == []
 
 
+def test_integrity_normalizes_ecog_in_list_from_zero():
+    r = _rule(rule_id="I5", text="ECOG performance status of 0 or 1.", field="ecog", operator="in", value="0,1")
+    p = _parsed([r])
+    assert check_integrity(p, {}) == []
+    assert (r.field, r.operator, r.value, r.structured_evaluable) == ("ecog", "<=", "1", True)
+    assert "[코드 정규화] I5: ecog in 0,1 -> ecog <= 1" in p.parsing_notes
+
+
+def test_integrity_keeps_demoting_ecog_lists_that_are_not_a_prefix():
+    gap = _rule(rule_id="I1", text="ECOG 0 or 2", field="ecog", operator="in", value="0,2")
+    high = _rule(rule_id="E1", text="ECOG 2 or 3", field="ecog", operator="in", value="2,3")
+    p = _parsed([gap, high])
+    assert len(check_integrity(p, {})) == 2
+    assert gap.field is None and high.field is None and "[코드 정규화]" not in p.parsing_notes
+
+
 def test_integrity_rejects_unit_converted_value():
     r = _rule(text="structured_eligibility: minimum_age=2 Weeks", field="age", operator=">=", value="0.038")
     assert check_integrity(_parsed([r]), {"minimum_age": "2 Weeks"}) and r.field is None

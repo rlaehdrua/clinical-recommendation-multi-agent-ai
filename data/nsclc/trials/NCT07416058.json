@@ -1,0 +1,50 @@
+{
+  "trial_id": "NCT07416058",
+  "title": "PHOENIX: QL1706 Plus Chemotherapy and Bevacizumab in AGA-Resistant, PD-L1 ≥50% Non-Squamous NSCLC",
+  "official_title": "A Multicenter Study of Iparomlimab and Tuvonralimab (QL1706) Plus Platinum-Based Doublet Chemotherapy and Bevacizumab in PD-L1 ≥50% Non-Squamous Non-Small Cell Lung Cancer With Actionable Genomic Alterations (AGA) Resistant to Prior Targeted Therapy",
+  "overall_status": "RECRUITING",
+  "phases": [
+    "PHASE2"
+  ],
+  "study_type": "INTERVENTIONAL",
+  "conditions": [
+    "Lung Adenocarcinoma"
+  ],
+  "keywords": [
+    "PD-L1",
+    "CTLA-4",
+    "QL1706"
+  ],
+  "interventions": [
+    {
+      "type": "DRUG",
+      "name": "QL1706 (bispecific antibody targeting PD-1 and CLTA-4)",
+      "description": "All cohorts will receive the same treatment regimen in 3-week cycles.Participants will receive combination therapy, consisting of QL1706 (5.0 mg/kg, day 1), bevacizumab (7.5 mg/kg, days1), pemetrexed(500 mg/m², days1) and Platinum \\[Cisplatin (75 mg/m²) or Carboplatin (AUC 5/mg/ml, up to 750 mg), Day 1\\],intravenously every 3 weeks for four cycles in induction phase, followed by QL1706 (5.0 mg/kg, day 1) and bevacizumab (7.5 mg/kg, days1) every 3 weeks for up to 2 years or until disease progression"
+    }
+  ],
+  "brief_summary": "The goal of this Phase II clinical trial (The PHOENIX Study) is to evaluate if the combination of QL1706 (Iparomlimab and Tuvonralimab), bevacizumab, and chemotherapy can treat patients with TKI-refractory, driver-gene positive (e.g., EGFR, ALK, ROS1, RET, KRAS, BRAF, HER2), non-squamous non-small cell lung cancer (NSCLC) who have high PD-L1 expression (TPS ≥50%).\n\nThe main question\\[s\\] it aims to answer \\[is/are\\]:\n\nDoes the quadruple combination therapy improve the Objective Response Rate (ORR) compared to historical chemotherapy data? What are the secondary efficacy outcomes, including Progression-Free Survival (PFS) and Overall Survival (OS)?\n\nIf there is a comparison group: There is no concurrent control group (this is an open-label, multi-cohort study). Researchers will compare the treatment outcomes of the participants to historical control data (standard platinum-based chemotherapy) to see if the objective response rate (ORR) improves from a historical baseline of 29% to a target of 55%.\n\nParticipants will:\n\nReceive induction therapy every 3 weeks for 4 cycles, consisting of intravenous infusions of QL1706, bevacizumab, pemetrexed, and platinum chemotherapy (cisplatin or carboplatin).\n\nReceive maintenance therapy every 3 weeks with QL1706 and bevacizumab for up to 2 years or until disease progression.\n\nUndergo regular tumor assessments (CT or MRI scans) to monitor disease status according to RECIST v1.1 criteria.\n\nProvide blood samples for safety monitoring and potential biomarker analysis.",
+  "detailed_description": "",
+  "eligibility_criteria": "Inclusion Criteria:\n\nThe study will enroll adult patients (aged 18-75 years) with histologically confirmed locally advanced or metastatic NSCLC (AJCC 9th Edition, Stage IIIB-IVB), and harbor confirmed actionable driver mutations for which targeted therapies are available; these mutations are stratified as follows: EGFR (19del, L858R); ALK, ROS1, RET fusions; KRAS G12C; BRAF V600; and HER2 exon 20 insertions. Patients must have disease progression following at least one line of TKI therapy and a 2-week washout period is required for prior TKI therapy or chemotherapy. Prior immunotherapy is not permitted. PD-L1 tumor proportion score (TPS) ≥ 50%, as confirmed by central laboratory testing using the 22C3 or SP263 clone on fresh or archival tumor tissue (collected within 2 years). Patients must have an Eastern Cooperative Oncology Group (ECOG) Performance Status of 0 or 1, and presence of at least one measurable lesion per Response Evaluation Criteria in Solid Tumors (RECIST) Version 1.1.\n\nExclusion Criteria:\n\n* Prior treatment with QL1706 or other investigational PD-1/PD-L1/CTLA-4 antibodies, unless allowed by the protocol.\n* Untreated or symptomatic central nervous system (CNS) metastases. Participants with previously treated, stable, and asymptomatic CNS metastases off steroids for at least 2 weeks before first dose may be eligible.\n* History of severe allergic reactions or hypersensitivity to monoclonal antibodies, platinum agents, pemetrexed, bevacizumab, or any excipients of the study drugs.\n* Clinically significant cardiovascular disease, including but not limited to:\n* Uncontrolled hypertension despite optimal medical management\n* New York Heart Association (NYHA) class III or IV heart failure\n* Unstable angina, myocardial infarction, or stroke within 6 months prior to enrollment\n* Significant arrhythmias requiring anti-arrhythmic therapy\n* Active or history of autoimmune disease that has required systemic treatment in the past 2 years (e.g., with disease-modifying agents, corticosteroids, or immunosuppressive drugs), except for conditions such as vitiligo, resolved childhood asthma/atopy, or hypothyroidism on stable replacement therapy.\n* Active infection requiring systemic therapy, including known active hepatitis B, hepatitis C, or human immunodeficiency virus (HIV) infection, unless well controlled according to protocol-defined criteria.\n* Significant hemoptysis (e.g., ≥ 2.5 mL of bright red blood) within 3 months prior to enrollment or any evidence of high-risk bleeding or coagulation disorder that would contraindicate bevacizumab.\n* Major surgery within 4 weeks before first dose of study treatment or anticipated need for major surgery during the study.\n* Pregnant or breastfeeding women.\n* Any other serious medical condition, uncontrolled intercurrent illness, psychiatric illness, or social circumstance that, in the opinion of the investigator, would compromise the participant's safety, interfere with study evaluations, or preclude informed consent.",
+  "sex": "ALL",
+  "minimum_age": "18 Years",
+  "maximum_age": "75 Years",
+  "healthy_volunteers": false,
+  "locations": [
+    {
+      "facility": "Guangdong Provincial People's Hospital",
+      "city": "Guangzhou",
+      "country": "China"
+    },
+    {
+      "facility": "Guangdong Provincial People's Hospital",
+      "city": "Guangzhou",
+      "country": "China"
+    }
+  ],
+  "source": {
+    "name": "ClinicalTrials.gov (U.S. National Library of Medicine)",
+    "url": "https://clinicaltrials.gov/study/NCT07416058",
+    "retrieved_at": "2026-11-02T16:15:35+00:00"
+  },
+  "synthetic": false
+}

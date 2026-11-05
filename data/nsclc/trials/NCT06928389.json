@@ -1,0 +1,46 @@
+{
+  "trial_id": "NCT06928389",
+  "title": "Ivonescimab in Combination With Docetaxel in Advanced Non-Small Cell Lung Cancer",
+  "official_title": "A Randomized, Double-blind, Multicenter Phase 3 Clinical Trial of Ivonescimab Versus Placebo, Combined With Docetaxel in Patients With Locally Advanced or Metastatic Non-small Cell Lung Cancer (NSCLC) That Has Progressed on or After PD-(L)1 Inhibitor-based Therapy",
+  "overall_status": "RECRUITING",
+  "phases": [
+    "PHASE3"
+  ],
+  "study_type": "INTERVENTIONAL",
+  "conditions": [
+    "Non-Small Cell Lung Cancer"
+  ],
+  "keywords": [],
+  "interventions": [
+    {
+      "type": "DRUG",
+      "name": "Ivonescimab, docetaxel",
+      "description": "Patients will receive ivonescimab and docetaxel as an IV injection"
+    },
+    {
+      "type": "DRUG",
+      "name": "Placebo, docetaxel",
+      "description": "Patients will receive placebo and docetaxel as an IV injection"
+    }
+  ],
+  "brief_summary": "This is a Phase 3 Randomized, double-blind, Multicenter Study of Ivonescimab Combined with Docetaxel Versus Placebo Combined with Docetaxel in Patients with Locally advanced or Metastatic Non-small Cell Lung Cancer (NSCLC) that has progressed on or after PD-(L)1 inhibitor-based therapy. The purpose of this study is to evaluate the efficacy and safety of ivonescimab versus placebo, combined with docetaxel in patients with advanced NSCLC.",
+  "detailed_description": "",
+  "eligibility_criteria": "Inclusion Criteria:\n\n* Be able and willing to provide written informed consent and to comply with all requirements of study participation (including all study procedures).\n* Age ≥ 18 years old and ≤ 75 years old at the time of randomization.\n* Eastern Cooperative Oncology Group (ECOG) performance status of 0 or 1.\n* Expected life expectancy of at least 3 months.\n* Histologically or cytologically confirmed diagnosis of NSCLC.\n* Locally advanced or metastatic NSCLC (American Joint Committee on Cancer \\[AJCC\\] 8th edition).\n* Previously received systemic platinum-based chemotherapy and PD-1/L1 inhibitors.\n* At least one measurable lesion according to Response Evaluation Criteria in Solid Tumors (RECIST) 1.1.\n* Adequate organ function.\n\nExclusion Criteria:\n\n* Histologic or cytopathologic evidence of the presence of small cell lung carcinoma.\n* Other malignancies within 3 years prior to randomization.\n* Known actionable genomic alterations.\n* Prior administration of any immunotherapy targeting immune mechanisms other than PD-1/PD-L1 inhibitors.\n* Previous treatment with docetaxel.\n* History of severe bleeding tendency or coagulation dysfunction.\n* Active autoimmune disease requiring systemic therapy within 2 years prior to randomization.\n* History of myocarditis, cardiomyopathy, and malignant arrhythmia.",
+  "sex": "ALL",
+  "minimum_age": "18 Years",
+  "maximum_age": "75 Years",
+  "healthy_volunteers": false,
+  "locations": [
+    {
+      "facility": "Shanghai East Hospital",
+      "city": "Shanghai",
+      "country": "China"
+    }
+  ],
+  "source": {
+    "name": "ClinicalTrials.gov (U.S. National Library of Medicine)",
+    "url": "https://clinicaltrials.gov/study/NCT06928389",
+    "retrieved_at": "2026-11-02T16:15:35+00:00"
+  },
+  "synthetic": false
+}

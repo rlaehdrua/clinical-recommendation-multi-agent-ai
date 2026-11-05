@@ -1,0 +1,149 @@
+{
+  "trial_id": "NCT06216301",
+  "title": "LUNAR-2: TTFields With Pembrolizumab + Platinum-based Chemotherapy for Metastatic NSCLC",
+  "official_title": "LUNAR-2: Pivotal, Randomized, Open-Label Study of Tumor Treating Fields (TTFields, 150 kHz) Concomitant With Pembrolizumab and Platinum-based Chemotherapy for the Treatment of Metastatic Non-Small Cell Lung Cancer",
+  "overall_status": "RECRUITING",
+  "phases": [
+    "PHASE3"
+  ],
+  "study_type": "INTERVENTIONAL",
+  "conditions": [
+    "Metastatic Non-small Cell Lung Cancer"
+  ],
+  "keywords": [
+    "NSCLC",
+    "Metastatic"
+  ],
+  "interventions": [
+    {
+      "type": "DEVICE",
+      "name": "NovoTTF-200T",
+      "description": "The NovoTTF-200T is a portable, battery operated system intended for continuous home use, which delivers TTFields at a frequency of 150kHz to the subject by means of insulated transducer arrays. TTFields physically disrupt the rapid cell division exhibited by cancer cells. The physical disruption induced by TTFields can lead to to downstream immunogenic cell death."
+    },
+    {
+      "type": "DRUG",
+      "name": "Pembrolizumab",
+      "description": "Pembrolizumab is an immune checkpoint inhibitor that helps the immune system recognize and attack cancer cells."
+    },
+    {
+      "type": "DRUG",
+      "name": "Platinum based chemotherapy",
+      "description": "Platinum-based chemotherapy is a standard chemotherapy regimen commonly used in the treatment of non-small cell lung cancer"
+    }
+  ],
+  "brief_summary": "This study, known as LUNAR-2, aims to investigate the effectiveness and safety of using TTFields, delivered by the NovoTTF-200T device, concomitantly administered with pembrolizumab and platinum-based chemotherapy for patients with advanced non-small cell lung cancer that has spread to other parts of the body. The primary goals of the study are to assess overall survival and progression-free survival. Secondary objectives include analyzing outcomes based on the specific histology (subtype) of the lung cancer.",
+  "detailed_description": "LUNAR-2 is a pivotal, randomized, open-label study that aims to evaluate the effectiveness and safety of Tumor Treating Fields (TTFields) concomitantly administered with pembrolizumab and platinum-based chemotherapy for the treatment of metastatic non-small cell lung cancer (NSCLC).\n\nThe primary objectives of the study are to assess overall survival (OS) and progression-free survival (PFS) in subjects treated with TTFields, pembrolizumab, and platinum-based chemotherapy compared to those treated with pembrolizumab and platinum-based chemotherapy alone. PFS will be evaluated by Response Evaluation Criteria in Solid Tumors (RECIST) v1.1.\n\nThe secondary endpoints of this study will evaluate PFS and OS, stratified by the specific histological subtype of NSCLC and PD-L1 Tumor Proportion Score (TPS).\n\nThe population will consist of subjects with an Eastern Cooperative Oncology Group (ECOG) performance status of 0-1 and will be stratified as follow:\n\n1. Histology - Squamous vs. non-squamous\n2. PD-L1 expression level - TPS \\<1% vs. 1% ≤TPS \\<50% vs. TPS ≥50%\n3. Prior treatment with immunotherapy - yes vs. no\n\nThe study will be conducted globally at approximately 130 participating sites. The study device, NovoTTF-200T, is a portable, battery-operated system that delivers TTFields at a frequency of 150kHz. It utilizes insulated transducer arrays to deliver electric forces intended to disrupt cancer cell division.",
+  "eligibility_criteria": "Inclusion Criteria\n\n* ≥22 years of age in the USA\n\n  ≥18 years of age outside of the USA.\n* Histologically or cytologically diagnosis of stage 4 (according to Version 8 of the American Joint Committee on Cancer \\[AJCC\\] criteria) non-squamous or squamous NSCLC.\n* Evaluable (measurable or non-measurable) disease in the thorax per RECIST v1.1.\n* Have not received prior systemic treatment for their metastatic NSCLC. Subjects who received adjuvant, neoadjuvant chemotherapy or chemoradiotherapy with curative intent for non-metastatic disease are eligible if the therapy was completed at least 12 months prior to the development of metastatic disease.\n* ECOG Performance Status (PS) of 0-1.\n* Adequate hematologic and end-organ function\n\n  o For subjects not receiving therapeutic anticoagulation: INR or aPTT ≤ 1.5 x ULN (unless participant is receiving anticoagulant therapy as long as INR or aPTT is within therapeutic range of intended use of anticoagulants).\n* A female participant is eligible to participate if she is not pregnant, not breastfeeding\n* If male subject with a female partner(s) of child-bearing potential, must agree to use an effective contraception\n* All subjects must sign written informed consent.\n\nExclusion Criteria:\n\nAll individuals meeting any of the following exclusion criteria will be excluded from study participation:\n\n* Mixed small cell and NSCLC histology.\n* EGFR sensitizing mutation and/or ALK translocation, and/or ROS1 and/or RET targetable gene rearrangement, and/or METex14 skipping mutation, and/or NTRK1/2 gene fusion and/or BRAF V600 mutations directed therapy is indicated or planned for other targeted therapy, where such testing and therapy is locally approved and available.\n* Has received systemic therapy for metastatic disease.\n* Had major surgery \\<3 weeks prior to randomization\n* Received radiation therapy to the lung that is \\> 30 Gy within 6 months of randomization.\n* Has received prior radiotherapy within 2 weeks of randomization. Subjects must have recovered from all radiation-related toxicities, not require corticosteroids, and not have had radiation pneumonitis. A 1-week washout is permitted for palliative radiation (≤2 weeks of radiotherapy) to non-CNS disease.\n* Is expected to require any other form of antineoplastic therapy while on study.\n* Has a known additional malignancy that is progressing or has required active treatment within the past 3 years.\n\n  * Note: Subjects with basal cell carcinoma of the skin, squamous cell carcinoma of the skin, or carcinoma in situ (e.g., breast carcinoma, cervical cancer in situ) that have undergone potentially curative therapy are not excluded\n* Has symptomatic Central Nervous System (CNS) metastases and/or carcinomatous meningitis. Subjects with asymptomatic CNS metastases or with previously treated brain metastases may participate provided they were treated before randomization (if applicable) and are neurologically stable and without requirement of steroid treatment for at least 7 days prior to randomization.\n* Has active autoimmune disease that has required systemic treatment in past 2 years (i.e. with use of disease modifying agents, corticosteroids or immunosuppressive drugs).\n* Has a diagnosis of immunodeficiency or is receiving chronic systemic steroid therapy (in dosing exceeding 10 mg daily of prednisone equivalent) or any other form of immunosuppressive therapy within 7 days prior randomization. Subjects with asthma that require intermittent use of bronchodilators, inhaled steroids, or local steroid injections would not be excluded from the study.\n* Had prior treatment with any other anti-PD-1, or PD-L1 or PD-L2 agent or an antibody or a small molecule targeting other immuno-regulatory receptors or mechanisms in the 12 months prior to randomization.\n* Participation in another clinical study with an investigational agent or device during the 4 weeks prior to randomization.\n* Concurrent treatment with other experimental treatments for NSCLC while in the study.\n* Has a known sensitivity to any component of the planned systemic therapies (pembrolizumab, cisplatin/carboplatin, pemetrexed/paclitaxel/nab-paclitaxel) .\n* Pregnant or breastfeeding\n* Admitted to an institution by administrative or court order.",
+  "sex": "ALL",
+  "minimum_age": "18 Years",
+  "maximum_age": null,
+  "healthy_volunteers": false,
+  "locations": [
+    {
+      "facility": "Central Alabama Research",
+      "city": "Birmingham",
+      "country": "United States"
+    },
+    {
+      "facility": "Western Regional Medical Center, LLC",
+      "city": "Goodyear",
+      "country": "United States"
+    },
+    {
+      "facility": "St. Jude Herritage Medical Group",
+      "city": "Fullerton",
+      "country": "United States"
+    },
+    {
+      "facility": "Hoag Family Cancer Institute - Hoag Memorial Hospital",
+      "city": "Newport Beach",
+      "country": "United States"
+    },
+    {
+      "facility": "Sutter Institute for Medical Research",
+      "city": "Sacramento",
+      "country": "United States"
+    },
+    {
+      "facility": "Baptist MD Anderson Cancer Center, Baptist Health",
+      "city": "Jacksonville",
+      "country": "United States"
+    },
+    {
+      "facility": "Florida Cancer Affiliates - Ocala Oncology",
+      "city": "Ocala",
+      "country": "United States"
+    },
+    {
+      "facility": "Moffitt Cancer Center",
+      "city": "Tampa",
+      "country": "United States"
+    },
+    {
+      "facility": "Northwest Oncology & Hematology",
+      "city": "Barrington",
+      "country": "United States"
+    },
+    {
+      "facility": "Elmhurst Hospital Nancy Knowles Cancer Center",
+      "city": "Elmhurst",
+      "country": "United States"
+    },
+    {
+      "facility": "Edward Cancer Center",
+      "city": "Naperville",
+      "country": "United States"
+    },
+    {
+      "facility": "Cancer Treatment Centers of America (CTCA)",
+      "city": "Zion",
+      "country": "United States"
+    },
+    {
+      "facility": "Parkview Packnett Family Cancer Institute",
+      "city": "Fort Wayne",
+      "country": "United States"
+    },
+    {
+      "facility": "Franciscan Health Indianapolis",
+      "city": "Indianapolis",
+      "country": "United States"
+    },
+    {
+      "facility": "University of Kansas Cancer Center",
+      "city": "Westwood",
+      "country": "United States"
+    },
+    {
+      "facility": "Luminis Health Radiation Oncology - Anne Arundel Health System",
+      "city": "Annapolis",
+      "country": "United States"
+    },
+    {
+      "facility": "University of Kansas Cancer Center - North",
+      "city": "Kansas City",
+      "country": "United States"
+    },
+    {
+      "facility": "University of Kansas Cancer Center - Lee's Summit",
+      "city": "Lee's Summit",
+      "country": "United States"
+    },
+    {
+      "facility": "University of Kansas Cancer Center - Overland Park",
+      "city": "Overland",
+      "country": "United States"
+    },
+    {
+      "facility": "New York Cancer & Blood Specialists (NYCBS)",
+      "city": "New Hyde Park",
+      "country": "United States"
+    }
+  ],
+  "source": {
+    "name": "ClinicalTrials.gov (U.S. National Library of Medicine)",
+    "url": "https://clinicaltrials.gov/study/NCT06216301",
+    "retrieved_at": "2026-11-02T16:15:35+00:00"
+  },
+  "synthetic": false
+}

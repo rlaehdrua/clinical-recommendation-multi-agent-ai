@@ -110,7 +110,7 @@
 ## 8. 팀 요청·결정 사항
 
 1. **WP7 (어댑터)**: 질문별 출처 요청은 WP3 PR #7로 처리됨(형식 `q:r<n>:<qid>`, "모름" 보류 규칙은 WP3 문서 §3). 남은 일: 이 어댑터가 `source_ref`를 넘겨 `facts_added`를 채우는 것.
-2. **선우/팀 (audit.py)**: ~~`load_run_v2`가 진단을 `issues`에 합치는 확장~~ → `audit.py`를 바꾸지 않는 별도 모듈 `engine/audit_diagnostics.py`로 해결 (`issues`의 기존 의미와 `verify_run`이 유지됨). 남은 결정: CLI·웹 Inspector 화면에서 이 함수를 기본으로 쓸지, 정상 기록도 조회 시 검사할지(§3 WP8 계약 5). `audit.py` 요청: `load_records`의 문제 목록이 파일의 추가 필드 키 이름(`_issue_fields`)과 `schema_version` 값(`unsupported_schema:`)을 그대로 담아 `view["issues"]`·기존 HTML로 나갑니다. 진단 쪽과 같이 값 없이 보고하도록 수정 필요(이 PR은 `audit.py`를 바꾸지 않음).
+2. **선우/팀 (audit.py)**: ~~`load_run_v2`가 진단을 `issues`에 합치는 확장 (Inspector v2에서 차단 단계가 보이도록)~~ → `audit.py`를 바꾸지 않는 별도 모듈 `engine/audit_diagnostics.py`로 해결 (`issues`의 기존 의미와 `verify_run`이 유지됨). 남은 결정: CLI·웹 Inspector 화면에서 이 함수를 기본으로 쓸지, 정상 기록도 조회 시 검사할지(§3 WP8 계약 5). `audit.py` 요청: `load_records`의 문제 목록이 파일의 추가 필드 키 이름(`_issue_fields`)과 `schema_version` 값(`unsupported_schema:`)을 그대로 담아 `view["issues"]`·기존 HTML로 나갑니다. 진단 쪽과 같이 값 없이 보고하도록 수정 필요(이 PR은 `audit.py`를 바꾸지 않음).
 3. **동겸 (WP5 정책) + 팀**: (a) 환자의 "모름"을 연락 실패와 같은 `no_response`로 볼지(현재 WP7 해석), 항목 단위 무응답으로 볼지 (b) 무응답 한 번에 `patient_interview` 전체가 그 환자에 대해 실패 처리되는 규칙이 의도인지. 계약 `OutcomeStatus`에는 '답했지만 모름'이 따로 없음. 오프라인 실험의 질문 수·회수율에 크게 영향. 진행 상황은 WP3 문서 §3.4·§5(Q-D1~D3, PR #10 기준, 리뷰어 확인 전)를 봅니다.
 4. 직접 역전: 계약 금지 유지 + 차단 진단(현재) vs 계약 변경.
 5. 선택됐지만 묻지 않은 행동의 기록 여부(`proposed`/`not_executed` 지원은 있음, 지금은 건수만).
@@ -128,3 +128,5 @@
 | §8-3 | PR #5: 원래 질문 + WP3 문서 §3.4·§5 참조 | — |
 
 §3·§4·§9는 자동 병합됩니다. 다른 팀원 문서는 고치지 않습니다.
+
+이 충돌은 `integration/dcvc` `0b402c6`과의 병합에서 위 표대로 해결했습니다.

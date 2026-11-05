@@ -75,30 +75,108 @@ _locks: dict[str, threading.Lock] = {}
 _locks_guard = threading.Lock()
 
 
+# 선정 기준 원문이 이보다 길면 선정·제외 기준을 따로 요청합니다. 한 번에 받으면 구조화 출력이 max_tokens(16000)를 넘어
+# 잘린 사례가 있었습니다(NCT05255302 7,939자, NCT04892953 10,968자). 그보다 짧은 시험은 지금과 같은 한 번 호출입니다.
+SPLIT_PARSE_CHARS = 6000
+_SPLIT_KINDS = (("inclusion", "선정(Inclusion)"), ("exclusion", "제외(Exclusion)"))
+
+
+def split_parse(trial: dict) -> bool:
+    """선정·제외 기준을 나눠 요청할지.
+
+    동결 시험(data/parsed/FROZEN.json)은 길어도 나누지 않습니다. 동결 기준표는 한 번 호출로 만들어졌으므로,
+    --unfreeze로 다시 컴파일할 때도 같은 호출 방식·캐시 키를 써야 동결본과 비교할 수 있습니다
+    (예: NCT06908096 6,801자 > SPLIT_PARSE_CHARS).
+    """
+    if len(trial.get("eligibility_criteria") or "") <= SPLIT_PARSE_CHARS:
+        return False
+    from .. import trial_store  # 지연 import: trial_store가 이 모듈을 import함
+
+    return not trial_store.is_frozen(trial["trial_id"])
+
+
+def parse_mode(trial: dict) -> str:
+    """저장소 메타에 남기는 파싱 방식: "split"(선정·제외 따로) 또는 "single". parser_prompt_hash에는 잡히지 않음."""
+    return "split" if split_parse(trial) else "single"
+
+
+# 분할 파싱에서 요청하지 않은 종류라 뺀 규칙 한 줄 (parsing_notes에 남기고 check_integrity가 integrity_issues로 올림).
+# 캐시·실행 파일에는 LLM 원본(메모 포함)만 있고 integrity_issues는 불러올 때마다 다시 계산하므로, 메모에서 되살립니다.
+SPLIT_DROP_TAG = "[분할 파싱 제외]"
+_SPLIT_DROP = re.compile(r"^\[분할 파싱 제외\] (inclusion|exclusion) 호출 #(\d+) \(rule_id=(.*?), kind=(\w+)\): (.*)$")
+
+
+def split_drop_issues(parsed: ParsedTrial) -> list[str]:
+    """parsing_notes에 남은 분할 파싱 제외 규칙 -> integrity_issues 줄 ("<키>: <문제>")."""
+    out = []
+    for line in (parsed.parsing_notes or "").splitlines():
+        m = _SPLIT_DROP.match(line.strip())
+        if m:
+            call, n, rid, kind, text = m.groups()
+            out.append(f"split_{call}_{n}: 분할 파싱 {call} 호출이 kind={kind} 규칙(rule_id={rid})을 냄 -> 병합에서 뺌, "
+                       f"원문 대조 필요 ({text})")
+    return out
+
+
 def parse_trial(trial: dict, *, use_cache: bool = True) -> ParsedTrial:
     rendered = _render_trial(trial)
-    key = hashlib.sha256((config.MODEL + SYSTEM + rendered).encode()).hexdigest()[:16]
+    split = split_parse(trial)
+    key = hashlib.sha256((config.MODEL + SYSTEM + rendered + ("|split" if split else "")).encode()).hexdigest()[:16]
     cache_path = config.CACHE_DIR / "parsed" / f"{trial['trial_id']}_{key}.json"
     # 여러 환자를 동시에 처리할 때 같은 시험을 중복 파싱하지 않도록 시험별 잠금
     with _locks_guard:
         lock = _locks.setdefault(str(cache_path), threading.Lock())
     with lock:
-        parsed = _parse_trial_locked(trial, rendered, cache_path, use_cache)
+        parsed = _parse_trial_locked(trial, rendered, cache_path, use_cache, split)
     # 캐시에는 LLM 원본을 두고, 불러올 때마다 검사 (검사 규칙이 바뀌어도 캐시를 버릴 필요 없음)
     parsed.integrity_issues = check_integrity(parsed, trial)
     return parsed
 
 
-def _parse_trial_locked(trial: dict, rendered: str, cache_path, use_cache: bool) -> ParsedTrial:
+def _parse_split(rendered: str) -> ParsedTrial:
+    """선정·제외 기준을 따로 요청해 합침. 요청하지 않은 종류의 규칙은 버리고 메모에 남김.
+
+    버린 규칙은 한 줄씩(SPLIT_DROP_TAG) 메모에 남겨 check_integrity가 integrity_issues에도 올립니다.
+    """
+    parts = []
+    for kind, label in _SPLIT_KINDS:
+        parts.append(llm.structured(
+            ParsedTrial,
+            system=SYSTEM,
+            user=rendered + f"\n\n위 임상시험의 {label} 기준만 원자 규칙으로 구조화하세요. 원문이 길어 선정·제외 기준을 "
+                            f"나눠 요청합니다. rules에는 kind=\"{kind}\"인 규칙만 넣고, 나머지 필드는 평소처럼 작성하세요.",
+            effort=config.EFFORT["criteria_parser"],
+        ))
+    inc, exc = parts
+    dropped = [(kind, r) for (kind, _), part in zip(_SPLIT_KINDS, parts) for r in part.rules if r.kind != kind]
+    notes = f"[선정 기준 호출] {inc.parsing_notes}\n[제외 기준 호출] {exc.parsing_notes}"
+    if dropped:
+        notes += f"\n[분할 파싱] 요청하지 않은 종류의 규칙 {len(dropped)}개를 뺌"
+        seq = {"inclusion": 0, "exclusion": 0}
+        for call, r in dropped:
+            seq[call] += 1
+            text = " ".join(r.text.split())[:120]
+            notes += f"\n{SPLIT_DROP_TAG} {call} 호출 #{seq[call]} (rule_id={r.rule_id}, kind={r.kind}): {text}"
+    return inc.model_copy(update={
+        "rules": [r for r in inc.rules if r.kind == "inclusion"] + [r for r in exc.rules if r.kind == "exclusion"],
+        "cohorts": inc.cohorts + [c for c in exc.cohorts if c not in inc.cohorts],
+        "parsing_notes": notes,
+    })
+
+
+def _parse_trial_locked(trial: dict, rendered: str, cache_path, use_cache: bool, split: bool = False) -> ParsedTrial:
     if use_cache and cache_path.exists():
         return ParsedTrial.model_validate_json(cache_path.read_text(encoding="utf-8"))
 
-    parsed = llm.structured(
-        ParsedTrial,
-        system=SYSTEM,
-        user=rendered + "\n\n위 임상시험의 기준을 원자 규칙으로 구조화하세요.",
-        effort=config.EFFORT["criteria_parser"],
-    )
+    if split:
+        parsed = _parse_split(rendered)
+    else:
+        parsed = llm.structured(
+            ParsedTrial,
+            system=SYSTEM,
+            user=rendered + "\n\n위 임상시험의 기준을 원자 규칙으로 구조화하세요.",
+            effort=config.EFFORT["criteria_parser"],
+        )
     parsed.trial_id = trial["trial_id"]
     _renumber(parsed)
 
@@ -154,6 +232,26 @@ def _integrity_problem(rule: Rule, source_numbers: set[float]) -> str | None:
     return None
 
 
+_INT_LIST = re.compile(r"^\s*\d+(?:\s*,\s*\d+)*\s*$")
+
+
+def normalize_engine_fields(rule: Rule) -> str | None:
+    """규칙 엔진이 읽을 수 있는 같은 뜻의 표현으로 바꿈. 바꿨으면 설명, 아니면 None.
+
+    ECOG "0 or 1"을 파서가 operator="in", value="0,1"로 내는 경우가 있는데, 규칙 엔진의 ecog 판정은 숫자 비교만
+    지원합니다. 0부터 빈틈없이 이어진 정수 목록일 때만 "<= 최댓값"으로 바꿉니다(뜻이 같음). 그 밖의 목록은 그대로 두며,
+    이어지는 무결성 검사가 LLM 판정으로 넘깁니다.
+    """
+    if rule.field != "ecog" or rule.operator != "in" or not rule.value or not _INT_LIST.match(rule.value):
+        return None
+    nums = sorted({int(n) for n in rule.value.split(",")})
+    if nums[0] != 0 or nums != list(range(nums[0], nums[-1] + 1)):
+        return None
+    before = f"{rule.field} {rule.operator} {rule.value}"
+    rule.operator, rule.value = "<=", str(nums[-1])
+    return f"{rule.rule_id}: {before} -> {rule.field} {rule.operator} {rule.value}"
+
+
 def demote_engine_fields(rule: Rule) -> None:
     """규칙 엔진 필드를 비워 LLM이 원문으로 판정하게 함. unit도 함께 비워 필드 없이 단위만 남지 않게 함."""
     rule.field = rule.operator = rule.value = rule.unit = None
@@ -168,15 +266,21 @@ def check_integrity(parsed: ParsedTrial, trial: dict) -> list[str]:
     """
     source_numbers = numbers_in(f"{trial.get('minimum_age') or ''} {trial.get('maximum_age') or ''}")
     issues = []
+    normalized = []
     for rule in parsed.rules:
+        change = normalize_engine_fields(rule)
+        if change:
+            normalized.append(change)
         problem = _integrity_problem(rule, source_numbers)
         if problem is None:
             continue
         issues.append(f"{rule.rule_id}: {problem} ({rule.field} {rule.operator} {rule.value}) -> LLM 판정으로 전환")
         demote_engine_fields(rule)
+    if normalized:
+        parsed.parsing_notes += "\n[코드 정규화] " + " / ".join(normalized)
     if issues:
         parsed.parsing_notes += "\n[코드 검증] " + " / ".join(issues)
-    return issues
+    return issues + split_drop_issues(parsed)  # 분할 파싱에서 뺀 규칙 (메모에는 이미 있으므로 다시 적지 않음)
 
 
 def rules_json(parsed: ParsedTrial) -> str:

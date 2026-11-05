@@ -261,7 +261,7 @@ class Session:
         try:
             r = profile_facts.ingest_profile(self.fact_store, self.profile.model_copy(deep=True),
                                              raw_text=self.case.raw_text, input_source=self.case.input_source,
-                                             session_id=self.session_id)
+                                             session_id=self.session_id, qa_pairs=self.qa_log)
             entry.update(status="partial" if r.rejected else "ok", added=len(r.added), duplicates=len(r.duplicates),
                          skipped=len(r.skipped), rejected=len(r.rejected),
                          rejected_kinds=sorted({name.split(":")[0] for name, _ in r.rejected}))
