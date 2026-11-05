@@ -203,3 +203,13 @@ def test_offline_records_never_builds_an_api_client(tmp_path, monkeypatch):
     hcs, _, sc = _load()
     r = orc.record_case(hcs[0], TRIALS, sc, tmp_path / "noapi")
     assert r.method_status == "ok" and r.complete and made == []
+
+
+def test_reversal_metrics_read_real_offline_runs(runs):
+    # 오프라인 대역은 확정 상태를 만들지 않으므로 0이 예상값. 정의 검증은 test_reversal_metrics의 고정 이력으로 함
+    from ctrec.engine import reversal_metrics as rm
+    _, results = runs
+    s, problems = rm.compute_for_runs([r.run_dir for r in results])
+    assert problems == [] and s.runs == len(results) and s.pairs_observed > 0
+    assert s.conflicting_steps == s.duplicate_records_ignored == s.history_gaps == 0
+    assert s.events == [] and s.direct_reversal_violations == 0

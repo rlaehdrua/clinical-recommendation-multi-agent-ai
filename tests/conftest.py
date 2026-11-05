@@ -36,3 +36,14 @@ def _stop_leftover_web_runs(monkeypatch):
         t.join(STOP_TIMEOUT_S)
     left = [t.name for t in workers if t.is_alive()]
     assert not left, f"웹 실행 작업 스레드가 {STOP_TIMEOUT_S}초 안에 끝나지 않음: {left}"
+
+
+@pytest.fixture()
+def calls(monkeypatch):
+    """Session 대역 (프로필·매칭 LLM·질문·추천)과 질문·추천 입력 기록. 정의는 test_session_fact_shadow.record_calls.
+
+    여러 테스트 모듈이 같은 픽스처를 쓰므로 여기 둠 (다른 모듈에서 픽스처를 import하면 ruff F811).
+    """
+    from test_session_fact_shadow import record_calls  # 지연 import: 이 픽스처를 쓰는 테스트만 그 모듈을 읽음
+
+    return record_calls(monkeypatch)

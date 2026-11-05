@@ -20,21 +20,33 @@
 - source_quote가 없는 단일 값 항목(age, sex, ecog, primary_diagnosis, disease_stage): 인용을 만들지 않고 출처는 unknown.
 - observed_at: 항목의 date가 YYYY, YYYY-MM, YYYY-MM-DD일 때만. 다른 표기는 해석하지 않고 observed_at_text에 보존.
 
+질문별 출처 (qa_pairs, 선택)
+- qa_pairs(확인 질문 문답 기록)를 넘기면, 답변에서 확인된 인용이 정확히 한 문답의 답에만 들어 있을 때 출처 참조를
+  계약 질문 경로와 같은 형식 "q:r<라운드>:<질문ID>"로 남깁니다. 둘 이상이거나 찾지 못하면 "raw_text:answers"(추정하지 않음).
+- 인용이 걸린 문답의 답이 모두 "모름"·거부·미응답이면(하나든 여럿이든) 사실로 만들지 않습니다(응답 상태이지 의료
+  사실이 아님). 이 검사는 유일성 검사보다 먼저 하므로 "모름"이 여러 번 나와도 raw_text:answers 사실이 되지 않습니다.
+- 그 문답이 의사 참고용(purpose="physician_reference")이면 사실로 만들지 않습니다(적격성 판정 근거가 아님, P14 D4).
+  인용이 걸린 문답이 모두 의사 참고용일 때도 같습니다. 적격성 문답과 함께 걸리면 모호하므로 "raw_text:answers".
+- qa_pairs를 넘기지 않으면(None) 이전과 같은 결과입니다.
+
 중복 방지
 같은 환자·세션에 같은 프로필을 다시 넣으면 같은 사실을 또 만들지 않습니다. 같은 근거인지는
 (항목, 값, 단위 표기, 관찰 시점, 출처, 출처 참조) 전체로 판단하므로, 같은 값이라도 관찰 시점·출처·인용이 다르면
 별개의 사실로 남고, 값이 바뀌면 새 사실이 되어 fact_store의 충돌 표시를 따릅니다.
+라운드 간: 앞 라운드에 질문별 출처(q:r1:Q1)로 저장된 인용이 뒤 라운드 답에도 들어 있어 모호해지면(raw_text:answers),
+그 인용이 걸린 문답의 질문별 출처로 저장된 사실을 같은 근거로 보고 새로 만들지 않습니다(_dedup_keys).
 """
 
 from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from typing import Sequence
 
 from . import evidence
 from .fact_store import (_PATIENT_ID, FactStore, FactStoreError, PatientFact, SourceReference, _check_value,
                          _norm_field)
-from .schemas import Fact, LabValue, PatientProfile
+from .schemas import Fact, LabValue, PatientProfile, QAPair
 from .tools.rule_engine import _norm_unit, canonical_lab
 
 _ISO_DATE = re.compile(r"^\d{4}(-\d{2}(-\d{2})?)?$")
@@ -48,10 +60,44 @@ class IngestResult:
     duplicates: list[str] = field(default_factory=list)  # 이미 있어 만들지 않은 사실의 fact_id
     skipped: list[str] = field(default_factory=list)  # 값이 없어 옮기지 않은 항목
     rejected: list[tuple[str, str]] = field(default_factory=list)  # (항목, 사유): 이름·값이 저장소 규칙에 맞지 않아 옮기지 못함
+    # qa_pairs를 넘겼을 때만 채움: 사실로 만들지 않은 항목 (항목, 사유: "non_answer" | "physician_reference")
+    withheld: list[tuple[str, str]] = field(default_factory=list)
 
 
 def _ws(s: str) -> str:
     return re.sub(r"\s+", " ", s).strip()
+
+
+def _qa_ref(pair) -> str:
+    return f"q:r{pair.round}:{pair.question_id}"
+
+
+def _answer_links(quote: str, qa_pairs, session_id: str | None) -> list:
+    """인용이 답에 들어 있는 문답 (같은 세션만, 세션을 모르면 모두)."""
+    q = _ws(quote)
+    return [p for p in qa_pairs
+            if (session_id is None or p.session_id in (None, session_id)) and q and q in _ws(p.answer or "")]
+
+
+def _link_answer(quote: str | None, ref: SourceReference, qa_pairs, session_id: str | None):
+    """답변에서 확인된 인용을 질문 단위로 연결. 반환: (새 SourceReference, 보류 사유 | None)."""
+    from .evidence_directness import declared_purpose  # 지연 import: evidence_directness가 이 모듈보다 무거움
+    from .question_contract import non_answer
+
+    if qa_pairs is None or ref.ref != "raw_text:answers" or not quote:
+        return ref, None
+    links = _answer_links(quote, qa_pairs, session_id)
+    purposes = {declared_purpose(p) for p in links}
+    if links and purposes == {"physician_reference"}:
+        return ref, "physician_reference"
+    if links and all(non_answer(p.answer) for p in links):
+        return ref, "non_answer"  # 연결된 문답이 모두 "모름"·거부·미응답 (몇 개든): 모호함보다 먼저 봄
+    if len(links) != 1:
+        return ref, None  # 모호하거나 찾지 못함: raw_text:answers 유지
+    pair = links[0]
+    if declared_purpose(pair) != "eligibility":
+        return ref, None  # 목적을 밝히지 않은 문답: 질문 단위로 연결하지 않음
+    return SourceReference(kind="answer", ref=_qa_ref(pair), quote=ref.quote), None
 
 
 def _locate(quote: str | None, raw_text: str | None, input_source: str) -> tuple[str, SourceReference]:
@@ -85,6 +131,23 @@ def evidence_key(f: PatientFact) -> tuple:
             f.source_type, ref.kind, ref.ref, _ws(ref.quote) if ref.quote else None)
 
 
+_REF_AT = 8  # evidence_key 안에서 source_reference.ref의 위치
+
+
+def _dedup_keys(key: tuple, quote: str | None, ref: SourceReference, qa_pairs, session_id: str | None) -> set:
+    """중복 판정에 쓸 키들. 질문 단위로 연결되지 못한(모호한) 답변 인용은 그 인용이 걸린 문답의 질문별 출처로
+    이미 저장된 사실도 같은 근거로 봄.
+
+    Session은 라운드마다 프로필 전체를 다시 넣으므로, 1라운드에 q:r1:Q1로 저장된 짧은 인용("네" 등)이 2라운드 답에도
+    들어 있으면 2라운드에서는 모호해져 raw_text:answers가 됨 -> ref만 달라 같은 사실이 또 생기는 것을 막음.
+    새 사실의 출처 참조는 그대로 raw_text:answers (추정해서 질문에 붙이지 않음).
+    """
+    keys = {key}
+    if qa_pairs is not None and quote and ref.ref == "raw_text:answers":
+        keys |= {key[:_REF_AT] + (_qa_ref(p),) + key[_REF_AT + 1:] for p in _answer_links(quote, qa_pairs, session_id)}
+    return keys
+
+
 def _items(profile: PatientProfile) -> list[tuple[str, object, str | None, str | None, str | None]]:
     """(field, value, unit, date, quote). 값이 없는 항목은 value=None."""
     out: list[tuple] = []
@@ -107,11 +170,13 @@ def _items(profile: PatientProfile) -> list[tuple[str, object, str | None, str |
 
 
 def ingest_profile(store: FactStore, profile: PatientProfile, *, raw_text: str | None = None,
-                   input_source: str = "unknown", session_id: str | None = None) -> IngestResult:
+                   input_source: str = "unknown", session_id: str | None = None,
+                   qa_pairs: Sequence[QAPair] | None = None) -> IngestResult:
     """PatientProfile의 사실을 store에 추가. 기존 사실은 바꾸지 않고, 같은 근거는 다시 만들지 않음.
 
     raw_text: 프로필을 만든 환자 원문(확인 질문 답변 포함). 없으면 인용 위치를 확인할 수 없어 출처는 unknown.
     input_source: 처음 입력의 선언된 출처 (PatientCase.input_source).
+    qa_pairs: 확인 질문 문답 기록 (Session.qa_log). 넘기면 답변 인용을 질문 단위로 연결 (모듈 설명 "질문별 출처").
     """
     if input_source not in evidence.INPUT_SOURCES:
         raise ValueError(f"input_source는 {', '.join(evidence.INPUT_SOURCES)} 중 하나: {input_source!r}")
@@ -132,12 +197,16 @@ def ingest_profile(store: FactStore, profile: PatientProfile, *, raw_text: str |
             result.rejected.append((name, str(e)))
             continue
         source_type, ref = _locate(quote, raw_text, input_source)
+        ref, withhold = _link_answer(quote, ref, qa_pairs, session_id)
+        if withhold:
+            result.withheld.append((name, withhold))
+            continue
         observed_at, observed_text = _dates(date)
         probe = PatientFact(fact_id="probe", patient_id=pid, session_id=session_id, field=name, value=value,
                             unit=unit or None, source_type=source_type, source_reference=ref, observed_at=observed_at,
                             observed_at_text=observed_text, recorded_at="", version=0)
-        key = evidence_key(probe)
-        existing = next((f for f in store.facts(pid, name) if evidence_key(f) == key), None)
+        keys = _dedup_keys(evidence_key(probe), quote, ref, qa_pairs, session_id)
+        existing = next((f for f in store.facts(pid, name) if evidence_key(f) in keys), None)
         if existing is not None:
             result.duplicates.append(existing.fact_id)
             continue
