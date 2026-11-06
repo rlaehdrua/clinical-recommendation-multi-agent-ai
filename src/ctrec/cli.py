@@ -186,10 +186,12 @@ def _run_case(case: PatientCase, trials: dict[str, dict], args, answerer) -> Ses
     )
     llm.reset_usage()
     tracer.log("pipeline", "start", message=f"mode={args.mode} model={config.MODEL} trials={len(trials)}")
-    if args.mode == "agent":
-        Orchestrator(session).run()
-    else:
-        session.run_fixed()
+    from .web import engine_runner  # CTREC_POLICY_MODE=engine -> 확인 질문을 정책 엔진이 고름 (WP8, 기본 legacy)
+    with engine_runner.for_mode(session):
+        if args.mode == "agent":
+            Orchestrator(session).run()
+        else:
+            session.run_fixed()
     session.save(out_dir)
     _write_run_meta(out_dir, session, args, fact_dir, run_id)
     u = session.usage

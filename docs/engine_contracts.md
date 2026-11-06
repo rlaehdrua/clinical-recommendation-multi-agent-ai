@@ -41,7 +41,7 @@ from ctrec.decision_state import Action as LegacyAction
 | I-1 | `PairKey`, `PairStatus` | patient_alias, trial_id / 7개 상태 | 별칭 형식, 전이 표 `ALLOWED_TRANSITIONS`, `check_transition(before, after, authority)` |
 | I-2 | `CriterionResult` | pair, rule_id, state, adjudication, decided_by, required_evidence, evidence_satisfied, evidence_fact_ids, inputs_used, gap, evaluator_version, criterion_version | 판정 권한 (§2-3) |
 | I-3 | `Action` | action_id, action_type, patient_alias, source_id, target_trial_ids, target_criteria, expected_cost, reason_code, tier, value_score, priority, sequence, safety_required, fingerprint, legacy_action_id, policy_version | target_criteria의 시험 ⊆ target_trial_ids, 키 형식 |
-| I-4 | `ActionOutcome` | action_id, status(succeeded/partial/failed/no_response/not_executed), new_fact_ids, cost_charged, charge_keys, latency_minutes, error_code | 실패·무응답·미실행 → 사실 0개, 실패·무응답 → error_code 필수, 부분 성공 → 사실 ≥1, 미실행 → 비용 0 |
+| I-4 | `ActionOutcome` | action_id, status(succeeded/partial/failed/no_response/not_executed), new_fact_ids, cost_charged, charge_keys, latency_minutes, error_code | 실패·무응답·미실행 → 사실 0개, 실패·무응답 → error_code 필수, 부분 성공 → 사실 ≥1, 미실행 → 비용 0. 실패 범위(`failure_scope`, 0.2 후보 추가·WP5): `no_answer` → 항목 단위, `unreachable`·`declined_all` → 정보원 단위, 그 밖의 코드 → 정보원 단위 |
 | I-5 | `InformationSource` | source_id, kind, provides_fields, request_cost, per_item_minutes, can_verify, alternatives | 자기 자신을 대체로 둘 수 없음 |
 | I-6 | `EffortBudget` | coordinator_minutes, clinician_minutes, llm_cost_usd, per_patient_floor_minutes, per_patient_cap_minutes, horizon_steps | floor ≤ cap, floor ≤ 전체 |
 | I-7 | `DecisionRecord` (+ `CriterionChange`, `PairTransition`) | schema_version `ctrec.decision_record/v2`, run_id, step, action, outcome, facts_added, criteria, pairs, policy_version, evaluator_version, fact_version_before/after | outcome.action_id = action.action_id, facts_added ⊆ outcome.new_fact_ids, 결과 없이 재평가 금지, 재사용 기준은 판정 불변, 다른 환자 쌍 금지, 전이 표 |
@@ -85,7 +85,7 @@ from ctrec.decision_state import Action as LegacyAction
 | 영역 | 변경 | 하위 호환 |
 |---|---|---|
 | 버전 | `CONTRACT_VERSION = dcvc.engine.contracts/0.2`, `SUPPORTED_CONTRACT_VERSIONS = {0.1, 0.2}`. 목록 밖 버전의 `DecisionRecord`는 거부 | 0.1 기록 그대로 읽음 |
-| I-1 쌍 상태 | `derive_pair_status` 안전 경계: ELIGIBLE이라도 필수 기준 gap이 있으면 확정 아님(우선순위 정보 없음 > 확인 필요 > 임상의 판단). INELIGIBLE은 `mismatch == "confirmed"`일 때만 확정(None·none·provisional → VERIFICATION_PENDING). 소진 규칙은 모든 판정에 같게 적용. 알 수 없는 gap 값은 거부. 신규 `pending_kinds()` | 의미 변경(확정을 내리기만 함). 0.1 테스트 표의 기대값은 모두 유지 |
+| I-1 쌍 상태 | `derive_pair_status` 안전 경계: ELIGIBLE이라도 필수 기준 gap이 있으면 확정 아님(우선순위 정보 없음 > 확인 필요 > 임상의 판단). INELIGIBLE은 `mismatch == "confirmed"`일 때만 확정(None·none·provisional → VERIFICATION_PENDING). 소진 규칙은 모든 판정에 같게 적용. 알 수 없는 gap 값은 거부. 판정에 적용된 필수 기준이 0개(`required_criteria=0`)면 ELIGIBLE이라도 NOT_EVALUATED(2026-11-05). 신규 `pending_kinds()` | 의미 변경(확정을 내리기만 함). 0.1 테스트 표의 기대값은 모두 유지 |
 | I-1 코호트 | `cohort_state.required_gaps`: 판정에 적용된 기준만(OR의 다른 갈래·절차 기준 제외) + 확정 판정의 근거 상충(`conflict_on_decided`)을 conflict로 셈. `PairState.pending_kinds`, `PairState.mismatch` | 필드 추가 |
 | I-2 판정 출처 | `decided_by`에 `contract_evaluator`(승인 IR + 질문 계약 명제 사실, LLM 아님). `EvidenceRef`(사실 ID·`prop:<명제 키>`·출처·검증 상태·계약 ID/버전), `CriterionResult.evidence_refs`. 진료 기록 필요 기준은 문서 검증 안 된 근거로 `evidence_satisfied=True` 불가. UNKNOWN은 근거 충족 불가 | 필드 추가(기본 빈 값) |
 | 비용 | 축 5개·단위(분, USD) 고정. 대기 최댓값 합산은 같은 단계 병렬 요청에만 유효(문서화). 순차 경과 시간은 시뮬레이터가 계산 | 변경 없음 |

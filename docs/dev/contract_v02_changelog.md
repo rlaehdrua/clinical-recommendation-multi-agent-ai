@@ -20,6 +20,7 @@
 | INELIGIBLE + provisional / confirmed | VP / CONFIRMED | 같음 | |
 | (INELIGIBLE 미확정 / ELIGIBLE 미확정) + exhausted | VP 또는 확정 | **BLOCKED_FAILURE** (INFO_MISSING·VP일 때) | 소진 규칙을 모든 판정에 같게 |
 | 알 수 없는 gap 문자열 | 무시 | **ValueError** | 오타가 확정으로 새지 않게 |
+| ELIGIBLE + 판정에 적용된 필수 기준 0개 (`required_criteria=0`, 2026-11-05 추가) | CONFIRMED_ELIGIBLE | **NOT_EVALUATED** | 기존 Matcher는 기준 목록이 비면 ELIGIBLE을 돌려줌 -> 근거 없는 적격 확정 차단. `cohort_state`가 required 기준 수를 넘김. 개수를 모르는 호출(None)은 이전과 같음 |
 
 - 신규 `pending_kinds(eligibility, gaps, mismatch, exhausted)`: 우선순위로 가려진 사유까지 전체 반환. 추가 종류 `exclusion_unverified`(불충족 근거 미검증), `sources_exhausted`. 확정·평가 실패면 빈 집합.
 - `cohort_state.required_gaps(trial)`: 판정에 적용된 기준(`requirement == "required"`)만. **OR의 다른 갈래(`alternative_cohort`)와 절차 기준(`waivable`)은 제외** — 닫힌 갈래의 gap이 열린 경로를 미해결로 만들지 않음. 확정 판정의 근거 상충(`conflict_on_decided`)은 gap이 none이어도 `conflict`로 셈(0.1에서는 놓침).
@@ -77,3 +78,12 @@
 4. 쌍 상태 "확정 부적격"을 문서 검증 불충족으로만 정의한 것(자기 보고 허용 기준 포함)이 M3·M5 연구 정의와 맞는지.
 5. 정보원 비용 실측·문헌값과 `cost_reference` ID 체계.
 6. 승인 시 `CONTRACT_STATUS = "APPROVED"`로 바꾸고 이 문서를 확정본으로.
+
+## 0.2 후보 추가 (2026-11-04, WP5): 실패 범위
+
+- 문제: 환자가 질문 하나에 "모름"이라고 답해도 `ActionOutcome(no_response)` 하나로 그 환자의 `patient_interview` 정보원 전체가 실패 처리되어, 다른 문진 질문까지 중단되고 대상 시험이 `BLOCKED_FAILURE`가 됨. masked 101건 오프라인 실행의 `BLOCKED_FAILURE` 104건이 모두 이 경로.
+- 계약 추가(필드 변경 없음, 상수·함수만): `NO_ANSWER = "no_answer"`(항목 단위), `UNREACHABLE = "unreachable"`·`DECLINED_ALL = "declined_all"`(정보원 단위), `ITEM_FAILURE_CODES`, `SOURCE_FAILURE_CODES`, `failure_scope(status, error_code)`. 모르는 코드는 정보원 단위(기존 동작). `no_answer`는 `record_producer.NO_ANSWER_ERROR`와 같은 값.
+- 운영 상태: `OpsState.failed_items`(정보원, 항목 키), `OpsState.exhausted_items`(남은 정보원이 없는 항목). 항목 키는 `decision_state.info_key`(구조화 필드·바이오마커는 시험 사이에서 공유).
+- 쌍 소진(Q-D2): 판정에 필요한 기준의 남은 gap이 모두 얻을 수 있는 정보(missing·stale·unverified)이고 그 항목이 전부 소진됐을 때만 `BLOCKED_FAILURE`. 일부만 소진됐거나 임상의 판단·상충이 남아 있으면 기존 상태 유지.
+- 무응답 판별은 `engine.answers.answer_outcome`(= `question_contract.non_answer`) 하나로 통일. 실행기는 이 함수로 `error_code`를 정함.
+

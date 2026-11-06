@@ -16,7 +16,7 @@ from ctrec.decision_policy import candidates  # noqa: E402
 from ctrec.decision_state import build_state  # noqa: E402
 from ctrec.engine import contracts as C  # noqa: E402
 from ctrec.engine.bundles import SourceCatalog, bundle, charge_key  # noqa: E402
-from ctrec.engine.cohort_state import CohortState  # noqa: E402
+from ctrec.engine.cohort_state import CohortState, OpsState  # noqa: E402
 from ctrec.engine.cost import BudgetExceeded, EffortLedger  # noqa: E402
 from ctrec.engine.fairness import allocation_report, gini  # noqa: E402
 from ctrec.engine.policy import LegacyAdapterPolicy, plan_and_charge, plan_cohort  # noqa: E402
@@ -337,3 +337,118 @@ def test_catalog_validation_and_routing():
     with pytest.raises(ValueError):
         SourceCatalog((C.InformationSource(source_id="a", kind="document"),) * 2)
     assert cat.digest() == SourceCatalog().digest()
+
+
+# ------------------------------------------------------------ WP5: "모름"은 항목 단위 실패
+def _ask(pol, co, info_key):
+    return next(a for a in pol.propose(co) if a.info_key == info_key and a.action_type == "ASK_PATIENT")
+
+
+def _no_answer(a):
+    return C.ActionOutcome(action_id=a.action_id, status="no_response", error_code=C.NO_ANSWER,
+                           cost_charged=C.EffortCost(coordinator_minutes=6))
+
+
+def test_failure_scope_codes():
+    assert C.failure_scope("no_response", C.NO_ANSWER) == "item"
+    assert C.failure_scope("failed", C.NO_ANSWER) == "item"
+    assert C.failure_scope("no_response", C.UNREACHABLE) == "source"
+    assert C.failure_scope("no_response", C.DECLINED_ALL) == "source"
+    assert C.failure_scope("failed", "document_unavailable") == "source"  # 모르는 코드는 기존 동작(정보원 단위)
+    assert C.failure_scope("succeeded", None) is None and C.failure_scope("not_executed", None) is None
+
+
+def test_no_answer_blocks_only_that_item_and_keeps_other_questions():
+    """ECOG에 "모름" -> 그 항목만 문서 정보원으로, EGFR 문진은 계속. 정보원 전체·쌍 소진 없음."""
+    co = CohortState.from_decision_states({PA: _state_missing()})
+    pol = LegacyAdapterPolicy()
+    ecog = _ask(pol, co, "ecog")
+    other = [a for a in pol.propose(co) if a.action_type == "ASK_PATIENT" and a.info_key != "ecog"]
+    assert other  # 다른 문진 질문이 있는 상태에서 시작
+    co2, tr = pol.apply_outcome(co, ecog, _no_answer(ecog))
+    assert tr == () and [p.status for p in co2.pairs()] == [p.status for p in co.pairs()]
+    assert co2.ops[PA].failed_sources == frozenset()
+    assert co2.ops[PA].failed_items == frozenset({("patient_interview", "ecog")})
+    after = {a.fingerprint: a for a in pol.propose(co2)}
+    moved = after[ecog.fingerprint]
+    assert moved.action_type == "REQUEST_DOCUMENT" and moved.reason_code == "alternative_source_after_no_answer"
+    assert moved.source_id == "medical_record" and moved.purpose == "eligibility"
+    for a in other:  # 같은 정보원의 다른 항목은 그대로 문진
+        assert after[a.fingerprint].action_type == "ASK_PATIENT" and after[a.fingerprint].source_id == "patient_interview"
+
+
+def test_item_exhausted_blocks_pair_only_when_all_its_items_are_exhausted():
+    """ECOG를 문진·문서 모두에서 얻지 못하면 ECOG만 필요한 T2는 소진, ECOG·EGFR가 필요한 T1은 EGFR이 남아 그대로 (Q-D2)."""
+    co = CohortState.from_decision_states({PA: _state_missing()})
+    pol = LegacyAdapterPolicy()
+    ecog = _ask(pol, co, "ecog")
+    co2, _ = pol.apply_outcome(co, ecog, _no_answer(ecog))
+    doc = next(a for a in pol.propose(co2) if a.fingerprint == ecog.fingerprint)
+    co3, tr = pol.apply_outcome(co2, doc, C.ActionOutcome(action_id=doc.action_id, status="no_response",
+                                                          error_code=C.NO_ANSWER))
+    assert co3.ops[PA].exhausted_items == frozenset({"ecog"}) and co3.ops[PA].failed_sources == frozenset()
+    assert co3.pair(PA, "T2").status == C.PairStatus.BLOCKED_FAILURE
+    assert co3.pair(PA, "T1").status == co.pair(PA, "T1").status  # EGFR가 아직 남음
+    assert [(t.pair.trial_id, t.after, t.authority, t.reason_code) for t in tr] == [
+        ("T2", C.PairStatus.BLOCKED_FAILURE, "policy", "item_sources_exhausted")]
+    held = next(a for a in pol.propose(co3) if a.fingerprint == ecog.fingerprint)
+    assert held.action_type == "DEFER" and held.reason_code == "item_sources_exhausted" and held.source_id is None
+    assert co3.patients[PA].legacy_copy().fact_ids == co.patients[PA].legacy_copy().fact_ids  # 사실 생성 없음
+
+
+@pytest.mark.parametrize("code", [C.UNREACHABLE, C.DECLINED_ALL])
+def test_unreachable_or_declined_all_blocks_the_whole_source(code):
+    co = CohortState.from_decision_states({PA: _state_missing()})
+    pol = LegacyAdapterPolicy()
+    ecog = _ask(pol, co, "ecog")
+    co2, tr = pol.apply_outcome(co, ecog, C.ActionOutcome(action_id=ecog.action_id, status="no_response",
+                                                          error_code=code))
+    assert co2.ops[PA].failed_sources == frozenset({"patient_interview"})
+    assert all(a.source_id != "patient_interview" for a in pol.propose(co2))  # 문진 전체 중단
+    assert {t.reason_code for t in tr} <= {"sources_exhausted"}
+
+
+def test_one_non_answer_detector_for_all_executors():
+    from ctrec.decision_state import DECLINED_ANSWERS
+    from ctrec.engine import answers
+    from ctrec.engine import record_producer as rp
+    assert C.NO_ANSWER == rp.NO_ANSWER_ERROR  # 생산기가 기록하는 코드와 같은 값
+    for text in (*DECLINED_ANSWERS, "잘 모르겠어요", "기억이 안 나요", "모름.", "  ", None):
+        assert answers.answer_outcome(text) == ("no_response", C.NO_ANSWER), text
+    for text in ("네", "ECOG 1이에요", "아니요"):
+        assert answers.answer_outcome(text) == ("succeeded", None), text
+
+
+def _declined_state(info_key: str):
+    """실제 Session처럼 "모름" 답이 기록된 상태: 기존 정책은 그 항목을 다시 묻지 않고 DEFER(user_declined_or_exhausted)."""
+    st = _state_missing()
+    for t in st.trials.values():
+        for c in t.criteria:
+            if c.info_key == info_key:
+                c.asked, c.declined = 1, True
+    return st
+
+
+def test_legacy_decline_defer_becomes_document_request_after_engine_item_failure():
+    """실제 Session 경로 (선우 보고): "모름" 뒤 기존 정책은 문진을 다시 제안하지 않고 보류를 냄. 엔진이 그 항목의 실패를
+    기록했으면 그 보류도 대체 문서 요청으로 바꿔야 함. 실패 기록이 없으면(엔진 밖의 거부) 보류 그대로."""
+    pol = LegacyAdapterPolicy()
+    legacy = [a for a in candidates(_declined_state("ecog"), pol.cfg)[0] if a.info_key == "ecog"]
+    assert [(a.action_type, a.reason_code) for a in legacy] == [("DEFER", "user_declined_or_exhausted")]
+
+    plain = CohortState.from_decision_states({PA: _declined_state("ecog")})
+    held = next(a for a in pol.propose(plain) if a.info_key == "ecog")
+    assert (held.action_type, held.reason_code) == ("DEFER", "user_declined_or_exhausted")  # 실패 기록 없음
+
+    ops = {PA: OpsState(failed_items=frozenset({("patient_interview", "ecog")}))}  # 엔진이 기록한 항목 실패
+    co = CohortState.from_decision_states({PA: _declined_state("ecog")}, ops=ops)
+    moved = next(a for a in pol.propose(co) if a.info_key == "ecog")
+    assert (moved.action_type, moved.reason_code, moved.source_id) == (
+        "REQUEST_DOCUMENT", "alternative_source_after_no_answer", "medical_record")
+    assert moved.purpose == "eligibility" and moved.target_criteria == held.target_criteria
+
+    co2, tr = pol.apply_outcome(co, moved, _no_answer(moved))  # 문서에서도 못 얻음 -> 그 항목만 소진
+    assert co2.ops[PA].exhausted_items == frozenset({"ecog"})
+    last = next(a for a in pol.propose(co2) if a.info_key == "ecog")
+    assert (last.action_type, last.reason_code, last.source_id) == ("DEFER", "item_sources_exhausted", None)
+    assert co2.pair(PA, "T1").status != C.PairStatus.BLOCKED_FAILURE  # EGFR가 남아 있음
