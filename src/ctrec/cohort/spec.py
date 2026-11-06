@@ -276,9 +276,10 @@ class OraclePart(BaseModel):
     truth: dict[str, Holds]  # "환자|시험|기준" -> 실제 성립 여부 (yes/no). 임상의 판단 기준은 unknown (정답 없음)
     pair_label: dict[str, PairLabel]  # "환자|시험"
     label_reasons: dict[str, list[str]] = Field(default_factory=dict)  # UNLABELED 쌍 -> [expert_review, unbound_rules]
-    # 연결된 기준 중 임상의 판단 기준을 뺀 나머지만으로 본 결과 (fail = 하나라도 불통과, pass = 모두 통과).
-    # 확정 라벨이 아니며, 미연결·판단 기준이 있는 쌍을 어느 상태로 볼지 정할 때 참고용으로만 남김
-    bound_result: dict[str, Literal["pass", "fail"]] = Field(default_factory=dict)
+    # INELIGIBLE은 미연결·판단 기준이 남아도 모든 OR 경로에서 불통과가 확인되면 허용 (2026-11-07 결정)
+    # 연결된 기준 중 임상의 판단 기준을 뺀 나머지만으로 본 OR 경로별 결과 (generate.label_pair).
+    # pass = 불통과 없음, or_partial = 일부 경로만 불통과, fail = 모든 경로 불통과 (fail이면 쌍 라벨 INELIGIBLE)
+    bound_result: dict[str, Literal["pass", "or_partial", "fail"]] = Field(default_factory=dict)
 
 
 class Cohort(BaseModel):
