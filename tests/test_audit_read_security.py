@@ -587,3 +587,25 @@ def test_loader_issues_for_extra_key_and_schema_keep_only_safe_details(tmp_path)
     assert KO_MARK not in str(loaded.issues)
     assert loaded.issues == ["line 1: invalid_record:<extra>", "line 2: unsupported_schema:?"]
     _assert_no_marks(loaded, view, page)
+
+
+# --- 쓰기 검사: 기록은 JSON 문자열이므로 금지 문자열도 이스케이프된 모양까지 찾음 ---
+
+@pytest.mark.parametrize("text", ['pain "sharp" reported', "first line\nsecond line", "tab\there", "back\\slash", "한글 \"인용\" 문장"])
+def test_forbidden_text_is_found_after_json_escaping(tmp_path, text):
+    from ctrec.engine import contracts as c
+    from test_reversal_metrics import _chain
+    rec = _chain([c.PairStatus.CONFIRMED_ELIGIBLE, c.PairStatus.VERIFICATION_PENDING])[0]
+    rec = rec.model_copy(update={"facts_added": (text,)})
+    assert audit.sensitive_findings(rec, [text]) == ["forbidden_text"]
+    writer = audit.RecordWriter(tmp_path / audit.RECORDS_FILE, rec.run_id, forbidden_texts=[text])
+    with pytest.raises(audit.AuditError):
+        writer.write(rec)
+    assert not (tmp_path / audit.RECORDS_FILE).exists()
+
+
+def test_forbidden_text_shorter_than_the_limit_is_still_ignored():
+    from ctrec.engine import contracts as c
+    from test_reversal_metrics import _chain
+    rec = _chain([c.PairStatus.CONFIRMED_ELIGIBLE, c.PairStatus.VERIFICATION_PENDING])[0]
+    assert audit.sensitive_findings(rec.model_copy(update={"facts_added": ('"a"',)}), ['"a"']) == []

@@ -117,7 +117,8 @@ def sensitive_findings(record: DecisionRecord, forbidden_texts: Iterable[str] = 
     from ..eval_hygiene import LeakScanner
     data = record.model_dump_json()
     out = []
-    if any(t and len(t) >= 4 and t in data for t in forbidden_texts):
+    # 기록은 JSON 문자열이라 따옴표·줄바꿈이 있는 문장은 이스케이프된 모양으로만 찾을 수 있음
+    if any(t and len(t) >= 4 and (t in data or json.dumps(t, ensure_ascii=False)[1:-1] in data) for t in forbidden_texts):
         out.append("forbidden_text")
     out.extend((scanner or LeakScanner()).scan(data))
     return sorted(set(out))
