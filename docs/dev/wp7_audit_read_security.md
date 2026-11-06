@@ -21,7 +21,7 @@
 - WP8은 `inspect_run_checked`와 `render_inspection_html`을 써야 합니다.
 - 이 문서의 검증은 파일 기반 합성 입력으로 한 것입니다. 실제 운영 연결은 별도 검증이 필요합니다.
 - `load_run_v2(scanner=None)`, `to_trace()`, `audit_diagnostics.inspect_run`은 운영용 조회·저장 경로로 쓰지 않습니다.
-- 역전 지표의 식별자 노출(§3)은 별도 보안 작업으로 분리했습니다. 해결 전에는 지표 JSON과 `events`를 WP8 화면·API에 내보내지 않습니다.
+- 역전 지표는 `compute_for_runs(run_dirs, scanner=...)`와 기본 `to_dict()`만 화면·API에 쓸 수 있습니다. 조건은 §3과 §5를 봅니다.
 - 이 작업은 위 경로의 보호만 다룹니다. WP7 전체의 개인정보 보호가 완성되었다는 뜻이 아닙니다.
 
 검사는 **scanner가 아는 값만** 찾습니다. 통과는 "이 scanner로 찾지 못했다"는 뜻이며 안전하다는 뜻이 아닙니다. 그래서 보기의 `value_scan.limit`은 `scanner_known_values_only`이고, `value_scan.status`는 `no_findings` 또는 `withheld`입니다. 화면은 이를 "안전함"으로 바꿔 표시하면 안 됩니다.
@@ -58,10 +58,11 @@
 - **scanner가 모르는 식별자**: `literals`에 없는 환자 ID는 ID 모양이 `F-`/`M-`/`V-` 규칙에 맞지 않으면 통과합니다.
 - **자유 서술**: 기본 `LeakScanner`는 문장을 찾지 못합니다. 한글 문장은 `literals`나 `forbidden_texts`에 정확히 있을 때만 걸립니다.
 - **항상 빈 목록을 돌려주는 scanner**: 형식이 맞으므로 실패로 알아낼 수 없습니다.
-- **`forbidden_texts`의 4자 미만 항목**: `sensitive_findings`가 무시합니다.
+- **`forbidden_texts`의 4자 미만 항목**: `sensitive_findings`가 무시합니다. 따옴표·줄바꿈이 있는 문장은 JSON 이스케이프 모양까지 찾지만, 공백·대소문자가 다른 표기는 찾지 못합니다.
 - **`IssueWriter`**: `scanner=None`이면 저장 시 검사가 없습니다. 조회 시 검사가 이를 보완합니다.
 - **`load_run_v2(scanner=None)`·`to_trace`**: 호환을 위해 남겼으므로 직접 호출하면 값이 검사 없이 지나갑니다.
-- **역전 지표 (미해결)**: `reversal_metrics.load_run_inputs`는 scanner 없이 읽고, `ReversalSummary.to_dict()`와 `write_metrics`의 `events`에 `run_id`, `patient_alias`, `trial_id`를 그대로 씁니다. `inspect_run_checked`가 뺀 기록의 `trial_id`가 지표 파일에 나오는 것을 합성값으로 확인했습니다. 집계 수와 로드 문제 코드에는 나오지 않습니다. 폴더 이름도 `load_problems`에 그대로 쓰지만, 오프라인 실행기의 폴더 이름은 일련번호입니다.
+- **역전 지표**: `scanner`를 넘기면 걸린 기록·진단이 계산에서 빠집니다. 넘기지 않으면 기존처럼 검사 없이 집계하므로, 걸린 기록이 집계 수와 `pair_ref`에 들어가고 `to_dict(identifiers=True)`로는 원시 값이 나옵니다. 호출자가 scanner를 빠뜨리는 것을 코드가 막지는 않습니다.
+- **`pair_ref`**: 고정 소금 없는 SHA-256 앞 12자리입니다. 같은 쌍을 구분하기 위한 값이며, 별칭과 시험 ID 후보를 아는 사람은 대입으로 되찾을 수 있습니다. 비식별화 수단이 아닙니다.
 - **`Tracer`**: 생성할 때 trace 파일을 비웁니다. 기존 동작이며 검사 실패 여부와 무관합니다.
 
 ## 4. 후속 계약 검토 항목 (`contracts.py` 보류)
@@ -85,7 +86,7 @@
 4. `AuditError`는 일반 조회 실패로 처리합니다. 검사 없는 경로로 되돌아가면 안 됩니다.
 5. `value_scan`과 `audit_status`를 표시하고, `values_withheld`를 정상 완료로 보이지 않게 합니다.
 6. §4의 자유 서술 위험을 받아들일지, 계약 변경을 먼저 할지 결정합니다.
-7. 역전 지표의 `events`와 지표 파일을 화면·API로 내보내지 않습니다 (§3).
+7. 역전 지표는 §1과 같은 scanner로 계산한 결과의 기본 `to_dict()`와 `write_metrics` 파일만 내보냅니다. `to_dict(identifiers=True)`와 `compute_for_runs`의 원본 `problems`는 내보내지 않습니다 (§3).
 8. 실제 웹 경로에서 위 조건을 별도로 검증합니다. 이 문서의 결과는 운영 연결을 검증한 것이 아닙니다.
 
 ## 6. 호환성
@@ -98,8 +99,10 @@
 
 ## 7. 병합 의존성
 
-- `audit_inspection.py`는 PR #5의 `audit_diagnostics.py`를 import합니다. **PR #5를 먼저 병합해야 합니다.** 그 전에는 이 모듈을 import할 수 없고 `tests/test_audit_inspection.py`는 건너뜁니다. PR #5 파일은 수정하지 않습니다.
-- PR #3의 `tests/test_reversal_metrics.py`에는 기존 노출을 고정한 단언이 있어 이 브랜치와 합치면 실패합니다. 어느 쪽을 먼저 병합하든 아래와 같이 바꿔야 합니다.
+PR #3과 PR #5는 이 문서를 처음 쓴 뒤 `integration/dcvc`에 병합되었으므로 아래 조건은 이미 충족됐습니다. `night/wp7-audit-security`는 `b2100d8` 위에 있습니다.
+
+- `audit_inspection.py`는 `audit_diagnostics.py`를 import합니다.
+- `tests/test_reversal_metrics.py`의 기존 노출 고정 단언을 별도 커밋에서 아래와 같이 바꿨습니다.
 
   ```python
   # 변경 전
@@ -108,11 +111,11 @@
   assert SENSITIVE not in str(audit.load_run_v2(d).issues)  # 로더 문제 목록에도 파일 값이 없음
   ```
 
-  이 파일은 PR #3에만 있어 이 브랜치에 넣지 않았습니다. 넣으면 PR #3과 add/add 충돌이 나고, `reversal_metrics`가 없는 이 브랜치에서는 수집 오류가 납니다. 같은 합성 입력의 검증은 `test_loader_issues_for_extra_key_and_schema_keep_only_safe_details`에 있습니다.
+  같은 합성 입력의 검증은 `test_loader_issues_for_extra_key_and_schema_keep_only_safe_details`에도 있습니다.
 
 ### PR #5 문서와의 차이
 
-PR #5의 `docs/dev/wp7_offline_records.md`와 PR #3의 `docs/dev/wp7_reversal_metrics.md`는 이 브랜치에서 고치지 않습니다. 병합 후 아래 항목은 **이 문서가 우선**합니다.
+PR #5의 `docs/dev/wp7_offline_records.md`는 이 브랜치에서 고치지 않습니다. 아래 항목은 **이 문서가 우선**합니다.
 
 | 위치 | PR 문서 내용 | 이 문서 기준 |
 |---|---|---|
