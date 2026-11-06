@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import io
 import json
+import re
 from contextlib import redirect_stdout
 from pathlib import Path
 
@@ -114,7 +115,8 @@ def test_options_do_not_change_judgements(tmp_path):
 def test_options_add_no_patient_text_to_console(tmp_path):
     _, plain = _run(tmp_path / "a")
     _, full = _run(tmp_path / "b", "--fact-store-dir", "--decision-diagnostic", "--dependency-diagnostic")
-    new_lines = set(full.splitlines()) - set(plain.splitlines())
+    scrub = lambda ln: re.sub(r"S-[0-9a-f]{12}", "S-<id>", ln.replace(str(tmp_path), "<tmp>"))  # 무작위 ID·임시 경로의 숫자는 환자 수치가 아님
+    new_lines = {scrub(ln) for ln in full.splitlines()} - {scrub(ln) for ln in plain.splitlines()}
     assert not [ln for ln in new_lines if SENTENCE in ln or "amlodipine" in ln or "185" in ln]
 
 
