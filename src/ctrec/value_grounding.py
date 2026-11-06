@@ -230,9 +230,9 @@ def _usable_answers(source_text: str, qa) -> list[ed.Segment]:
 
 
 def _qa_in_source(qa, usable) -> list:
-    """이 원문에 실제로 있는 답의 문답만. 다른 세션이나 지워진 문답은 근거가 아님."""
-    bodies = {s.body for s in usable}
-    return [q for q in qa or [] if ed._norm(q.answer or "") in bodies]
+    """이 원문에 질문과 답이 함께 있는 문답만. 다른 세션이나 지워진 문답은 답 문자열이 같아도 근거가 아님."""
+    pairs = {(s.question.body if s.question else None, s.body) for s in usable}
+    return [q for q in qa or [] if (ed._norm(q.question or ""), ed._norm(q.answer or "")) in pairs]
 
 
 def _bare(answer: str) -> str:
@@ -391,6 +391,20 @@ def _same_unit(body: str, hi: int, unit: str | None) -> bool:
     return _norm_unit(m.group(1).rstrip(".")) == _norm_unit(unit)
 
 
+_FULL_DATE = re.compile(r"(?<!\d)(\d{4})[-./](\d{1,2})[-./](\d{1,2})(?!\d)")
+
+
+def _full_dates(text: str) -> set[tuple[int, ...]]:
+    return {tuple(map(int, m.groups())) for m in _FULL_DATE.finditer(text)}
+
+
+def _same_date(body: str, lo: int, hi: int, stated: str | None) -> bool:
+    """수치가 적힌 절의 날짜가 프로필 날짜와 같은가. 어느 쪽이든 날짜가 없거나 절에 날짜가 여럿이면 비교할 수 없으므로 막지 않음."""
+    before, after = _clause_around(body, lo, hi)
+    near, profile = _full_dates(before + " " + after), _full_dates(stated or "")
+    return len(near) != 1 or len(profile) != 1 or near == profile
+
+
 def _quote_hits(quote: str | None, source_text: str) -> list:
     """인용의 위치. 일반 위치 검사는 짧은 인용을 건너뛰고 표의 "|"에서 인용을 나누므로 인용 전체도 그대로 찾음 (수치 연결은 호출 쪽에서 확인)."""
     if not quote:
@@ -403,8 +417,8 @@ def _quote_hits(quote: str | None, source_text: str) -> list:
 
 
 def ground_lab(lab: str, value, quote: str | None, source_text: str | None, *, key: str | None = None, qa=None,
-               unit: str | None = None, known: set[str] | None = None) -> str | None:
-    """검사값의 원문 근거. 인용 안의 수치가 이 검사에 연결되고 프로필 값·단위와 같아야 함.
+               unit: str | None = None, known: set[str] | None = None, stated_date: str | None = None) -> str | None:
+    """검사값의 원문 근거. 인용 안의 수치가 이 검사에 연결되고 프로필 값·단위·날짜와 같아야 함.
 
     known: 프로필에 있는 이 검사의 값 전체. 기록의 다른 값이 빠져 있으면 어느 값이 현재인지 알 수 없으므로 충돌로 봅니다."""
     if source_text is None or value is None:
@@ -422,7 +436,8 @@ def ground_lab(lab: str, value, quote: str | None, source_text: str | None, *, k
             continue
         body = h.seg.body
         for lo, hi, number, role in _lab_numbers(lab, body):
-            if not (h.lo <= lo and hi <= h.hi) or float(number) != float(value) or not _same_unit(body, hi, unit):
+            if not (h.lo <= lo and hi <= h.hi) or float(number) != float(value) or not _same_unit(body, hi, unit) \
+                    or not _same_date(body, lo, hi, stated_date):
                 continue
             if role == "past" and has_current:
                 continue
@@ -455,7 +470,7 @@ def _has_lab_name(lab: str, text: str) -> bool:
 
 # ---------------------------------------------------------------------------- 판정 근거 확인
 _LLM_FIELD = re.compile(r'["\']?\b(sex|age|ecog)\b["\']?\s*[:=]\s*["\']?([a-z0-9.]+)', re.IGNORECASE)
-_LAB_EVIDENCE = re.compile(r'^(.+?) (-?\d+(?:\.\d+)?(?:e[+-]?\d+)?) (.*?) ?\(', re.IGNORECASE)
+_LAB_EVIDENCE = re.compile(r'^(.+?) (-?\d+(?:\.\d+)?(?:e[+-]?\d+)?) (.*?) ?\(([^)]*)\)', re.IGNORECASE)
 
 
 def structured_problem(a, rule, profile, source_text: str | None, *, key: str | None = None, qa=None,
@@ -493,5 +508,6 @@ def structured_problem(a, rule, profile, source_text: str | None, *, key: str | 
         if not m:
             return UNLOCATED
         known = {_text(x.value) for x in profile.labs if x.value is not None and canonical_lab(x.name) == canonical_lab(m.group(1))}
-        return ground_lab(m.group(1), float(m.group(2)), quote, source_text, unit=m.group(3).strip() or None, known=known, **kw)
+        return ground_lab(m.group(1), float(m.group(2)), quote, source_text, unit=m.group(3).strip() or None, known=known,
+                          stated_date=m.group(4), **kw)
     return None
