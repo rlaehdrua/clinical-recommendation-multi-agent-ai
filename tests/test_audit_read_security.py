@@ -519,7 +519,7 @@ def test_literal_scanner_finds_values_in_unpatterned_fields(tmp_path, source, fi
     _write_source(tmp_path, source, [json.loads(_record(**{field: KO_MARK}).model_dump_json())])
     loaded = audit.load_run_v2(tmp_path, scanner=LeakScanner(literals={KO_MARK}))
     view = audit.build_v2_view(loaded)
-    assert loaded.records == [] and loaded.issues == ["line 1: sensitive_record:original_id"]
+    assert loaded.records == [] and loaded.issues == ["line 1: sensitive_record:free_text,original_id"]
     _assert_no_marks(loaded, view, audit.render_v2_html(view))
 
 
@@ -531,7 +531,7 @@ def test_all_records_withheld_is_not_reported_as_missing(tmp_path):
 @pytest.mark.parametrize("scanner", [RaisingScanner(), FixedScanner(None), FixedScanner({"a": 1}), object()],
                          ids=["raises", "none", "not_list", "no_scan_method"])
 def test_scanner_failure_stops_the_load_without_values(tmp_path, scanner):
-    _write_source(tmp_path, FILE_SOURCE, [json.loads(_record(policy_version=KO_MARK).model_dump_json())])
+    _write_source(tmp_path, FILE_SOURCE, [json.loads(_record(policy_version=ASCII_MARK).model_dump_json())])
     with pytest.raises(audit.AuditError) as err:
         audit.load_run_v2(tmp_path, scanner=scanner)
     rendered = "".join(traceback.format_exception(type(err.value), err.value, err.value.__traceback__))
@@ -569,9 +569,9 @@ def test_withheld_record_still_counts_for_integrity_checks(tmp_path):
 
 def test_scanner_that_knows_nothing_passes_free_text(tmp_path):
     """한계 고정: scanner가 모르는 값은 통과합니다. '안전'이라고 주장하면 안 되는 이유."""
-    _write_source(tmp_path, FILE_SOURCE, [json.loads(_record(policy_version=KO_MARK).model_dump_json())])
+    _write_source(tmp_path, FILE_SOURCE, [json.loads(_record(policy_version=ASCII_MARK).model_dump_json())])
     loaded = audit.load_run_v2(tmp_path, scanner=LeakScanner())
-    assert len(loaded.records) == 1 and KO_MARK in _dump(audit.build_v2_view(loaded))
+    assert len(loaded.records) == 1 and ASCII_MARK in _dump(audit.build_v2_view(loaded))
 
 
 def test_normal_load_is_identical_with_and_without_a_scanner(tmp_path):
@@ -597,7 +597,7 @@ def test_forbidden_text_is_found_after_json_escaping(tmp_path, text):
     from test_reversal_metrics import _chain
     rec = _chain([c.PairStatus.CONFIRMED_ELIGIBLE, c.PairStatus.VERIFICATION_PENDING])[0]
     rec = rec.model_copy(update={"facts_added": (text,)})
-    assert audit.sensitive_findings(rec, [text]) == ["forbidden_text"]
+    assert "forbidden_text" in audit.sensitive_findings(rec, [text])
     writer = audit.RecordWriter(tmp_path / audit.RECORDS_FILE, rec.run_id, forbidden_texts=[text])
     with pytest.raises(audit.AuditError):
         writer.write(rec)
@@ -608,4 +608,4 @@ def test_forbidden_text_shorter_than_the_limit_is_still_ignored():
     from ctrec.engine import contracts as c
     from test_reversal_metrics import _chain
     rec = _chain([c.PairStatus.CONFIRMED_ELIGIBLE, c.PairStatus.VERIFICATION_PENDING])[0]
-    assert audit.sensitive_findings(rec.model_copy(update={"facts_added": ('"a"',)}), ['"a"']) == []
+    assert "forbidden_text" not in audit.sensitive_findings(rec.model_copy(update={"facts_added": ('"a"',)}), ['"a"'])

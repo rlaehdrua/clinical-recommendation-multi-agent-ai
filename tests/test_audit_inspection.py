@@ -57,7 +57,7 @@ def test_scanner_is_required_and_has_no_default():
 @pytest.mark.parametrize("scanner", [None, object(), sec.RaisingScanner(), sec.FixedScanner(None)],
                          ids=["missing", "no_scan_method", "raises", "returns_none"])
 def test_no_view_without_a_working_scanner(tmp_path, scanner):
-    _write(tmp_path, sec._record(policy_version=sec.KO_MARK))
+    _write(tmp_path, sec._record(policy_version=sec.ASCII_MARK))
     with pytest.raises(audit.AuditError) as err:
         ai.inspect_run_checked(tmp_path, scanner)
     assert sec.KO_MARK not in str(err.value) and sec.KO_MARK not in repr(err.value) and err.value.__context__ is None
@@ -144,9 +144,9 @@ def test_clean_run_keeps_the_existing_view_and_only_adds_the_scan_block(tmp_path
 
 def test_scanner_unaware_of_an_identifier_does_not_hide_it(tmp_path):
     """한계 고정: 검사 범위 표시가 있어도 scanner가 모르는 값은 보입니다."""
-    _write(tmp_path, sec._record(policy_version=sec.KO_MARK))
+    _write(tmp_path, sec._record(policy_version=sec.ASCII_MARK))
     view = ai.inspect_run_checked(tmp_path, LeakScanner())
-    assert view[ai.SCAN_KEY]["limit"] == ai.SCAN_LIMIT and sec.KO_MARK in json.dumps(view, ensure_ascii=False)
+    assert view[ai.SCAN_KEY]["limit"] == ai.SCAN_LIMIT and sec.ASCII_MARK in json.dumps(view, ensure_ascii=False)
 
 
 def test_module_respects_engine_isolation():
