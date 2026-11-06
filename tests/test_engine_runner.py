@@ -162,3 +162,33 @@ def test_entry_points_use_the_same_runner():
     for path in (WEB / "web" / "app.py", WEB / "cli.py"):
         assert "engine_runner.for_mode(session)" in path.read_text(encoding="utf-8"), path
     assert "engine_runner" not in (WEB / "pipeline.py").read_text(encoding="utf-8")  # 보호 파일은 그대로
+
+
+# ------------------------------------------------------------ 리뷰 후속 (2026-11-06)
+def test_conflict_source_check_is_not_sent_to_the_screen_user():
+    """VERIFY_RECORD(상충 근거의 출처 대조, 안전 필수)는 자유 입력 질문으로 바꾸지 않음 - 실행하지 않고 따로 알림."""
+    from types import SimpleNamespace as NS
+    r = er.EngineRunner(NS(case=NS(patient_id="SYN-P1"), parsed={}, tracer=_Tracer()))
+    a = C.Action(action_id=f"{r.alias}:abc", action_type="VERIFY_RECORD", patient_alias=r.alias, source_id="system_check",
+                 target_trial_ids=("NCT1",), target_criteria=("NCT1:I1",), reason_code="conflict_on_decided_criterion",
+                 tier=1, fingerprint="abc", safety_required=True, policy_version="t", info_key="ecog")
+    assert r.render(a, "EQ1-1") is None
+
+
+@pytest.mark.parametrize("text", ["잘 모르겠어요", "확인할 수 없습니다"])
+def test_no_answer_wording_outside_the_legacy_list_still_moves_to_documents(text):
+    """엔진은 넓은 무응답 판별, 기존 정책은 좁은 "모름" 목록 -> 기존 정책이 재추출·보류로 남겨도 대체 문서로 넘어감."""
+    s, r = _run(answer=lambda q: text, rounds=6)
+    failed = {it for _, it in r.ops[r.alias].failed_items if not it.startswith("fp:")}
+    assert failed
+    stalled = {a.info_key for a in r.policy.propose(r.cohort()) if a.action_type == "REPARSE"}
+    assert not failed & stalled  # 무응답 항목이 재추출(웹에서 실행 불가)에 머물지 않음
+    assert any(a.action.reason_code == "alternative_source_after_no_answer" for a in r.asked)
+
+
+def test_answered_document_request_is_not_repeated():
+    """문서 요청에 답이 있었는데 gap이 남으면 같은 (문서, 항목)을 다시 요청하지 않음 (다음 문서 또는 그 항목만 보류)."""
+    ans = lambda q: "기록에 해당 내용이 적혀 있지 않습니다" if q.question.startswith("[기록 확인") else "모름"  # noqa: E731
+    s, r = _run(answer=ans, rounds=9)
+    docs = [(a.action.source_id, a.action.info_key) for a in r.asked if a.action.action_type == "REQUEST_DOCUMENT"]
+    assert docs and len(docs) == len(set(docs))
