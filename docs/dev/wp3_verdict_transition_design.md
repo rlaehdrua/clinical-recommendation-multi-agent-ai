@@ -158,9 +158,9 @@ PR #3(`reversal_metrics.py`)은 **상태 이력만** 보고 `reason_code`는 읽
 1. **qa_log를 넘김 (권장)**: `ingest_profile(..., qa_pairs: Sequence[QAPair] | None = None)` 인자를 추가하고, 인용이 들어 있는 답이
    **정확히 하나**일 때만 `q:r<라운드>:<질문ID>`를 붙입니다. 둘 이상이거나 못 찾으면 지금처럼 `raw_text:answers`(추정하지 않음).
    - `profile_facts.py` 변경은 서연 범위. **호출하는 쪽 `pipeline.py`의 `_shadow_record`에 `qa_pairs=self.qa_log` 한 줄을 넣는 것은
-     보호 파일 수정 → 선우(리뷰어) 승인 2026-11-03(아래 조건)**. 수정안:
+     보호 파일 수정 → 선우·동겸 승인 (2026-11-03 PR #7 리뷰, 아래 조건)**. 수정안:
      ```text
-     # pipeline.py Session._shadow_record (보호 파일 · 선우(2026-11-03) 승인 · 이 한 줄만)
+     # pipeline.py Session._shadow_record (보호 파일 · 선우·동겸 승인(2026-11-03) · 이 한 줄만)
      r = profile_facts.ingest_profile(self.fact_store, self.profile.model_copy(deep=True),
                                       raw_text=self.case.raw_text, input_source=self.case.input_source,
                                       session_id=self.session_id, qa_pairs=self.qa_log)   # ← 추가
@@ -168,7 +168,7 @@ PR #3(`reversal_metrics.py`)은 **상태 이력만** 보고 `reason_code`는 읽
    - 기본값이 None이므로 승인 전에도 `profile_facts`만 먼저 바꿀 수 있고 동작은 그대로입니다.
 2. 원문만으로 나눔: 블록의 라운드 번호와 Q/A 순서(`q:r2:#3`)만 남김. 질문 ID가 아니라 순번이라 qa_log와 조인할 때 순서 가정이 필요함 → 권장하지 않음.
 
-**승인 (선우 2026-11-03, 리뷰어): `pipeline.py` `_shadow_record`에 `qa_pairs=self.qa_log` 인자 전달 한 줄.** 승인 조건은 다음과 같습니다.
+**승인 (선우·동겸, 2026-11-03 PR #7 리뷰): `pipeline.py` `_shadow_record`에 `qa_pairs=self.qa_log` 인자 전달 한 줄.** 승인 조건은 다음과 같습니다.
 
 | 조건 | 내용 |
 |---|---|
@@ -285,19 +285,25 @@ WP2a 교차 충돌 표(`cross_trial_conflicts.md`)에 나온 두 기준 표현�
 - **Q-D5** 사실의 `ref` 형식이 `raw_text:answers` → `q:r<n>:<qid>`로 바뀌면 웹 쪽(Inspector·결과 화면)에 영향이 있나요?
 - **Q-D6** engine 모드에서 확정 하강 시 `pair_reasons`를 실행기가 넘기나요, 판정 계층(WP4)이 넘기나요?
 
-#### 동겸 질문의 현재 상태 — PR #10 코드 기준 (리뷰어 확인 전)
+#### 동겸 질문의 답 — 리뷰어 답변 (동겸, 2026-11-03 PR #6 코멘트)
 
-> 2026-11-04 기록. 아래는 **리뷰어 답변이 아니라** 동겸 PR #10(`origin/feat/wp5-item-level-failure` `617156b`)과
-> `origin/integration/dcvc` 코드에서 확인한 현재 동작입니다. 리뷰어 답변이 오면 이 표를 그 답으로 바꿉니다.
+> 2026-11-07 갱신. 2026-11-04에 PR #10 코드 기준으로 적었던 "리뷰어 확인 전" 표를 리뷰어 답변으로 바꿨습니다
+> (2026-11-05 PR #6 병합 코멘트의 요청). 근거 열은 이전 표에서 코드로 확인한 위치입니다.
 
-| 질문 | 코드 기준 현재 상태 | 근거 | 남은 것 |
-|---|---|---|---|
-| Q-D1 | `status="no_response"` + `error_code="no_answer"`. `contracts.failure_scope`는 status가 failed·no_response일 때만 실패 범위를 보므로 "`succeeded` + 새 사실 0" 방식은 쓰지 않음 | `offline_records.py`(`rp.NO_ANSWER_ERROR`), PR #10 `engine/contracts.py` `failure_scope` | 리뷰어 확인 |
-| Q-D2 | `info_key` 단위(`decision_state.info_key`, 시험 사이에서 공유. 없으면 행동 지문 `fp:<fingerprint>`). 쌍은 판정에 필요한 기준의 남은 gap이 모두 얻을 수 있는 정보(missing·stale·unverified)이고 그 항목이 전부 소진됐을 때만 `BLOCKED_FAILURE`. 일부만 소진, 임상의 판단·상충이 남으면 소진 아님 | PR #10 `cohort_state.items_exhausted`, `OpsState.failed_items`·`exhausted_items` (커밋 메시지에 Q-D2 명시) | 리뷰어 확인 |
-| Q-D3 | "모름" 1회로 그 (정보원, 항목)을 막음 → 같은 환자에게 같은 항목을 다른 문장으로 다시 묻지 않음. 같은 항목은 문서 정보원으로 요청(`alternative_source_after_no_answer`), 남은 문서 정보원이 없으면 그 항목만 `DEFER(item_sources_exhausted)`. 같은 정보원의 다른 항목 질문은 계속 | PR #10 `engine/policy.py` | 다른 문장 재질문을 허용할지는 정책 결정 (코드로 정해지지 않음) |
-| Q-D4 | **확인 불가**. `integration/dcvc`와 PR #10에 WP8 실행기(`web/engine_runner.py`)가 없음 | — | 미결 |
-| Q-D5 | Inspector는 영향 없음: `inspector._code`가 `[A-Za-z0-9_.:\-]{1,64}`만 통과시키는데 `q:r1:Q1`, `q:r2:CQ-ecog_1` 모두 그대로 표시됨 | `inspector.py:169-171`, `:476` | 결과 화면(웹)은 미확인 |
-| Q-D6 | **확인 불가**. engine 모드 웹 코드가 아직 없음 | — | 미결 |
+| 질문 | 답 | 근거 |
+|---|---|---|
+| Q-D1 | `status="no_response"`, `error_code="no_answer"`(항목 단위). 정보원 단위는 `unreachable` / `declined_all`. 상수는 `contracts.py`에 추가(동겸) | `offline_records.py`(`rp.NO_ANSWER_ERROR`), `engine/contracts.py` `failure_scope` |
+| Q-D2 | 단위는 (환자, 정보원, `info_key`/지문). 쌍 단위 소진은 그 쌍에 필요한 **모든 항목의 모든 정보원**이 소진됐을 때만(`BLOCKED_FAILURE`). 일부만 소진되면 `INFO_MISSING` 유지 | `cohort_state.items_exhausted`, `OpsState.failed_items`·`exhausted_items` |
+| Q-D3 | **기본: 재질문 불허.** 첫 "모름"(`no_answer`)에서 그 (정보원, 항목)을 즉시 막음. 문장만 바꿔 다시 묻는 것도 안 됨(지문이 같아서 막힘). 같은 항목은 문서 정보원으로 요청(`alternative_source_after_no_answer`), 남은 문서 정보원이 없으면 그 항목만 `DEFER(item_sources_exhausted)`. 같은 정보원의 다른 항목 질문은 계속. **옵션:** `rephrase`(기본 꺼짐, 아래 주) | `engine/policy.py` |
+| Q-D4 | WP8에서 `AskedQuestion`으로 기록(동겸). PR #7 병합 뒤 오프라인 경로도 `source_ref`를 채울 수 있어 `offline_records.py:173` 조정은 선우에게 요청 | — |
+| Q-D5 | 깨지는 곳 없음. 웹 코드(`app.py`, `display.py`, `app.js`)는 `source_reference`를 쓰지 않고, Inspector는 `q:r1:Q1` 형식을 그대로 표시 | `inspector.py:169-171`, `:476` |
+| Q-D6 | 판정 계층(WP3/WP4)이 `pair_reasons`를 넘김. 실행기는 `evaluation_failed`만 자동으로 붙임 | — |
+
+> **Q-D3 옵션 `rephrase` (PR #20, 미병합).** 기본 꺼짐이며 민감도 분석에서만 켭니다. 켜면 환자 정보원이 다루는 항목
+> (ECOG·복용 약 등)에 한해 첫 "모름" 뒤 **한 번만** 다른 질문을 보냅니다(사유 `rephrase_after_no_answer`, 지문 `<fp>.rephrase`,
+> 새 연락으로 청구). 또 "모름"이면 문서 정보원으로 넘어갑니다. 검사 수치 등은 바로 문서로 갑니다.
+> 같은 질문을 그대로 반복하는 재질문은 옵션과 관계없이 없습니다. 실험 결과는 기본(불허)을 주 결과로, `rephrase`는 민감도 분석으로만 보고합니다.
+> PR #20이 병합되기 전에는 코드에 없습니다.
 
 ### PR #3 작성자 (WP7 역전 지표)
 
@@ -310,5 +316,5 @@ WP2a 교차 충돌 표(`cross_trial_conflicts.md`)에 나온 두 기준 표현�
 
 ### 선우 (참고 · 승인 필요 항목)
 
-- `pipeline.py` `_shadow_record`에 `qa_pairs=self.qa_log` 추가 (§2.3) — **승인됨 (선우 2026-11-03)**. 인자 전달 한 줄만.
+- `pipeline.py` `_shadow_record`에 `qa_pairs=self.qa_log` 추가 (§2.3) — **승인됨 (선우·동겸, 2026-11-03 PR #7 리뷰)**. 인자 전달 한 줄만.
 - `REVERSAL_REASON_CODES` 확장과 하강 사유 필수화 (§1.2) — `contracts.py` 추가 요청. **미승인 · 계약 0.2 확정 후**.
