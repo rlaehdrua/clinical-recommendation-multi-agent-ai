@@ -74,7 +74,7 @@ def decisive_criteria(t) -> list:
     무관해지고 쌍 상태는 내려가기만 함 (0.2 안전 경계). 닫힌 갈래(적격성이 낮거나 미확인이 많은 코호트)는 그대로 제외."""
     tied = tied_paths(t)
     return [c for c in t.criteria
-            if c.requirement == "required" or (c.requirement == "alternative_cohort" and c.cohort in tied)]
+            if c.requirement == "required" or (tied and c.requirement == "alternative_cohort" and c.cohort in tied)]
 
 
 def items_exhausted(t, exhausted_items: frozenset[str]) -> bool:
