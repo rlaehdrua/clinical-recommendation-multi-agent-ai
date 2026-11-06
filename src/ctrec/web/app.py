@@ -43,6 +43,7 @@ from ..schemas import ClarifyingQuestion
 from ..status import MATCH_NOTE
 from ..tools import ctgov
 from ..trace import Tracer
+from .. import conservative_view
 from . import engine_runner
 from . import access, budget, cohort_board, display, paid_gate, retention
 
@@ -340,6 +341,8 @@ _TRACE_DROP = frozenset({"profile", "screening", "assessments", "evaluation_erro
 
 def _client_record(rec: dict) -> dict:
     rec = {k: v for k, v in rec.items() if k not in _TRACE_DROP}
+    if rec.get("match_status") == "CRITERIA_MATCH":  # 진행 중 값은 엔진 확인 전: 화면의 '중간 판정'으로만 보임
+        rec["match_status"] = rec.get("eligibility") or "UNCERTAIN"
     if (rec.get("agent"), rec.get("event")) not in _ERROR_TRACES:
         return rec
     kind = str(rec.get("message", "")).split("(", 1)[0].split(":", 1)[0].strip() or "Error"
@@ -450,11 +453,13 @@ def _execute_run(run: Run, req: RunRequest, case: PatientCase, trials: dict[str,
             raise budget.BudgetStop(run.budget.stopped)
         if out_dir is not None:
             session.save(out_dir)
+            conservative_view.save(session, out_dir)
+        shown = conservative_view.build(session, display.redact_errors(session.result()), session.report)
         with run.lock:  # 취소 요청과 경합: 아직 running일 때만 결과를 보내고, 같은 잠금 안에서 completed로 확정
             if run.state == "running":
                 run.state = "completed"
-                run.emit("result", result=display.redact_errors(session.result()), report=session.report, match_note=MATCH_NOTE,
-                         display=_display(session),
+                run.emit("result", result=shown.result, report=shown.report, match_note=MATCH_NOTE,
+                         display=conservative_view.adjust_display(_display(session), shown.holds),
                          trials={tid: {"title": t.get("title"), "overall_status": t.get("overall_status"),
                                        "url": (t.get("source") or {}).get("url")} for tid, t in session.trials.items()})
     except budget.BudgetStop as e:
