@@ -1,0 +1,431 @@
+{
+ "version": 1,
+ "reference_date": "2026-11-01",
+ "base_seed": 20261101,
+ "slot_dictionary": "data/cohort/slot_dictionary.draft.json",
+ "source_catalog": "data/cohort/source_catalog.json",
+ "budgets_min": [
+  30,
+  60,
+  120,
+  240
+ ],
+ "max_resample": 20,
+ "clusters": {
+  "nephrotic_peds": {
+   "trials": [
+    "NCT06125405",
+    "NCT06530004",
+    "NCT07087314"
+   ],
+   "priors": {
+    "age": {
+     "dist": "uniform",
+     "a": 1,
+     "b": 18,
+     "decimals": 0,
+     "basis": "가정 (소아 신증후군 시험 대상 연령 범위)"
+    },
+    "sex": {
+     "dist": "categorical",
+     "probs": {
+      "male": 0.6,
+      "female": 0.4
+     },
+     "basis": "가정"
+    },
+    "lab.egfr": {
+     "dist": "normal",
+     "a": 105,
+     "b": 20,
+     "lo": 15,
+     "hi": 160,
+     "decimals": 0,
+     "unit": "ml/min/1.73m2",
+     "basis": "가정"
+    },
+    "lab.hemoglobin": {
+     "dist": "normal",
+     "a": 12.0,
+     "b": 1.6,
+     "lo": 6,
+     "hi": 17,
+     "decimals": 1,
+     "unit": "g/dL",
+     "basis": "가정"
+    },
+    "lab.white blood cell count": {
+     "dist": "normal",
+     "a": 8.0,
+     "b": 2.8,
+     "lo": 1.0,
+     "hi": 25,
+     "decimals": 1,
+     "unit": "10^9/L",
+     "basis": "가정"
+    },
+    "lab.platelets": {
+     "dist": "normal",
+     "a": 320,
+     "b": 110,
+     "lo": 20,
+     "hi": 800,
+     "decimals": 0,
+     "unit": "10^9/L",
+     "basis": "가정"
+    },
+    "lab.absolute neutrophil count": {
+     "dist": "normal",
+     "a": 4.0,
+     "b": 1.8,
+     "lo": 0.2,
+     "hi": 15,
+     "decimals": 1,
+     "unit": "10^9/L",
+     "basis": "가정"
+    },
+    "dx.ns_etiology": {
+     "dist": "categorical",
+     "probs": {
+      "primary": 0.9,
+      "secondary": 0.07,
+      "congenital_infantile": 0.03
+     },
+     "basis": "가정 (LLM 초안, 검수 필요)"
+    },
+    "dx.ns_steroid_response": {
+     "dist": "categorical",
+     "probs": {
+      "FRNS": 0.35,
+      "SDNS": 0.35,
+      "SRNS": 0.15,
+      "infrequent_relapse": 0.15
+     },
+     "basis": "가정 (LLM 초안, 검수 필요)"
+    },
+    "dx.active_hepatitis": {
+     "dist": "categorical",
+     "probs": {
+      "yes": 0.02,
+      "no": 0.98
+     },
+     "basis": "가정 (LLM 초안, 검수 필요)"
+    },
+    "lab.urine_protein_remission": {
+     "dist": "categorical",
+     "probs": {
+      "yes": 0.6,
+      "no": 0.4
+     },
+     "basis": "가정 (LLM 초안, 검수 필요)"
+    },
+    "lab.hbv_status": {
+     "dist": "categorical",
+     "probs": {
+      "negative": 0.95,
+      "serology_pos_dna_neg": 0.04,
+      "serology_pos_dna_pos": 0.01
+     },
+     "basis": "가정 (LLM 초안, 검수 필요)"
+    },
+    "lab.hcv_status": {
+     "dist": "categorical",
+     "probs": {
+      "negative": 0.98,
+      "ab_pos_rna_neg": 0.015,
+      "ab_pos_rna_pos": 0.005
+     },
+     "basis": "가정 (LLM 초안, 검수 필요)"
+    },
+    "lab.hiv_ab": {
+     "dist": "categorical",
+     "probs": {
+      "negative": 0.995,
+      "positive": 0.005
+     },
+     "basis": "가정 (LLM 초안, 검수 필요)"
+    },
+    "lab.liver_dysfunction_sustained": {
+     "dist": "categorical",
+     "probs": {
+      "yes": 0.04,
+      "no": 0.96
+     },
+     "basis": "가정 (LLM 초안, 검수 필요)"
+    },
+    "lab.inr_within_1_5uln": {
+     "dist": "categorical",
+     "probs": {
+      "yes": 0.97,
+      "no": 0.03
+     },
+     "basis": "가정 (LLM 초안, 검수 필요)"
+    },
+    "med.anti_cd20_recency": {
+     "dist": "categorical",
+     "probs": {
+      "none_6m": 0.75,
+      "rituximab_6m": 0.22,
+      "obinutuzumab_6m": 0.03
+     },
+     "basis": "가정 (LLM 초안, 검수 필요)"
+    },
+    "med.steroid_sparing_recent": {
+     "dist": "categorical",
+     "probs": {
+      "none": 0.35,
+      "tacrolimus_le2m": 0.2,
+      "tacrolimus_2to3m": 0.05,
+      "mmf_le2m": 0.15,
+      "mmf_2to3m": 0.04,
+      "csa_le2m": 0.06,
+      "csa_2to3m": 0.02,
+      "cyclophosphamide_le2m": 0.03,
+      "cyclophosphamide_2to3m": 0.02,
+      "levamisole_le2m": 0.06,
+      "azathioprine_le2m": 0.01,
+      "belimumab_le2m": 0.01
+     },
+     "basis": "가정 (LLM 초안, 검수 필요)"
+    },
+    "med.acth_3m": {
+     "dist": "categorical",
+     "probs": {
+      "yes": 0.03,
+      "no": 0.97
+     },
+     "basis": "가정 (LLM 초안, 검수 필요)"
+    },
+    "med.live_vaccine_4w": {
+     "dist": "categorical",
+     "probs": {
+      "yes": 0.04,
+      "no": 0.96
+     },
+     "basis": "가정 (LLM 초안, 검수 필요)"
+    },
+    "cm.family_ns_history": {
+     "dist": "categorical",
+     "probs": {
+      "yes": 0.05,
+      "no": 0.95
+     },
+     "basis": "가정 (LLM 초안, 검수 필요)"
+    },
+    "cm.chronic_active_infection": {
+     "dist": "categorical",
+     "probs": {
+      "yes": 0.05,
+      "no": 0.95
+     },
+     "basis": "가정 (LLM 초안, 검수 필요)"
+    },
+    "cm.acute_infection": {
+     "dist": "categorical",
+     "probs": {
+      "none": 0.85,
+      "mild_systemic_tx": 0.12,
+      "severe": 0.03
+     },
+     "basis": "가정 (LLM 초안, 검수 필요)"
+    },
+    "cm.immune_onc": {
+     "dist": "categorical",
+     "probs": {
+      "none": 0.94,
+      "autoimmune": 0.03,
+      "primary_immunodeficiency": 0.015,
+      "malignancy": 0.015
+     },
+     "basis": "가정 (LLM 초안, 검수 필요)"
+    },
+    "cm.heme_endocrine": {
+     "dist": "categorical",
+     "probs": {
+      "yes": 0.05,
+      "no": 0.95
+     },
+     "basis": "가정 (LLM 초안, 검수 필요)"
+    },
+    "cm.serious_organ_disease": {
+     "dist": "categorical",
+     "probs": {
+      "yes": 0.04,
+      "no": 0.96
+     },
+     "basis": "가정 (LLM 초안, 검수 필요)"
+    },
+    "tx.other_trial_3m": {
+     "dist": "categorical",
+     "probs": {
+      "yes": 0.05,
+      "no": 0.95
+     },
+     "basis": "가정 (LLM 초안, 검수 필요)"
+    },
+    "tx.rtx_first_course_for_ns": {
+     "dist": "categorical",
+     "probs": {
+      "yes": 0.3,
+      "no": 0.7
+     },
+     "basis": "가정 (LLM 초안, 검수 필요)"
+    },
+    "tx.prior_anti_cd38": {
+     "dist": "categorical",
+     "probs": {
+      "yes": 0.02,
+      "no": 0.98
+     },
+     "basis": "가정 (LLM 초안, 검수 필요)"
+    },
+    "proc.major_surgery_4w": {
+     "dist": "categorical",
+     "probs": {
+      "yes": 0.03,
+      "no": 0.97
+     },
+     "basis": "가정 (LLM 초안, 검수 필요)"
+    },
+    "other.followup_1y": {
+     "dist": "categorical",
+     "probs": {
+      "yes": 0.6,
+      "no": 0.4
+     },
+     "basis": "가정 (LLM 초안, 검수 필요)"
+    },
+    "judge.investigator_unsuitable": {
+     "dist": "categorical",
+     "probs": {
+      "yes": 0.05,
+      "no": 0.95
+     },
+     "basis": "가정 (LLM 초안, 검수 필요)"
+    },
+    "lab_age_days": {
+     "dist": "uniform",
+     "a": 0,
+     "b": 30,
+     "decimals": 0,
+     "unit": "days",
+     "basis": "가정 (마지막 혈액검사가 0-30일 전에 고르게 분포). 7일 이내 기준을 만족하는 비율 약 1/4"
+    },
+    "med.transfusion_or_gf_7d": {
+     "dist": "categorical",
+     "probs": {
+      "yes": 0.05,
+      "no": 0.95
+     },
+     "basis": "가정 (LLM 초안, 검수 필요)"
+    },
+    "cm.severe_drug_immunosuppression": {
+     "dist": "categorical",
+     "probs": {
+      "yes": 0.08,
+      "no": 0.92
+     },
+     "basis": "가정 (LLM 초안, 검수 필요)"
+    },
+    "other.rec_rtx_admin": {
+     "dist": "categorical",
+     "probs": {
+      "yes": 0.95,
+      "no": 0.05
+     },
+     "basis": "가정 (LLM 초안, 검수 필요)"
+    },
+    "other.rec_relapse_pre_1y": {
+     "dist": "categorical",
+     "probs": {
+      "yes": 0.9,
+      "no": 0.1
+     },
+     "basis": "가정 (LLM 초안, 검수 필요)"
+    },
+    "other.rec_followup_outcomes": {
+     "dist": "categorical",
+     "probs": {
+      "yes": 0.85,
+      "no": 0.15
+     },
+     "basis": "가정 (LLM 초안, 검수 필요)"
+    },
+    "other.rec_cd19_followup": {
+     "dist": "categorical",
+     "probs": {
+      "yes": 0.7,
+      "no": 0.3
+     },
+     "basis": "가정 (LLM 초안, 검수 필요)"
+    }
+   }
+  }
+ },
+ "scenarios": [
+  {
+   "scenario_id": "neph-null",
+   "cluster": "nephrotic_peds",
+   "n_patients": 20,
+   "replicates": 5,
+   "dev_replicates": 3,
+   "null": true,
+   "knobs": {
+    "trials_per_patient": 1,
+    "missing_rate": {
+     "default": 0.3,
+     "lab": 0.4
+    }
+   }
+  },
+  {
+   "scenario_id": "neph-k3-catalog-source",
+   "cluster": "nephrotic_peds",
+   "n_patients": 20,
+   "replicates": 5,
+   "dev_replicates": 3,
+   "knobs": {
+    "trials_per_patient": 3,
+    "cost_heterogeneity": 1.0,
+    "grouping": "source",
+    "missing_rate": {
+     "default": 0.3,
+     "lab": 0.4
+    }
+   }
+  },
+  {
+   "scenario_id": "neph-k3-catalog-perslot",
+   "cluster": "nephrotic_peds",
+   "n_patients": 20,
+   "replicates": 5,
+   "dev_replicates": 3,
+   "knobs": {
+    "trials_per_patient": 3,
+    "cost_heterogeneity": 1.0,
+    "grouping": "per_slot",
+    "missing_rate": {
+     "default": 0.3,
+     "lab": 0.4
+    }
+   }
+  },
+  {
+   "scenario_id": "neph-k2-enroll1",
+   "cluster": "nephrotic_peds",
+   "n_patients": 20,
+   "replicates": 5,
+   "dev_replicates": 3,
+   "knobs": {
+    "trials_per_patient": 2,
+    "cost_heterogeneity": 1.0,
+    "grouping": "source",
+    "enrollment_remaining": 1,
+    "missing_rate": {
+     "default": 0.3,
+     "lab": 0.4
+    }
+   }
+  }
+ ]
+}

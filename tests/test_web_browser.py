@@ -761,6 +761,9 @@ def test_insufficient_information_distinct_from_mismatch(server):
         for v in ("정보 부족", "연구진 판단"):
             assert v in detail, v
         assert "맞지 않음" not in detail
+        # 일반 문구 missing_info(대역 '확인 필요')는 서버가 원문 기준 문장으로 바꿔 보냄 -> 원문 줄과 겹치지 않게 짧은 안내만
+        assert "판단할 정보가 입력에 없음" in detail
+        assert "필요: 확인 필요" not in detail and "이 기준을 확인할 정보 (원문)" not in detail
         page.click("#detail-back")
         # AI 글에 내부 표기가 섞이면 중립 안내 + 원문 접기 (글자를 바꾸지 않음)
         html = page.evaluate("() => aiText('AI 요약', '이 시험은 UNCERTAIN 상태입니다')")
