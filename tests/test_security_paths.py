@@ -286,6 +286,7 @@ def _session(*a):
 def _cli(monkeypatch, tmp_path, fake, *extra, n=2):
     from ctrec import cli
     monkeypatch.setattr(cli, "_run_case", fake)
+    monkeypatch.setattr(cli, "shown_recommendation", lambda s: s.recommendation)  # 대역 Session에는 표현 사본이 없음. 실제 사본 경로는 test_night2_status_boundary
     out = io.StringIO()
     with contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
         code = 0

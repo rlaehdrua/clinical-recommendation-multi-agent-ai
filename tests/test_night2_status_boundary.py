@@ -392,6 +392,23 @@ def test_cli_run_prints_and_saves_the_held_copy(monkeypatch, tmp_path, capsys):
     assert "★ DEMO-LUNG-001 (기록 확인 시 충족 가능)" in capsys.readouterr().out
 
 
+def test_redacted_console_prints_the_held_copy_without_patient_text(monkeypatch, tmp_path, capsys):
+    """--redact-console과 표현 사본의 결합: 보류 상태를 보이고 ID·근거 문장·보고서 경로는 쓰지 않음."""
+    demo = Path(__file__).resolve().parents[1] / "data" / "trials" / "DEMO-LUNG-001.json"
+    patient = tmp_path / "patient_input.json"
+    patient.write_text(json.dumps({"patient_id": "CLI-T2", "text": "62-year-old female. ECOG performance status 1.",
+                                   "candidate_trials": ["DEMO-LUNG-001"]}), encoding="utf-8")
+    monkeypatch.setattr(cv, "evaluate", fake_holds())
+    with qe.OfflineEnvironment(2), pipeline.question_generator.use_generator(qe.baseline_generator):
+        monkeypatch.setattr(config, "DEMO_MODE", True)
+        cli.main(["run", "--patient", str(patient), "--trials", str(demo), "--mode", "fixed", "--candidates", "given",
+                  "--answers", "none", "--max-rounds", "1", "--redact-console", "--out", str(tmp_path / "out")])
+    text = capsys.readouterr().out
+    assert "[#1]" in text and "1. DEMO-LUNG-001(기록 확인 시 충족 가능)" in text
+    assert "CLI-T2" not in text and "report.md" not in text and "★" not in text
+    assert "engine_boundary" in json.loads((tmp_path / "out" / "CLI-T2" / "result.json").read_text(encoding="utf-8"))
+
+
 # ------------------------------------------------------------ 보호 파일 승인이 필요한 경로
 PATCH = "pipeline.py 승인 패치 필요 (docs/dev/night2_patches/pipeline_finalize.patch)"
 
