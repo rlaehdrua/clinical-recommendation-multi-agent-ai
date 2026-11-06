@@ -546,8 +546,11 @@ def test_expert_rule_gets_no_value_truth_or_label_even_when_fully_visible(slot):
                 continue
             key = f"{p.patient_id}|T1|E2"
             assert c.oracle.truth[key] == c.public.initial_holds[key] == "unknown"
-            assert c.oracle.pair_label[f"{p.patient_id}|T1"] == "UNLABELED"
-            assert c.oracle.label_reasons[f"{p.patient_id}|T1"] == ["expert_review"]
+            pk = f"{p.patient_id}|T1"
+            if c.oracle.bound_result[pk] == "fail":  # 다른 기준이 불통과면 판단과 무관하게 부적격
+                assert c.oracle.pair_label[pk] == "INELIGIBLE" and pk not in c.oracle.label_reasons
+            else:
+                assert c.oracle.pair_label[pk] == "UNLABELED" and c.oracle.label_reasons[pk] == ["expert_review"]
 
 
 def test_fully_visible_judge_rule_leads_board_to_expert_review_not_confirmed():
@@ -576,11 +579,14 @@ def test_unbound_rules_are_not_counted_as_passed():
         for p in c.public.patients:
             for t in p.candidate_trials:
                 pk = f"{p.patient_id}|{t}"
-                if c.public.unbound_rules[t]:  # T2: I3·E1 검수 전
+                if c.public.unbound_rules[t]:  # T2: I3·E1 검수 전 (코호트 없음 = 경로 하나)
                     n += 1
-                    assert c.oracle.pair_label[pk] == "UNLABELED"
-                    assert c.oracle.label_reasons[pk] == ["unbound_rules"]
-                    assert c.oracle.bound_result[pk] in ("pass", "fail")
+                    if c.oracle.bound_result[pk] == "fail":
+                        assert c.oracle.pair_label[pk] == "INELIGIBLE" and pk not in c.oracle.label_reasons
+                    else:
+                        assert c.oracle.bound_result[pk] == "pass"
+                        assert c.oracle.pair_label[pk] == "UNLABELED"
+                        assert c.oracle.label_reasons[pk] == ["unbound_rules"]
                 else:
                     assert c.oracle.pair_label[pk] in ("ELIGIBLE", "INELIGIBLE") and pk not in c.oracle.label_reasons
         assert c.unbound_policy == "unlabeled" and "ELIGIBLE" not in {
@@ -598,3 +604,76 @@ def test_validation_detects_expert_value_and_confirmed_label_with_unbound_rules(
     forged = c.model_copy(deep=True)
     forged.oracle.pair_label[f"{p.patient_id}|T2"] = "ELIGIBLE"
     assert any("쌍 라벨 불일치" in i for i in validate(forged, sd, PARSED_J))
+
+
+# ---------------------------------------------------------------------------
+# 미연결 기준이 남은 쌍의 부적격 확정: 불통과가 모든 OR 경로(코호트)에서 성립할 때만
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("failing, paths, label, result", [
+    ([None], [None], "INELIGIBLE", "fail"),                     # 단일 경로 불통과 -> 확정
+    (["A"], ["A", "B"], "UNLABELED", "or_partial"),             # OR 한 경로만 불통과 -> 확정 금지
+    ([], [None], "UNLABELED", "pass"),                          # 불통과 없음 -> 라벨 없음
+    (["A", "B"], ["A", "B"], "INELIGIBLE", "fail"),             # 모든 경로 불통과
+    ([None], ["A", "B"], "INELIGIBLE", "fail"),                 # 공통 기준 불통과 = 모든 경로
+])
+def test_label_pair_with_unbound_rules_confirms_ineligible_only_on_every_or_path(failing, paths, label, result):
+    assert gen.label_pair(failing, paths, ["unbound_rules"]) == (label, result)
+
+
+def test_label_pair_without_reasons_keeps_eligible_through_a_passing_path():
+    assert gen.label_pair(["A"], ["A", "B"], []) == ("ELIGIBLE", "or_partial")  # B 경로 기준은 정답이 모두 통과
+    assert gen.label_pair([], [None], []) == ("ELIGIBLE", "pass")
+
+
+PARSED_OR = {"T3": ParsedTrial(trial_id="T3", title="t", target_population="", intervention_summary="",
+                               key_conditions=[], cohorts=["A", "B"], parsing_notes="", rules=[
+    _rule(rule_id="I1", category="demographic", field="age", operator=">=", value="18", unit="years"),
+    _rule(rule_id="I2", field="lab:hemoglobin", operator=">=", value="11", unit="g/dL", cohort="A"),
+    _rule(rule_id="I3", field="lab:platelets", operator=">=", value="150", unit="10^9/L", cohort="B"),
+    _rule(rule_id="E1", kind="exclusion", category="comorbidity", text="Uncontrolled infection",
+          structured_evaluable=False),  # 검수 전 (미연결)
+])}
+
+
+def _or_dictionary() -> SlotDictionary:
+    """초안기는 코호트 전용 기준을 needs_review로 둠(slots.py) -> 사람이 검수해 연결했다고 가정."""
+    d = slot_draft.draft(PARSED_OR)
+    base = _dictionary().slots
+    slots = {**d.slots, "lab.hemoglobin": base["lab.hemoglobin"], "lab.platelets": base["lab.platelets"]}
+    link = {"T3:I2": "lab.hemoglobin", "T3:I3": "lab.platelets"}
+    return SlotDictionary(built_from=d.built_from, slots=slots, bindings=[
+        b.model_copy(update=dict(status="reviewed", slot=link[b.key], truth="engine", note=None)) if b.key in link else b
+        for b in d.bindings])
+
+
+def test_or_trial_cohorts_label_by_path_and_validate():
+    assert gen.trial_paths(PARSED_OR["T3"]) == ["A", "B"]
+    sd = _or_dictionary()
+    cfg = _config(n_patients=60, knobs={"trials_per_patient": 1, "cost_heterogeneity": 1.0, "grouping": "source",
+                                        "missing_rate": {"default": 0.5}})
+    cfg.clusters["c"].trials = ["T3"]
+    seen = Counter()
+    for c in gen.generate_all(cfg, sd, CATALOG, PARSED_OR):
+        assert validate(c, sd, PARSED_OR) == []
+        assert c.public.unbound_rules == {"T3": ["E1"]}
+        for p in c.public.patients:
+            pk, v = f"{p.patient_id}|T3", {**p.known, **c.oracle.hidden.get(p.patient_id, {})}
+            a_fail = v["age"] < 18 or v["lab.hemoglobin"] < 11
+            b_fail = v["age"] < 18 or v["lab.platelets"] < 150
+            want = "INELIGIBLE" if a_fail and b_fail else "UNLABELED"
+            assert c.oracle.pair_label[pk] == want
+            seen[(want, c.oracle.bound_result[pk])] += 1
+    assert seen[("UNLABELED", "or_partial")] > 0 and seen[("INELIGIBLE", "fail")] > 0  # 두 경우가 실제로 생김
+
+
+def test_validation_recomputes_or_paths_independently():
+    sd = _or_dictionary()
+    cfg = _config(n_patients=60, knobs={"trials_per_patient": 1, "cost_heterogeneity": 1.0, "grouping": "source",
+                                        "missing_rate": {"default": 0.5}})
+    cfg.clusters["c"].trials = ["T3"]
+    c = gen.generate_all(cfg, sd, CATALOG, PARSED_OR)[0]
+    pk = next(k for k, r in c.oracle.bound_result.items() if r == "or_partial")
+    forged = c.model_copy(deep=True)
+    forged.oracle.pair_label[pk] = "INELIGIBLE"  # 한 경로만 불통과인데 부적격 확정 -> 검증기가 잡아야 함
+    assert any("쌍 라벨 불일치" in i for i in validate(forged, sd, PARSED_OR))
