@@ -19,6 +19,7 @@ eval_hygiene)를 쓰므로 engine 패키지 밖에 둡니다(엔진은 평가·�
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -35,6 +36,7 @@ from .eval_hygiene import run_method_hygienic
 from .schemas import QuestionSet
 
 QUESTIONS_PER_ROUND = 1
+MIN_SENTENCE_CHARS = 12  # 짧은 조각은 코드 값과 우연히 겹칠 수 있음
 METHOD = "engine_records"
 QUESTION_ID = "Q1"
 DEFAULT_BUDGET = EffortBudget(coordinator_minutes=100000.0)  # 실험 예산이 아니라 선택이 예산에서 잘리지 않게 하는 값
@@ -177,6 +179,11 @@ def _observations(rec: _Recorder, s, run_id: str, final_snap, final_co) -> list[
     return out
 
 
+def _patient_sentences(text: str) -> list[str]:
+    """쓰기 검사에 넘길 환자 원문 문장. 기록은 ID·코드뿐이므로 원문 전체가 아니라 문장 단위로 찾습니다."""
+    return [s.strip() for s in re.split(r"(?<=[.!?。])\s+|\n+", text or "") if len(s.strip()) >= MIN_SENTENCE_CHARS]
+
+
 def record_case(hc, trials: dict, scanner, run_dir: Path, *, rounds: int = 2,
                 policy: LegacyAdapterPolicy | None = None, budget: EffortBudget = DEFAULT_BUDGET) -> OfflineRunResult:
     """별칭 사례 하나를 오프라인 대역으로 실행하고 기록·진단을 run_dir에 씀 (OfflineEnvironment는 여기서 설치)."""
@@ -201,16 +208,17 @@ def record_case(hc, trials: dict, scanner, run_dir: Path, *, rounds: int = 2,
     res.final_snapshot, res.final_cohort = rec.state(s)
     for o in _observations(rec, s, run_id, res.final_snapshot, res.final_cohort):
         res.steps.append(rp.build_step(o))
-    records = audit.RecordWriter(run_dir / audit.RECORDS_FILE, run_id, scanner=scanner)
-    issues = rp.IssueWriter(run_dir / rp.ISSUES_FILE, run_id, scanner=scanner)
+    sentences = _patient_sentences(hc.case.raw_text)
+    records = audit.RecordWriter(run_dir / audit.RECORDS_FILE, run_id, forbidden_texts=sentences, scanner=scanner)
+    issues = rp.IssueWriter(run_dir / rp.ISSUES_FILE, run_id, forbidden_texts=sentences, scanner=scanner)
     for step in res.steps:
         rp.write_step(step, records, issues)
-    res.verification = verify_run(res)
+    res.verification = verify_run(res, scanner)
     return res
 
 
-def verify_run(res: OfflineRunResult) -> list[str]:
-    """저장한 두 파일을 다시 읽어 실행과 맞는지 확인. 문제 코드 목록 (빈 목록 = 정합)."""
+def verify_run(res: OfflineRunResult, scanner=None) -> list[str]:
+    """저장한 두 파일을 다시 읽어 실행과 맞는지 확인. 문제 코드 목록 (빈 목록 = 정합). scanner를 주면 읽을 때도 값을 검사."""
     problems: list[str] = []
     run_dir = res.run_dir
     expected = {i + 1: rd.action.action_id for i, rd in enumerate(res.rounds)}
@@ -219,7 +227,7 @@ def verify_run(res: OfflineRunResult) -> list[str]:
     if res.rematch_rounds_in_session != len(res.rounds):
         problems.append("rematch_count_mismatch")  # 질문 1개당 재매칭 1번이어야 귀속이 성립
     try:
-        loaded = audit.load_run_v2(run_dir) if (run_dir / audit.RECORDS_FILE).exists() else None
+        loaded = audit.load_run_v2(run_dir, scanner=scanner) if (run_dir / audit.RECORDS_FILE).exists() else None
     except audit.AuditError:
         return problems + ["records_unreadable"]
     records = loaded.records if loaded else []
