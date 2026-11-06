@@ -56,7 +56,7 @@ def tied_paths(t) -> frozenset[str]:
     """matcher._select_cohort가 선언 순서로만 고른 동점 코호트 (선택된 코호트 포함). 동점이 없으면 빈 집합.
 
     동점 기준은 matcher와 같음: 같은 적격성 + 같은 판정 불가 수. 이름·순서를 보지 않으므로 선언 순서를 바꿔도 같은 집합."""
-    best, results = t.matched_cohort, t.cohort_results
+    best, results = getattr(t, "matched_cohort", None), getattr(t, "cohort_results", {})  # 기준 목록만 넘기는 호출도 있음
     if best is None or best not in results:
         return frozenset()
 
