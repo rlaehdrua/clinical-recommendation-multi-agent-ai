@@ -140,3 +140,15 @@ def test_answers_follow_the_same_roles(text):
 def test_clear_answer_is_kept():
     assert answer(HB, 12.0, "Hb 12 g/dL입니다") is None
     assert answer(HB, 12.0, "12요") is None
+
+
+@pytest.mark.parametrize("text", [
+    "혈색소는 12 g/dL입니다", "Hb 12 g/dL로 정상", "Hb 12 g/dL이고 혈소판 200", "WBC 5.0 / Hb 12 / Plt 200", "Hb 12 without transfusion",
+    "no transfusion Hb 12"])
+def test_particle_and_list_separator_do_not_hide_a_real_value(text):
+    assert vg.ground_lab("hemoglobin", 12.0, text, text, unit="g/dL") is None
+
+
+def test_a_different_unit_after_a_particle_is_still_a_different_unit():
+    text = "Hb 12 g/L입니다"
+    assert vg.ground_lab("hemoglobin", 12.0, text, text, unit="g/dL") == "unlocated"

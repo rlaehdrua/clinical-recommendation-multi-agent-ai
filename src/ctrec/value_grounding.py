@@ -94,7 +94,7 @@ def normalize(field: str, text: str) -> str:
 
 
 # ---------------------------------------------------------------------------- 수치의 역할
-_NOT_A_RESULT = re.compile(r"\b(?:target|goal|aim|desired|threshold|cut-?off|trigger|maintain|keep|transfus\w*|if|unless|should|in\s+case|provided|"
+_NOT_A_RESULT = re.compile(r"\b(?:target|goal|aim|desired|threshold|cut-?off|trigger|maintain|keep|(?<!without\s)(?<!no\s)transfus\w*|if|unless|should|in\s+case|provided|"
                            r"assuming|suppose|would|once|until|expected|predicted)\b|목표|유지|역치|수혈(?!\s*없이)|라면|다면|이면|"
                            r"[일인]\s*(?:경우|때)|예상|예정", re.IGNORECASE)
 _REFERENCE_BEFORE = re.compile(r"\b(?:reference|ref|normal|range|uln|lln)\b|정상|참고|기준\s*(?:범위|치|값)", re.IGNORECASE)
@@ -288,7 +288,7 @@ _NOT_A_VALUE = re.compile(r"\d{4}[-./]\d{1,2}(?:[-./]\d{1,2})?|\d{1,2}월(?:\s*\
                           r"\d+(?:\.\d+)?\s*[-~–]\s*\d+(?:\.\d+)?|10\s*[\^*]\s*\d+|10e\d+", re.IGNORECASE)  # 범위, 단위의 10^9
 _LINK_BREAK = re.compile(r"[,;\n]")
 _NAME_TO_VALUE, _VALUE_TO_NAME = 25, 12  # 검사명과 수치 사이 글자 수
-_UNIT_AFTER = re.compile(r"\s*([^\s,;()]*[/%][^\s,;()]*)")
+_UNIT_AFTER = re.compile(r"\s*([^\s,;()가-힣]*[/%][^\s,;()가-힣]*)")  # 조사는 단위가 아님: "12 g/dL입니다"
 
 
 def _sentence_spans(body: str):
@@ -347,7 +347,9 @@ def _current_values(numbers: list[tuple[int, int, str, str]]) -> set[str]:
 def _same_unit(body: str, hi: int, unit: str | None) -> bool:
     """수치 바로 뒤의 단위가 프로필 단위와 같은가. 어느 한쪽에 단위가 없으면 비교할 수 없으므로 막지 않음."""
     m = _UNIT_AFTER.match(body, hi)
-    return not (unit and m) or _norm_unit(m.group(1).rstrip(".")) == _norm_unit(unit)
+    if not (unit and m) or not m.group(1).strip("/"):  # "Hb 12 / Plt 200"의 구분선은 단위가 아님
+        return True
+    return _norm_unit(m.group(1).rstrip(".")) == _norm_unit(unit)
 
 
 def _quote_hits(quote: str | None, source_text: str) -> list:
