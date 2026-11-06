@@ -484,3 +484,117 @@ def test_dictionary_rejects_unknown_also_slot():
     with pytest.raises(ValueError, match="tx.transfusion"):
         SlotDictionary(built_from=sd.built_from, slots=slots,
                        bindings=[b.model_copy(update={"status": "reviewed"}) if b.key == "T1:I2" else b for b in sd.bindings])
+
+
+# ---------------------------------------------------------------------------
+# 임상의 판단 기준(judge.* ∪ expert 슬롯): 값·정답·쌍 라벨을 만들지 않음 / 미연결 기준: 충족으로 간주하지 않음
+# ---------------------------------------------------------------------------
+
+import csv  # noqa: E402
+from collections import Counter  # noqa: E402
+
+from ctrec import config as app_config  # noqa: E402
+from ctrec.cohort.spec import EXPERT_SLOT_PREFIX, EXPERT_SLOTS, is_expert_slot  # noqa: E402
+from ctrec.web import cohort_board  # noqa: E402
+
+JUDGE = "judge.investigator_unsuitable"
+PARSED_J = {**PARSED, "T1": _parsed("T1", [*PARSED["T1"].rules, _rule(
+    rule_id="E2", kind="exclusion", category="other", text="Unsuitable in the investigator's opinion",
+    structured_evaluable=False)])}
+CATALOG_J = SourceCatalog(sources={**CATALOG.sources, "S_md": SourceSpec(
+    label="md", evidence="physician", cost_min=20, cost_range=(10, 60), reveals=["judge.*", "cm.cardiac"], basis="가정")})
+
+
+def _judge_dictionary(slot=JUDGE) -> SlotDictionary:
+    d = slot_draft.draft(PARSED_J)
+    sd = _dictionary()
+    slots = {**sd.slots, slot: SlotSpec(slot_id=slot, kind="categorical", category="other", source="S_md",
+                                        values=["yes", "no"])}
+    by = {b.key: b for b in sd.bindings}
+    bindings = []
+    for b in d.bindings:
+        if b.key == "T1:E2":  # 사람이 검수해 연결했다고 가정 (검수돼도 판단 기준이면 정답을 만들지 않아야 함)
+            b = b.model_copy(update=dict(status="reviewed", slot=slot, truth="categorical", op="in", values=["yes"]))
+        bindings.append(by.get(b.key, b))
+    return SlotDictionary(built_from=d.built_from, slots=slots, bindings=bindings)
+
+
+def _fully_visible_config():
+    """결측률 0: 판단 슬롯이 '처음부터 공개'되는 조건 (수정 전에는 201/296건이 이렇게 공개됨). 판단 슬롯 사전 분포 없음."""
+    return _config(knobs={"trials_per_patient": 2, "cost_heterogeneity": 1.0, "grouping": "source",
+                          "missing_rate": {"default": 0.0}})
+
+
+def test_expert_slot_definition_is_single_and_matches_board_and_csv():
+    assert EXPERT_SLOT_PREFIX == cohort_board.EXPERT_SLOT_PREFIX  # 현황판과 같은 접두어
+    path = app_config.DATA_DIR / "nsclc" / "cohort" / "slot_candidates.csv"
+    with open(path, encoding="utf-8-sig", newline="") as f:
+        csv_expert = {r["slot_id"] for r in csv.DictReader(f) if r["adjudication_candidate"] == "expert"}
+    assert EXPERT_SLOTS == csv_expert  # 후보표가 바뀌면 상수도 같이 바꿔야 함
+    assert is_expert_slot("judge.anything") and is_expert_slot("cm.cardiac") and not is_expert_slot("lab.hemoglobin")
+
+
+@pytest.mark.parametrize("slot", [JUDGE, "cm.cardiac"])
+def test_expert_rule_gets_no_value_truth_or_label_even_when_fully_visible(slot):
+    sd = _judge_dictionary(slot)
+    for c in gen.generate_all(_fully_visible_config(), sd, CATALOG_J, PARSED_J):
+        assert validate(c, sd, PARSED_J) == []
+        assert c.public.expert_rules == {"T1": ["E2"], "T2": []}
+        for p in c.public.patients:
+            assert slot not in p.known and slot not in c.oracle.hidden.get(p.patient_id, {})
+            if "T1" not in p.candidate_trials:
+                continue
+            key = f"{p.patient_id}|T1|E2"
+            assert c.oracle.truth[key] == c.public.initial_holds[key] == "unknown"
+            assert c.oracle.pair_label[f"{p.patient_id}|T1"] == "UNLABELED"
+            assert c.oracle.label_reasons[f"{p.patient_id}|T1"] == ["expert_review"]
+
+
+def test_fully_visible_judge_rule_leads_board_to_expert_review_not_confirmed():
+    sd = _judge_dictionary()
+    seen = Counter()
+    for c in gen.generate_all(_fully_visible_config(), sd, CATALOG_J, PARSED_J):
+        b = cohort_board.board(c.model_dump(mode="json"))
+        for p in c.public.patients:
+            if "T1" not in p.candidate_trials:
+                continue
+            pk = f"{p.patient_id}|T1"
+            status = b["pairs"][pk]["status"]
+            seen[status] += 1
+            assert status != "CONFIRMED_ELIGIBLE"
+            others = [c.public.initial_holds[f"{pk}|{r.rule_id}"] for r in c.public.rules["T1"] if r.rule_id != "E2"]
+            # 다른 기준을 모두 알고(검사 유효 기간이 지난 stale은 INFO_MISSING이 우선) 모두 통과면 남은 것은 임상의 판단뿐
+            if c.oracle.bound_result[pk] == "pass" and "unknown" not in others:
+                assert status == "EXPERT_REVIEW" and "physician_review" in b["pairs"][pk]["pending_kinds"]
+    assert seen["EXPERT_REVIEW"] > 0
+
+
+def test_unbound_rules_are_not_counted_as_passed():
+    sd = _dictionary()
+    n = 0
+    for c in _cohorts(sd=sd):
+        for p in c.public.patients:
+            for t in p.candidate_trials:
+                pk = f"{p.patient_id}|{t}"
+                if c.public.unbound_rules[t]:  # T2: I3·E1 검수 전
+                    n += 1
+                    assert c.oracle.pair_label[pk] == "UNLABELED"
+                    assert c.oracle.label_reasons[pk] == ["unbound_rules"]
+                    assert c.oracle.bound_result[pk] in ("pass", "fail")
+                else:
+                    assert c.oracle.pair_label[pk] in ("ELIGIBLE", "INELIGIBLE") and pk not in c.oracle.label_reasons
+        assert c.unbound_policy == "unlabeled" and "ELIGIBLE" not in {
+            c.oracle.pair_label[f"{p.patient_id}|T2"] for p in c.public.patients if "T2" in p.candidate_trials}
+    assert n > 0
+
+
+def test_validation_detects_expert_value_and_confirmed_label_with_unbound_rules():
+    sd = _judge_dictionary()
+    c = gen.generate_all(_fully_visible_config(), sd, CATALOG_J, PARSED_J)[0]
+    leak = c.model_copy(deep=True)
+    leak.public.patients[0].known[JUDGE] = "no"
+    assert any("임상의 판단 슬롯에 값이 있음" in i for i in validate(leak, sd, PARSED_J))
+    p = next(p for p in c.public.patients if "T2" in p.candidate_trials)
+    forged = c.model_copy(deep=True)
+    forged.oracle.pair_label[f"{p.patient_id}|T2"] = "ELIGIBLE"
+    assert any("쌍 라벨 불일치" in i for i in validate(forged, sd, PARSED_J))
