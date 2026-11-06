@@ -625,7 +625,7 @@ def test_record_load_problems_do_not_carry_file_values(tmp_path):
     (d).mkdir()
     (d / audit.RECORDS_FILE).write_text("\n".join(json.dumps(x, ensure_ascii=False) for x in (bad_extra, other_schema)) + "\n",
                                         encoding="utf-8")
-    assert SENSITIVE in str(audit.load_run_v2(d).issues)  # 기존 로더 메시지에는 남음: 여기서 제거해야 함
+    assert SENSITIVE not in str(audit.load_run_v2(d).issues)  # 로더 문제 목록에도 파일 값이 없음
     _, problems = rm.compute_for_runs([d])
     assert problems == ["run:line 1: invalid_record", "run:line 2: unsupported_schema"]
 
