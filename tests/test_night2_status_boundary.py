@@ -318,10 +318,10 @@ def test_saved_outputs_without_a_hold_keep_the_report_file(tmp_path):
 def test_cli_prints_the_held_recommendation(tmp_path):
     with Run(tmp_path, {"HELD": [HB, AGE], "CLEAN": [AGE]}, RISE) as r:
         rec = cli.shown_recommendation(r.s)
-        original = r.s.recommendation
+        kept = r.s.matches["HELD"].match_status
     assert [(x.trial_id, x.match_status) for x in rec.recommended] == [("CLEAN", "CRITERIA_MATCH")]
     assert [(x.trial_id, x.match_status) for x in rec.ranked][1] == ("HELD", "POTENTIAL_MATCH")
-    assert {x.trial_id: x.match_status for x in original.ranked}["HELD"] == "CRITERIA_MATCH"  # Session 값은 그대로
+    assert kept == "CRITERIA_MATCH"  # Session 판정 쪽 값은 그대로
 
 
 def test_orchestrator_tool_result_uses_the_held_copy(tmp_path):
