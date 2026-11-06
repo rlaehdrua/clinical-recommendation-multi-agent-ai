@@ -599,6 +599,17 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 
 수정할 때마다 무엇을 왜 바꿨는지 여기에 기록합니다. 최신 항목이 위에 옵니다.
 
+### 2026-11-06 — 필수 기준이 0개인 쌍을 담당자 검토로 보냄 (#14·#17 후속)
+
+배경: #14는 판정에 적용된 필수 기준이 0개인 쌍(파싱 결과 빔·절차 기준만 있음 등)을 확정 적격이 아니라 NOT_EVALUATED로 둡니다. 그런데 기존 정책(`decision_policy`)은 Matcher 판정 값만 보므로, Matcher가 ELIGIBLE을 준 이 쌍에는 아무 행동도 내지 않았습니다. 현황판에 "평가 안 됨"으로 남을 뿐 누구도 확인하지 않는 상태였습니다. #17 검토 중 R5 선택지 P2(필수 기준 없으면 UNCERTAIN)도 같은 문제(행동 없는 INFO_MISSING)를 만든다는 점을 확인했습니다.
+
+| # | 변경 | 파일 |
+|---|---|---|
+| 1 | 판정에 적용된 필수 기준이 0개이고 Matcher 판정이 ELIGIBLE·UNCERTAIN인 모집 중 쌍에 `CLINICIAN_REVIEW(no_required_criteria)`를 환자당 한 건(해당 시험 묶음) 더함. 단계·비용은 기존 `evaluation_failed` 검토와 같음. 판정·쌍 상태는 바꾸지 않음. Matcher가 NOT_EVALUATED를 준 시험(#17)은 기존 `evaluation_failed` 검토가 맡으므로 중복되지 않음 | `src/ctrec/engine/policy.py` |
+| 2 | 테스트: 기준 0개·절차 기준만·기준 0개 UNCERTAIN은 검토 대상, 정상 대조군·모집 종료 시험은 제외, 결정적, 선택되고 결과 반영 뒤에도 판정 불변, 일반 코호트에는 추가되지 않음 | `tests/test_engine_policy.py` |
+
+- 이 브랜치는 PR #16 위에 있습니다. 웹 엔진 모드(#15)에서 이 행동은 화면에서 실행하지 않고 계획 trace에만 남습니다(임상의 판단 행동과 같은 처리).
+
 ### 2026-11-05 — 기준선 정책 4종과 제안 정책 full_dcvc 초안, PolicyEngine 프로토콜 정리 (DCV+C 엔진, WP6 준비)
 
 배경: #13(WP6 준비 상태 점검)에서 정책 비교 실험에 필요한 기준선·제안 정책이 코드에 없다고 지적됐습니다. 기준선은 로드맵 M10에서 이미 정해진 범위라 먼저 구현했고, full_dcvc는 정의 합의 전 초안으로 스위치를 두어 나중에 바꾸기 쉽게 했습니다.

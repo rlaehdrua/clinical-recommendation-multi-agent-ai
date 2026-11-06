@@ -452,3 +452,43 @@ def test_legacy_decline_defer_becomes_document_request_after_engine_item_failure
     last = next(a for a in pol.propose(co2) if a.info_key == "ecog")
     assert (last.action_type, last.reason_code, last.source_id) == ("DEFER", "item_sources_exhausted", None)
     assert co2.pair(PA, "T1").status != C.PairStatus.BLOCKED_FAILURE  # EGFR가 남아 있음
+
+
+# ------------------------------------------------------------ 필수 기준 0개 쌍
+def _state_no_required():
+    """T0 기준 0개, T1 절차 기준만(waivable), T2 정상 대조군, T3 기준 0개지만 모집 종료, T4 기준 0개 UNCERTAIN."""
+    from ctrec.decision_state import CriterionState, DecisionState, TrialState
+    crit = lambda tid, rid, req: CriterionState(trial_id=tid, rule_id=rid, kind="inclusion", category="clinical",  # noqa
+                                                cohort=None, requirement=req, status="MET", info_key="age")
+    return DecisionState(session_id="S", patient_id="SYN-PE", fact_version="v1", trials={
+        "T0": TrialState(trial_id="T0", eligibility="ELIGIBLE", match_status=None, open=True),
+        "T1": TrialState(trial_id="T1", eligibility="ELIGIBLE", match_status=None, open=True,
+                         criteria=[crit("T1", "I1", "waivable")]),
+        "T2": TrialState(trial_id="T2", eligibility="ELIGIBLE", match_status=None, open=True,
+                         criteria=[crit("T2", "I1", "required")]),
+        "T3": TrialState(trial_id="T3", eligibility="ELIGIBLE", match_status=None, open=False),
+        "T4": TrialState(trial_id="T4", eligibility="UNCERTAIN", match_status=None, open=True)})
+
+
+def test_pair_without_required_criteria_goes_to_clinician_review():
+    """엔진이 NOT_EVALUATED로 둔 쌍(#14)과 필수 기준 없는 UNCERTAIN 쌍은 기존 정책이 행동을 내지 않음 -> 담당자 검토."""
+    pe = AM.alias("SYN-PE")
+    co = CohortState.from_decision_states({pe: _state_no_required()})
+    status = {p.pair.trial_id: p.status for p in co.pairs()}
+    assert status["T0"] == status["T1"] == C.PairStatus.NOT_EVALUATED and status["T4"] == C.PairStatus.INFO_MISSING
+    pol = LegacyAdapterPolicy()
+    reviews = [a for a in pol.propose(co) if a.reason_code == "no_required_criteria"]
+    assert len(reviews) == 1
+    r = reviews[0]
+    assert r.action_type == "CLINICIAN_REVIEW" and r.source_id == "clinician_review" and not r.safety_required
+    assert r.target_trial_ids == ("T0", "T1", "T4")  # 정상 대조군·모집 종료 시험은 제외
+    assert r.expected_cost.clinician_minutes > 0
+    assert [a.action_id for a in pol.propose(co)] == [a.action_id for a in pol.propose(co)]  # 결정적
+    plan = pol.select(pol.propose(co), _budget(60), cohort=co)
+    assert r.action_id in {a.action_id for a in plan.selected}
+    co2, trans = pol.apply_outcome(co, r, C.ActionOutcome(action_id=r.action_id, status="succeeded"))
+    assert trans == () and [p.status for p in co2.pairs()] == [p.status for p in co.pairs()]  # 판정·상태는 그대로
+
+
+def test_no_review_added_when_every_pair_has_required_criteria():
+    assert not [a for a in LegacyAdapterPolicy().propose(_cohort()) if a.reason_code == "no_required_criteria"]

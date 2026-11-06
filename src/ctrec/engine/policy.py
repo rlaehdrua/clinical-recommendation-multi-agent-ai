@@ -10,6 +10,8 @@ LegacyAdapterPolicy
   실제 Session에서는 "모름" 뒤 기존 정책이 그 항목을 다시 묻지 않고 DEFER(user_declined_or_exhausted)를 내므로,
   그 보류도 같은 항목의 실패 기록(ops.failed_items)이 있으면 같은 규칙으로 문서 정보원 요청으로 바꿈
   (실패 기록이 없는 보류 - 엔진 밖에서 생긴 거부 등 - 는 그대로 보류).
+  판정에 적용된 필수 기준이 0개인데 ELIGIBLE·UNCERTAIN인 쌍(절차 기준만 있음 등)은 CLINICIAN_REVIEW(no_required_criteria)를
+  더함. 엔진은 이 쌍을 확정하지 않지만(derive_pair_status) 기존 정책은 판정 값만 보고 행동을 내지 않으므로.
 - select(candidates, budget, ledger): 결정적 탐욕 기준선.
     1) 안전 필수(tier 1: 상충 확인·상태 재계산) 먼저. 예산이 모자라면 버리지 않고 safety_unfunded로 보고하고,
        그 환자의 나머지 행동은 실행하지 않음(blocked_by_unfunded_safety).
@@ -30,9 +32,9 @@ from __future__ import annotations
 import re
 from types import MappingProxyType
 
-from ..decision_policy import DEFAULT_POLICY, PolicyConfig, candidates
+from ..decision_policy import ACTION_ORDER, DEFAULT_POLICY, PolicyConfig, candidates, fingerprint
 from .bundles import SourceCatalog
-from .cohort_state import CohortState, OpsState
+from .cohort_state import CohortState, OpsState, required_count
 from .contracts import (LEGACY_ACTION_TYPES, NON_EXECUTING, ZERO_COST, Action, ActionOutcome, EffortBudget,
                         PairTransition, Plan, SkippedAction, check_transition, failure_scope)
 from .cost import EffortLedger
@@ -41,6 +43,8 @@ POLICY_ID = "legacy_adapter_greedy"
 POLICY_VERSION = "0.2-provisional"
 SAFETY_TIER = 1
 LEGACY_DECLINED_DEFER = "user_declined_or_exhausted"  # decision_policy가 "모름"·거부 뒤 내는 보류 사유
+NO_REQUIRED_REVIEW = "no_required_criteria"  # 필수 기준 0개 쌍의 담당자 검토 사유
+REVIEW_TIER = 6  # decision_policy의 evaluation_failed 검토와 같은 단계
 VERIFICATION_TYPES = frozenset({"ASK_PATIENT", "REQUEST_DOCUMENT", "VERIFY_RECORD", "CLINICIAN_REVIEW"})
 
 
@@ -76,7 +80,28 @@ class LegacyAdapterPolicy:
             legacy, _ = candidates(st, self.cfg, (pending_reevaluation or {}).get(alias))
             for seq, la in enumerate(legacy):
                 out.append(self._convert(alias, seq, la, ops, gaps))
+            review = self._no_required_review(alias, st, len(legacy))
+            if review is not None:
+                out.append(review)
         return out
+
+    def _no_required_review(self, alias: str, st, seq: int) -> Action | None:
+        """판정에 적용된 필수 기준이 0개인 모집 중 쌍 -> 담당자 검토 한 건 (환자당, 시험 묶음).
+
+        확인할 필수 기준이 없으니 환자 질문·문서로는 확정 근거가 생기지 않음. 판정은 바꾸지 않음."""
+        tids = sorted(tid for tid, t in st.trials.items()
+                      if t.open and t.eligibility in ("ELIGIBLE", "UNCERTAIN") and required_count(t) == 0)
+        if not tids:
+            return None
+        source = self.catalog.route("NEEDS_REVIEW", [], None)
+        src = self.catalog.get(source)
+        fp = fingerprint("NEEDS_REVIEW", NO_REQUIRED_REVIEW, tids, None, st.fact_version)
+        return Action(
+            action_id=f"{alias}:{fp}", action_type="CLINICIAN_REVIEW", patient_alias=alias, source_id=source,
+            target_trial_ids=tuple(tids), expected_cost=ZERO_COST if src is None else src.request_cost,
+            reason_code=NO_REQUIRED_REVIEW, tier=REVIEW_TIER,
+            priority=REVIEW_TIER + ACTION_ORDER["NEEDS_REVIEW"] / 100 + 0.5, sequence=seq, fingerprint=fp,
+            policy_version=self.version)
 
     @staticmethod
     def purpose_of(action_type: str, targets: tuple[str, ...], gaps: dict[str, str]) -> str:
