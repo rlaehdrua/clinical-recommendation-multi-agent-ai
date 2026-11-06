@@ -599,6 +599,24 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 
 수정할 때마다 무엇을 왜 바꿨는지 여기에 기록합니다. 최신 항목이 위에 옵니다.
 
+### 2026-11-06 — WP6 오프라인 시뮬레이터·실행기 1차 (`src/ctrec/sim/`, #13 §9-1·9-2·9-4)
+
+배경: 기준선·`full_dcvc` 초안(#16)은 있었지만, 같은 코호트·예산·seed로 정책을 돌려 비교표를 만드는 실행기가 없었습니다(#13 P0). 설계는 `docs/dev/wp6_experiment_design.md`를 따르고, 정책은 `engine/`의 웹과 같은 클래스를 씁니다(M14). 실제 LLM 호출은 0건입니다.
+
+| # | 변경 | 파일 |
+|---|---|---|
+| 1 | 코호트 형식: public(처음 알려진 사실, 출처·검증 상태 포함)과 oracle(정답 사실) 분리. 시험은 시험 저장소 형식 그대로(ParsedTrial + 규칙 메타). 환자 키는 AliasMap 별칭으로만 실행에 들어감. `cohort_hash`·`frozen_store_hash` 계산 | `src/ctrec/sim/cohort.py` (신규) |
+| 2 | 오프라인 평가기: 기존 Matcher·Decision State를 그대로 쓰고 LLM만 대역(`llm.use_client`)으로 바꿈. LLM에 넘어가는 기준은 전부 판정 불가 → **규칙 엔진 범위만 평가하는 시나리오**(#13 §9 위험 1). Matcher 외 LLM 요청은 막음. 사실 ID·기록 시각은 결정적. 원문은 기록 부분/답변 부분으로 나눠 써서 근거 수준 정책(진료 기록 필요 기준은 답변만으로 확정 안 함)이 실제 Session과 같이 작동 | `src/ctrec/sim/evaluator.py` (신규) |
+| 3 | 응답 모델: 정보원 종류별 연락 불가(정보원 단위 `unreachable`)·"모름"(항목 단위 `no_answer`)·지연. 값은 전부 가정값(`basis: assumed`), 정책에 보이지 않음. 행동별 해시 난수(seed, 별칭, 정보원, 지문, 시도 횟수)라 정책 순서와 무관한 공통 난수 | `src/ctrec/sim/response_model.py` (신규) |
+| 4 | 환경: 정보원이 드러낼 수 있는 정답 사실 중 행동이 요구한 항목만 새 사실로. 환자는 검사 수치·바이오마커를 모름. 문서는 같은 값의 기존 사실을 **문서 확인 상태로 바꾸고**(새 사실로 겹치지 않음 - 겹치면 근거 수준 최솟값 때문에 확정되지 않음), 없거나 다르면 새 기록 사실. LLM이 드는 재파싱은 실행 안 함, 임상의 검토는 사실·판정을 만들지 않음 | `src/ctrec/sim/environment.py` (신규) |
+| 5 | Runner: spec 검증(카탈로그·코호트·저장소 해시, 계약·정책 버전) → 라운드마다 propose/select → 실행 → 실행한 행동만 청구(실패·무응답 포함) → 새 사실·문서 확인이 있으면 그 환자 전체 재평가 → `apply_outcome` → `record_producer.build_step`. 같은 사실 상태에서 같은 정보원에 같은 행동은 다시 넣지 않음(`repeat_limit=1`, 모든 정책 공통). `result_hash` = 기록·진단·지표 정규화 해시. manifest에 주장 범위·카탈로그 주장·응답 모델·평가기 범위·환경·커밋 | `src/ctrec/sim/runner.py` (신규) |
+| 6 | 지표: PairStatus 최초/최종, 시스템 확정 적격·부적격, 규칙 GT 비교(정답 사실을 같은 평가기에 넣어 확정된 쌍만 라벨 - **순환적이라 일관성 검사이며 False Eligible로 쓰지 않음**), 행동·실패 코드, 능동 분과 경과 분 분리, 환자 질문 수·"모름" 수, 배분 Gini, 라운드별 확정 수, 종료 사유, 감사 상태 | `src/ctrec/sim/metrics.py` (신규) |
+| 7 | 점검용 합성 데모 코호트(환자 6 × 시험 3, NSCLC 형태, 실제 데이터 아님)와 비교표 CLI `python -m ctrec.sim --budgets 20,45,90,400 --seeds 1,2 [--out DIR]` | `src/ctrec/sim/demo.py`, `src/ctrec/sim/__main__.py` (신규) |
+| 8 | 테스트 58건: 같은 spec 2회 같은 해시·seed별 차이, 해시 없음·불일치 거부, 실패·무응답 새 사실 0·비용 청구, 정책별 예산 초과 0, 실제 LLM 클라이언트 미사용, oracle 정적 격리(engine/·평가기), 정책 입력은 public 사실뿐, sim/에 정책 클래스 없음, 공통 난수, 규칙 GT 대비 확정 불일치 0, 문서 확인으로 확정 부적격, 첫 라운드 계획 = 공유 정책 계획, 기록 저장·재로드, manifest 주장 범위 | `tests/test_sim_runner.py` (신규) |
+
+- 데모 결과(합성·가정 비용, 상대 비교 전용): 예산 400분에서 모든 정책이 확정 적격 4~5·부적격 6에 이르고, `full_dcvc`가 같은 확정 수를 더 적은 분(280.5/260 vs 286.5/281)으로 냄. 예산 45분에서는 `full_dcvc`가 확정 0건(random·patient_order 1건). 기존 후보 생성이 검사 수치를 환자에게 먼저 묻고(환자는 모름) 그 뒤에 문서로 넘어가 예산을 먼저 쓰기 때문이며, `full_dcvc` 정의 논의 때 같이 볼 점입니다.
+- 남은 한계: 생성기(`src/ctrec/cohort`) 슬롯 코호트 변환은 슬롯 → 사실 항목 대응표(설계 §2.1, Q-G1) 합의 뒤. LLM 기준용 검수된 categorical 평가기 없음. 부분 응답(partial)·환자 오답 없음. `oracle_upper`·부트스트랩 신뢰구간·소규모 완전탐색 없음. 상충(기록 ECOG 1 vs 답변 3)은 문서 확인 뒤에도 풀리지 않음(답변 사실을 철회하는 경로가 없음 - 기존 decision_state 동작). "모름" 재질문 횟수(`repeat_limit`)는 팀 결정 전 기본값.
+
 ### 2026-11-06 — WP8 실행기 리뷰 후속: 상충 확인을 화면 질문으로 보내지 않음, "모름" 표현 차이·문서 요청 반복 수정
 
 배경: 선우 대신 독립 리뷰를 돌린 결과, 엔진 모드(`CTREC_POLICY_MODE=engine`)에서 결함 3건이 재현됐습니다. 기본 모드는 영향이 없습니다.

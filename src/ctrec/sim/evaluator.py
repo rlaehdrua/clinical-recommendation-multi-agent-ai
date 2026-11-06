@@ -1,0 +1,166 @@
+"""오프라인 판정 (설계 §3.3): 기존 Matcher·Decision State를 그대로 쓰고, LLM 호출만 오프라인 대역으로 바꿉니다.
+
+- 규칙 엔진이 판정하는 구조화 기준(나이·성별·ECOG·검사 수치)은 기존 경로 그대로 판정됩니다.
+- Matcher가 LLM에 넘기는 기준은 OfflineMatcherClient가 전부 "판정 불가(unknown)"로 답합니다. 실제 API 호출은 0건이며
+  (llm.use_client로 이 컨텍스트의 클라이언트를 대역으로 고정), Matcher 외의 LLM 요청은 OfflineLLMRequest로 막습니다.
+  따라서 결과는 **규칙 엔진 범위만 평가한 시나리오**입니다 (#13 §9 위험 1). 검수된 categorical 평가기는 생성기 대응표 합의 뒤.
+- 사실은 결정적 ID·기록 시각으로 만듭니다 (같은 실행이면 같은 fact_id -> 같은 행동 지문·결과 해시).
+- 원문(source_text): 진료 기록·문서 확인 사실은 처음 받은 기록 부분, 환자 답변 사실은 답변 부분(evidence.ANSWER_MARKER 뒤).
+  Matcher의 근거 수준 정책(진료 기록 필요 기준을 답변만으로 확정하지 않음)이 실제 Session과 같은 방식으로 작동합니다.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+from types import SimpleNamespace
+
+from .. import llm
+from ..agents import matcher
+from ..decision_state import DecisionState, SessionView, build_state
+from ..evidence import ANSWER_MARKER
+from ..fact_changes import FactSnapshot, make_snapshot, snapshot_store
+from ..fact_store import PatientFact, SourceReference, VerificationEvent
+from ..fact_view import FactEvidenceView
+from ..schemas import LLMAssessment, MatcherOutput
+from .cohort import SimFact, SimTrial
+
+EVALUATOR_ID = "matcher_rule_scope_offline/0.1"  # 규칙 엔진 범위 + LLM 기준 판정 불가
+RECORDED_AT = "2000-01-01T00:00:00.000000+00:00"  # 결정적 기록 시각 (실제 시각을 해시에 넣지 않음)
+INITIAL_HEADER = "[시뮬레이터 기록]"
+SIM_BY = "simulator"
+
+
+class OfflineLLMRequest(RuntimeError):
+    """오프라인 실행 중 Matcher 외의 LLM 요청 (args[0]: 코드)."""
+
+
+class OfflineMatcherClient:
+    """anthropic 클라이언트와 같은 messages.create 인터페이스. Matcher 요청에만 '판정 불가'로 답함 (네트워크 없음)."""
+
+    def __init__(self):
+        self.requests = 0  # Matcher가 LLM에 넘긴 요청 수 (대역이 답함, 실제 호출 아님)
+        self.messages = SimpleNamespace(create=self._create)
+        self.beta = SimpleNamespace(messages=SimpleNamespace(create=self._create))
+
+    def _create(self, **kw):
+        system = kw.get("system")
+        text = system[0]["text"] if isinstance(system, list) and system else system
+        if text != matcher.SYSTEM:
+            raise OfflineLLMRequest("non_matcher_llm_request")
+        user = kw["messages"][0]["content"]
+        rules = json.loads(user.split("<rules_to_assess>")[1].split("</rules_to_assess>")[0])
+        self.requests += 1
+        out = MatcherOutput(assessments=[
+            LLMAssessment(rule_id=r["rule_id"], applicable=True, holds="unknown", evidence_type="absent",
+                          confidence="low", evidence="근거 없음", reasoning="offline_rule_scope_only",
+                          missing_info="오프라인 실행: LLM 기준은 판정하지 않음") for r in rules])
+        return SimpleNamespace(content=[SimpleNamespace(type="text", text=out.model_dump_json())],
+                               stop_reason="end_turn", usage=None)
+
+
+def fact_id(*parts) -> str:
+    return "F-" + hashlib.sha256("|".join(str(p) for p in parts).encode()).hexdigest()[:12]
+
+
+def fact_line(f: SimFact | PatientFact) -> str:
+    """원문 한 줄 = 사실의 인용문. 나이·성별·ECOG는 Matcher가 원문에서 찾는 표기(matcher._FIELD_TEXT)를 따름."""
+    v = f.value
+    if f.field == "age":
+        return f"나이 {v}세"
+    if f.field == "sex":
+        return f"성별 {v}"
+    if f.field == "ecog":
+        return f"ECOG {v}"
+    if f.field.startswith("lab:"):
+        num = f"{v:g}" if isinstance(v, float) else str(v)
+        return f"{f.field[4:]} {num}{' ' + f.unit if f.unit else ''}"
+    return f"{f.field}: {v}"
+
+
+def _verified_event(origin: str, before: str = "unknown") -> VerificationEvent:
+    return VerificationEvent(from_status=before, to_status="document_verified", reason="sim_document_check", by=SIM_BY,
+                             document_reference=origin, at=RECORDED_AT)
+
+
+def make_fact(alias: str, f: SimFact, *, seq: int, origin: str, source_type: str, verified: bool,
+              ref_kind: str, ref: str | None) -> PatientFact:
+    """SimFact -> PatientFact (결정적 ID). verified면 문서 검증 이력을 함께 남김 (document_verified는 문서 참조 필요)."""
+    fid = fact_id(alias, seq, origin, f.field, f.value, f.unit, source_type)
+    history = [_verified_event(origin)] if verified else []
+    return PatientFact(fact_id=fid, patient_id=alias, field=f.field.strip().lower(), value=f.value, unit=f.unit,
+                       source_type=source_type, source_reference=SourceReference(kind=ref_kind, ref=ref,
+                                                                                 quote=fact_line(f)),
+                       verification_status="document_verified" if verified else "unknown",
+                       verification_history=history, observed_at=f.observed_at, recorded_at=RECORDED_AT, version=1)
+
+
+def verify_fact(f: PatientFact, origin: str) -> PatientFact:
+    """이미 있는 사실을 문서로 확인함 (FactStore.set_verification과 같은 기록: 사유·기록자·문서 참조). 값·출처는 그대로."""
+    return f.model_copy(update={"verification_status": "document_verified",
+                                "verification_history": [*f.verification_history,
+                                                         _verified_event(origin, f.verification_status)]})
+
+
+def same_value(f: PatientFact, s: SimFact) -> bool:
+    return f.field == s.field.strip().lower() and f.value == s.value and (f.unit or None) == (s.unit or None)
+
+
+def renumber(facts: list[PatientFact]) -> list[PatientFact]:
+    """같은 항목 안의 순번·직전 사실 연결 (FactStore.add와 같은 규칙)."""
+    out, last = [], {}
+    count: dict[str, int] = {}
+    for f in facts:
+        count[f.field] = count.get(f.field, 0) + 1
+        out.append(f.model_copy(update={"version": count[f.field], "previous_fact_id": last.get(f.field)}))
+        last[f.field] = f.fact_id
+    return out
+
+
+def on_record(f: PatientFact) -> bool:
+    """처음 받은 기록 부분에 쓸 사실: 진료 기록 출처이거나 문서로 확인된 사실 (환자 답변이었어도 문서 확인 뒤에는 기록)."""
+    return f.source_type == "clinical_record" or f.verification_status == "document_verified"
+
+
+def source_text(facts: list[PatientFact]) -> str:
+    record = [f.source_reference.quote for f in facts if on_record(f)]
+    answers = [f.source_reference.quote for f in facts if not on_record(f)]
+    text = "\n".join([INITIAL_HEADER, *dict.fromkeys(record)])
+    if answers:
+        text += ANSWER_MARKER + "]\n" + "\n".join(dict.fromkeys(answers))
+    return text
+
+
+class OfflineEvaluator:
+    """사실 목록 -> DecisionState (전체 재평가). 결정적이며 LLM 호출 0건."""
+    evaluator_id = EVALUATOR_ID
+
+    def __init__(self, trials: tuple[SimTrial, ...], reference_date: str):
+        self.trials = trials
+        self.reference_date = reference_date
+        self.client = OfflineMatcherClient()
+
+    def snapshot(self, alias: str, facts: list[PatientFact]) -> FactSnapshot:
+        return make_snapshot(alias, renumber(facts))
+
+    def evaluate(self, alias: str, facts: list[PatientFact]) -> tuple[DecisionState, FactSnapshot]:
+        snap = self.snapshot(alias, facts)
+        store = snapshot_store(snap)
+        text = source_text(snap.facts)
+        profile = FactEvidenceView(store, alias).to_profile()
+        parsed, tdict, matches = {}, {}, {}
+        with llm.use_client(self.client):
+            for t in self.trials:
+                p = t.parsed_with_meta()
+                parsed[t.trial_id], tdict[t.trial_id] = p, dict(t.trial)
+                matches[t.trial_id] = matcher.match_trial(profile, p, tdict[t.trial_id],
+                                                          reference_date=self.reference_date, source_text=text,
+                                                          input_source="clinical_record")
+        view = SessionView(session_id=alias, patient_id=alias, snapshot=snap, matches=matches, parsed=parsed,
+                           trials=tdict, reference_date=self.reference_date,
+                           matched_versions={t: snap.version for t in matches})
+        return build_state(view), snap
+
+
+__all__ = ["OfflineEvaluator", "OfflineMatcherClient", "OfflineLLMRequest", "EVALUATOR_ID", "fact_id", "fact_line",
+           "make_fact", "verify_fact", "same_value", "source_text"]
