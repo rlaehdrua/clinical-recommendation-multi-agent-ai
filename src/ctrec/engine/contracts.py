@@ -420,6 +420,21 @@ class Action(_Frozen):
 
 OutcomeStatus = Literal["succeeded", "partial", "failed", "no_response", "not_executed"]
 
+# 실패 범위 (0.2 후보 추가, WP5): 실패·무응답이 '항목 하나'인지 '정보원 전체'인지를 ActionOutcome.error_code로 구분.
+# 환자가 질문 하나에 "모름"이라고 답해도 연락은 된 것이므로 같은 환자의 다른 문진 질문은 계속할 수 있어야 함 (M2·M9).
+NO_ANSWER = "no_answer"  # 이 항목을 모름·답하지 않음 -> 그 (정보원, 항목)만 막음. record_producer.NO_ANSWER_ERROR와 같은 값
+UNREACHABLE = "unreachable"  # 연락·접근 불가 -> 정보원 전체
+DECLINED_ALL = "declined_all"  # 확인 자체를 거부 -> 정보원 전체
+ITEM_FAILURE_CODES = frozenset({NO_ANSWER})
+SOURCE_FAILURE_CODES = frozenset({UNREACHABLE, DECLINED_ALL})
+
+
+def failure_scope(status: str, error_code: str | None) -> Literal["item", "source"] | None:
+    """실패·무응답의 범위. 성공·부분 성공·미실행은 None. 모르는 코드는 안전하게 정보원 단위(기존 동작)."""
+    if status not in ("failed", "no_response"):
+        return None
+    return "item" if error_code in ITEM_FAILURE_CODES else "source"
+
 
 class ActionOutcome(_Frozen):
     action_id: str = Field(pattern=ID_PATTERN)
@@ -567,8 +582,11 @@ class PolicyEngine(Protocol):
     def propose(self, state) -> list[Action]:  # state: engine.cohort_state.CohortState
         ...
 
-    def select(self, candidates: list[Action], budget: EffortBudget, ledger=None) -> Plan:
-        ...
+    def select(self, candidates: list[Action], budget: EffortBudget, ledger=None, cohort=None) -> Plan:
+        ...  # cohort: 쌍 상태가 필요한 선택(환자별 최소 배정·코호트 점수)에 씀. 없으면 후보만으로
+
+    def apply_outcome(self, cohort, action: Action, outcome: "ActionOutcome") -> tuple:
+        ...  # (새 CohortState, 정책 권한 PairTransition들). 운영 상태만 바꾸고 사실·판정은 바꾸지 않음
 
 
 # ---------------------------------------------------------------------------

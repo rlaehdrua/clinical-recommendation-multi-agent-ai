@@ -43,6 +43,7 @@ from ..schemas import ClarifyingQuestion
 from ..status import MATCH_NOTE
 from ..tools import ctgov
 from ..trace import Tracer
+from . import engine_runner
 from . import access, budget, cohort_board, display, paid_gate, retention
 
 STATIC = Path(__file__).parent / "static"
@@ -441,7 +442,8 @@ def _execute_run(run: Run, req: RunRequest, case: PatientCase, trials: dict[str,
                           decision_loop="diagnostic" if req.decision_diagnostic else "off")
         # 웹 UI는 오케스트레이터(agent) 모드로만 실행
         tracer.log("pipeline", "start", message=f"mode=agent model={config.MODEL} trials={len(trials)}")
-        Orchestrator(session).run()
+        with engine_runner.for_mode(session):  # CTREC_POLICY_MODE=engine -> 확인 질문을 정책 엔진이 고름 (WP8)
+            Orchestrator(session).run()
         llm.guard()  # 오케스트레이터가 끝난 뒤라도 취소·시간 초과였으면 결과를 완료로 내보내지 않음
         if run.budget is not None and run.budget.stopped:
             # 예산 차단은 오케스트레이터·병렬 Matcher가 오류로 삼켜도 여기서 다시 확인: 중단된 분석을 완료로 내보내지 않음

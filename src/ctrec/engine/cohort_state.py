@@ -34,10 +34,32 @@ class PairState:
 
 @dataclass(frozen=True)
 class OpsState:
-    """판정과 무관한 운영 상태 (정책이 관리)."""
+    """판정과 무관한 운영 상태 (정책이 관리).
+
+    실패 범위 (contracts.failure_scope)
+    - 정보원 단위(연락 불가·확인 거부 등): failed_sources. 그 정보원의 모든 행동을 대체 정보원으로 돌리거나 보류.
+    - 항목 단위("모름" = no_answer): failed_items에 (정보원, 항목)만. 같은 정보원의 다른 항목 질문은 계속.
+      항목을 얻을 정보원이 하나도 남지 않으면 exhausted_items에 항목을 넣음.
+    """
     failed_sources: frozenset[str] = frozenset()
     attempts: MappingProxyType = field(default_factory=lambda: MappingProxyType({}))  # fingerprint -> 횟수
-    exhausted_trials: frozenset[str] = frozenset()  # 확보 수단이 소진되어 보류한 시험
+    exhausted_trials: frozenset[str] = frozenset()  # 확보 수단이 소진되어 보류한 시험 (정보원 단위 실패)
+    failed_items: frozenset[tuple[str, str]] = frozenset()  # (정보원, 항목 키) - 항목 단위 실패
+    exhausted_items: frozenset[str] = frozenset()  # 남은 정보원이 없는 항목 키 (decision_state.info_key)
+
+
+# 다른 정보원으로 얻을 수 있는 gap (임상의 판단·상충은 정보를 더 모아서 해결되지 않으므로 소진 대상이 아님)
+OBTAINABLE_GAPS = frozenset({"missing", "stale", "unverified"})
+
+
+def items_exhausted(t, exhausted_items: frozenset[str]) -> bool:
+    """쌍 단위 소진 (Q-D2): 판정에 필요한 기준의 남은 gap이 모두 '얻을 수 있는 정보'이고, 그 항목이 전부 소진됐을 때만.
+    일부만 소진됐거나 임상의 판단·상충이 남아 있으면 소진이 아님 (INFO_MISSING 등 기존 상태 유지)."""
+    if not exhausted_items:
+        return False
+    open_c = [c for c in t.criteria if c.requirement == "required" and (c.gap != "none" or c.conflict_on_decided)]
+    return bool(open_c) and all(c.gap in OBTAINABLE_GAPS and not c.conflict_on_decided
+                                and c.info_key in exhausted_items for c in open_c)
 
 
 @dataclass(frozen=True)
@@ -120,7 +142,7 @@ def _pair_states(alias: str, st: DecisionState, ops: OpsState,
     for tid, t in sorted(st.trials.items()):
         crit = tuple(_override(criterion_result(alias, c), overrides) for c in t.criteria)
         gaps = required_gaps(t)
-        ex = tid in ops.exhausted_trials
+        ex = tid in ops.exhausted_trials or items_exhausted(t, ops.exhausted_items)
         n = required_count(t)
         status = derive_pair_status(t.eligibility, gaps, t.mismatch, exhausted=ex, required_criteria=n)
         out.append(PairState(PairKey(patient_alias=alias, trial_id=tid), status, t.eligibility, t.open, crit, gaps,
@@ -166,6 +188,13 @@ class CohortState:
 
     def pair(self, alias: str, trial_id: str) -> PairState | None:
         return next((p for p in self.patients[alias].pairs if p.pair.trial_id == trial_id), None)
+
+    def remaining_required(self, alias: str, trial_id: str) -> int:
+        """그 쌍에서 판정에 적용된 필수 기준 중 아직 해결되지 않은 수 (gap이 있거나 확정 근거가 상충). 정책 점수용 구조적 개수."""
+        t = self.patients[alias]._legacy.trials.get(trial_id)
+        if t is None:
+            return 0
+        return sum(c.requirement == "required" and (c.gap != "none" or c.conflict_on_decided) for c in t.criteria)
 
     def open_pairs(self, alias: str) -> list[PairState]:
         """확정·평가 실패가 아니고 모집 중인 쌍 (아직 작업이 남은 쌍)."""
