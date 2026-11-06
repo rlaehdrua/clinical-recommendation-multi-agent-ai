@@ -1,6 +1,6 @@
 # WP7 DecisionRecord 저장·조회 경로 보안
 
-> 브랜치 `fix/wp7-audit-read-security` (base `integration/dcvc` `0b402c6`).
+> 처음 작성: 브랜치 `fix/wp7-audit-read-security` (base `0b402c6`). 현재 PR 기준은 `integration/dcvc` `b2100d8`입니다.
 > 측정과 테스트는 합성 표지값으로만 했습니다. LLM·외부 API 호출 없음.
 
 ## 1. 어떤 경로를 쓸지
@@ -107,7 +107,7 @@
 
 ## 7. 병합 의존성
 
-PR #3과 PR #5는 이 문서를 처음 쓴 뒤 `integration/dcvc`에 병합되었으므로 아래 조건은 이미 충족됐습니다. `night/wp7-audit-security`는 `b2100d8` 위에 있습니다.
+PR #3과 PR #5는 이 문서를 처음 쓴 뒤 `integration/dcvc`에 병합되었으므로 아래 조건은 이미 충족됐습니다. 이 변경은 `b2100d8` 위에 있습니다.
 
 - `audit_inspection.py`는 `audit_diagnostics.py`를 import합니다.
 - `tests/test_reversal_metrics.py`의 기존 노출 고정 단언을 별도 커밋에서 아래와 같이 바꿨습니다.

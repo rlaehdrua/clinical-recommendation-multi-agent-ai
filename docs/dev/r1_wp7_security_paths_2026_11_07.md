@@ -1,8 +1,7 @@
 # R1 WP7 보안 적용 경로 보고서 (2026-11-07)
 
-- 브랜치: `night2/wp7-security-paths`, 폴더 `workseoyeon-r1-wp7`. 원격에 올리지 않음
-- 기준: `origin/integration/dcvc` `b2100d8` + N1 `3acc817` (fast-forward, N1 브랜치는 수정하지 않음)
-- 코드 최종: `f9d91f2`. 이 보고서 커밋은 문서만 더함
+- 표기: N1은 저장·조회 1차 수정, R1은 그 위에 실제 경로를 연결한 수정입니다. 두 수정은 이 PR에 함께 있습니다
+- 기준: `origin/integration/dcvc` `b2100d8`
 - 전체 pytest: `f9d91f2`에서 **2617 passed, 9 skipped, exit 0** (N1 2556 passed, 61개 증가)
 
 ## 결론
@@ -134,12 +133,8 @@ scanner를 만드는 실제 경로는 `load_cases_hygienic`뿐이고, 오프라�
 - 메모리와 문제 목록 증폭을 상한으로 막았습니다.
 - 회귀 테스트 61개가 늘었습니다.
 
-## 9. 다른 브랜치와의 관계
+## 9. 다른 변경과의 관계
 
-N1은 fast-forward로 적용했으므로 충돌과 중복 수정이 없습니다. 이 브랜치는 N1과 같은 파일을 더 수정하므로 N1과 함께 또는 N1 뒤에 병합해야 합니다. 
+`git merge-tree` 결과, 열린 PR #13·#20·#21·#22와 소스 충돌은 없습니다. README §10 맨 위 항목은 #13·#20과 겹치므로 병합할 때 양쪽을 모두 남깁니다.
 
-`git merge-tree` 결과는 다음과 같습니다.
-
-- 충돌 없음: `5f7d66b`, `ba870cb`, `229969c`, `395e025`, `75966cb`, `c0981b9`, `d20865a`, `c48fce9`
-- **충돌 1건:** `night2/status-boundary` `554f37d`의 `src/ctrec/cli.py`, 결과 출력 끝부분 한 구역입니다. 해결은 양쪽을 합치면 됩니다. `rec.no_recommendation_reason`은 그쪽을, `_who`와 `--redact-console` 분기는 이쪽을 씁니다.
-- **충돌 해결 뒤 재검증 필요:** 그 브랜치의 `shown_recommendation(session)`은 `conservative_view.build`를 호출합니다. `tests/test_security_paths.py`의 가짜 `_session`은 이를 거치지 못하므로 테스트 수정이 필요할 수 있습니다. `--redact-console` 판단 근거 제외도 합친 코드에서 다시 확인해야 합니다. 이 조합은 실행해 보지 않았습니다.
+후속 표시 경계 변경은 `src/ctrec/cli.py` 결과 출력 끝부분에서 이 PR과 충돌합니다. 그 변경은 이 PR 위에서 다시 구성했고, `--redact-console`과 표현 사본의 결합을 실제 Session 테스트로 확인했습니다.
