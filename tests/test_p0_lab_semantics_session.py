@@ -71,6 +71,13 @@ def test_real_measurement_still_rules_out(run, monkeypatch):
     assert (o.match.eligibility, o.status) == ("INELIGIBLE", "VERIFICATION_PENDING") and ranked(o, monkeypatch).ranked == []
 
 
+def test_undeclared_document_does_not_rule_out(run):
+    """선언이 없으면 값이 원문에 있어도 기록 필요 기준은 어느 쪽으로도 확정하지 않음."""
+    o = run("Hb 12 g/dL", [HB_HIGH], lab_profile("Hb 12 g/dL", 12.0), meta=RECORD, input_source="unknown")
+    held(o, "VERIFICATION_PENDING")
+    assert "REQUEST_DOCUMENT" in o.actions
+
+
 def test_current_value_is_used_over_the_stated_past(run):
     text = "과거 Hb 8, 현재 Hb 12"
     confirmed(run(text, [HB], prof(labs=[hb(12.0, "현재 Hb 12")]), meta=SELF_OK))
