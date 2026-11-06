@@ -43,6 +43,10 @@ POLICY_ID = "legacy_adapter_greedy"
 POLICY_VERSION = "0.2-provisional"
 SAFETY_TIER = 1
 LEGACY_DECLINED_DEFER = "user_declined_or_exhausted"  # decision_policy가 "모름"·거부 뒤 내는 보류 사유
+# 기존 정책은 답을 decision_state.DECLINED_ANSWERS(좁은 목록)로만 "모름"으로 봄. 엔진(answers.answer_outcome)이 더 넓게
+# 무응답으로 본 답("잘 모르겠어요" 등)은 기존 정책에서 답이 있는 것으로 남아 보류·재추출로 나옴 -> 같은 대체 규칙을 적용
+LEGACY_HELD = frozenset({LEGACY_DECLINED_DEFER, "answered_but_unresolved"})
+LEGACY_UNREFLECTED = "answered_not_reflected"  # REPARSE 사유
 NO_REQUIRED_REVIEW = "no_required_criteria"  # 필수 기준 0개 쌍의 담당자 검토 사유
 REVIEW_TIER = 6  # decision_policy의 evaluation_failed 검토와 같은 단계
 VERIFICATION_TYPES = frozenset({"ASK_PATIENT", "REQUEST_DOCUMENT", "VERIFY_RECORD", "CLINICIAN_REVIEW"})
@@ -53,6 +57,11 @@ _INFO_KEY = re.compile(r"^[A-Za-z0-9._:+\-]{1,160}$")  # contracts.Action.info_k
 
 def _code(s: str) -> str:
     return s if s and len(s) <= 64 else "unspecified"
+
+
+def tried_key(source: str, item: str) -> str:
+    """ops.attempts의 문서 요청 기록 키: 같은 (문서 정보원, 항목)을 요청했는데 gap이 남으면 다시 요청하지 않음."""
+    return f"tried:{source}|{item}"
 
 
 def item_key(info_key: str | None, fingerprint: str) -> str:
@@ -132,6 +141,9 @@ class LegacyAdapterPolicy:
         source = self.catalog.route(la.action_type, la.required_fact_fields, la.info_key)
         reason = _code(la.reason_code)
         item = item_key(la.info_key if la.info_key and _INFO_KEY.match(la.info_key) else None, la.fingerprint)
+        # 이미 요청한 문서(답이 있었지만 gap이 남음)는 실패한 (정보원, 항목)과 같이 대체 후보에서 뺌
+        tried = {(s, item) for s in self.catalog.sources if ops.attempts.get(tried_key(s, item))}
+        blocked = ops.failed_items | tried
         if not self.recovery:  # 회복 제거(ablation): 대체 정보원을 찾지 않고 바로 보류. 기존 정책의 "모름" 보류는 그대로
             if source is not None and source in ops.failed_sources:
                 atype, source, reason = "DEFER", None, "sources_exhausted"
@@ -145,21 +157,31 @@ class LegacyAdapterPolicy:
                 atype, source, reason = "DEFER", None, "sources_exhausted"
         elif source is not None and (source, item) in ops.failed_items:
             alts = self.item_alternatives(source, la.required_fact_fields, la.info_key, item, ops.failed_sources,
-                                          ops.failed_items)
+                                          blocked)
             if alts:
                 atype, source, reason = "REQUEST_DOCUMENT", alts[0], "alternative_source_after_no_answer"
             else:
                 atype, source, reason = "DEFER", None, "item_sources_exhausted"
-        elif atype == "DEFER" and reason == LEGACY_DECLINED_DEFER:
-            # 기존 정책은 "모름" 뒤 같은 항목을 다시 제안하지 않고 보류함 -> 엔진이 기록한 항목 실패가 있으면 대체 문서로
+        elif (atype == "DEFER" and reason in LEGACY_HELD) or (la.action_type == "REPARSE"
+                                                              and reason == LEGACY_UNREFLECTED):
+            # 기존 정책은 "모름" 뒤 같은 항목을 다시 제안하지 않고 보류(또는 답이 있다고 보고 재추출)함 -> 엔진이 기록한
+            # 항목 실패가 있으면 대체 문서로. 실패 기록이 없으면(엔진도 답으로 봄) 기존 행동 그대로
             failed = sorted(s for s, it in ops.failed_items if it == item)
             if failed:
                 alts = list(dict.fromkeys(a for f in failed for a in self.item_alternatives(
-                    f, la.required_fact_fields, la.info_key, item, ops.failed_sources, ops.failed_items)))
+                    f, la.required_fact_fields, la.info_key, item, ops.failed_sources, blocked)))
                 if alts:
                     atype, source, reason = "REQUEST_DOCUMENT", alts[0], "alternative_source_after_no_answer"
                 else:
-                    reason = "item_sources_exhausted"
+                    atype, source, reason = "DEFER", None, "item_sources_exhausted"
+        if atype == "REQUEST_DOCUMENT" and source is not None and (source, item) in tried:
+            # 같은 문서를 이미 요청했는데 gap이 남음 -> 다음 문서 정보원, 없으면 그 항목만 보류 (같은 요청 반복 방지)
+            alts = self.item_alternatives(source, la.required_fact_fields, la.info_key, item, ops.failed_sources,
+                                          blocked) if self.recovery else []
+            if alts:
+                source, reason = alts[0], "alternative_source_after_unresolved_document"
+            else:
+                atype, source, reason = "DEFER", None, "requested_documents_unresolved"
         n_items = max(len(la.target_criterion_ids), 1)
         src = self.catalog.get(source)
         expected = ZERO_COST if src is None else src.request_cost.model_copy(update={
@@ -269,6 +291,9 @@ class LegacyAdapterPolicy:
         ops = cohort.ops.get(alias, OpsState())
         attempts = dict(ops.attempts)
         attempts[action.fingerprint] = attempts.get(action.fingerprint, 0) + 1
+        if action.action_type == "REQUEST_DOCUMENT" and action.source_id and outcome.status == "succeeded":
+            tk = tried_key(action.source_id, item_key(action.info_key, action.fingerprint))
+            attempts[tk] = attempts.get(tk, 0) + 1
         failed = set(ops.failed_sources)
         exhausted = set(ops.exhausted_trials)
         failed_items = set(ops.failed_items)

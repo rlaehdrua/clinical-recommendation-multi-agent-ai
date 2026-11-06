@@ -11,9 +11,12 @@ question_generator.use_generator(실행별 생성기 교체 장치)로 그 자�
 3. policy.propose -> select (오프라인 기록기·시뮬레이터와 같은 정책 객체, M14).
 4. 선택된 행동 중 이 화면에서 실행할 수 있는 것만 질문으로 바꿈 (W-3, LLM 없음):
    - ASK_PATIENT, 의사 참고용 CLINICIAN_REVIEW -> question_bridge.render_action
-   - REQUEST_DOCUMENT·VERIFY_RECORD -> 화면 사용자(코디네이터)에게 "기록에서 확인해 입력" 요청. 입력값은 다른 답과 같은
+   - REQUEST_DOCUMENT -> 화면 사용자(코디네이터)에게 "기록에서 확인해 입력" 요청. 입력값은 다른 답과 같은
      경로로 들어가므로 문서 검증(document_verified)으로 올라가지 않습니다 (자기 보고 수준 그대로, 안전 쪽).
-   - 그 밖(임상의 판단 CLINICIAN_REVIEW, RUN_TOOL 등)은 이 화면에서 실행하지 않고 기록만 남김.
+   - 그 밖(상충 근거의 출처 확인 VERIFY_RECORD, 임상의 판단 CLINICIAN_REVIEW, RUN_TOOL 등)은 이 화면에서 실행하지 않고
+     기록만 남김. VERIFY_RECORD는 사실 출처를 코드로 대조하는 안전 확인이라 자유 입력 질문으로 바꾸면 이미 상충한 기준에
+     자기 보고 사실만 하나 더 쌓이고, "모름"이면 항목 실패로 잘못 기록됨. 실행하지 못한 안전 필수 행동은
+     ("engine", "safety_not_executed")로 따로 알림.
    질문 대상·목적은 행동 그대로이고(check_rendered), 질문 수는 Session이 넘긴 한도를 넘지 않습니다.
 5. 안전 필수 행동이 예산 부족으로 실행되지 못하면(Plan.safety_unfunded) 화면에 알리고 그 라운드는 질문하지 않음 (W-7).
 
@@ -44,7 +47,7 @@ ENV_POLICY_ID = "CTREC_POLICY_ID"
 DEFAULT_POLICY_ID = "legacy_greedy"
 # 웹에는 아직 코디네이터 작업시간 예산 입력이 없음 -> 선택이 예산에서 잘리지 않게 하는 값 (실험 예산이 아님)
 DEFAULT_BUDGET = EffortBudget(coordinator_minutes=100000.0)
-DOCUMENT_ACTIONS = frozenset({"REQUEST_DOCUMENT", "VERIFY_RECORD"})
+DOCUMENT_ACTIONS = frozenset({"REQUEST_DOCUMENT"})
 SOURCE_KO = {"patient_interview": "환자 문진", "lab_report": "검사 결과지", "pathology_report": "병리 보고서",
              "medication_list": "복용 약 목록", "medical_record": "진료 기록", "clinician_review": "담당의 확인"}
 
@@ -167,7 +170,12 @@ class EngineRunner:
                 questions.append(q)
                 summary["asked"].append({"action_type": a.action_type, "source_id": a.source_id,
                                          "reason_code": a.reason_code, "targets": list(a.target_criteria)})
-        summary["not_executable_here"] = sum(1 for a in plan.selected if self.render(a, "X") is None)
+        not_run = [a for a in plan.selected if self.render(a, "X") is None]
+        summary["not_executable_here"] = len(not_run)
+        unsafe = sorted({a.reason_code for a in not_run if a.safety_required})
+        if unsafe:
+            s.tracer.log("engine", "safety_not_executed", round=s.rounds, count=sum(a.safety_required for a in not_run),
+                         reasons=unsafe, message="안전 확인(근거 상충 등)은 이 화면에서 실행하지 않습니다 - 담당자 확인 필요")
         self.plans.append(summary)
         s.tracer.log("engine", "plan", **summary,
                      message=f"정책 엔진: 행동 {len(plan.selected)}개 중 질문 {len(questions)}개")
