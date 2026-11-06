@@ -41,8 +41,37 @@ class AuditError(ValueError):
 
 
 # 검사 결과로 그대로 보고할 수 있는 종류. 그 밖의 값은 scanner가 찾은 원문일 수 있어 SCAN_OTHER로만 보고
-KNOWN_SCAN_KINDS = frozenset({"original_id", "label_token", "case_id_shape", "forbidden_text"})
+FREE_TEXT = "free_text"
+KNOWN_SCAN_KINDS = frozenset({"original_id", "label_token", "case_id_shape", "forbidden_text", FREE_TEXT})
 SCAN_OTHER = "other"
+# 계약이 형식을 두지 않는 문자열 필드에 들어온 서술을 찾음 (contracts.py는 바꾸지 않음). 기록 값은 ID·코드뿐이므로 공백·비ASCII는
+# 서술로 봄. required_fields만 'lab:corrected calcium' 같은 기준 항목 이름이 있어 공백을 조금 허용 (201개 사례 기록 402건 실측)
+_NOT_CODE = re.compile(r"[^\x21-\x7e]")
+_FIELD_NAME = re.compile(r"[\x21-\x7e]+(?: [\x21-\x7e]+){0,3}")
+_FIELD_NAME_KEYS = frozenset({"required_fields"})
+_MAX_CODE_CHARS = 256
+
+
+def _strings(value, key: str = ""):
+    if isinstance(value, str):
+        yield key, value
+    elif isinstance(value, dict):
+        for k, v in value.items():
+            yield from _strings(v, k)
+    elif isinstance(value, (list, tuple)):
+        for v in value:
+            yield from _strings(v, key)
+
+
+def has_free_text(record: DecisionRecord) -> bool:
+    """코드·ID 모양이 아닌 문자열이 있는가. 공백 없는 ASCII 서술은 찾지 못합니다 (통과가 서술 없음을 뜻하지 않음)."""
+    for key, text in _strings(record.model_dump(mode="json")):
+        if len(text) > _MAX_CODE_CHARS:
+            return True
+        if _FIELD_NAME.fullmatch(text) if key in _FIELD_NAME_KEYS else not _NOT_CODE.search(text):
+            continue
+        return True
+    return False
 
 
 class CheckedScanner:
@@ -121,7 +150,14 @@ def sensitive_findings(record: DecisionRecord, forbidden_texts: Iterable[str] = 
     if any(t and len(t) >= 4 and (t in data or json.dumps(t, ensure_ascii=False)[1:-1] in data) for t in forbidden_texts):
         out.append("forbidden_text")
     out.extend((scanner or LeakScanner()).scan(data))
+    if has_free_text(record):
+        out.append(FREE_TEXT)
     return sorted(set(out))
+
+
+def record_findings(record: DecisionRecord, checked: CheckedScanner) -> list[str]:
+    """조회 때 기록 하나를 검사: scanner 결과 + 자유 서술."""
+    return sorted({*checked.scan(record.model_dump_json()), *([FREE_TEXT] if has_free_text(record) else [])})
 
 
 def to_trace(tracer, record: DecisionRecord) -> None:
@@ -283,7 +319,7 @@ def parse_records(items: Iterable[tuple[int, object]], *, scanner=None) -> LoadR
         if seen[(rec.run_id, rec.step)] > 1:
             out.issues.append(f"line {n}: duplicate_step:{rec.step}")
             continue
-        found = checked.scan(rec.model_dump_json()) if checked else []
+        found = record_findings(rec, checked) if checked else []
         if found:
             out.issues.append(f"line {n}: {SENSITIVE_RECORD}:{','.join(found)}")
             withheld.append(rec)
