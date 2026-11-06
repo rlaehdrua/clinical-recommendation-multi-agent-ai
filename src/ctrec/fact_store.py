@@ -149,6 +149,14 @@ def relation(a: PatientFact, b: PatientFact) -> Relation:
     return "contradictory"
 
 
+def document_backed(f: PatientFact) -> bool:
+    """문서 확인 이력이 실제로 있는가. 상태 문자열만 document_verified인 사실은 아님 (참조 문자열의 진위는 보지 못함)."""
+    if f.verification_status != "document_verified" or not f.verification_history:
+        return False
+    last = f.verification_history[-1]
+    return last.to_status == "document_verified" and bool((last.document_reference or "").strip())
+
+
 class FactStore:
     """환자별 사실 목록. root를 주면 save()/load()로 <root>/<patient_id>.json에 저장합니다."""
 

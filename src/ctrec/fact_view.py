@@ -34,7 +34,7 @@ from typing import Literal
 from pydantic import BaseModel
 
 from .agents import matcher
-from .fact_store import MULTI_VALUED_FIELDS, FactStore, PatientFact
+from .fact_store import FactStore, MULTI_VALUED_FIELDS, PatientFact, document_backed
 from .schemas import CriterionAssessment, Fact, LabValue, PatientProfile, Rule, RuleMeta
 from .tools.rule_engine import canonical_lab
 
@@ -48,7 +48,7 @@ _LIST_ATTRS = {"diagnosis": "diagnoses", "biomarker": "biomarkers", "medication"
 
 def tier(f: PatientFact) -> EvidenceTier:
     """사실 하나의 근거 수준. 문서 검증 이력이 있어야 verified (clinical_record 선언만으로는 declared_record)."""
-    if f.verification_status == "document_verified":
+    if document_backed(f):
         return "verified"
     if f.source_type == "clinical_record":
         return "declared_record"
