@@ -91,6 +91,15 @@ def display_missing_info(a: dict) -> dict:
     return {**a, "missing_info": f"이 기준을 확인할 정보 (원문): {str(a.get('criterion_text') or '')[:300]}"}
 
 
+# 오류가 아니라 시험에 평가할 기준이 없어서 판정하지 못한 경우 (matcher.CRITERIA_PARSE_EMPTY·NO_SOURCE_CRITERIA)
+NO_CRITERIA_CODES = {"criteria_parse_empty": "기준 해석 결과가 비어", "no_source_criteria": "시험에 평가할 기준이 없어"}
+
+
+def _not_evaluated_cause(kind: str) -> str:
+    """NOT_EVALUATED 문구의 원인 부분. 기준이 없는 경우를 '평가 실패'(처리 오류)와 구분해 보여 줌."""
+    return NO_CRITERIA_CODES.get(kind, "평가 실패로")
+
+
 def redact_errors(result: dict) -> dict:
     """화면으로 보내는 결과 사본에서 평가 오류 원문(예외 repr - 요청 내용이 섞일 수 있음)을 오류 종류로 바꿈.
     판정 불가 기준의 일반 문구 missing_info는 원문 기준 문장으로 보여 줌 (display_missing_info, 사본만).
@@ -103,7 +112,7 @@ def redact_errors(result: dict) -> dict:
         if m.get("eligibility") == "NOT_EVALUATED" and m.get("evaluation_error"):
             kind = _error_type(m["evaluation_error"])
             failed[tid] = kind
-            m = {**m, "evaluation_error": kind, "summary": f"NOT_EVALUATED: 평가 실패로 판정하지 못함(부적격 아님) - {kind}"}
+            m = {**m, "evaluation_error": kind, "summary": f"NOT_EVALUATED: {_not_evaluated_cause(kind)} 판정하지 못함(부적격 아님) - {kind}"}
         m = {**m, **{k: [display_missing_info(a) for a in m[k]] for k in ("assessments", "other_cohort_assessments")
                      if isinstance(m.get(k), list)}}
         matches[tid] = m
@@ -113,7 +122,7 @@ def redact_errors(result: dict) -> dict:
     rec = result.get("recommendation")
     if rec and failed:
         rec = dict(rec)
-        rec["excluded"] = [{**x, "reason": f"평가 실패로 적격 여부를 판정하지 못함(부적격 아님) - 재평가 또는 담당자 확인 필요. 원인: {failed[x['trial_id']]}"}
+        rec["excluded"] = [{**x, "reason": f"{_not_evaluated_cause(failed[x['trial_id']])} 적격 여부를 판정하지 못함(부적격 아님) - 재평가 또는 담당자 확인 필요. 원인: {failed[x['trial_id']]}"}
                            if x.get("trial_id") in failed else x for x in rec.get("excluded") or []]
         out["recommendation"] = rec
     return out

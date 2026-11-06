@@ -198,7 +198,7 @@ def test_web_display_shows_cause_code_only(env):
     store(t, parsed("SYN-R1"))
     m = display.redact_errors(run_session(t).result())["matches"]["SYN-R1"]
     assert m["evaluation_error"] == "criteria_parse_empty"
-    assert m["summary"] == "NOT_EVALUATED: 평가 실패로 판정하지 못함(부적격 아님) - criteria_parse_empty"
+    assert m["summary"] == "NOT_EVALUATED: 기준 해석 결과가 비어 판정하지 못함(부적격 아님) - criteria_parse_empty"
 
 
 def test_clinician_review_uses_the_existing_not_evaluated_path(env):
