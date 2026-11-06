@@ -8,6 +8,8 @@ Session은 LLM이 만든 PatientProfile로 규칙 엔진을 돌립니다. 원문
 - 처음 입력의 값은 값 표현 전체로 찾습니다. 대명사와 단독 F/M/여/남은 성별의 근거가 아닙니다.
 - 단독 값("62", "여")은 그 값을 직접 물은 문답에서만 인정합니다.
 - 검사값은 인용 안의 수치가 그 검사명에 연결되어야 합니다. 인용이 길어도 옆 검사의 수치, 날짜, 참고 범위는 근거가 아닙니다.
+- 연결된 수치도 역할을 봅니다(`_role`). 부정, 목표, 가정, 비교식의 기준값, 참고 범위, 다른 사람의 값은 측정값이 아닙니다.
+  표현을 다 해석하지는 않습니다. 표지가 있으면 측정값으로 보지 않는 쪽으로 기웁니다.
 - 문장 단위로 보므로 "62세인데 혈색소는 몰라요"의 나이는 인정되고 혈색소는 인정되지 않습니다.
 - 값의 임상적 의미는 판단하지 않습니다. 적혀 있는지만 봅니다. 문서 검증 여부는 근거 수준(evidence.py) 쪽입니다.
 """
@@ -16,6 +18,7 @@ from __future__ import annotations
 
 import re
 from datetime import date
+from functools import lru_cache
 
 from . import evidence, evidence_directness as ed
 from .tools.rule_engine import LAB_ALIASES, _norm, _norm_unit, canonical_lab
@@ -45,7 +48,8 @@ _SEX_QUESTION = re.compile(r"성별|남성.{0,6}여성|여성.{0,6}남성|남자
 _BARE_SEX = {"f": "female", "m": "male", "여": "female", "남": "male"}
 _LAB_KO = {"hemoglobin": ["혈색소", "헤모글로빈"], "platelets": ["혈소판"], "absolute neutrophil count": ["호중구"],
            "white blood cell count": ["백혈구"], "creatinine": ["크레아티닌"], "total bilirubin": ["빌리루빈"],
-           "albumin": ["알부민"], "creatinine clearance": ["크레아티닌 청소율"], "lvef": ["박출률", "구혈률"]}
+           "albumin": ["알부민"], "creatinine clearance": ["크레아티닌 청소율"], "lvef": ["박출률", "구혈률"],
+           "potassium": ["칼륨"], "sodium": ["나트륨"], "calcium": ["칼슘"], "magnesium": ["마그네슘"], "glucose": ["혈당"]}
 _NUMBER = r"\d+(?:\.\d+)?"
 
 # ---------------------------------------------------------------------------- 수사 표현
@@ -89,6 +93,51 @@ def normalize(field: str, text: str) -> str:
     return text
 
 
+# ---------------------------------------------------------------------------- 수치의 역할
+_NOT_A_RESULT = re.compile(r"\b(?:target|goal|aim|desired|threshold|cut-?off|trigger|maintain|keep|transfus\w*|if|unless|should|in\s+case|provided|"
+                           r"assuming|suppose|would|once|until|expected|predicted)\b|목표|유지|역치|수혈(?!\s*없이)|라면|다면|이면|"
+                           r"[일인]\s*(?:경우|때)|예상|예정", re.IGNORECASE)
+_REFERENCE_BEFORE = re.compile(r"\b(?:reference|ref|normal|range|uln|lln)\b|정상|참고|기준\s*(?:범위|치|값)", re.IGNORECASE)
+_COMPARE_BEFORE = re.compile(r"[<>≤≥]=?\s*$")
+_COMPARE_AFTER = re.compile(r"\s*[^\s,;()]*\s*(?:이상|이하|미만|초과|or\s+(?:more|less|above|below|greater|higher|lower)|and\s+(?:above|below))", re.IGNORECASE)
+_NEGATED_BEFORE = re.compile(r"\b(?:not|never|isn'?t|wasn'?t|no\s+longer|rather\s+than|instead\s+of)\b[^,;]{0,12}$", re.IGNORECASE)
+_NEGATED_AFTER = re.compile(r"[^,;]{0,12}?(?:아님|아니|아닌|아닙|않|없(?:음|었|다|습|어))")
+_DENIED_AFTER = re.compile(r"\s*(?:가|이|은|는|라는\s*뜻은)?\s*(?:아님|아니|아닌|아닙)")  # 나이·성별·ECOG: 값 바로 뒤의 부정만
+_DENIED_BEFORE = re.compile(r"\bnot\s+(?:an?\s+)?$", re.IGNORECASE)
+_PAST = re.compile(r"\b(?:previous|prior|former|old|last\s+(?:week|month|year))\b|과거|이전|지난|\d+\s*(?:일|주|개월|달|년)\s*전", re.IGNORECASE)
+_OTHER_PERSON = r"아버지|어머니|부친|모친|남편|아내|배우자|형제|자매|보호자|파트너|공여자|\b(?:donor|father|mother|spouse|husband|wife|partner|sibling|brother|sister)\b"
+_ABOUT_OTHER = re.compile(_OTHER_PERSON, re.IGNORECASE)
+_NEXT_TO_OTHER = re.compile(rf"\s*(?:{_OTHER_PERSON})", re.IGNORECASE)  # 값 바로 뒤: "남성 보호자", "62세 아버지"
+
+
+def _clause_around(text: str, lo: int, hi: int) -> tuple[str, str]:
+    """수치 앞뒤의 같은 절 (줄을 넘지 않음)."""
+    start, end = text.rfind("\n", 0, lo) + 1, text.find("\n", hi)
+    end = len(text) if end < 0 else end
+    for m in ed._CLAUSE_BOUNDARY.finditer(text, start, end):
+        if m.end() <= lo:
+            start = m.end()
+        elif m.start() >= hi:
+            end = m.start()
+            break
+    return text[start:lo], text[hi:end]
+
+
+def _role(text: str, lo: int, hi: int) -> str | None:
+    """검사 수치의 역할: 'measured', 'past', 측정값이 아니면 None."""
+    before, after = _clause_around(text, lo, hi)
+    if _NOT_A_RESULT.search(before + " " + after) or _ABOUT_OTHER.search(before + " " + after) or _REFERENCE_BEFORE.search(before) \
+            or _COMPARE_BEFORE.search(before) or _COMPARE_AFTER.match(after) or _NEGATED_BEFORE.search(before) or _NEGATED_AFTER.match(after):
+        return None
+    return "past" if _PAST.search(before + " " + after) else "measured"
+
+
+def _about_patient(text: str, lo: int, hi: int) -> bool:
+    """나이·성별·ECOG 값이 환자에 대한 긍정 진술인가. 같은 절의 다른 내용은 보지 않고 값에 붙은 표지만 봅니다."""
+    before, after = _clause_around(text, lo, hi)
+    return not (_DENIED_AFTER.match(after) or _DENIED_BEFORE.search(before) or _NEXT_TO_OTHER.match(after))
+
+
 # ---------------------------------------------------------------------------- 값 표현
 def _text(value) -> str:
     return f"{value:g}" if isinstance(value, (int, float)) else str(value).strip().lower()
@@ -111,11 +160,13 @@ def _mentions(field: str, text: str) -> list[tuple[str, int, int]]:
     """본문에 적힌 이 필드의 값들 (충돌 확인용)."""
     if field == "age":
         pat = re.compile(rf"(?<![\d.])(\d{{1,3}})\s*(?:{_AGE_SUFFIX['years']})", re.IGNORECASE)
-        return [(m.group(1), m.start(), m.end()) for m in pat.finditer(text)]
-    if field == "ecog":
+        found = [(m.group(1), m.start(), m.end()) for m in pat.finditer(text)]
+    elif field == "ecog":
         pat = re.compile(r"(?:ecog|performance\s*status|\bps\b|수행\s*상태|활동도)[^0-9\n]{0,20}(?<!\d)(\d)(?!\d)" + _RANGE_TAIL, re.IGNORECASE)
-        return [(m.group(1), m.start(), m.end()) for m in pat.finditer(text)]
-    return [(s, m.start(), m.end()) for s in ("female", "male") for m in _value_pattern("sex", s, None).finditer(text)]
+        found = [(m.group(1), m.start(), m.end()) for m in pat.finditer(text)]
+    else:
+        found = [(s, m.start(), m.end()) for s in ("female", "male") for m in _value_pattern("sex", s, None).finditer(text)]
+    return [x for x in found if _about_patient(text, x[1], x[2])]
 
 
 def _uncertain(body: str, lo: int, hi: int) -> bool:
@@ -167,12 +218,15 @@ def ground(field: str, value, source_text: str | None, *, key: str | None = None
     v = _text(value)
     pat = _value_pattern(field, v, unit)
     initial = normalize(field, evidence.split_source(source_text)[0])
-    in_record = bool(pat.search(initial)) or (field == "age" and _from_birth_year(v, initial, reference_date))
+    in_record = any(_about_patient(initial, m.start(), m.end()) for m in pat.finditer(initial)) \
+        or (field == "age" and _from_birth_year(v, initial, reference_date))
     stated, hedged = False, False
     answered: set[str] = set()
     for seg in _usable_answers(source_text, qa):
         body = normalize(field, seg.body)
         for m in pat.finditer(body):
+            if not _about_patient(body, m.start(), m.end()):
+                continue
             if _uncertain(body, m.start(), m.end()):
                 hedged = True
             else:
@@ -208,9 +262,20 @@ def _lab_named(lab: str, sentence: str) -> bool:
     return not names or any(re.search(rf"(?<![a-z가-힣]){re.escape(n)}(?![a-z])", sentence, re.IGNORECASE) for n in names)
 
 
-_LAB_CANON = {n.lower(): canon for table in (LAB_ALIASES, _LAB_KO) for canon, names in table.items() for n in names}
-_LAB_NAMES = sorted(_LAB_CANON, key=len, reverse=True)
-_ANY_LAB = re.compile(rf"(?<![a-z가-힣])(?:{'|'.join(map(re.escape, _LAB_NAMES))})(?![a-z])", re.IGNORECASE)
+_LAB_CANON = {n.lower(): canon for table in (LAB_ALIASES, _LAB_KO) for canon, names in table.items() for n in (canon, *names)}
+
+
+@lru_cache(maxsize=256)
+def _lab_names(extra: str) -> re.Pattern:
+    """알려진 검사명과 이 검사의 이름. 목록에 없는 검사는 자기 이름으로만 수치에 연결됩니다."""
+    names = sorted({*_LAB_CANON, extra}, key=len, reverse=True)
+    return re.compile(rf"(?<![a-z가-힣])(?:{'|'.join(map(re.escape, names))})(?![a-z])", re.IGNORECASE)
+
+
+def _lab_key(lab: str) -> str:
+    return _LAB_CANON.get(_norm(lab)) or canonical_lab(lab)
+
+
 _LAB_NUMBER = re.compile(r"(?<![\d.,])(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?(?![\d,]*\d)")
 _NOT_A_VALUE = re.compile(r"\d{4}[-./]\d{1,2}(?:[-./]\d{1,2})?|\d{1,2}월(?:\s*\d{1,2}일)?|(?<![\d.])\d{1,2}/\d{1,2}(?![\d/])|"  # 날짜
                           r"\d+(?:\.\d+)?\s*[-~–]\s*\d+(?:\.\d+)?|10\s*[\^*]\s*\d+|10e\d+", re.IGNORECASE)  # 범위, 단위의 10^9
@@ -227,12 +292,12 @@ def _sentence_spans(body: str):
     yield start, len(body)
 
 
-def _linked_numbers(sentence: str) -> list[tuple[int, int, str, str | None]]:
+def _linked_numbers(sentence: str, key: str) -> list[tuple[int, int, str, str | None]]:
     """문장의 수치와 그 수치의 검사명 (시작, 끝, 수치, 표준 검사명 | None). 검사명마다 자기 뒤의 첫 수치 하나만 가짐.
 
     뒤에 수치가 없는 검사명만 바로 앞의 수치를 가짐 ("12 g/dL hemoglobin"). 참고 범위·날짜·단위의 숫자는 수치가 아님."""
     text = _NOT_A_VALUE.sub(lambda m: " " * len(m.group()), sentence)
-    names = [(m.start(), m.end(), _LAB_CANON[m.group().lower()]) for m in _ANY_LAB.finditer(text)]
+    names = [(m.start(), m.end(), _LAB_CANON.get(m.group().lower(), key)) for m in _lab_names(key).finditer(text)]
     numbers = [(m.start(), m.end(), m.group().replace(",", "")) for m in _LAB_NUMBER.finditer(text)]
     owner: dict[int, str] = {}
     waiting = []
@@ -253,24 +318,23 @@ def _linked_numbers(sentence: str) -> list[tuple[int, int, str, str | None]]:
     return [(x[0], x[1], x[2], owner.get(n)) for n, x in enumerate(numbers)]
 
 
-def _is_listed(lab: str) -> bool:
-    canon = canonical_lab(lab)
-    return canon in LAB_ALIASES or canon in _LAB_KO
-
-
-def _lab_numbers(lab: str, body: str) -> list[tuple[int, int, str]]:
-    """본문에서 이 검사의 수치 (시작, 끝, 수치). 이름을 아는 검사는 연결된 수치만, 모르는 검사는 다른 검사에 연결되지 않은 수치."""
-    canon = canonical_lab(lab) if _is_listed(lab) else None
+def _lab_numbers(lab: str, body: str) -> list[tuple[int, int, str, str]]:
+    """본문에서 이 검사에 연결된 환자 수치 (시작, 끝, 수치, 역할). 측정값이 아닌 수치는 뺍니다."""
+    key = _lab_key(lab)
     out = []
     for start, end in _sentence_spans(body):
-        for lo, hi, number, owner in _linked_numbers(body[start:end]):
-            if owner == canon:
-                out.append((start + lo, start + hi, number))
+        sentence = body[start:end]
+        for lo, hi, number, owner in _linked_numbers(sentence, key):
+            role = _role(sentence, lo, hi) if owner == key else None
+            if role:
+                out.append((start + lo, start + hi, number, role))
     return out
 
 
-def _lab_mentions(lab: str, text: str) -> set[str]:
-    return {_text(float(n)) for _, _, n in _lab_numbers(lab, text)} if _is_listed(lab) else set()
+def _current_values(numbers: list[tuple[int, int, str, str]]) -> set[str]:
+    """현재 값으로 볼 수치. 과거로 표시된 값은 현재 값이 없을 때만 씁니다."""
+    measured = {_text(float(x[2])) for x in numbers if x[3] == "measured"}
+    return measured or {_text(float(x[2])) for x in numbers}
 
 
 def _same_unit(body: str, hi: int, unit: str | None) -> bool:
@@ -280,15 +344,14 @@ def _same_unit(body: str, hi: int, unit: str | None) -> bool:
 
 
 def _quote_hits(quote: str | None, source_text: str) -> list:
-    """인용의 위치. "Hb 12"처럼 짧은 인용은 일반 위치 검사의 최소 길이에 걸리므로 그대로 찾음 (수치 연결은 호출 쪽에서 확인)."""
+    """인용의 위치. 일반 위치 검사는 짧은 인용을 건너뛰고 표의 "|"에서 인용을 나누므로 인용 전체도 그대로 찾음 (수치 연결은 호출 쪽에서 확인)."""
     if not quote:
         return []
     found, hits = ed.locate(quote, source_text)
-    if found:
-        return hits
     text = ed._norm(quote).strip(" .,:'`()[]")
     _, segs = ed.parse_source(source_text)
-    return [ed.Hit(s, m.start(), m.end()) for s in segs for m in re.finditer(re.escape(text), s.body)] if text else []
+    whole = [ed.Hit(s, m.start(), m.end()) for s in segs for m in re.finditer(re.escape(text), s.body)] if text else []
+    return (hits if found else []) + whole
 
 
 def ground_lab(lab: str, value, quote: str | None, source_text: str | None, *, key: str | None = None, qa=None,
@@ -299,9 +362,10 @@ def ground_lab(lab: str, value, quote: str | None, source_text: str | None, *, k
     if source_text is None or value is None:
         return None
     usable = {id(s): s for s in _usable_answers(source_text, qa)}
-    recorded = _lab_mentions(lab, evidence.split_source(source_text)[0])
-    answered = {_text(float(n)) for seg in usable.values() for lo, hi, n in _lab_numbers(lab, seg.body)
-                if not _uncertain(seg.body, lo, hi)}
+    in_record = _lab_numbers(lab, evidence.split_source(source_text)[0])
+    in_answers = [x for seg in usable.values() for x in _lab_numbers(lab, seg.body) if not _uncertain(seg.body, x[0], x[1])]
+    recorded, answered = _current_values(in_record), _current_values(in_answers)
+    has_current = any(x[3] == "measured" for x in (*in_record, *in_answers))
     if len(answered) > 1 or (recorded and answered - recorded) or (known is not None and recorded - known):
         return CONFLICT
     hedged = False
@@ -309,10 +373,12 @@ def ground_lab(lab: str, value, quote: str | None, source_text: str | None, *, k
         if h.seg.role != "record" and not (h.seg.role == "answer" and any(s.text == h.seg.text for s in usable.values())):
             continue
         body = h.seg.body
-        for lo, hi, number in _lab_numbers(lab, body):
+        for lo, hi, number, role in _lab_numbers(lab, body):
             if not (h.lo <= lo and hi <= h.hi) or float(number) != float(value) or not _same_unit(body, hi, unit):
                 continue
-            if h.seg.role == "answer" and _uncertain(body, lo, hi):
+            if role == "past" and has_current:
+                continue
+            if _uncertain(body, lo, hi) if h.seg.role == "answer" else ed.hedged(ed._clause(body, lo, hi)):
                 hedged = True
             else:
                 return None
