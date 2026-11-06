@@ -192,6 +192,12 @@ def _usable_answers(source_text: str, qa) -> list[ed.Segment]:
     return out
 
 
+def _qa_in_source(qa, usable) -> list:
+    """이 원문에 실제로 있는 답의 문답만. 다른 세션이나 지워진 문답은 근거가 아님."""
+    bodies = {s.body for s in usable}
+    return [q for q in qa or [] if ed._norm(q.answer or "") in bodies]
+
+
 def _bare(answer: str) -> str:
     return re.sub(r"(?:이에요|예요|입니다|이요|요)$", "", (answer or "").strip().strip(" .!~").strip()).strip().lower()
 
@@ -222,7 +228,8 @@ def ground(field: str, value, source_text: str | None, *, key: str | None = None
         or (field == "age" and _from_birth_year(v, initial, reference_date))
     stated, hedged = False, False
     answered: set[str] = set()
-    for seg in _usable_answers(source_text, qa):
+    usable = _usable_answers(source_text, qa)
+    for seg in usable:
         body = normalize(field, seg.body)
         for m in pat.finditer(body):
             if not _about_patient(body, m.start(), m.end()):
@@ -232,7 +239,7 @@ def ground(field: str, value, source_text: str | None, *, key: str | None = None
             else:
                 stated = True
         answered |= {x for x, lo, hi in _mentions(field, body) if not _uncertain(body, lo, hi)}
-    for q in qa or []:
+    for q in _qa_in_source(qa, usable):
         bare = _bare_value(field, q, key)
         if bare is not None:
             answered.add(bare)
@@ -382,7 +389,7 @@ def ground_lab(lab: str, value, quote: str | None, source_text: str | None, *, k
                 hedged = True
             else:
                 return None
-    for q in qa or []:
+    for q in _qa_in_source(qa, usable.values()):
         bare = _bare_lab(lab, q, key)
         if bare is not None and float(bare) == float(value):
             return None
