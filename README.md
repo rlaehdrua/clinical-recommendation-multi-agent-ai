@@ -612,6 +612,17 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 
 - 남은 한계(이번 범위 밖): 웹의 답변 시간 초과는 모든 질문을 "모름"으로 넘겨 항목 단위 실패로 기록됩니다(부재는 정보원 단위에 가까움). info_key가 없는 항목은 질문과 재추출의 지문이 달라 2번 규칙이 연결되지 않습니다. 실패 항목 키를 공유하는 다른 시험의 상태 변화는 전이 기록에 남지 않습니다.
 
+### 2026-11-06 — 판정·쌍 상태·추천·검토 행동의 일치 점검, '기준 없음'과 '평가 실패' 문구 구분 (#17 후속)
+
+배경: 선우가 #17 이후 "Matcher 판정, PairStatus, 추천, 검토 행동이 서로 일치하는지" 확인을 요청했습니다. 고정 사례 101건(140쌍)을 엔진 모드 실제 Session(오프라인 대역)으로 돌린 결과 불일치는 0건이었지만, 대역 특성상 거의 모든 쌍이 정보 없음 상태라 점검력이 약했습니다. 그래서 E-1의 합성 시험(R1·R3·R5·R6·R7)으로 층별 일치를 테스트로 고정했습니다. 또 기준이 없어서 판정하지 못한 시험이 화면에 처리 오류와 같은 '평가 실패'로 보이던 문제(선우 §5)를 고쳤습니다.
+
+| # | 변경 | 파일 |
+|---|---|---|
+| 1 | 네 층 일치 규칙(`confirmed_not_match`·`match_not_confirmed`·`ranked_closed`·`unreviewed`·`no_action`)과 합성 시험별 검증. R1·R3·R6·R7은 불일치 0. R5(절차 기준만)는 Session이 CRITERIA_MATCH·추천 1순위이고 엔진은 NOT_EVALUATED인 **알려진 불일치**로 기록(팀 결정 P1/P2/P3 대기). 엔진은 담당자 검토(`no_required_criteria`)를 냄 | `tests/test_status_consistency.py` (신규) |
+| 2 | 결과 화면 사본의 NOT_EVALUATED 문구: 원인 코드가 `criteria_parse_empty`면 "기준 해석 결과가 비어", `no_source_criteria`면 "시험에 평가할 기준이 없어" 판정하지 못함(부적격 아님). 처리 오류는 기존 "평가 실패로" 그대로. 판정 값·원인 코드는 바꾸지 않음. 배지(`app.js`의 '평가 실패')와 `status.py` 라벨은 그대로 | `src/ctrec/web/display.py`, `tests/test_empty_criteria.py`(기대 문구 1줄) |
+
+- 이 브랜치는 #18과 #17을 합친 위에 있습니다. #17·#18 다음에 병합합니다.
+
 ### 2026-11-06 — 필수 기준이 0개인 쌍을 담당자 검토로 보냄 (#14·#17 후속)
 
 배경: #14는 판정에 적용된 필수 기준이 0개인 쌍(파싱 결과 빔·절차 기준만 있음 등)을 확정 적격이 아니라 NOT_EVALUATED로 둡니다. 그런데 기존 정책(`decision_policy`)은 Matcher 판정 값만 보므로, Matcher가 ELIGIBLE을 준 이 쌍에는 아무 행동도 내지 않았습니다. 현황판에 "평가 안 됨"으로 남을 뿐 누구도 확인하지 않는 상태였습니다. #17 검토 중 R5 선택지 P2(필수 기준 없으면 UNCERTAIN)도 같은 문제(행동 없는 INFO_MISSING)를 만든다는 점을 확인했습니다.
