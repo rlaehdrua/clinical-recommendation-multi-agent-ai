@@ -189,6 +189,13 @@ class CohortState:
     def pair(self, alias: str, trial_id: str) -> PairState | None:
         return next((p for p in self.patients[alias].pairs if p.pair.trial_id == trial_id), None)
 
+    def remaining_required(self, alias: str, trial_id: str) -> int:
+        """그 쌍에서 판정에 적용된 필수 기준 중 아직 해결되지 않은 수 (gap이 있거나 확정 근거가 상충). 정책 점수용 구조적 개수."""
+        t = self.patients[alias]._legacy.trials.get(trial_id)
+        if t is None:
+            return 0
+        return sum(c.requirement == "required" and (c.gap != "none" or c.conflict_on_decided) for c in t.criteria)
+
     def open_pairs(self, alias: str) -> list[PairState]:
         """확정·평가 실패가 아니고 모집 중인 쌍 (아직 작업이 남은 쌍)."""
         done = {PairStatus.CONFIRMED_ELIGIBLE, PairStatus.CONFIRMED_INELIGIBLE, PairStatus.BLOCKED_FAILURE}

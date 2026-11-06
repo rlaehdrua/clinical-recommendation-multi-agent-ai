@@ -612,6 +612,21 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 
 - 남은 한계(이번 범위 밖): 웹의 답변 시간 초과는 모든 질문을 "모름"으로 넘겨 항목 단위 실패로 기록됩니다(부재는 정보원 단위에 가까움). info_key가 없는 항목은 질문과 재추출의 지문이 달라 2번 규칙이 연결되지 않습니다. 실패 항목 키를 공유하는 다른 시험의 상태 변화는 전이 기록에 남지 않습니다.
 
+### 2026-11-05 — 기준선 정책 4종과 제안 정책 full_dcvc 초안, PolicyEngine 프로토콜 정리 (DCV+C 엔진, WP6 준비)
+
+배경: #13(WP6 준비 상태 점검)에서 정책 비교 실험에 필요한 기준선·제안 정책이 코드에 없다고 지적됐습니다. 기준선은 로드맵 M10에서 이미 정해진 범위라 먼저 구현했고, full_dcvc는 정의 합의 전 초안으로 스위치를 두어 나중에 바꾸기 쉽게 했습니다.
+
+| # | 변경 | 파일 |
+|---|---|---|
+| 1 | 기준선 `no_action`·`random`(seed·행동 ID 해시 순위, 공통 난수)·`patient_order`(환자별 독립)·`cheapest_first`. 모두 같은 후보(`propose`)·결과 반영(`apply_outcome`)·안전 필수 우선·예산 규칙을 쓰고 남은 예산을 채우는 순서만 다름. 정책 등록표 `make_policy(policy_id)` | `src/ctrec/engine/baselines.py` (신규) |
+| 2 | 제안 정책 초안 `full_dcvc`: DCV = 기존 후보 + 결정 영향 필터(움직일 열린 쌍이 없는 행동 제외, 안전·임상의 검토는 유지), C = 매번 `Σ(1/쌍의 남은 필수 기준 수) ÷ 지금 원장 기준 추가 비용`이 가장 큰 행동. 성공 확률 없음(M9). 스위치 `dcv_impact`·`bundles`·`fairness_floor`·`recovery` | `src/ctrec/engine/dcvc.py` (신규) |
+| 3 | 선택 규칙을 하위 정책이 순서만 바꿀 수 있게 나눔(`floor_minutes`·`fill` 훅, 기존 동작 그대로), 회복 제거 스위치(`recovery=False`: 실패 뒤 바로 보류·소진). 쌍의 남은 필수 기준 수 `CohortState.remaining_required` | `src/ctrec/engine/policy.py`, `src/ctrec/engine/cohort_state.py` |
+| 4 | `PolicyEngine` 프로토콜을 실제 구현과 맞춤: `select(..., cohort)`, `apply_outcome(cohort, action, outcome)` 추가 | `src/ctrec/engine/contracts.py`, `docs/engine_contracts.md`, `tests/test_engine_contracts.py` |
+| 5 | 웹·CLI 엔진 모드의 정책을 같은 등록표에서 고름: `CTREC_POLICY_ID`(기본 `legacy_greedy`, `full_dcvc` 등) (M14) | `src/ctrec/web/engine_runner.py` |
+| 6 | 테스트: 정책별 예산 초과 0·중복 선택 0·결정성·같은 후보 공유·안전 필수 우선과 미실행 시 그 환자 중단, no_action 미실행 보고, random seed 재현·seed별 차이, patient_order 환자 순서, cheapest_first 비용 순서, full_dcvc 필터·점수·스위치 4종, 판정·사실 불변. 실행기: 등록표에서 정책 선택, full_dcvc로 실제 Session 실행 | `tests/test_engine_baselines.py` (신규), `tests/test_engine_runner.py` |
+
+- 이 브랜치는 PR #15(WP8, #10·#14 포함) 위에 있습니다. full_dcvc의 식·기본값은 팀 결정(#13 안건 ①) 뒤 바뀔 수 있습니다.
+
 ### 2026-11-05 — WP8: 실제 Session(웹·CLI)의 확인 질문을 정책 엔진이 고르게 연결, "모름" 뒤 대체 문서 요청이 실제로 동작하도록 수정
 
 배경: 선우가 실제 Session 점검에서 "'모름' 뒤 대체 정보원 전환이 동작하지 않음"을 보고했습니다. 확인해 보니 (1) 웹·CLI의 Session은 정책 엔진을 전혀 거치지 않고 기존 LLM 질문 생성기로 질문을 만들었고(엔진은 오프라인 기록기에서만 사용), (2) 엔진에서도 "모름" 뒤 기존 정책이 그 항목을 다시 제안하지 않고 `DEFER(user_declined_or_exhausted)`를 내서, WP5의 대체 문서 요청 규칙(같은 질문이 다시 제안될 때만 동작)이 한 번도 실행되지 않았습니다. 단위 테스트는 질문이 다시 제안되는 상태를 직접 만들어 이 경로를 놓쳤습니다.

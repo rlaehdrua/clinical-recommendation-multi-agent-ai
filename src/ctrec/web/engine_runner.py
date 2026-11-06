@@ -43,6 +43,8 @@ from ..schemas import ClarifyingQuestion, QuestionSet
 
 POLICY_MODES = ("legacy", "engine")
 ENV_POLICY_MODE = "CTREC_POLICY_MODE"
+ENV_POLICY_ID = "CTREC_POLICY_ID"
+DEFAULT_POLICY_ID = "legacy_greedy"
 # 웹에는 아직 코디네이터 작업시간 예산 입력이 없음 -> 선택이 예산에서 잘리지 않게 하는 값 (실험 예산이 아님)
 DEFAULT_BUDGET = EffortBudget(coordinator_minutes=100000.0)
 DOCUMENT_ACTIONS = frozenset({"REQUEST_DOCUMENT"})
@@ -198,9 +200,16 @@ def activate(session, **kw):
     runner.settle()  # 마지막 라운드 답도 운영 상태에 반영 (기록용)
 
 
+def policy_from_env():
+    """CTREC_POLICY_ID (기본 legacy_greedy): 시뮬레이터와 같은 정책 등록표(engine.baselines.make_policy)에서 고름 (M14)."""
+    from ..engine.baselines import make_policy
+    return make_policy(os.getenv(ENV_POLICY_ID, "").strip() or DEFAULT_POLICY_ID)
+
+
 def for_mode(session):
     """실행 진입점(웹·CLI)용: 엔진 모드면 activate, 아니면 아무것도 바꾸지 않는 컨텍스트."""
-    return activate(session) if policy_mode() == "engine" else contextlib.nullcontext()
+    return activate(session, policy=policy_from_env()) if policy_mode() == "engine" else contextlib.nullcontext()
 
 
-__all__ = ["EngineRunner", "activate", "for_mode", "policy_mode", "POLICY_MODES", "ENV_POLICY_MODE"]
+__all__ = ["EngineRunner", "activate", "for_mode", "policy_from_env", "policy_mode", "POLICY_MODES", "ENV_POLICY_MODE",
+           "ENV_POLICY_ID"]
