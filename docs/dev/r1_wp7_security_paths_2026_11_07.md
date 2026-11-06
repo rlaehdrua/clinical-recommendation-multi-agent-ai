@@ -136,4 +136,10 @@ scanner를 만드는 실제 경로는 `load_cases_hygienic`뿐이고, 오프라�
 
 ## 9. 다른 브랜치와의 관계
 
-N1은 fast-forward로 적용했으므로 충돌과 중복 수정이 없습니다. 이 브랜치는 N1과 같은 파일을 더 수정하므로 N1과 함께 또는 N1 뒤에 병합해야 합니다. 다른 브랜치와의 `git merge-tree` 결과는 `reports/R1.md`에 기록합니다.
+N1은 fast-forward로 적용했으므로 충돌과 중복 수정이 없습니다. 이 브랜치는 N1과 같은 파일을 더 수정하므로 N1과 함께 또는 N1 뒤에 병합해야 합니다. 
+
+`git merge-tree` 결과는 다음과 같습니다.
+
+- 충돌 없음: `5f7d66b`, `ba870cb`, `229969c`, `395e025`, `75966cb`, `c0981b9`, `d20865a`, `c48fce9`
+- **충돌 1건:** `night2/status-boundary` `554f37d`의 `src/ctrec/cli.py`, 결과 출력 끝부분 한 구역입니다. 해결은 양쪽을 합치면 됩니다. `rec.no_recommendation_reason`은 그쪽을, `_who`와 `--redact-console` 분기는 이쪽을 씁니다.
+- **충돌 해결 뒤 재검증 필요:** 그 브랜치의 `shown_recommendation(session)`은 `conservative_view.build`를 호출합니다. `tests/test_security_paths.py`의 가짜 `_session`은 이를 거치지 못하므로 테스트 수정이 필요할 수 있습니다. `--redact-console` 판단 근거 제외도 합친 코드에서 다시 확인해야 합니다. 이 조합은 실행해 보지 않았습니다.
