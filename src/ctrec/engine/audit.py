@@ -188,6 +188,9 @@ class LoadResult:
 _KNOWN_SCHEMA_RE = re.compile(r"ctrec\.decision_record/v[0-9]{1,4}")
 # 한 줄의 손상을 그 줄에서 끝냄. ValueError: JSONDecodeError와 숫자가 너무 긴 정수, RecursionError: 너무 깊은 중첩
 _BAD_JSON_ERRORS = (ValueError, RecursionError)
+# 읽기 상한. 실제 기록은 실행당 수 KB이고 trace도 수십 KB (2026-11-07 실측). 넘으면 끝까지 읽지 않고 읽기 실패로 처리
+MAX_READ_BYTES = 64 * 1024 * 1024
+MAX_LINE_PROBLEMS = 10_000  # 문제 목록이 파일보다 커지지 않게 함 (20MB 손상 파일 = 문제 400만 줄, 메모리 757MB 실측)
 
 
 def _nested_models(tp) -> Iterable[type[BaseModel]]:
@@ -230,9 +233,23 @@ def _schema_label(ver: object) -> str:
     return ver if isinstance(ver, str) and _KNOWN_SCHEMA_RE.fullmatch(ver) else "?"
 
 
+def read_limited(path: Path) -> bytes:
+    """MAX_READ_BYTES까지만 읽음. 넘으면 AuditError."""
+    with Path(path).open("rb") as f:
+        data = f.read(MAX_READ_BYTES + 1)
+    if len(data) > MAX_READ_BYTES:
+        raise AuditError("파일이 너무 큼")
+    return data
+
+
+def _check_problem_count(problems: list[str]) -> None:
+    if len(problems) > MAX_LINE_PROBLEMS:
+        raise AuditError("문제 줄이 너무 많음")
+
+
 def _read_text(path: Path) -> str:
     """UTF-8로 읽음. 실패 시 UnicodeDecodeError를 내보내지 않음 (예외 객체의 .object·repr에 파일 전체가 들어 있음)."""
-    data = Path(path).read_bytes()
+    data = read_limited(path)
     try:
         return data.decode("utf-8")
     except UnicodeDecodeError:
@@ -313,8 +330,10 @@ def load_records(path: Path, *, scanner=None) -> LoadResult:
             items.append((n, json.loads(line)))
         except _BAD_JSON_ERRORS:
             bad.append(f"line {n}: corrupt_json")
+            _check_problem_count(bad)
     res = parse_records(items, scanner=scanner)
     res.issues = bad + res.issues
+    _check_problem_count(res.issues)
     return res
 
 
@@ -332,7 +351,7 @@ def count_withheld(issues: Iterable[str]) -> int:
 def load_run_v2(run_dir: Path, scanner=None) -> LoadResult:
     """실행 폴더에서 v2 기록을 읽음: decision_records.jsonl 우선, 없으면 trace.jsonl의 v2 이벤트. 링크는 거부.
 
-    폴더가 아니거나 링크이거나 파일이 UTF-8이 아니면 AuditError.
+    폴더가 아니거나 링크이거나 파일이 UTF-8이 아니거나 읽기 상한(MAX_READ_BYTES, MAX_LINE_PROBLEMS)을 넘으면 AuditError.
     scanner=None이면 값을 검사하지 않습니다(오프라인 평가·검증용). 화면·API는 audit_inspection.inspect_run_checked를 씁니다.
     scanner 검사는 그 scanner가 아는 값만 찾으므로 통과가 안전을 뜻하지는 않습니다.
     """
@@ -362,8 +381,10 @@ def load_run_v2(run_dir: Path, scanner=None) -> LoadResult:
             events.append(json.loads(line)) if line.strip() else None
         except _BAD_JSON_ERRORS:
             bad.append(f"trace line {n}: corrupt_json")
+            _check_problem_count(bad)
     res = records_from_trace(events, scanner=checked)
     res.issues = bad + res.issues + ([] if res.records or count_withheld(res.issues) else ["no_v2_records"])
+    _check_problem_count(res.issues)
     return res
 
 

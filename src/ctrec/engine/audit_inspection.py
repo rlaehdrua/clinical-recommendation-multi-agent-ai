@@ -29,7 +29,12 @@ def inspect_run_checked(run_dir: Path, scanner) -> dict:
     checked = audit.CheckedScanner(scanner)
     loaded = audit.load_run_v2(run_dir, scanner=checked)
     diag = ad.load_diagnostics(run_dir, {r.run_id for r in loaded.records}, checked)
-    view = ad.build_diagnostics_view(loaded, diag)
+    try:
+        view = ad.build_diagnostics_view(loaded, diag)
+    except (OverflowError, ValueError):  # 무한대·NaN 비용 등 표시할 수 없는 값
+        view = None
+    if view is None:
+        raise audit.AuditError("기록 값을 표시할 수 없음")  # except 밖에서 올려 원래 예외가 남지 않게 함
     records = audit.count_withheld(loaded.issues)
     diagnostics = sum(": sensitive_text:" in p for p in diag.problems)
     view[SCAN_KEY] = {"status": "withheld" if records or diagnostics else "no_findings", "limit": SCAN_LIMIT,

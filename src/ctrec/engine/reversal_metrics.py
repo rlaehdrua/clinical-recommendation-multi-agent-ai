@@ -102,7 +102,8 @@ _STEP = rf"(?:\d{{1,18}}|{OUT_OF_RANGE})"
 # write_metrics가 파일에 남기는 문제 코드 전체. 폴더 이름은 콜론을 포함해 무엇이든 될 수 있으므로 코드를 끝에서 정확히 맞춤
 _KNOWN_PROBLEM = re.compile(
     r"^(?P<folder>.*):(?P<code>no_v2_records|records_unreadable|records_from_trace|multiple_run_ids"
-    r"|issues_file_link|issues_file_unreadable|issues_file_absent:direct_violations_and_withheld_not_computable"
+    r"|issues_file_link|issues_file_unreadable|issues_file_too_large|issues_file_too_damaged"
+    r"|issues_file_absent:direct_violations_and_withheld_not_computable"
     r"|(?:conflicting_steps|step_out_of_range):\d{1,18}"
     rf"|(?:unexplained_confirmed_downgrade|reversal_without_new_evidence):{_STEP}"
     r"|trace line \d+: corrupt_json"
@@ -414,6 +415,7 @@ def _issue_field_names(e: ValidationError) -> str:
 
 def _load_issues_partial(run_dir: Path, checked=None) -> tuple[list, list[str]]:
     """진단 파일을 줄 단위로 읽음: 유효한 줄은 살리고 손상된 줄은 번호·코드·필드 이름으로만 보고 (값·원문 없음)."""
+    from . import audit
     from . import record_producer as rp
     p = run_dir / rp.ISSUES_FILE
     if not p.exists() and not p.is_symlink():
@@ -421,7 +423,9 @@ def _load_issues_partial(run_dir: Path, checked=None) -> tuple[list, list[str]]:
     if run_dir.is_symlink() or p.is_symlink() or run_dir.resolve() not in p.resolve().parents:
         return [], ["issues_file_link"]
     try:
-        data = p.read_bytes()
+        data = audit.read_limited(p)
+    except audit.AuditError:
+        return [], ["issues_file_too_large"]
     except OSError:
         return [], ["issues_file_unreadable"]
     issues, problems, seen = [], [], set()
@@ -450,6 +454,8 @@ def _load_issues_partial(run_dir: Path, checked=None) -> tuple[list, list[str]]:
             continue
         seen.add(issue.issue_id)
         issues.append(issue)
+    if len(problems) > audit.MAX_LINE_PROBLEMS:
+        return [], ["issues_file_too_damaged"]
     return issues, problems
 
 
