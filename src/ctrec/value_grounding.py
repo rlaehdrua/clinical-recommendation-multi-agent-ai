@@ -7,7 +7,7 @@ Session은 LLM이 만든 PatientProfile로 규칙 엔진을 돌립니다. 원문
 
 - 처음 입력의 값은 값 표현 전체로 찾습니다. 대명사와 단독 F/M/여/남은 성별의 근거가 아닙니다.
 - 단독 값("62", "여")은 그 값을 직접 물은 문답에서만 인정합니다.
-- 인용 문자열이 있어도 값과 검사명이 그 문장에 없으면 근거가 아닙니다.
+- 검사값은 인용 안의 수치가 그 검사명에 연결되어야 합니다. 인용이 길어도 옆 검사의 수치, 날짜, 참고 범위는 근거가 아닙니다.
 - 문장 단위로 보므로 "62세인데 혈색소는 몰라요"의 나이는 인정되고 혈색소는 인정되지 않습니다.
 - 값의 임상적 의미는 판단하지 않습니다. 적혀 있는지만 봅니다. 문서 검증 여부는 근거 수준(evidence.py) 쪽입니다.
 """
@@ -18,7 +18,7 @@ import re
 from datetime import date
 
 from . import evidence, evidence_directness as ed
-from .tools.rule_engine import LAB_ALIASES, _norm, canonical_lab
+from .tools.rule_engine import LAB_ALIASES, _norm, _norm_unit, canonical_lab
 
 UNLOCATED, HEDGED, CONFLICT = "unlocated", "hedged", "conflict"
 
@@ -208,50 +208,117 @@ def _lab_named(lab: str, sentence: str) -> bool:
     return not names or any(re.search(rf"(?<![a-z가-힣]){re.escape(n)}(?![a-z])", sentence, re.IGNORECASE) for n in names)
 
 
-def _lab_mentions(lab: str, text: str) -> set[str]:
+_LAB_CANON = {n.lower(): canon for table in (LAB_ALIASES, _LAB_KO) for canon, names in table.items() for n in names}
+_LAB_NAMES = sorted(_LAB_CANON, key=len, reverse=True)
+_ANY_LAB = re.compile(rf"(?<![a-z가-힣])(?:{'|'.join(map(re.escape, _LAB_NAMES))})(?![a-z])", re.IGNORECASE)
+_LAB_NUMBER = re.compile(r"(?<![\d.,])(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?(?![\d,]*\d)")
+_NOT_A_VALUE = re.compile(r"\d{4}[-./]\d{1,2}(?:[-./]\d{1,2})?|\d{1,2}월(?:\s*\d{1,2}일)?|(?<![\d.])\d{1,2}/\d{1,2}(?![\d/])|"  # 날짜
+                          r"\d+(?:\.\d+)?\s*[-~–]\s*\d+(?:\.\d+)?|10\s*[\^*]\s*\d+|10e\d+", re.IGNORECASE)  # 범위, 단위의 10^9
+_LINK_BREAK = re.compile(r"[,;\n]")
+_NAME_TO_VALUE, _VALUE_TO_NAME = 25, 12  # 검사명과 수치 사이 글자 수
+_UNIT_AFTER = re.compile(r"\s*([^\s,;()]*[/%][^\s,;()]*)")
+
+
+def _sentence_spans(body: str):
+    start = 0
+    for m in ed._SENTENCE_BOUNDARY.finditer(body):
+        yield start, m.start()
+        start = m.end()
+    yield start, len(body)
+
+
+def _linked_numbers(sentence: str) -> list[tuple[int, int, str, str | None]]:
+    """문장의 수치와 그 수치의 검사명 (시작, 끝, 수치, 표준 검사명 | None). 검사명마다 자기 뒤의 첫 수치 하나만 가짐.
+
+    뒤에 수치가 없는 검사명만 바로 앞의 수치를 가짐 ("12 g/dL hemoglobin"). 참고 범위·날짜·단위의 숫자는 수치가 아님."""
+    text = _NOT_A_VALUE.sub(lambda m: " " * len(m.group()), sentence)
+    names = [(m.start(), m.end(), _LAB_CANON[m.group().lower()]) for m in _ANY_LAB.finditer(text)]
+    numbers = [(m.start(), m.end(), m.group().replace(",", "")) for m in _LAB_NUMBER.finditer(text)]
+    owner: dict[int, str] = {}
+    waiting = []
+    for i, (lo, hi, canon) in enumerate(names):
+        limit = names[i + 1][0] if i + 1 < len(names) else len(text)
+        after = next((n for n, x in enumerate(numbers) if hi <= x[0] < limit), None)
+        if after is not None and numbers[after][0] - hi <= _NAME_TO_VALUE and not _LINK_BREAK.search(text[hi:numbers[after][0]]):
+            owner[after] = canon
+        elif after is None:
+            waiting.append(i)
+    for i in waiting:
+        lo, _, canon = names[i]
+        floor = names[i - 1][1] if i else 0
+        before = next((n for n in range(len(numbers) - 1, -1, -1) if floor <= numbers[n][1] <= lo), None)
+        if before is not None and before not in owner and lo - numbers[before][1] <= _VALUE_TO_NAME \
+                and not _LINK_BREAK.search(text[numbers[before][1]:lo]):
+            owner[before] = canon
+    return [(x[0], x[1], x[2], owner.get(n)) for n, x in enumerate(numbers)]
+
+
+def _is_listed(lab: str) -> bool:
     canon = canonical_lab(lab)
-    names = [*LAB_ALIASES.get(canon, ()), *_LAB_KO.get(canon, ())]
-    out = set()
-    for n in names:
-        pat = rf"(?<![a-z가-힣]){re.escape(n)}(?![a-z])[^0-9\n]{{0,15}}({_NUMBER})"
-        out |= {f"{float(m.group(1)):g}" for m in re.finditer(pat, text.replace(",", ""), re.IGNORECASE)}
+    return canon in LAB_ALIASES or canon in _LAB_KO
+
+
+def _lab_numbers(lab: str, body: str) -> list[tuple[int, int, str]]:
+    """본문에서 이 검사의 수치 (시작, 끝, 수치). 이름을 아는 검사는 연결된 수치만, 모르는 검사는 다른 검사에 연결되지 않은 수치."""
+    canon = canonical_lab(lab) if _is_listed(lab) else None
+    out = []
+    for start, end in _sentence_spans(body):
+        for lo, hi, number, owner in _linked_numbers(body[start:end]):
+            if owner == canon:
+                out.append((start + lo, start + hi, number))
     return out
 
 
-def ground_lab(lab: str, value, quote: str | None, source_text: str | None, *, key: str | None = None, qa=None) -> str | None:
-    """검사값의 원문 근거. 인용이 원문에 있고, 그 문장에 같은 검사명과 같은 수치가 있어야 함."""
+def _lab_mentions(lab: str, text: str) -> set[str]:
+    return {_text(float(n)) for _, _, n in _lab_numbers(lab, text)} if _is_listed(lab) else set()
+
+
+def _same_unit(body: str, hi: int, unit: str | None) -> bool:
+    """수치 바로 뒤의 단위가 프로필 단위와 같은가. 어느 한쪽에 단위가 없으면 비교할 수 없으므로 막지 않음."""
+    m = _UNIT_AFTER.match(body, hi)
+    return not (unit and m) or _norm_unit(m.group(1).rstrip(".")) == _norm_unit(unit)
+
+
+def _quote_hits(quote: str | None, source_text: str) -> list:
+    """인용의 위치. "Hb 12"처럼 짧은 인용은 일반 위치 검사의 최소 길이에 걸리므로 그대로 찾음 (수치 연결은 호출 쪽에서 확인)."""
+    if not quote:
+        return []
+    found, hits = ed.locate(quote, source_text)
+    if found:
+        return hits
+    text = ed._norm(quote).strip(" .,:'`()[]")
+    _, segs = ed.parse_source(source_text)
+    return [ed.Hit(s, m.start(), m.end()) for s in segs for m in re.finditer(re.escape(text), s.body)] if text else []
+
+
+def ground_lab(lab: str, value, quote: str | None, source_text: str | None, *, key: str | None = None, qa=None,
+               unit: str | None = None, known: set[str] | None = None) -> str | None:
+    """검사값의 원문 근거. 인용 안의 수치가 이 검사에 연결되고 프로필 값·단위와 같아야 함.
+
+    known: 프로필에 있는 이 검사의 값 전체. 기록의 다른 값이 빠져 있으면 어느 값이 현재인지 알 수 없으므로 충돌로 봅니다."""
     if source_text is None or value is None:
         return None
-    v = _text(value)
-    num = re.compile(rf"(?<![\d.]){re.escape(v)}(?:\.0+)?(?![\d.])")
     usable = {id(s): s for s in _usable_answers(source_text, qa)}
-    initial = evidence.split_source(source_text)[0]
-    answered: set[str] = set()
-    for seg in usable.values():
-        for x in _lab_mentions(lab, seg.body):
-            if not ed.hedged(seg.body) and not _APPROX.search(seg.body):
-                answered.add(x)
-    recorded = _lab_mentions(lab, initial)
-    if len(answered) > 1 or (recorded and answered - recorded):
+    recorded = _lab_mentions(lab, evidence.split_source(source_text)[0])
+    answered = {_text(float(n)) for seg in usable.values() for lo, hi, n in _lab_numbers(lab, seg.body)
+                if not _uncertain(seg.body, lo, hi)}
+    if len(answered) > 1 or (recorded and answered - recorded) or (known is not None and recorded - known):
         return CONFLICT
-    found, hits = ed.locate(quote or "", source_text) if quote else (False, [])
     hedged = False
-    for h in hits if found else []:
-        if h.seg.role == "answer":
-            if not any(s.text == h.seg.text for s in usable.values()):
+    for h in _quote_hits(quote, source_text):
+        if h.seg.role != "record" and not (h.seg.role == "answer" and any(s.text == h.seg.text for s in usable.values())):
+            continue
+        body = h.seg.body
+        for lo, hi, number in _lab_numbers(lab, body):
+            if not (h.lo <= lo and hi <= h.hi) or float(number) != float(value) or not _same_unit(body, hi, unit):
                 continue
-        elif h.seg.role != "record":
-            continue
-        sentence = ed._sentence(h.seg.body, h.lo).replace(",", "")
-        if not (num.search(sentence) and _lab_named(lab, sentence)):
-            continue
-        if h.seg.role == "answer" and _uncertain(h.seg.body, h.lo, h.hi):
-            hedged = True
-        else:
-            return None
+            if h.seg.role == "answer" and _uncertain(body, lo, hi):
+                hedged = True
+            else:
+                return None
     for q in qa or []:
         bare = _bare_lab(lab, q, key)
-        if bare is not None and float(bare) == float(v):
+        if bare is not None and float(bare) == float(value):
             return None
     return HEDGED if hedged else UNLOCATED
 
@@ -274,7 +341,7 @@ def _has_lab_name(lab: str, text: str) -> bool:
 
 # ---------------------------------------------------------------------------- 판정 근거 확인
 _LLM_FIELD = re.compile(r'["\']?\b(sex|age|ecog)\b["\']?\s*[:=]\s*["\']?([a-z0-9.]+)', re.IGNORECASE)
-_LAB_EVIDENCE = re.compile(r'^(.+?) (-?\d+(?:\.\d+)?(?:e[+-]?\d+)?) ', re.IGNORECASE)
+_LAB_EVIDENCE = re.compile(r'^(.+?) (-?\d+(?:\.\d+)?(?:e[+-]?\d+)?) (.*?) ?\(', re.IGNORECASE)
 
 
 def structured_problem(a, rule, profile, source_text: str | None, *, key: str | None = None, qa=None,
@@ -309,5 +376,8 @@ def structured_problem(a, rule, profile, source_text: str | None, *, key: str | 
     if field.startswith("lab:"):
         m = _LAB_EVIDENCE.match(a.evidence)
         quote = a.evidence.split(' - "', 1)[-1].rstrip('"') if ' - "' in a.evidence else ""
-        return ground_lab(m.group(1), float(m.group(2)), quote, source_text, **kw) if m else UNLOCATED
+        if not m:
+            return UNLOCATED
+        known = {_text(x.value) for x in profile.labs if x.value is not None and canonical_lab(x.name) == canonical_lab(m.group(1))}
+        return ground_lab(m.group(1), float(m.group(2)), quote, source_text, unit=m.group(3).strip() or None, known=known, **kw)
     return None

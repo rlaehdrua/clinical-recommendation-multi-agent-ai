@@ -146,3 +146,91 @@ def test_compound_non_answers_are_recognized(text):
 def test_answers_with_content_are_not_non_answers(text):
     from ctrec.question_contract import non_answer
     assert not non_answer(text)
+
+
+LINE = "Synthetic 45-year-old female. ECOG 0. hemoglobin 12 g/dL"
+
+
+@pytest.mark.parametrize("quote", [LINE, "ECOG 0. hemoglobin 12 g/dL", "hemoglobin 12 g/dL", "ECOG 0, hemoglobin 12 g/dL"])
+def test_quote_across_sentences_finds_the_lab_value(quote):
+    text = LINE if quote != "ECOG 0, hemoglobin 12 g/dL" else quote
+    assert vg.ground_lab("hemoglobin", 12.0, quote, text) is None
+
+
+@pytest.mark.parametrize("value,quote,text", [
+    (12.0, "Platelets 12. Hb 9 g/dL", "Platelets 12. Hb 9 g/dL"),  # 인접한 다른 검사값
+    (9.0, "Hb 12 g/dL, Platelets 9", "Hb 12 g/dL, Platelets 9"),
+    (200.0, "Hb 12 g/dL, Platelets 200", "Hb 12 g/dL, Platelets 200"),
+    (5.0, "Hb low. ANC 5 g/dL", "Hb low. ANC 5 g/dL"),
+    (4.1, "Hb low, potassium 4.1", "Hb low, potassium 4.1"),
+    (9.0, "Hb 12 g/dL (2026-09-01)", "Hb 12 g/dL (2026-09-01)"),  # 날짜의 숫자
+    (13.0, "Hb 12 g/dL (normal 13-17)", "Hb 12 g/dL (normal 13-17)"),  # 참고 범위
+    (10.0, "Hb 12 x10^9/L", "Hb 12 x10^9/L"),  # 단위의 숫자
+    (12.0, "Hb는 측정함", "Hb는 측정함. 체중 12 kg"),  # 인용에 값이 없음
+    (12.0, "체중 12 kg입니다", "체중 12 kg입니다"),  # 값은 있지만 검사명이 다름
+    (12.0, "Hb는 측정했고 다른 메모", "Hb는 측정했고 다른 메모 12"),  # 값이 인용 밖
+])
+def test_neighbouring_numbers_are_not_the_lab_value(value, quote, text):
+    assert vg.ground_lab("hemoglobin", value, quote, text) == "unlocated"
+
+
+@pytest.mark.parametrize("value,quote,text", [
+    (12.0, "Hb: 12 g/dL", "Hb: 12 g/dL"), (12.0, "hemoglobin was 12 g/dL", "hemoglobin was 12 g/dL"),
+    (12.0, "12 g/dL", "Hb 12 g/dL"), (12.0, "혈색소 수치는 12 g/dL", "혈색소 수치는 12 g/dL"), (12.0, "12 g/dL hemoglobin", "12 g/dL hemoglobin"),
+    (12.0, "Hb 12 g/dL, Platelets 200", "Hb 12 g/dL, Platelets 200"), (12.0, "Hb on 2026-09-01 was 12", "Hb on 2026-09-01 was 12"),
+    (12.0, "Hb 9/1 12 g/dL", "Hb 9/1 12 g/dL"), (12.0, "Hb 12 (normal 13-17)", "Hb 12 (normal 13-17)")])
+def test_linked_lab_values_are_accepted(value, quote, text):
+    assert vg.ground_lab("hemoglobin", value, quote, text) is None
+
+
+def test_comma_number_stays_one_value():
+    assert vg.ground_lab("platelets", 150000, "Platelets 150,000 /uL", "Platelets 150,000 /uL") is None
+    assert vg.ground_lab("platelets", 150, "Platelets 150,000 /uL", "Platelets 150,000 /uL") == "unlocated"
+
+
+def test_unit_must_agree_when_both_are_stated():
+    assert vg.ground_lab("hemoglobin", 12.0, "Hb 12 g/L", "Hb 12 g/L", unit="g/dL") == "unlocated"
+    assert vg.ground_lab("hemoglobin", 12.0, "Hb 12 g/dL", "Hb 12 g/dL", unit="g/dl") is None
+    assert vg.ground_lab("hemoglobin", 12.0, "Hb 12", "Hb 12", unit="g/dL") is None  # 원문에 단위가 없으면 비교할 수 없음
+    assert vg.ground_lab("platelets", 150.0, "Plt 150 x10^3/uL", "Plt 150 x10^3/uL", unit="x10^9/L") is None  # 같은 단위의 다른 표기
+
+
+TIMES = "Hb 10 g/dL (2026-01-01). Hb 12 g/dL (2026-03-01)."
+
+
+def test_several_time_points_are_each_located_when_the_profile_holds_them():
+    assert vg.ground_lab("hemoglobin", 12.0, "Hb 12 g/dL", TIMES, known={"10", "12"}) is None
+    assert vg.ground_lab("hemoglobin", 10.0, "Hb 10 g/dL", TIMES, known={"10", "12"}) is None
+
+
+@pytest.mark.parametrize("value,kept", [(12.0, {"12"}), (10.0, {"10"})])
+def test_a_record_value_missing_from_the_profile_is_a_conflict(value, kept):
+    """프로필이 여러 시점 값 중 하나만 옮기면 어느 값이 현재인지 판정할 수 없음."""
+    assert vg.ground_lab("hemoglobin", value, f"Hb {value:g} g/dL", TIMES, known=kept) == "conflict"
+
+
+def test_unlisted_lab_keeps_working_without_a_known_name():
+    assert vg.ground_lab("potassium", 4.1, "칼륨 4.1 mmol/L", "칼륨 4.1 mmol/L") is None
+    assert vg.ground_lab("potassium", 12.0, "Hb 12 g/dL", "Hb 12 g/dL") == "unlocated"  # 다른 검사의 수치
+
+
+def test_unknown_answer_does_not_ground_a_lab():
+    src = "기록.\n\n[추가 확인 정보 - 라운드 1]\nQ: 혈색소 수치는요?\nA: 잘 모르겠어요"
+    qa = [QAPair(round=1, question_id="Q1", question="혈색소 수치는요?", answer="잘 모르겠어요", purpose="eligibility", target=["T1:I3"], session_id="S")]
+    assert vg.ground_lab("hemoglobin", 12.0, "잘 모르겠어요", src, key="T1:I3", qa=qa) == "unlocated"
+
+
+def test_hedged_lab_answer_is_held_only_for_the_hedged_value():
+    src = "기록.\n\n[추가 확인 정보 - 라운드 1]\nQ: 수치는요?\nA: 혈소판은 200이고 혈색소는 12쯤인 것 같아요"
+    assert vg.ground_lab("hemoglobin", 12.0, "혈색소는 12쯤인 것 같아요", src) == "hedged"
+    assert vg.ground_lab("platelets", 200.0, "혈소판은 200이고", src) == "hedged"  # '이고'는 절 경계가 아니라 함께 보류됨 (안전한 쪽)
+    mixed = "기록.\n\n[추가 확인 정보 - 라운드 1]\nQ: 수치는요?\nA: 혈소판은 200인데 혈색소는 12쯤인 것 같아요"
+    assert vg.ground_lab("platelets", 200.0, "혈소판은 200인데", mixed) is None
+    assert vg.ground_lab("hemoglobin", 12.0, "혈색소는 12쯤인 것 같아요", mixed) == "hedged"
+
+
+def test_short_quote_is_found_and_still_needs_the_link():
+    assert vg.ground_lab("hemoglobin", 12.0, "Hb 12", "ECOG 1. Hb 12") is None
+    assert vg.ground_lab("hemoglobin", 12.0, "12", "ECOG 1. Hb 12") is None
+    assert vg.ground_lab("hemoglobin", 12.0, "12", "ECOG 1. 체중 12") == "unlocated"
+    assert vg.ground_lab("hemoglobin", 12.0, "Hb 12", "ECOG 1. Hb 13") == "unlocated"

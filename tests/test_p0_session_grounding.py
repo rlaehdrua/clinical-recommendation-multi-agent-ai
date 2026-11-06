@@ -313,3 +313,47 @@ def test_days_ago_is_not_an_age(run):
 def test_sex_all_rule_needs_no_sex_value(run):
     rule = SEX.model_copy(update={"text": "Sex: All", "value": "all"})
     confirmed(run("62세 폐암 환자.", [rule, AGE.model_copy(update={"rule_id": "I2"})], prof(age=62)))
+
+
+# ------------------------------------------------------------ 여러 문장 인용 (야간 비교에서 찾은 과잉 차단)
+FULL_LINE = "Synthetic 45-year-old female. ECOG 0. hemoglobin 12 g/dL"
+HB_LOW_OUT = _rule(rule_id="E3", kind="exclusion", text="Hemoglobin < 9.0 g/dL", category="lab", field="lab:hemoglobin", operator="<",
+                   value="9.0", unit="g/dL")
+
+
+def test_record_quote_across_sentences_confirms_an_inclusion(run):
+    o = run(FULL_LINE, [HB], prof(labs=[hb(12.0, FULL_LINE)]), meta=RECORD, input_source="clinical_record")
+    confirmed(o)
+    assert o.a.passes is True and not o.a.needs_verification and "REQUEST_DOCUMENT" not in o.actions
+
+
+def test_record_quote_across_sentences_clears_an_exclusion(run):
+    o = run(FULL_LINE, [HB_LOW_OUT], prof(labs=[hb(12.0, FULL_LINE)]), meta={"E3": RuleMeta(required_evidence="clinical_record")},
+            input_source="clinical_record")
+    confirmed(o)
+    assert o.a.holds == "no" and not o.a.needs_verification
+
+
+def test_adjacent_lab_in_a_long_quote_does_not_confirm(run):
+    text = "ECOG 0. Platelets 12. Hb 8 g/dL"
+    o = run(text, [HB], prof(labs=[hb(12.0, text)]), meta=SELF_OK)
+    held(o, "INFO_MISSING")
+
+
+def test_invented_lab_with_a_long_real_quote_does_not_rule_out(run):
+    text = "Synthetic patient. ECOG 0. Stable since last visit."
+    held(run(text, [HB_HIGH], prof(labs=[hb(12.0, text)]), meta=SELF_OK), "INFO_MISSING")
+
+
+def test_past_value_alone_in_the_profile_is_held(run):
+    text = "Hb 8 g/dL (2026-01-01). Hb 12 g/dL (2026-03-01)."
+    held(run(text, [HB], prof(labs=[hb(8.0, "Hb 8 g/dL")]), meta=SELF_OK), "INFO_MISSING")
+
+
+def test_two_dated_values_use_the_latest_and_stay_flagged_by_the_fact_layer(run):
+    text = "Hb 8 g/dL (2026-01-01). Hb 12 g/dL (2026-03-01)."
+    labs = [LabValue(name="hemoglobin", value=8.0, unit="g/dL", date="2026-01-01", source_quote="Hb 8 g/dL"),
+            LabValue(name="hemoglobin", value=12.0, unit="g/dL", date="2026-03-01", source_quote="Hb 12 g/dL")]
+    o = run(text, [HB], prof(labs=labs), meta=SELF_OK)
+    assert o.match.eligibility == "ELIGIBLE" and "12" in o.a.evidence  # 규칙 엔진은 최신 값으로 판정
+    assert o.status == "VERIFICATION_PENDING"  # 사실 층은 서로 다른 값을 충돌로 보아 확정하지 않음 (기존 동작)
