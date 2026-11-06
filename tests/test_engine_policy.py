@@ -454,6 +454,24 @@ def test_legacy_decline_defer_becomes_document_request_after_engine_item_failure
     assert co2.pair(PA, "T1").status != C.PairStatus.BLOCKED_FAILURE  # EGFR가 남아 있음
 
 
+def test_legacy_decline_defer_becomes_rephrase_when_enabled():
+    """웹 경로: "모름" 뒤 기존 정책의 보류도 바꿔 묻기 차례면 바꿔 묻기 질문으로. 바꿔 묻기를 끈 정책은 보류 그대로."""
+    from types import MappingProxyType
+    from ctrec.engine.policy import REPHRASE_DONE, REPHRASE_PENDING, rephrase_key
+    key = rephrase_key("patient_interview", "ecog")
+    ops = {PA: OpsState(attempts=MappingProxyType({key: REPHRASE_PENDING}))}
+    co = CohortState.from_decision_states({PA: _declined_state("ecog")}, ops=ops)
+    asked = next(a for a in LegacyAdapterPolicy(rephrase=True).propose(co) if a.info_key == "ecog")
+    assert (asked.action_type, asked.reason_code, asked.source_id) == ("ASK_PATIENT", C.REPHRASE, "patient_interview")
+    assert asked.fingerprint.endswith(".rephrase")
+    held = next(a for a in LegacyAdapterPolicy().propose(co) if a.info_key == "ecog")
+    assert (held.action_type, held.reason_code) == ("DEFER", "user_declined_or_exhausted")
+    done = CohortState.from_decision_states({PA: _declined_state("ecog")},
+                                            ops={PA: OpsState(attempts=MappingProxyType({key: REPHRASE_DONE}))})
+    again = next(a for a in LegacyAdapterPolicy(rephrase=True).propose(done) if a.info_key == "ecog")
+    assert again.reason_code != C.REPHRASE  # 바꿔 묻기는 한 번만
+
+
 # ------------------------------------------------------------ 필수 기준 0개 쌍
 def _state_no_required():
     """T0 기준 0개, T1 절차 기준만(waivable), T2 정상 대조군, T3 기준 0개지만 모집 종료, T4 기준 0개 UNCERTAIN."""

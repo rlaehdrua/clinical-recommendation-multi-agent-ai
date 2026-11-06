@@ -8,6 +8,10 @@ LegacyAdapterPolicy
   항목 단위 실패("모름" = no_answer)는 그 (정보원, 항목)만 막고 같은 항목을 문서 정보원으로 요청
   (alternative_source_after_no_answer). 남은 문서 정보원도 없으면 그 항목만 DEFER(item_sources_exhausted).
   같은 정보원의 다른 항목 질문은 그대로 계속합니다.
+  바꿔 묻기(rephrase=True, 기본 꺼짐): 환자가 "모름"이라고 한 항목이 환자 정보원이 다룰 수 있는 항목(provides_fields -
+  ECOG·복용 약 등, 검사 수치는 아님)이면 바로 실패로 보지 않고 한 번만 다른 말로 다시 묻는 질문(REPHRASE, 지문
+  "<지문>.rephrase")을 냄. 그 질문도 "모름"이면 항목 실패 -> 문서 정보원. 환자가 알 수 없는 항목은 다시 묻지 않고 바로 문서로.
+  같은 질문을 그대로 반복하지는 않습니다 (11-06 결정: 같은 내용 재질문은 의미 없음).
   실제 Session에서는 "모름" 뒤 기존 정책이 그 항목을 다시 묻지 않고 DEFER(user_declined_or_exhausted)를 내므로,
   그 보류도 같은 항목의 실패 기록(ops.failed_items)이 있으면 같은 규칙으로 문서 정보원 요청으로 바꿈
   (실패 기록이 없는 보류 - 엔진 밖에서 생긴 거부 등 - 는 그대로 보류).
@@ -31,12 +35,13 @@ LegacyAdapterPolicy
 from __future__ import annotations
 
 import re
+from fnmatch import fnmatch
 from types import MappingProxyType
 
 from ..decision_policy import ACTION_ORDER, DEFAULT_POLICY, PolicyConfig, candidates, fingerprint
-from .bundles import SourceCatalog
+from .bundles import CONTEXT_FIELDS, SourceCatalog
 from .cohort_state import CohortState, OpsState, required_count
-from .contracts import (LEGACY_ACTION_TYPES, NON_EXECUTING, ZERO_COST, Action, ActionOutcome, EffortBudget,
+from .contracts import (LEGACY_ACTION_TYPES, NON_EXECUTING, REPHRASE, ZERO_COST, Action, ActionOutcome, EffortBudget,
                         PairTransition, Plan, SkippedAction, check_transition, failure_scope)
 from .cost import EffortLedger
 
@@ -65,9 +70,20 @@ def tried_key(source: str, item: str) -> str:
     return f"tried:{source}|{item}"
 
 
-def no_answer_key(source: str, item: str) -> str:
-    """ops.attempts의 "모름" 횟수 키 (max_item_attempts 비교용)."""
-    return f"noanswer:{source}|{item}"
+def rephrase_key(source: str, item: str) -> str:
+    """ops.attempts의 바꿔 묻기 키: 값 1 = 첫 "모름" 뒤 다른 말로 한 번 더 물을 차례, 2 = 바꿔 묻기를 이미 함."""
+    return f"rephrase:{source}|{item}"
+
+
+REPHRASE_PENDING, REPHRASE_DONE = 1, 2
+
+
+REPHRASE_SUFFIX = ".rephrase"
+
+
+def base_fingerprint(fp: str) -> str:
+    """바꿔 묻기 행동의 지문 -> 원래 질문의 지문 (항목 키가 지문일 때 같은 항목으로 보게)."""
+    return fp[:-len(REPHRASE_SUFFIX)] if fp.endswith(REPHRASE_SUFFIX) else fp
 
 
 def item_key(info_key: str | None, fingerprint: str) -> str:
@@ -82,15 +98,12 @@ class LegacyAdapterPolicy:
     recovery = True  # 실패 뒤 대체 정보원 탐색 (False: 실패한 정보원·항목은 바로 보류, full_dcvc의 recovery 스위치)
 
     def __init__(self, cfg: PolicyConfig = DEFAULT_POLICY, catalog: SourceCatalog | None = None,
-                 max_item_attempts: int = 1):
-        """max_item_attempts: 같은 (정보원, 항목)에서 "모름"을 몇 번 받으면 항목 실패로 볼지 (기본 1 = 바로 대체 정보원).
-        2 이상이면 그 전까지는 실패로 기록하지 않아 같은 질문을 다시 할 수 있음 (WP6 민감도 분석, 11-06).
-        웹 Session은 "모름" 뒤 기존 정책이 재질문 대신 보류를 내므로 이 값과 무관하게 다시 묻지 않습니다."""
-        if max_item_attempts < 1:
-            raise ValueError("max_item_attempts는 1 이상")
+                 rephrase: bool = False):
+        """rephrase: 환자가 알 수 있는 항목의 "모름" 뒤 한 번 다른 말로 다시 물을지 (기본 False = 바로 대체 정보원).
+        WP6 민감도 분석용 (11-06). 웹 질문 렌더러는 아직 REPHRASE 행동의 문구를 따로 만들지 않으므로 웹에서는 끈 채로 둡니다."""
         self.cfg = cfg
         self.catalog = catalog or SourceCatalog()
-        self.max_item_attempts = int(max_item_attempts)
+        self.rephrase = bool(rephrase)
 
     # ------------------------------------------------------------ propose
     def propose(self, cohort: CohortState, pending_reevaluation: dict[str, list[str]] | None = None) -> list[Action]:
@@ -149,15 +162,30 @@ class LegacyAdapterPolicy:
                 if s != source and s not in failed_sources and (s, item) not in failed_items
                 and self.catalog[s].kind == "document"]
 
+    def rephrasable(self, source: str | None, fields) -> bool:
+        """바꿔 묻기 대상: 환자 정보원이고, 질문 항목(맥락 항목 제외)이 모두 그 정보원이 다루는 항목.
+        환자가 원래 알 수 없는 값(검사 수치 등)은 말을 바꿔도 답이 생기지 않으므로 제외."""
+        src = self.catalog.get(source)
+        wanted = [f for f in fields if f not in CONTEXT_FIELDS]
+        return (self.rephrase and self.recovery and src is not None and src.kind == "patient" and bool(wanted)
+                and all(any(fnmatch(f, p) for p in src.provides_fields) for f in wanted))
+
     def _convert(self, alias: str, seq: int, la, ops: OpsState, gaps: dict[str, str] | None = None) -> Action:
         atype = LEGACY_ACTION_TYPES[la.action_type]
         source = self.catalog.route(la.action_type, la.required_fact_fields, la.info_key)
         reason = _code(la.reason_code)
+        fp = la.fingerprint
         item = item_key(la.info_key if la.info_key and _INFO_KEY.match(la.info_key) else None, la.fingerprint)
         # 이미 요청한 문서(답이 있었지만 gap이 남음)는 실패한 (정보원, 항목)과 같이 대체 후보에서 뺌
         tried = {(s, item) for s in self.catalog.sources if ops.attempts.get(tried_key(s, item))}
         blocked = ops.failed_items | tried
-        if not self.recovery:  # 회복 제거(ablation): 대체 정보원을 찾지 않고 바로 보류. 기존 정책의 "모름" 보류는 그대로
+        # 첫 "모름" 뒤 바꿔 묻기 차례인 환자 정보원 (실패 기록 전). 기존 정책이 같은 질문을 다시 내든(시뮬레이터)
+        # "모름" 보류를 내든(웹) 같은 바꿔 묻기 행동으로
+        pending = sorted(s for s in self.catalog.sources if ops.attempts.get(rephrase_key(s, item)) == REPHRASE_PENDING
+                         and s not in ops.failed_sources and (s, item) not in ops.failed_items)
+        if pending and self.rephrase and (source in pending or (atype == "DEFER" and reason in LEGACY_HELD)):
+            atype, source, reason, fp = "ASK_PATIENT", pending[0], REPHRASE, la.fingerprint + REPHRASE_SUFFIX
+        elif not self.recovery:  # 회복 제거(ablation): 대체 정보원을 찾지 않고 바로 보류. 기존 정책의 "모름" 보류는 그대로
             if source is not None and source in ops.failed_sources:
                 atype, source, reason = "DEFER", None, "sources_exhausted"
             elif source is not None and (source, item) in ops.failed_items:
@@ -204,12 +232,12 @@ class LegacyAdapterPolicy:
         expected = ZERO_COST if src is None else src.request_cost.model_copy(update={
             "coordinator_minutes": src.request_cost.coordinator_minutes + src.per_item_minutes * n_items})
         return Action(
-            action_id=f"{alias}:{la.fingerprint}", action_type=atype, patient_alias=alias, source_id=source,
+            action_id=f"{alias}:{fp}", action_type=atype, patient_alias=alias, source_id=source,
             target_trial_ids=tuple(la.target_trial_ids), target_criteria=tuple(la.target_criterion_ids),
             required_fields=tuple(la.required_fact_fields), evidence_fact_ids=tuple(la.evidence_refs),
             expected_cost=expected, reason_code=reason, tier=la.tier, value_score=la.value_score,
             priority=la.priority, sequence=seq, safety_required=la.tier == SAFETY_TIER and atype not in NON_EXECUTING,
-            fingerprint=la.fingerprint, legacy_action_id=None, policy_version=self.version,
+            fingerprint=fp, legacy_action_id=None, policy_version=self.version,
             purpose=self.purpose_of(atype, tuple(la.target_criterion_ids), gaps or {}),
             info_key=la.info_key if la.info_key and _INFO_KEY.match(la.info_key) else None)
 
@@ -308,9 +336,12 @@ class LegacyAdapterPolicy:
         ops = cohort.ops.get(alias, OpsState())
         attempts = dict(ops.attempts)
         attempts[action.fingerprint] = attempts.get(action.fingerprint, 0) + 1
+        base_fp = base_fingerprint(action.fingerprint)
         if action.action_type == "REQUEST_DOCUMENT" and action.source_id and outcome.status == "succeeded":
-            tk = tried_key(action.source_id, item_key(action.info_key, action.fingerprint))
+            tk = tried_key(action.source_id, item_key(action.info_key, base_fp))
             attempts[tk] = attempts.get(tk, 0) + 1
+        if action.reason_code == REPHRASE and action.source_id:  # 결과와 무관하게 바꿔 묻기는 한 번만
+            attempts[rephrase_key(action.source_id, item_key(action.info_key, base_fp))] = REPHRASE_DONE
         failed = set(ops.failed_sources)
         exhausted = set(ops.exhausted_trials)
         failed_items = set(ops.failed_items)
@@ -319,17 +350,19 @@ class LegacyAdapterPolicy:
         reason = "sources_exhausted"
         if scope == "source" and action.source_id:
             failed.add(action.source_id)
-            item = item_key(action.info_key, action.fingerprint)
+            item = item_key(action.info_key, base_fp)
             if not self.recovery or not (self.catalog.alternatives(action.source_id, frozenset(failed))
                                          or self.item_alternatives(action.source_id, action.required_fields,
                                                                    action.info_key, item, frozenset(failed),
                                                                    frozenset(failed_items))):
                 exhausted.update(action.target_trial_ids)
         elif scope == "item" and action.source_id:
-            item = item_key(action.info_key, action.fingerprint)
-            nk = no_answer_key(action.source_id, item)
-            attempts[nk] = attempts.get(nk, 0) + 1
-            if attempts[nk] >= self.max_item_attempts:  # 정한 횟수만큼 "모름"을 받은 뒤에만 항목 실패
+            item = item_key(action.info_key, base_fp)
+            rk = rephrase_key(action.source_id, item)
+            if action.reason_code != REPHRASE and not attempts.get(rk) and \
+                    self.rephrasable(action.source_id, action.required_fields):
+                attempts[rk] = REPHRASE_PENDING  # 첫 "모름": 실패로 기록하지 않고 다음 계획에서 다른 말로 한 번 더
+            else:  # 바꿔 묻기도 "모름"이거나 바꿔 물을 수 없는 항목 -> 항목 실패
                 failed_items.add((action.source_id, item))
                 reason = "item_sources_exhausted"
                 if action.info_key and (not self.recovery or not self.item_alternatives(

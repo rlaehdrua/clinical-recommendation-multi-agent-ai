@@ -599,6 +599,23 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 
 수정할 때마다 무엇을 왜 바꿨는지 여기에 기록합니다. 최신 항목이 위에 옵니다.
 
+### 2026-11-06 — WP6 3차: "모름" 뒤 같은 질문 반복을 없애고 바꿔 묻기로 교체 (#20)
+
+배경: 2차의 재질문 2회는 같은 질문(같은 행동 지문)을 그대로 다시 보내는 것이었고, 달라지는 것은 응답 난수의 시도 번호뿐이었습니다. 환자가 원래 모르는 값(검사 수치 등)은 몇 번 물어도 "모름"이고, 원장이 같은 항목을 두 번 청구하지 않아 비용도 0분으로 잡혔습니다. 11-06 결정: 같은 내용 재질문은 의미가 없으므로 삭제하고, 다른 말로 다시 묻는 바꿔 묻기를 넣습니다. 2차 표의 5번(`max_item_attempts`·`--ask-attempts`)을 대체합니다.
+
+| # | 변경 | 파일 |
+|---|---|---|
+| 1 | **삭제:** 정책 `max_item_attempts`, 실행기 `repeat_limit`, `compare(ask_attempts=)`, CLI `--ask-attempts`. 실행기는 같은 (환자, 지문, 유형, 정보원) 행동을 다시 실행하지 않음 | `src/ctrec/engine/policy.py`, `src/ctrec/sim/runner.py`, `src/ctrec/sim/__main__.py` |
+| 2 | **바꿔 묻기:** 정책 `rephrase`(기본 꺼짐). 환자가 "모름"이라고 한 항목이 환자 정보원이 다루는 항목(카탈로그 `provides_fields` - ECOG·복용 약 등)이면 바로 실패로 보지 않고 한 번만 다른 질문을 냄: 사유 `rephrase_after_no_answer`(`contracts.REPHRASE`), 지문 `"<원래 지문>.rephrase"`, 같은 대상 기준·목적. 그 질문도 "모름"이면 항목 실패 → 문서 정보원. 검사 수치처럼 환자가 알 수 없는 항목은 바꿔 묻지 않고 바로 문서. 결과와 무관하게 한 번만(`ops.attempts["rephrase:<정보원>\|<항목>"]` 1 = 차례, 2 = 완료). 웹 경로의 "모름" 보류(`user_declined_or_exhausted`)도 차례면 같은 행동으로 바꿈 | `src/ctrec/engine/policy.py`, `src/ctrec/engine/contracts.py` |
+| 3 | **비용:** 바꿔 묻기는 새 연락으로 보고 별도 청구 키 `"<환자>\|<정보원>#rephrase"`로 요청 비용 + 항목 비용을 청구(같은 환자의 바꿔 묻기끼리는 한 연락). 2차의 "재질문 0분" 과소평가 해소 | `src/ctrec/engine/cost.py` |
+| 4 | **응답 모델:** 바꿔 묻기는 지문이 달라 첫 질문과 독립된 난수를 받고 "모름" 확률은 `p_no_answer_rephrased`(환자 기본 0.1, 첫 질문 0.2). 0.1은 "쉬운 말·단서를 넣으면 이해·기억 실패가 절반으로 준다"는 **가정값**(manifest 기록). 환자가 원래 모르는 값은 바꿔 물어도 드러나지 않음 | `src/ctrec/sim/response_model.py`, `src/ctrec/sim/environment.py` |
+| 5 | 실행기·CLI: `policy_config["rephrase"]`(spec 해시에 들어감), manifest `rephrase`, `compare(rephrase=[False, True])`, CLI `--rephrase off\|on\|both`, 비교표·지표에 `rephrased`(실행한 바꿔 묻기 수) | `src/ctrec/sim/runner.py`, `src/ctrec/sim/__main__.py`, `src/ctrec/sim/metrics.py` |
+| 6 | 테스트: 재질문 2건을 7건으로 교체 - 기본은 바로 문서, 바꿔 묻기 한 번 뒤 문서(세 번째 질문 없음), 검사 수치는 바꿔 묻지 않음, 새 연락으로 청구(원장 수정을 되돌리면 실패 확인), 별도 응답 확률·모르는 값은 안 드러남, 실행 전체에서 같은 행동 반복 0건, 웹 보류 경로 | `tests/test_sim_generator.py`, `tests/test_engine_policy.py` |
+
+- 데모(합성·상대 비교, seed 1~3, 예산 400분): 바꿔 묻기는 seed 2에서만 2건 실행됐고 확정 수는 같음(적격 5·부적격 5~6), 코디네이터 분 +16. 데모의 "모름"은 대부분 검사 수치·바이오마커라 바꿔 묻기 대상이 아니기 때문입니다.
+- 남은 한계: 웹 질문 렌더러(`question_bridge`)는 REPHRASE 행동의 문구를 따로 만들지 않아 웹에서는 끈 채로 둠. 바꿔 묻기의 효과(0.1)는 근거 없는 가정값.
+- 전체 테스트(`.env` 없는 작업 트리): 2,423 passed, 5 skipped.
+
 ### 2026-11-06 — WP6 2차: 생성기 코호트 연결(대응표), LLM 기준 결정적 판정기, "모름" 재질문 횟수, 정보원 실패 뒤 문서 대체 (#20)
 
 배경: 1차 실행기는 손으로 만든 데모 코호트만 받고 LLM 기준을 전부 판정 불가로 뒀습니다. 생성기(`src/ctrec/cohort`)의 슬롯 코호트를 그대로 넣고, 슬롯 연결이 있는 LLM 기준은 결정적으로 판정하도록 했습니다. 재질문 횟수는 11-06 결정대로 기본 1회, 민감도 2회입니다.

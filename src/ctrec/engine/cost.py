@@ -3,6 +3,8 @@
 - 요청 비용(request_cost)은 (환자, 정보원)당 한 번만 청구합니다. 같은 문서를 다시 요청하는 것은 비용 0이 아니라
   '이미 받은 문서에서 항목 확인'으로 보고 항목 비용(per_item_minutes)만 더합니다.
 - 같은 (환자, 정보원, 기준) 항목은 두 번 청구하지 않습니다.
+- 바꿔 묻기(reason_code REPHRASE, "모름" 뒤 다른 말로 다시 묻는 질문)는 같은 질문이 아니라 새 연락이므로 별도 키
+  "<환자>|<정보원>#rephrase"로 요청 비용과 항목 비용을 다시 청구합니다. 같은 환자의 바꿔 묻기끼리는 한 연락으로 묶음.
 - 환자 응답 대기(patient_wait_minutes)는 예산에서 빼지 않습니다(능동 시간 아님).
 - 예산을 넘는 청구는 BudgetExceeded로 거부합니다(부분 청구 없음). 웹 LLM 비용 원장(web/budget.py)과는 별개입니다.
 """
@@ -13,9 +15,10 @@ import copy
 from collections import defaultdict
 
 from .bundles import SourceCatalog, charge_key, items_of
-from .contracts import ZERO_COST, Action, EffortBudget, EffortCost
+from .contracts import REPHRASE, ZERO_COST, Action, EffortBudget, EffortCost
 
 EPS = 1e-9
+REPHRASE_KEY = "#rephrase"  # 바꿔 묻기 연락의 청구 키 접미사
 
 
 class BudgetExceeded(RuntimeError):
@@ -43,7 +46,7 @@ class EffortLedger:
         src = self.catalog.get(action.source_id)
         if src is None:
             return ZERO_COST, None, ()
-        key = charge_key(action.patient_alias, src.source_id)
+        key = charge_key(action.patient_alias, src.source_id) + (REPHRASE_KEY if action.reason_code == REPHRASE else "")
         new_items = tuple(i for i in dict.fromkeys(items_of(action)) if (key, i) not in self.items)
         base = ZERO_COST if key in self.requested else src.request_cost
         if key in self.requested and not new_items:

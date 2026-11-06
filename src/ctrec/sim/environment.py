@@ -6,6 +6,7 @@
   그 밖(system_check·trial_registry)은 실행되지만 환자 사실을 드러내지 않음.
 - clinician(임상의 검토): 실행되지만 oracle에 임상 판단 정답이 없으므로 사실·판정을 만들지 않음 (EXPERT_REVIEW 유지).
 - patient·document: 응답 모델로 연락 불가(정보원 단위 실패) -> 항목 없음·"모름"(항목 단위) -> 응답 순서로 정함.
+  바꿔 묻기(REPHRASE)는 응답 모델의 p_no_answer_rephrased를 씀. 환자가 모르는 값은 바꿔 물어도 "모름".
   응답하면 그 정보원이 드러낼 수 있는 정답 사실 중 행동이 요구한 항목(required_fields)만 새 사실로 만듦.
   환자 답변은 self_report. 문서는 같은 값의 기존 사실이 있으면 그 사실을 문서 확인(document_verified)으로 바꾸고
   (FactStore.set_verification과 같은 방식 - 같은 값을 새 사실로 겹쳐 넣지 않음), 없거나 값이 다르면 clinical_record 새 사실
@@ -20,7 +21,7 @@ from fnmatch import fnmatch
 from typing import Literal
 
 from ..engine.bundles import SourceCatalog
-from ..engine.contracts import NO_ANSWER, NON_EXECUTING, UNREACHABLE, Action
+from ..engine.contracts import NO_ANSWER, NON_EXECUTING, REPHRASE, UNREACHABLE, Action
 from ..fact_store import PatientFact
 from .cohort import SimCohort, SimFact
 from .evaluator import make_fact, same_value
@@ -90,7 +91,9 @@ class CohortEnvironment:
         if self.responses.draw(a, sid, fp, attempt, "reach") < p.p_unreachable:
             return EnvResult("failed", error_code=UNREACHABLE, latency_minutes=latency)
         found = self.revealable(a, sid, action)
-        if not found or self.responses.draw(a, sid, fp, attempt, "answer") < p.p_no_answer:
+        p_no = p.p_no_answer_rephrased if action.reason_code == REPHRASE and p.p_no_answer_rephrased is not None \
+            else p.p_no_answer
+        if not found or self.responses.draw(a, sid, fp, attempt, "answer") < p_no:
             return EnvResult("declined", error_code=NO_ANSWER, latency_minutes=latency)
         if src.kind == "patient":
             facts = tuple(make_fact(a, f, seq=step, origin=sid, source_type="self_report", verified=False,

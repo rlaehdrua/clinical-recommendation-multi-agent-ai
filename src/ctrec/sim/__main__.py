@@ -1,9 +1,9 @@
-"""정책 비교표: python -m ctrec.sim [--budgets 20,45,90,400] [--seeds 1,2] [--ask-attempts 1,2] [--out DIR]
+"""정책 비교표: python -m ctrec.sim [--budgets 20,45,90,400] [--seeds 1,2] [--rephrase off|on|both] [--out DIR]
 생성기 코호트: python -m ctrec.sim --generator data/cohort/generator_config.json --scenario ID [--replicate 0]
                 [--map data/cohort/source_map.json] [--include-draft]
 
 기본 입력은 합성 데모(sim.demo)입니다. 결과는 합성 조건·가정 비용·순환 규칙 GT에서의 **정책 간 상대 비교**이며, 임상
-정확도나 업무시간 절감의 근거가 아닙니다. --ask-attempts는 "모름" 몇 번째에 항목 실패로 볼지 (기본 1, 민감도 2).
+정확도나 업무시간 절감의 근거가 아닙니다. --rephrase는 "모름" 뒤 다른 말로 한 번 더 물을지 (기본 off, 민감도 both).
 --out을 주면 실행마다 manifest.json과 decision_records.jsonl을 남깁니다.
 """
 
@@ -18,9 +18,12 @@ from ..engine.baselines import policies
 from ..engine.contracts import EffortBudget
 from . import demo, runner
 
-COLS = ["policy_id", "ask_attempts", "budget_minutes", "seed", "confirmed_eligible", "confirmed_ineligible",
-        "coordinator_minutes", "elapsed_minutes", "actions", "questions", "no_answer", "rule_gt_disagreements",
-        "termination", "audit"]
+COLS = ["policy_id", "rephrase", "budget_minutes", "seed", "confirmed_eligible", "confirmed_ineligible",
+        "coordinator_minutes", "elapsed_minutes", "actions", "questions", "rephrased", "no_answer",
+        "rule_gt_disagreements", "termination", "audit"]
+
+
+REPHRASE_MODES = {"off": [False], "on": [True], "both": [False, True]}
 
 
 def _ints(s: str) -> list[int]:
@@ -44,7 +47,8 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="python -m ctrec.sim", description=__doc__.splitlines()[0])
     ap.add_argument("--budgets", default="20,45,90,400", help="코디네이터 분 (쉼표)")
     ap.add_argument("--seeds", default="1", help="응답 seed (쉼표)")
-    ap.add_argument("--ask-attempts", default="1", help='"모름" 몇 번째에 항목 실패로 볼지 (쉼표, 예: 1,2)')
+    ap.add_argument("--rephrase", choices=sorted(REPHRASE_MODES), default="off",
+                    help='"모름" 뒤 다른 말로 한 번 더 물을지 (both = 끈 것과 켠 것 모두)')
     ap.add_argument("--horizon", type=int, default=10)
     ap.add_argument("--policies", default=",".join(sorted(policies())))
     ap.add_argument("--generator", default=None, help="생성기 설정 (없으면 합성 데모)")
@@ -58,16 +62,16 @@ def main(argv: list[str] | None = None) -> int:
     budgets = [EffortBudget(coordinator_minutes=m, clinician_minutes=60, horizon_steps=a.horizon)
                for m in _ints(a.budgets)]
     pids = [p for p in a.policies.split(",") if p]
-    asks = _ints(a.ask_attempts)
+    modes = REPHRASE_MODES[a.rephrase]
     if a.out is not None:
-        for n in asks:
+        for rp_on in modes:
             for b in budgets:
                 for seed in _ints(a.seeds):
                     for pid in pids:
-                        cfg = {"max_item_attempts": n} if n != 1 else {}
+                        cfg = {"rephrase": True} if rp_on else {}
                         r = runner.run(runner.build_spec(f"{pid}-{int(b.coordinator_minutes)}-{seed}", pid, co, b, seed,
                                                          cfg), co)
-                        d = a.out / f"{pid}-a{n}-b{int(b.coordinator_minutes)}-s{seed}"
+                        d = a.out / f"{pid}-r{int(rp_on)}-b{int(b.coordinator_minutes)}-s{seed}"
                         d.mkdir(parents=True, exist_ok=True)
                         (d / "manifest.json").write_text(json.dumps({**r.manifest, "metrics": r.metrics},
                                                                     ensure_ascii=False, indent=1), encoding="utf-8")
@@ -77,7 +81,7 @@ def main(argv: list[str] | None = None) -> int:
                         w = audit.RecordWriter(path, r.manifest["run_id"])
                         for rec in r.records:
                             w.write(rec)
-    rows = runner.compare(co, pids, budgets, _ints(a.seeds), ask_attempts=asks)
+    rows = runner.compare(co, pids, budgets, _ints(a.seeds), rephrase=modes)
     print("\t".join(COLS))
     for row in rows:
         print("\t".join(str(row[c]) for c in COLS))

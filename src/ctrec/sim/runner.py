@@ -2,9 +2,9 @@
 
 단계(라운드)마다
 1. policy.propose(CohortState) - 정책은 public에서 만든 상태만 봄 (oracle 없음)
-2. 같은 사실 상태에서 같은 정보원에 이미 시도한 행동(같은 지문·유형·정보원)은 repeat_limit번까지만 (모든 정책 공통).
-   repeat_limit = policy_config["max_item_attempts"] (기본 1): 정책이 "모름" 몇 번째에 그 항목을 실패로 볼지와 같은 값.
-   기본 1회(바로 대체 정보원), 민감도 분석으로 2회 (11-06 결정). spec에 들어가므로 해시가 다름
+2. 같은 사실 상태에서 같은 정보원에 이미 시도한 행동(같은 지문·유형·정보원)은 다시 실행하지 않음 (모든 정책 공통).
+   같은 질문을 그대로 반복하지 않고, "모름" 뒤 다시 묻는 것은 정책의 바꿔 묻기(policy_config["rephrase"], 지문이 다름)뿐.
+   기본 꺼짐, 민감도 분석으로 켬 (11-06 결정). spec에 들어가므로 해시가 다름
 3. policy.select(남은 예산 원장) -> 선택된 행동을 순서대로 실행 (CohortEnvironment)
 4. 실행한 행동만 원장에 청구 (실패·무응답도 청구, 미실행은 0). 새 사실·문서 확인이 있으면 그 환자를 전체 재평가
 5. policy.apply_outcome (운영 상태만) -> record_producer.build_step -> DecisionRecord v2 / 진단
@@ -125,7 +125,6 @@ def run(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog | None =
     model = ResponseModel(spec.seed, responses)
     env = CohortEnvironment(cohort, catalog, model)
     ev = OfflineEvaluator(cohort.trials, cohort.reference_date, cohort.judge)
-    repeat_limit = int(spec.policy_config.get("max_item_attempts", 1))  # 정책의 재질문 횟수와 같은 값 (한 손잡이)
     run_id = f"sim-{spec.spec_hash()}"
 
     facts, states, snaps = {}, {}, {}
@@ -147,7 +146,7 @@ def run(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog | None =
     termination, rounds = "horizon_reached", 0
     for rnd in range(spec.budget.horizon_steps):
         cands = policy.propose(co)
-        fresh = [a for a in cands if a.action_type in NON_EXECUTING or tried.get(_repeat_key(a), 0) < repeat_limit]
+        fresh = [a for a in cands if a.action_type in NON_EXECUTING or _repeat_key(a) not in tried]
         suppressed += len(cands) - len(fresh)
         plan = policy.select(fresh, spec.budget, ledger, co)
         unfunded += len(plan.safety_unfunded)
@@ -159,8 +158,8 @@ def run(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog | None =
         round_latency = 0.0
         for action in plan.selected:
             alias = action.patient_alias
-            # 응답 난수의 시도 번호 = 같은 (환자, 지문, 유형, 정보원)을 시도한 횟수. 정보원마다 따로 세어, 다른 정보원에
-            # 먼저 물어본 횟수(재질문 설정 등)가 이 정보원의 응답 운을 바꾸지 않게 함 (공통 난수)
+            # 응답 난수의 시도 번호 = 같은 (환자, 지문, 유형, 정보원)을 시도한 횟수 (반복을 막으므로 항상 0). 정보원마다 따로
+            # 세어, 다른 정보원에 먼저 물어본 횟수(바꿔 묻기 설정 등)가 이 정보원의 응답 운을 바꾸지 않게 함 (공통 난수)
             attempt = tried.get(_repeat_key(action), 0)
             ref = f"sim:{step}"
             ex = env.execute(action, attempt, step, ref, facts[alias])
@@ -203,7 +202,7 @@ def run(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog | None =
                 records.append(res.record)
             issues.extend(res.issues)
             steps.append({"action_type": action.action_type, "execution": ex.execution, "note": ex.note,
-                          "patient_alias": alias, "error_code": ex.error_code})
+                          "patient_alias": alias, "error_code": ex.error_code, "reason_code": action.reason_code})
             co = after
             step += 1
         elapsed += round_latency
@@ -230,8 +229,7 @@ def run(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog | None =
                       "judge_digest": cohort.judge.digest() if cohort.judge is not None else None,
                       "judge_include_draft": bool(getattr(cohort.judge, "include_draft", False)),
                       "ground_truth": metrics["rule_gt"]["kind"]},
-        "response_model": model.describe(), "repeat_limit": repeat_limit,
-        "max_item_attempts": repeat_limit,
+        "response_model": model.describe(), "rephrase": bool(spec.policy_config.get("rephrase", False)),
         "llm": {"real_calls": 0, "offline_matcher_requests": ev.client.requests},
         "environment": {"python": sys.version.split()[0], "platform": platform.platform(), "commit": _git_commit()},
     }
@@ -240,34 +238,33 @@ def run(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog | None =
 
 def compare(cohort: SimCohort, policy_ids: list[str], budgets: list[EffortBudget], seeds: list[int],
             catalog: SourceCatalog | None = None, policy_configs: dict[str, dict] | None = None,
-            responses: dict[str, SourceResponse] | None = None, ask_attempts: list[int] = (1,)) -> list[dict]:
-    """같은 코호트·카탈로그·응답 모델·seed로 정책을 돌린 비교표 (M10). 행 = (재질문 횟수, 예산, seed, 정책).
+            responses: dict[str, SourceResponse] | None = None, rephrase: list[bool] = (False,)) -> list[dict]:
+    """같은 코호트·카탈로그·응답 모델·seed로 정책을 돌린 비교표 (M10). 행 = (바꿔 묻기, 예산, seed, 정책).
 
-    ask_attempts: "모름" 몇 번째에 항목 실패로 볼지 (max_item_attempts). 기본 1, 민감도 분석은 [1, 2] (11-06 결정)."""
+    rephrase: "모름" 뒤 다른 말로 한 번 더 물을지. 기본 [False], 민감도 분석은 [False, True] (11-06 결정)."""
     catalog = catalog or SourceCatalog()
     rows = []
-    for n in ask_attempts:
+    for rp_on in rephrase:
         for budget in budgets:
             for seed in seeds:
                 for pid in policy_ids:
                     cfg = dict((policy_configs or {}).get(pid, {}))
-                    if n != 1:
-                        cfg["max_item_attempts"] = n
-                    rows.append(_row(pid, cfg, n, budget, seed, run(build_spec(f"cmp-{pid}-{seed}", pid, cohort, budget,
-                                                                           seed, cfg, catalog), cohort, catalog,
-                                                                responses)))
+                    if rp_on:
+                        cfg["rephrase"] = True
+                    spec = build_spec(f"cmp-{pid}-{seed}", pid, cohort, budget, seed, cfg, catalog)
+                    rows.append(_row(pid, cfg, rp_on, budget, seed, run(spec, cohort, catalog, responses)))
     return rows
 
 
-def _row(pid: str, cfg: dict, n: int, budget: EffortBudget, seed: int, r: RunResult) -> dict:
+def _row(pid: str, cfg: dict, rp_on: bool, budget: EffortBudget, seed: int, r: RunResult) -> dict:
     m = r.metrics
-    return {"policy_id": pid, "policy_config": cfg, "ask_attempts": n, "budget_minutes": budget.coordinator_minutes,
+    return {"policy_id": pid, "policy_config": cfg, "rephrase": rp_on, "budget_minutes": budget.coordinator_minutes,
             "seed": seed, "confirmed_eligible": m["system_confirmed_eligible"],
             "confirmed_ineligible": m["system_confirmed_ineligible"], "confirmed_share": m["system_confirmed_share"],
             "coordinator_minutes": m["active_minutes"]["coordinator"],
             "clinician_minutes": m["active_minutes"]["clinician"], "elapsed_minutes": m["elapsed_minutes"],
             "actions": sum(m["actions_executed"].values()), "questions": m["patient_burden"]["questions"],
-            "no_answer": m["patient_burden"]["no_answer"],
+            "rephrased": m["patient_burden"]["rephrased"], "no_answer": m["patient_burden"]["no_answer"],
             "rule_gt_disagreements": m["rule_gt"]["rule_gt_disagreements"],
             "false_confirmed_eligible_vs_rule_gt": m["rule_gt"]["confirmed_eligible_gt_ineligible"],
             "termination": m["termination"], "audit": m["audit"]["status"], "result_hash": r.result_hash}

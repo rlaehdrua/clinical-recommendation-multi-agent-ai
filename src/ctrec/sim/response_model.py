@@ -5,6 +5,9 @@
   (환자, 정보원, 행동, 시도 횟수)는 같은 결과를 받습니다 (공통 난수 - 정책 간 차이가 응답 운이 아니라 선택에서 나오게).
   시도 횟수는 그 정보원에 같은 행동을 보낸 횟수입니다(Runner). 설계 §3.2의 OpsState.attempts[지문]은 정보원을 가리지 않아,
   환자에게 한 번 더 물은 설정에서는 같은 문서 요청이 다른 난수를 받으므로 정보원별로 셉니다 (11-06).
+- 바꿔 묻기(REPHRASE): 지문이 달라 첫 질문과 독립된 난수를 받고, "모름" 확률은 p_no_answer_rephrased (없으면 p_no_answer).
+  환자 기본값 0.1은 "쉬운 말·단서를 넣어 다시 물으면 이해·기억 실패가 절반으로 준다"는 **가정값**입니다. 환자가 원래 모르는
+  값(patient_knows=False)은 말을 바꿔도 드러나지 않습니다 (환경이 강제).
 - 실패 범위: 연락·접근 불가는 정보원 단위(unreachable), 항목을 모름·문서에 항목 없음은 항목 단위(no_answer).
 """
 
@@ -22,11 +25,12 @@ class SourceResponse(BaseModel):
 
     p_unreachable: float = Field(ge=0, le=1)  # 정보원 전체 실패
     p_no_answer: float = Field(ge=0, le=1)  # 연락은 됐지만 그 항목을 모름 (알 수 있는 값이 있어도)
+    p_no_answer_rephrased: float | None = Field(default=None, ge=0, le=1)  # 바꿔 묻기의 "모름" (None = p_no_answer)
     latency_scale: tuple[float, float] = (0.5, 1.5)  # 지연 = 예상 대기(patient_wait_minutes) x 균등(a, b)
 
 
 DEFAULT_RESPONSES = {
-    "patient": SourceResponse(p_unreachable=0.05, p_no_answer=0.2),
+    "patient": SourceResponse(p_unreachable=0.05, p_no_answer=0.2, p_no_answer_rephrased=0.1),
     "document": SourceResponse(p_unreachable=0.1, p_no_answer=0.0),
     "clinician": SourceResponse(p_unreachable=0.0, p_no_answer=0.0),
     "system": SourceResponse(p_unreachable=0.0, p_no_answer=0.0, latency_scale=(0.0, 0.0)),

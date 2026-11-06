@@ -12,7 +12,7 @@ from __future__ import annotations
 from collections import Counter
 
 from ..engine.cohort_state import CohortState
-from ..engine.contracts import PairStatus
+from ..engine.contracts import REPHRASE, PairStatus
 from ..engine.fairness import gini
 
 ELIGIBLE, INELIGIBLE, UNLABELED = "eligible", "ineligible", "unlabeled"
@@ -88,6 +88,8 @@ def summarize(*, initial: CohortState, final: CohortState, labels: dict[str, str
         "elapsed_minutes": r6(elapsed_minutes),
         "patient_burden": {"questions": sum(asks.values()),
                            "max_questions_per_patient": max(asks.values(), default=0),
+                           "rephrased": sum(s.get("reason_code") == REPHRASE and s["execution"] != "not_executed"
+                                            for s in steps),
                            "no_answer": sum(s["error_code"] == "no_answer" for s in steps)},
         "allocation_gini": r6(gini([per_patient_minutes.get(a, 0.0) for a in aliases]) or 0.0),
         "rounds": rounds,

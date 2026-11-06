@@ -425,6 +425,9 @@ OutcomeStatus = Literal["succeeded", "partial", "failed", "no_response", "not_ex
 NO_ANSWER = "no_answer"  # 이 항목을 모름·답하지 않음 -> 그 (정보원, 항목)만 막음. record_producer.NO_ANSWER_ERROR와 같은 값
 UNREACHABLE = "unreachable"  # 연락·접근 불가 -> 정보원 전체
 DECLINED_ALL = "declined_all"  # 확인 자체를 거부 -> 정보원 전체
+# "모름" 뒤 같은 항목을 다른 말로 다시 묻는 환자 질문의 사유 코드 (LegacyAdapterPolicy rephrase). 같은 질문의 반복이
+# 아니므로 비용 원장은 새 연락으로 청구하고(cost.EffortLedger), 시뮬레이터 응답 모델은 따로 정한 확률을 씀
+REPHRASE = "rephrase_after_no_answer"
 ITEM_FAILURE_CODES = frozenset({NO_ANSWER})
 SOURCE_FAILURE_CODES = frozenset({UNREACHABLE, DECLINED_ALL})
 

@@ -1,4 +1,4 @@
-"""생성기 코호트 -> 시뮬레이터 변환(대응표 ①②③), LLM 기준 결정적 판정기, "모름" 재질문 횟수, 정보원 실패 뒤 문서 대체.
+"""생성기 코호트 -> 시뮬레이터 변환(대응표 ①②③), LLM 기준 결정적 판정기, "모름" 뒤 바꿔 묻기, 정보원 실패 뒤 문서 대체.
 
 생성기 예시(신증후군 소아, data/cohort)와 NSCLC 슬롯 후보(data/nsclc/cohort)만 씁니다. 실제 LLM 호출 없음."""
 
@@ -15,13 +15,14 @@ from ctrec.cohort import generate as G
 from ctrec.engine import contracts as C
 from ctrec.engine.bundles import SourceCatalog
 from ctrec.engine.cohort_state import CohortState
-from ctrec.engine.policy import LegacyAdapterPolicy, no_answer_key
+from ctrec.engine.cost import EffortLedger
+from ctrec.engine.policy import REPHRASE_DONE, REPHRASE_PENDING, LegacyAdapterPolicy, rephrase_key
 from ctrec.sim import demo, from_generator as FG, runner
 from ctrec.sim.cohort import make_cohort
 from ctrec.sim.environment import CohortEnvironment
 from ctrec.sim.evaluator import make_fact
 from ctrec.sim.judge import CategoricalJudge, encode
-from ctrec.sim.response_model import ResponseModel
+from ctrec.sim.response_model import DEFAULT_RESPONSES, ResponseModel, SourceResponse
 
 ROOT = Path(__file__).resolve().parents[1]
 NSCLC_MAP = ROOT / "data" / "nsclc" / "cohort" / "source_map.json"
@@ -184,47 +185,109 @@ def test_judge_lets_llm_criteria_be_decided(sim):
     assert llm_decided(sim) > 0
 
 
-# ------------------------------------------------------------ "모름" 재질문 횟수
-def test_max_item_attempts_default_marks_the_item_failed_at_once():
-    co = runner.run(runner.build_spec("t", "no_action", demo.cohort(), BUDGET, 0), demo.cohort()).final
-    for n, failed_after_first in ((1, True), (2, False)):
-        pol = LegacyAdapterPolicy(max_item_attempts=n)
-        ask = next(a for a in pol.propose(co) if a.action_type == "ASK_PATIENT" and a.info_key == "ecog")
-        same = lambda c: next(a for a in pol.propose(c) if a.action_id == ask.action_id)  # noqa: E731
-        out = C.ActionOutcome(action_id=ask.action_id, status="no_response", error_code=C.NO_ANSWER)
-        co2, _ = pol.apply_outcome(co, ask, out)
-        ops = co2.ops[ask.patient_alias]
-        assert bool(ops.failed_items) == failed_after_first
-        assert ops.attempts[no_answer_key(ask.source_id, "ecog")] == 1
-        if n == 2:
-            again = same(co2)
-            assert again.action_type == "ASK_PATIENT"  # 한 번 더 물음
-            co3, _ = pol.apply_outcome(co2, again, out.model_copy(update={"action_id": again.action_id}))
-            nxt = same(co3)
-            assert co3.ops[ask.patient_alias].failed_items and nxt.action_type == "REQUEST_DOCUMENT"
-    with pytest.raises(ValueError):
-        LegacyAdapterPolicy(max_item_attempts=0)
+# ------------------------------------------------------------ "모름" 뒤 바꿔 묻기
+def _ask(pol, co, info_key, alias=None):
+    return next(a for a in pol.propose(co) if a.info_key == info_key and a.action_type == "ASK_PATIENT"
+                and (alias is None or a.patient_alias == alias))
 
 
-def test_ask_attempts_sensitivity_changes_the_spec_and_reasks():
+def _no_answer(a):
+    return C.ActionOutcome(action_id=a.action_id, status="no_response", error_code=C.NO_ANSWER)
+
+
+def _start():
+    return runner.run(runner.build_spec("t", "no_action", demo.cohort(), BUDGET, 0), demo.cohort()).final
+
+
+def test_rephrase_is_off_by_default_and_the_item_moves_to_documents_at_once():
+    co, pol = _start(), LegacyAdapterPolicy()
+    ask = _ask(pol, co, "ecog")
+    co2, _ = pol.apply_outcome(co, ask, _no_answer(ask))
+    assert ("patient_interview", "ecog") in co2.ops[ask.patient_alias].failed_items
+    nxt = next(a for a in pol.propose(co2) if a.patient_alias == ask.patient_alias and a.info_key == "ecog")
+    assert nxt.action_type == "REQUEST_DOCUMENT" and nxt.reason_code == "alternative_source_after_no_answer"
+
+
+def test_rephrase_asks_once_in_other_words_then_falls_back_to_documents():
+    """환자가 알 수 있는 항목(ECOG): 첫 "모름" -> 같은 질문이 아니라 바꿔 묻기 행동(다른 지문·사유) 한 번 -> 또 "모름"이면 문서."""
+    co, pol = _start(), LegacyAdapterPolicy(rephrase=True)
+    ask = _ask(pol, co, "ecog")
+    co2, _ = pol.apply_outcome(co, ask, _no_answer(ask))
+    ops = co2.ops[ask.patient_alias]
+    assert not ops.failed_items and ops.attempts[rephrase_key("patient_interview", "ecog")] == REPHRASE_PENDING
+    again = _ask(pol, co2, "ecog", ask.patient_alias)
+    assert again.reason_code == C.REPHRASE and again.source_id == ask.source_id
+    assert again.fingerprint == ask.fingerprint + ".rephrase" and again.action_id != ask.action_id
+    assert again.target_criteria == ask.target_criteria and again.purpose == ask.purpose
+    co3, _ = pol.apply_outcome(co2, again, _no_answer(again))
+    ops3 = co3.ops[ask.patient_alias]
+    assert ("patient_interview", "ecog") in ops3.failed_items
+    assert ops3.attempts[rephrase_key("patient_interview", "ecog")] == REPHRASE_DONE
+    nxt = next(a for a in pol.propose(co3) if a.patient_alias == ask.patient_alias and a.info_key == "ecog")
+    assert nxt.action_type == "REQUEST_DOCUMENT"  # 세 번째로 묻지 않음
+
+
+def test_rephrase_is_not_used_for_values_the_patient_cannot_know():
+    """검사 수치는 환자 정보원이 다루는 항목이 아님 -> 말을 바꿔도 소용없으므로 바로 문서."""
+    co, pol = _start(), LegacyAdapterPolicy(rephrase=True)
+    ask = _ask(pol, co, "lab:hemoglobin")
+    co2, _ = pol.apply_outcome(co, ask, _no_answer(ask))
+    assert (ask.source_id, "lab:hemoglobin") in co2.ops[ask.patient_alias].failed_items
+    assert not pol.rephrasable(ask.source_id, ask.required_fields)
+    assert all(a.reason_code != C.REPHRASE for a in pol.propose(co2))
+
+
+def test_rephrase_is_charged_as_a_new_contact():
+    """같은 항목의 재질문도 비용 0이 아님: 바꿔 묻기는 별도 청구 키로 요청 비용 + 항목 비용."""
+    co, pol = _start(), LegacyAdapterPolicy(rephrase=True)
+    ask = _ask(pol, co, "ecog")
+    co2, _ = pol.apply_outcome(co, ask, _no_answer(ask))
+    again = _ask(pol, co2, "ecog", ask.patient_alias)
+    led = EffortLedger(BUDGET, pol.catalog)
+    _, k1 = led.charge(ask)
+    cost, k2 = led.charge(again)
+    src = pol.catalog["patient_interview"]
+    assert k2 == k1 + "#rephrase"
+    assert cost.coordinator_minutes == src.request_cost.coordinator_minutes + src.per_item_minutes * len(
+        again.target_criteria)
+    assert led.charge(again)[0] == C.ZERO_COST  # 같은 바꿔 묻기는 두 번 청구하지 않음
+
+
+def test_rephrase_has_its_own_answer_probability_and_cannot_reveal_unknown_values():
+    co, pol = _start(), LegacyAdapterPolicy(rephrase=True)
+    resp = {"patient": SourceResponse(p_unreachable=0.0, p_no_answer=1.0, p_no_answer_rephrased=0.0),
+            "document": SourceResponse(p_unreachable=0.0, p_no_answer=0.0)}
+    cohort = demo.cohort()
+    env = CohortEnvironment(cohort, pol.catalog, ResponseModel(0, resp))
+    ask = _ask(pol, co, "ecog")
+    assert env.execute(ask, 0, 0, "s0").execution == "declined"
+    co2, _ = pol.apply_outcome(co, ask, _no_answer(ask))
+    again = _ask(pol, co2, "ecog", ask.patient_alias)
+    got = env.execute(again, 0, 1, "s1")
+    assert got.execution == "answered" and [f.field for f in got.facts] == ["ecog"]
+    lab = _ask(pol, co, "lab:hemoglobin")
+    fake = lab.model_copy(update={"reason_code": C.REPHRASE})  # 환자가 모르는 값은 바꿔 물어도 "모름"
+    assert env.execute(fake, 0, 2, "s2").execution == "declined"
+
+
+def test_rephrase_sensitivity_changes_the_spec_and_never_repeats_the_same_question():
     co = demo.cohort()
-    one = runner.build_spec("t", "legacy_greedy", co, BUDGET, 1)
-    two = runner.build_spec("t", "legacy_greedy", co, BUDGET, 1, {"max_item_attempts": 2})
-    assert one.spec_hash() != two.spec_hash()
-    r1, r2 = runner.run(one, co), runner.run(two, co)
-    assert r2.manifest["max_item_attempts"] == 2 and r1.manifest["max_item_attempts"] == 1
-
-    def reasks(r):
-        seen, n = set(), 0
-        for rec in r.records:
-            k = (rec.action.patient_alias, rec.action.fingerprint, rec.action.action_type, rec.action.source_id)
-            n += k in seen and rec.action.action_type == "ASK_PATIENT"
-            seen.add(k)
-        return n
-    assert reasks(r1) == 0 and reasks(r2) > 0
-    assert r2.metrics["patient_burden"]["questions"] > r1.metrics["patient_burden"]["questions"]
-    rows = runner.compare(co, ["legacy_greedy"], [BUDGET], [1], ask_attempts=[1, 2])
-    assert [r["ask_attempts"] for r in rows] == [1, 2] and rows[1]["policy_config"] == {"max_item_attempts": 2}
+    resp = {**DEFAULT_RESPONSES, "patient": SourceResponse(p_unreachable=0.0, p_no_answer=1.0,
+                                                            p_no_answer_rephrased=0.0)}
+    off = runner.build_spec("t", "legacy_greedy", co, BUDGET, 1)
+    on = runner.build_spec("t", "legacy_greedy", co, BUDGET, 1, {"rephrase": True})
+    assert off.spec_hash() != on.spec_hash()
+    r0, r1 = runner.run(off, co, responses=resp), runner.run(on, co, responses=resp)
+    assert r0.manifest["rephrase"] is False and r1.manifest["rephrase"] is True
+    assert r0.metrics["patient_burden"]["rephrased"] == 0 < r1.metrics["patient_burden"]["rephrased"]
+    for r in (r0, r1):  # 같은 (환자, 지문, 유형, 정보원) 행동은 두 번 실행되지 않음
+        keys = [(x.action.patient_alias, x.action.fingerprint, x.action.action_type, x.action.source_id)
+                for x in r.records]
+        assert len(keys) == len(set(keys))
+    assert r1.metrics["active_minutes"]["coordinator"] > r0.metrics["active_minutes"]["coordinator"]
+    rows = runner.compare(co, ["legacy_greedy"], [BUDGET], [1], responses=resp, rephrase=[False, True])
+    assert [r["rephrase"] for r in rows] == [False, True] and rows[1]["policy_config"] == {"rephrase": True}
+    assert rows[1]["rephrased"] > 0
 
 
 # ------------------------------------------------------------ 정보원 실패 뒤 문서 대체
