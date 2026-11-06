@@ -42,3 +42,10 @@ def test_metrics_file_has_no_raw_identifiers_or_folder_names(tmp_path):
     text = out.read_text(encoding="utf-8")
     assert "SYNSECRET" not in text
     assert json.loads(text)["load_problems"] == ["run-1:no_v2_records", "run-1:records_unreadable", "run-2:no_v2_records"]
+
+
+def test_a_line_too_deep_to_parse_is_skipped(tmp_path):
+    from ctrec.engine import audit
+    lines = ['{"ok": 1}', "[" * 200000]
+    (tmp_path / audit.RECORDS_FILE).write_text("\n".join(lines), encoding="utf-8")
+    assert rm._raw_record_items(tmp_path) == [(1, {"ok": 1})]

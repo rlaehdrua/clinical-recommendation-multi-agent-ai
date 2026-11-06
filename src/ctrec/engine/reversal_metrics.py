@@ -341,7 +341,7 @@ def _raw_record_items(run_dir: Path) -> list[tuple[int, object]]:
             try:
                 if line.strip():
                     yield n, json.loads(line)
-            except json.JSONDecodeError:
+            except (ValueError, RecursionError):  # 깨진 줄, 초장 정수, 깊은 중첩: 그 줄만 건너뜀
                 pass
 
     records = run_dir / audit.RECORDS_FILE
