@@ -2,8 +2,9 @@
 
 단계(라운드)마다
 1. policy.propose(CohortState) - 정책은 public에서 만든 상태만 봄 (oracle 없음)
-2. 같은 사실 상태에서 같은 정보원에 이미 시도한 행동(같은 지문·유형·정보원)은 다시 넣지 않음 (repeat_limit, 모든 정책 공통).
-   몇 번째 "모름"에서 소진할지·같은 질문을 다시 물을지는 팀 결정 전이라 기본 1회 (#13 §10 팀 결정 항목)
+2. 같은 사실 상태에서 같은 정보원에 이미 시도한 행동(같은 지문·유형·정보원)은 repeat_limit번까지만 (모든 정책 공통).
+   repeat_limit = policy_config["max_item_attempts"] (기본 1): 정책이 "모름" 몇 번째에 그 항목을 실패로 볼지와 같은 값.
+   기본 1회(바로 대체 정보원), 민감도 분석으로 2회 (11-06 결정). spec에 들어가므로 해시가 다름
 3. policy.select(남은 예산 원장) -> 선택된 행동을 순서대로 실행 (CohortEnvironment)
 4. 실행한 행동만 원장에 청구 (실패·무응답도 청구, 미실행은 0). 새 사실·문서 확인이 있으면 그 환자를 전체 재평가
 5. policy.apply_outcome (운영 상태만) -> record_producer.build_step -> DecisionRecord v2 / 진단
@@ -31,13 +32,14 @@ from ..engine.cost import EffortLedger
 from ..engine.experiment import ExperimentSpecError, catalog_claims, require_catalog_hash
 from .cohort import SimCohort
 from .environment import CohortEnvironment
-from .evaluator import EVALUATOR_ID, OfflineEvaluator, make_fact, verify_fact
+from .evaluator import OfflineEvaluator, make_fact, verify_fact
 from .metrics import label_of, summarize
 from .response_model import ResponseModel, SourceResponse
 
 RUNNER_VERSION = "wp6_runner/0.1"
 CLAIMS = "synthetic_relative_comparison_only"  # 합성 코호트·가정 비용·순환 규칙 GT -> 정책 간 상대 비교만
 EVALUATOR_SCOPE = "rule_engine_only_llm_criteria_unknown"
+JUDGE_SCOPE = "rule_engine_plus_categorical_judge_upper_bound"  # 연결된 LLM 기준은 결정적 판정기 (LLM 오판 미반영)
 _STATUS = {"answered": "succeeded", "declined": "no_response", "failed": "failed", "not_executed": "not_executed"}
 
 
@@ -100,18 +102,20 @@ def _git_commit() -> str | None:
 
 def rule_labels(cohort: SimCohort, catalog: SourceCatalog) -> dict[str, str]:
     """규칙 GT (순환적, metrics 참고): 정답 사실 전체를 문서 검증된 기록으로 넣어 같은 평가기로 확정된 쌍만 라벨."""
-    ev = OfflineEvaluator(cohort.trials, cohort.reference_date)
+    ev = OfflineEvaluator(cohort.trials, cohort.reference_date, cohort.judge)
     states = {}
-    for key, alias in cohort.aliases().items():
+    aliases = cohort.aliases()
+    for p in cohort.patients:
+        alias = aliases[p.key]
         facts = [make_fact(alias, f, seq=0, origin=f"truth{i}", source_type="clinical_record", verified=True,
-                           ref_kind="document", ref=None) for i, f in enumerate(cohort.oracle.truth[key])]
-        states[alias] = ev.evaluate(alias, facts)[0]
+                           ref_kind="document", ref=None) for i, f in enumerate(cohort.oracle.truth[p.key])]
+        states[alias] = ev.evaluate(alias, facts, p.trials)[0]
     co = CohortState.from_decision_states(states)
     return {p.pair.key: label_of(p.status) for p in co.pairs()}
 
 
 def run(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog | None = None,
-        responses: dict[str, SourceResponse] | None = None, repeat_limit: int = 1) -> RunResult:
+        responses: dict[str, SourceResponse] | None = None) -> RunResult:
     catalog = catalog or SourceCatalog()
     _check(spec, cohort, catalog)
     policy = make_policy(spec.policy_id, catalog=catalog, **_policy_kwargs(spec.policy_id, spec.policy_config,
@@ -120,16 +124,19 @@ def run(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog | None =
         raise ExperimentSpecError("policy_version_mismatch")
     model = ResponseModel(spec.seed, responses)
     env = CohortEnvironment(cohort, catalog, model)
-    ev = OfflineEvaluator(cohort.trials, cohort.reference_date)
+    ev = OfflineEvaluator(cohort.trials, cohort.reference_date, cohort.judge)
+    repeat_limit = int(spec.policy_config.get("max_item_attempts", 1))  # 정책의 재질문 횟수와 같은 값 (한 손잡이)
     run_id = f"sim-{spec.spec_hash()}"
 
     facts, states, snaps = {}, {}, {}
     aliases = cohort.aliases()
+    cands_of = {}
     for p in cohort.patients:
         alias = aliases[p.key]
+        cands_of[alias] = p.trials
         facts[alias] = [make_fact(alias, f, seq=0, origin=f"public{i}", source_type=f.source_type,
                                   verified=f.verified, ref_kind="input_text", ref=None) for i, f in enumerate(p.public)]
-        states[alias], snaps[alias] = ev.evaluate(alias, facts[alias])
+        states[alias], snaps[alias] = ev.evaluate(alias, facts[alias], p.trials)
     co = initial = CohortState.from_decision_states(states)
     trial_ids = {a: frozenset(s.trials) | frozenset(s.not_evaluated_trials) for a, s in states.items()}
 
@@ -152,7 +159,9 @@ def run(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog | None =
         round_latency = 0.0
         for action in plan.selected:
             alias = action.patient_alias
-            attempt = co.ops[alias].attempts.get(action.fingerprint, 0)
+            # 응답 난수의 시도 번호 = 같은 (환자, 지문, 유형, 정보원)을 시도한 횟수. 정보원마다 따로 세어, 다른 정보원에
+            # 먼저 물어본 횟수(재질문 설정 등)가 이 정보원의 응답 운을 바꾸지 않게 함 (공통 난수)
+            attempt = tried.get(_repeat_key(action), 0)
             ref = f"sim:{step}"
             ex = env.execute(action, attempt, step, ref, facts[alias])
             tried[_repeat_key(action)] = tried.get(_repeat_key(action), 0) + 1
@@ -168,12 +177,12 @@ def run(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog | None =
                 checked = set(ex.verified)
                 facts[alias] = [verify_fact(f, action.source_id) if f.fact_id in checked else f
                                 for f in facts[alias]] + list(ex.facts)
-                states[alias], snaps[alias] = ev.evaluate(alias, facts[alias])
+                states[alias], snaps[alias] = ev.evaluate(alias, facts[alias], cands_of[alias])
                 mid = CohortState.from_decision_states(states, dict(co.ops))
                 reevaluated = trial_ids[alias]
             status = _STATUS[ex.execution]
             outcome = ActionOutcome(action_id=action.action_id, status=status,
-                                    new_fact_ids=tuple(f.fact_id for f in ex.facts) if status == "succeeded" else (),
+                                    new_fact_ids=tuple(sorted(f.fact_id for f in ex.facts)) if status == "succeeded" else (),
                                     cost_charged=cost, charge_keys=keys, error_code=ex.error_code,
                                     latency_minutes=ex.latency_minutes)
             after, ptrans = policy.apply_outcome(mid, action, outcome)
@@ -217,8 +226,12 @@ def run(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog | None =
         "catalog_claims": catalog_claims(catalog), "claims": CLAIMS,
         "cohort": {"cohort_id": cohort.cohort_id, "cohort_hash": cohort.digest(), "store_hash": cohort.store_hash(),
                    "patients": len(cohort.patients), "trials": len(cohort.trials)},
-        "evaluator": {"id": EVALUATOR_ID, "scope": EVALUATOR_SCOPE, "ground_truth": metrics["rule_gt"]["kind"]},
+        "evaluator": {"id": ev.evaluator_id, "scope": EVALUATOR_SCOPE if cohort.judge is None else JUDGE_SCOPE,
+                      "judge_digest": cohort.judge.digest() if cohort.judge is not None else None,
+                      "judge_include_draft": bool(getattr(cohort.judge, "include_draft", False)),
+                      "ground_truth": metrics["rule_gt"]["kind"]},
         "response_model": model.describe(), "repeat_limit": repeat_limit,
+        "max_item_attempts": repeat_limit,
         "llm": {"real_calls": 0, "offline_matcher_requests": ev.client.requests},
         "environment": {"python": sys.version.split()[0], "platform": platform.platform(), "commit": _git_commit()},
     }
@@ -227,30 +240,37 @@ def run(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog | None =
 
 def compare(cohort: SimCohort, policy_ids: list[str], budgets: list[EffortBudget], seeds: list[int],
             catalog: SourceCatalog | None = None, policy_configs: dict[str, dict] | None = None,
-            responses: dict[str, SourceResponse] | None = None) -> list[dict]:
-    """같은 코호트·카탈로그·응답 모델·seed로 정책을 돌린 비교표 (M10). 행 = (정책, 예산, seed)."""
+            responses: dict[str, SourceResponse] | None = None, ask_attempts: list[int] = (1,)) -> list[dict]:
+    """같은 코호트·카탈로그·응답 모델·seed로 정책을 돌린 비교표 (M10). 행 = (재질문 횟수, 예산, seed, 정책).
+
+    ask_attempts: "모름" 몇 번째에 항목 실패로 볼지 (max_item_attempts). 기본 1, 민감도 분석은 [1, 2] (11-06 결정)."""
     catalog = catalog or SourceCatalog()
     rows = []
-    for budget in budgets:
-        for seed in seeds:
-            for pid in policy_ids:
-                cfg = (policy_configs or {}).get(pid, {})
-                spec = build_spec(f"cmp-{pid}-{seed}", pid, cohort, budget, seed, cfg, catalog)
-                r = run(spec, cohort, catalog, responses)
-                m = r.metrics
-                rows.append({"policy_id": pid, "policy_config": cfg, "budget_minutes": budget.coordinator_minutes,
-                             "seed": seed, "confirmed_eligible": m["system_confirmed_eligible"],
-                             "confirmed_ineligible": m["system_confirmed_ineligible"],
-                             "confirmed_share": m["system_confirmed_share"],
-                             "coordinator_minutes": m["active_minutes"]["coordinator"],
-                             "clinician_minutes": m["active_minutes"]["clinician"],
-                             "elapsed_minutes": m["elapsed_minutes"], "actions": sum(m["actions_executed"].values()),
-                             "questions": m["patient_burden"]["questions"],
-                             "rule_gt_disagreements": m["rule_gt"]["rule_gt_disagreements"],
-                             "false_confirmed_eligible_vs_rule_gt": m["rule_gt"]["confirmed_eligible_gt_ineligible"],
-                             "termination": m["termination"], "audit": m["audit"]["status"],
-                             "result_hash": r.result_hash})
+    for n in ask_attempts:
+        for budget in budgets:
+            for seed in seeds:
+                for pid in policy_ids:
+                    cfg = dict((policy_configs or {}).get(pid, {}))
+                    if n != 1:
+                        cfg["max_item_attempts"] = n
+                    rows.append(_row(pid, cfg, n, budget, seed, run(build_spec(f"cmp-{pid}-{seed}", pid, cohort, budget,
+                                                                           seed, cfg, catalog), cohort, catalog,
+                                                                responses)))
     return rows
+
+
+def _row(pid: str, cfg: dict, n: int, budget: EffortBudget, seed: int, r: RunResult) -> dict:
+    m = r.metrics
+    return {"policy_id": pid, "policy_config": cfg, "ask_attempts": n, "budget_minutes": budget.coordinator_minutes,
+            "seed": seed, "confirmed_eligible": m["system_confirmed_eligible"],
+            "confirmed_ineligible": m["system_confirmed_ineligible"], "confirmed_share": m["system_confirmed_share"],
+            "coordinator_minutes": m["active_minutes"]["coordinator"],
+            "clinician_minutes": m["active_minutes"]["clinician"], "elapsed_minutes": m["elapsed_minutes"],
+            "actions": sum(m["actions_executed"].values()), "questions": m["patient_burden"]["questions"],
+            "no_answer": m["patient_burden"]["no_answer"],
+            "rule_gt_disagreements": m["rule_gt"]["rule_gt_disagreements"],
+            "false_confirmed_eligible_vs_rule_gt": m["rule_gt"]["confirmed_eligible_gt_ineligible"],
+            "termination": m["termination"], "audit": m["audit"]["status"], "result_hash": r.result_hash}
 
 
 __all__ = ["run", "build_spec", "compare", "rule_labels", "RunResult", "RUNNER_VERSION", "CLAIMS"]

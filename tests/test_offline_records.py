@@ -151,7 +151,10 @@ class _UnreachablePolicy(LegacyAdapterPolicy):
 
     WP5 이후 "모름"(no_answer)은 항목 단위 실패라 masked 사례에서 정보원 소진 -> BLOCKED_FAILURE 정책 전이가 생기지
     않으므로, 정책 전이가 있는 실행이 필요한 테스트는 실제 unreachable 결과로 그 전이를 만듦 (내부 상수를 바꾸지 않음).
-    기록의 행동 결과(outcome)는 실행기가 관찰한 그대로(no_answer)이며, 이 테스트들은 정책 전이 기록만 검사합니다."""
+    기록의 행동 결과(outcome)는 실행기가 관찰한 그대로(no_answer)이며, 이 테스트들은 정책 전이 기록만 검사합니다.
+    11-06부터 연락 불가 뒤에도 문서 정보원이 남으면 소진하지 않으므로, 회복을 꺼서(recovery=False) 바로 소진 전이를 만듦."""
+
+    recovery = False
 
     def apply_outcome(self, cohort, action, outcome):
         if outcome.error_code == C.NO_ANSWER:

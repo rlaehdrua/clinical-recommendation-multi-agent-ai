@@ -3,7 +3,8 @@
 LegacyAdapterPolicy
 - propose(cohort): 환자마다 기존 decision_policy.candidates(깊은 사본)를 불러 행동을 만들고 엔진 Action으로 옮김.
   행동 ID = "<별칭>:<기존 지문>" (기존 action_id는 uuid라 재현되지 않으므로 옮기지 않음).
-  실패한 정보원은 대체 정보원으로 바꾸고, 대체도 없으면 DEFER(sources_exhausted)로 보류.
+  실패한 정보원은 대체 정보원으로 바꾸고, 정보원 자체의 대체가 없으면 그 항목을 담은 문서 정보원(환자 연락 불가 뒤 검사지 등),
+  그것도 없으면 DEFER(sources_exhausted)로 보류.
   항목 단위 실패("모름" = no_answer)는 그 (정보원, 항목)만 막고 같은 항목을 문서 정보원으로 요청
   (alternative_source_after_no_answer). 남은 문서 정보원도 없으면 그 항목만 DEFER(item_sources_exhausted).
   같은 정보원의 다른 항목 질문은 그대로 계속합니다.
@@ -64,6 +65,11 @@ def tried_key(source: str, item: str) -> str:
     return f"tried:{source}|{item}"
 
 
+def no_answer_key(source: str, item: str) -> str:
+    """ops.attempts의 "모름" 횟수 키 (max_item_attempts 비교용)."""
+    return f"noanswer:{source}|{item}"
+
+
 def item_key(info_key: str | None, fingerprint: str) -> str:
     """항목 단위 실패의 키: decision_state.info_key (구조화 필드·바이오마커는 시험 사이에서 공유), 없으면 행동 지문."""
     return info_key or f"fp:{fingerprint}"
@@ -75,9 +81,16 @@ class LegacyAdapterPolicy:
 
     recovery = True  # 실패 뒤 대체 정보원 탐색 (False: 실패한 정보원·항목은 바로 보류, full_dcvc의 recovery 스위치)
 
-    def __init__(self, cfg: PolicyConfig = DEFAULT_POLICY, catalog: SourceCatalog | None = None):
+    def __init__(self, cfg: PolicyConfig = DEFAULT_POLICY, catalog: SourceCatalog | None = None,
+                 max_item_attempts: int = 1):
+        """max_item_attempts: 같은 (정보원, 항목)에서 "모름"을 몇 번 받으면 항목 실패로 볼지 (기본 1 = 바로 대체 정보원).
+        2 이상이면 그 전까지는 실패로 기록하지 않아 같은 질문을 다시 할 수 있음 (WP6 민감도 분석, 11-06).
+        웹 Session은 "모름" 뒤 기존 정책이 재질문 대신 보류를 내므로 이 값과 무관하게 다시 묻지 않습니다."""
+        if max_item_attempts < 1:
+            raise ValueError("max_item_attempts는 1 이상")
         self.cfg = cfg
         self.catalog = catalog or SourceCatalog()
+        self.max_item_attempts = int(max_item_attempts)
 
     # ------------------------------------------------------------ propose
     def propose(self, cohort: CohortState, pending_reevaluation: dict[str, list[str]] | None = None) -> list[Action]:
@@ -151,8 +164,12 @@ class LegacyAdapterPolicy:
                 atype, source, reason = "DEFER", None, "item_sources_exhausted"
         elif source is not None and source in ops.failed_sources:
             alts = [s for s in self.catalog.alternatives(source, ops.failed_sources) if (s, item) not in ops.failed_items]
+            docs = [] if alts else self.item_alternatives(source, la.required_fact_fields, la.info_key, item,
+                                                          ops.failed_sources, blocked)
             if alts:
                 source, reason = alts[0], "alternative_source_after_failure"
+            elif docs:  # 정보원 자체의 대체가 없어도(환자 연락 불가 등) 그 항목을 담은 문서는 확인할 수 있음
+                atype, source, reason = "REQUEST_DOCUMENT", docs[0], "alternative_source_after_failure"
             else:
                 atype, source, reason = "DEFER", None, "sources_exhausted"
         elif source is not None and (source, item) in ops.failed_items:
@@ -302,16 +319,23 @@ class LegacyAdapterPolicy:
         reason = "sources_exhausted"
         if scope == "source" and action.source_id:
             failed.add(action.source_id)
-            if not self.recovery or not self.catalog.alternatives(action.source_id, frozenset(failed)):
+            item = item_key(action.info_key, action.fingerprint)
+            if not self.recovery or not (self.catalog.alternatives(action.source_id, frozenset(failed))
+                                         or self.item_alternatives(action.source_id, action.required_fields,
+                                                                   action.info_key, item, frozenset(failed),
+                                                                   frozenset(failed_items))):
                 exhausted.update(action.target_trial_ids)
         elif scope == "item" and action.source_id:
             item = item_key(action.info_key, action.fingerprint)
-            failed_items.add((action.source_id, item))
-            reason = "item_sources_exhausted"
-            if action.info_key and (not self.recovery or not self.item_alternatives(
-                    action.source_id, action.required_fields, action.info_key, item, frozenset(failed),
-                    frozenset(failed_items))):
-                exhausted_items.add(action.info_key)
+            nk = no_answer_key(action.source_id, item)
+            attempts[nk] = attempts.get(nk, 0) + 1
+            if attempts[nk] >= self.max_item_attempts:  # 정한 횟수만큼 "모름"을 받은 뒤에만 항목 실패
+                failed_items.add((action.source_id, item))
+                reason = "item_sources_exhausted"
+                if action.info_key and (not self.recovery or not self.item_alternatives(
+                        action.source_id, action.required_fields, action.info_key, item, frozenset(failed),
+                        frozenset(failed_items))):
+                    exhausted_items.add(action.info_key)
         new_ops = OpsState(frozenset(failed), MappingProxyType(attempts), frozenset(exhausted),
                            frozenset(failed_items), frozenset(exhausted_items))
         new = cohort.with_ops(alias, new_ops)

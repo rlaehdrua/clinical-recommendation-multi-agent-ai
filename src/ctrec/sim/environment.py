@@ -46,16 +46,27 @@ class CohortEnvironment:
         self.responses = responses
         self._alias = cohort.aliases()
         self._truth = {self._alias[k]: tuple(v) for k, v in cohort.oracle.truth.items()}
+        self._criterion_slots = dict(cohort.criterion_slots)
 
-    def revealable(self, alias: str, source_id: str, fields) -> list[SimFact]:
-        """그 정보원이 드러낼 수 있는 정답 사실 중 행동이 요구한 항목."""
+    def revealable(self, alias: str, source_id: str, action: Action) -> list[SimFact]:
+        """그 정보원이 드러낼 수 있는 정답 사실 중 행동이 요구한 것.
+
+        요구: 대상 기준에 생성기 슬롯 연결이 있으면 그 슬롯의 사실만 (LLM 기준의 유형별 후보 항목 - diagnosis·lab:* 등 -
+        전체를 드러내지 않음). 연결이 없으면 행동의 required_fields와 같은 항목.
+        정보원: 사실에 sources가 있으면 그 목록(생성기 소스 대응), 없으면 카탈로그 provides_fields + 환자가 아는 항목."""
         src = self.catalog[source_id]
-        wanted = set(fields)
+        fields = set(action.required_fields)
+        slots = {s for k in action.target_criteria for s in self._criterion_slots.get(k, ())}
         out = []
         for f in self._truth.get(alias, ()):
-            if f.field not in wanted or not any(fnmatch(f.field, p) for p in src.provides_fields):
+            wanted = f.slot in slots if (slots and f.slot is not None) else f.field in fields
+            if not wanted:
                 continue
-            if src.kind == "patient" and not f.known_by_patient():
+            if f.sources is not None:
+                if source_id not in f.sources:
+                    continue
+            elif not any(fnmatch(f.field, p) for p in src.provides_fields) or (
+                    src.kind == "patient" and not f.known_by_patient()):
                 continue
             out.append(f)
         return out
@@ -78,7 +89,7 @@ class CohortEnvironment:
             return EnvResult("answered", latency_minutes=latency)
         if self.responses.draw(a, sid, fp, attempt, "reach") < p.p_unreachable:
             return EnvResult("failed", error_code=UNREACHABLE, latency_minutes=latency)
-        found = self.revealable(a, sid, action.required_fields)
+        found = self.revealable(a, sid, action)
         if not found or self.responses.draw(a, sid, fp, attempt, "answer") < p.p_no_answer:
             return EnvResult("declined", error_code=NO_ANSWER, latency_minutes=latency)
         if src.kind == "patient":
