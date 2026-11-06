@@ -52,12 +52,37 @@ class OpsState:
 OBTAINABLE_GAPS = frozenset({"missing", "stale", "unverified"})
 
 
+def tied_paths(t) -> frozenset[str]:
+    """matcher._select_cohort가 선언 순서로만 고른 동점 코호트 (선택된 코호트 포함). 동점이 없으면 빈 집합.
+
+    동점 기준은 matcher와 같음: 같은 적격성 + 같은 판정 불가 수. 이름·순서를 보지 않으므로 선언 순서를 바꿔도 같은 집합."""
+    best, results = t.matched_cohort, t.cohort_results
+    if best is None or best not in results:
+        return frozenset()
+
+    def blocking(path: str) -> int:  # 판정을 막지 않는 미확인(절차 기준)은 gap이 none이라 세지 않음
+        return sum(c.status not in ("MET", "NOT_MET") and c.gap != "none" for c in t.criteria
+                   if c.cohort in (None, path))
+    tied = frozenset(p for p, e in results.items() if e == results[best] and blocking(p) == blocking(best))
+    return tied if len(tied) > 1 else frozenset()
+
+
+def decisive_criteria(t) -> list:
+    """쌍 상태를 정하는 기준: 판정에 적용된 기준(required) + 동점 코호트의 기준.
+
+    선택된 코호트가 선언 순서에 달렸다면 그 코호트만 보고 확정할 수 없음 (G2). 동점 갈래의 gap을 모두 보면 상태가 순서와
+    무관해지고 쌍 상태는 내려가기만 함 (0.2 안전 경계). 닫힌 갈래(적격성이 낮거나 미확인이 많은 코호트)는 그대로 제외."""
+    tied = tied_paths(t)
+    return [c for c in t.criteria
+            if c.requirement == "required" or (c.requirement == "alternative_cohort" and c.cohort in tied)]
+
+
 def items_exhausted(t, exhausted_items: frozenset[str]) -> bool:
     """쌍 단위 소진 (Q-D2): 판정에 필요한 기준의 남은 gap이 모두 '얻을 수 있는 정보'이고, 그 항목이 전부 소진됐을 때만.
     일부만 소진됐거나 임상의 판단·상충이 남아 있으면 소진이 아님 (INFO_MISSING 등 기존 상태 유지)."""
     if not exhausted_items:
         return False
-    open_c = [c for c in t.criteria if c.requirement == "required" and (c.gap != "none" or c.conflict_on_decided)]
+    open_c = [c for c in decisive_criteria(t) if c.gap != "none" or c.conflict_on_decided]
     return bool(open_c) and all(c.gap in OBTAINABLE_GAPS and not c.conflict_on_decided
                                 and c.info_key in exhausted_items for c in open_c)
 
@@ -116,13 +141,11 @@ def _override(base: CriterionResult, overrides: dict[str, CriterionResult]) -> C
 
 
 def required_gaps(t) -> frozenset[str]:
-    """판정에 적용된 기준(required)의 gap. 다른 코호트 기준(alternative_cohort, OR의 다른 갈래)과 절차 기준(waivable)은
+    """판정에 적용된 기준과 동점 코호트 기준(decisive_criteria)의 gap. 닫힌 갈래(alternative_cohort)와 절차 기준(waivable)은
     제외하므로 닫힌 갈래의 gap이 열린 경로를 미해결로 만들지 않음. 확정 판정(MET/NOT_MET)의 근거가 상충하면
     (conflict_on_decided) 그 기준은 gap이 none이어도 확인이 필요하므로 conflict로 셈 (0.2)."""
     out = set()
-    for c in t.criteria:
-        if c.requirement != "required":
-            continue
+    for c in decisive_criteria(t):
         if c.gap != "none":
             out.add(c.gap)
         if c.conflict_on_decided:
@@ -194,7 +217,7 @@ class CohortState:
         t = self.patients[alias]._legacy.trials.get(trial_id)
         if t is None:
             return 0
-        return sum(c.requirement == "required" and (c.gap != "none" or c.conflict_on_decided) for c in t.criteria)
+        return sum(c.gap != "none" or c.conflict_on_decided for c in decisive_criteria(t))
 
     def open_pairs(self, alias: str) -> list[PairState]:
         """확정·평가 실패가 아니고 모집 중인 쌍 (아직 작업이 남은 쌍)."""
