@@ -34,7 +34,8 @@ FIELD_TEXT = {
 }
 
 _RANGE_TAIL = r"(?!\s*[-~–]\s*\d)"  # "ECOG 0-1"은 단일 값의 근거가 아님
-_AGE_UNITS = {"years": r"세|살|years?|yrs?|-year|yo\b|y/o", "months": r"개월|달|months?|mos?\b|-month",
+_DURATION = r"(?!\s+(?:ago|of|later|before|after|prior|since|survival|follow))"  # "20 years ago", "5-year survival"은 나이가 아님
+_AGE_UNITS = {"years": rf"세|살|years?\b{_DURATION}|yrs?\b{_DURATION}|-year\b{_DURATION}|yo\b|y/o", "months": r"개월|달|months?|mos?\b|-month",
               "weeks": r"주|weeks?|wks?|-week", "days": r"일|days?|-day"}
 _AGE_SUFFIX = {"years": r"세|살|years?\s*old|yrs?\s*old|-year-old|yo\b|y/o"}
 _SEX_MARK = {"female": r"\d\s*/?\s*f\b|성별\s*[:：]?\s*여|\bsex\s*[:=]\s*f", "male": r"\d\s*/?\s*m\b|성별\s*[:：]?\s*남|\bsex\s*[:=]\s*m"}
@@ -95,19 +96,35 @@ def normalize(field: str, text: str) -> str:
 
 # ---------------------------------------------------------------------------- 수치의 역할
 _NOT_A_RESULT = re.compile(r"\b(?:target|goal|aim|desired|threshold|cut-?off|trigger|maintain|keep|(?<!without\s)(?<!no\s)transfus\w*|if|unless|should|in\s+case|provided|"
-                           r"assuming|suppose|would|once|until|expected|predicted)\b|목표|유지|역치|수혈(?!\s*없이)|라면|다면|이면|"
-                           r"[일인]\s*(?:경우|때)|예상|예정", re.IGNORECASE)
-_REFERENCE_BEFORE = re.compile(r"\b(?:reference|ref|normal|range|uln|lln)\b|정상|참고|기준\s*(?:범위|치|값)", re.IGNORECASE)
+                           r"assum\w*|suppose\w*|hypothetical\w*|example|would|once|until|expected|predicted|required?|requires|needed|needs?|plan(?:ned|s)?|"
+                           r"estimated(?!\s+(?:gfr|glomerular|cr)))\b|e\.g\.|목표|유지|역치|수혈(?!\s*없이)|라면|다면|이면|되면|만약|가정|가상|예시|"
+                           r"(?<![가-힣])예\s*[:：)]|희망|필요|맞추|[어여]야|[일인]\s*(?:경우|때)|예상|예정", re.IGNORECASE)
+_WHEN_BEFORE = re.compile(r"\b(?:when|whenever)\b", re.IGNORECASE)  # 뒤쪽의 when은 측정 시점: "Hb 12 when admitted"
+_WHEN_AFTER = re.compile(r"\s*[^\s,;()]*\s*시(?=\s|$)")  # "Hb 12 시 투약", "Hb 12 도달 시"
+_REFERENCE_BEFORE = re.compile(r"\b(?:reference|ref|normal|range|limit|uln|lln|criteri\w+|eligibility|protocol|population|mean|average)\b|"
+                               r"정상|참고|평균|기준\s*(?:범위|치|값)|(?:시험|선정|제외|적격)\s*(?:기준|조건)", re.IGNORECASE)
 _COMPARE_BEFORE = re.compile(r"[<>≤≥]=?\s*$")
 _COMPARE_AFTER = re.compile(r"\s*[^\s,;()]*\s*(?:이상|이하|미만|초과|or\s+(?:more|less|above|below|greater|higher|lower)|and\s+(?:above|below))", re.IGNORECASE)
-_NEGATED_BEFORE = re.compile(r"\b(?:not|never|isn'?t|wasn'?t|no\s+longer|rather\s+than|instead\s+of)\b[^,;]{0,12}$", re.IGNORECASE)
-_NEGATED_AFTER = re.compile(r"[^,;]{0,12}?(?:아님|아니|아닌|아닙|않|없(?:음|었|다|습|어))")
-_DENIED_AFTER = re.compile(r"\s*(?:가|이|은|는|라는\s*뜻은)?\s*(?:아님|아니|아닌|아닙)")  # 나이·성별·ECOG: 값 바로 뒤의 부정만
+_NEGATED_BEFORE = re.compile(r"\b(?:not|never|isn'?t|wasn'?t|no\s+longer|rather\s+than|instead\s+of|den(?:y|ies|ied))\b[^,;]{0,12}$", re.IGNORECASE)
+_NEGATED_AFTER = re.compile(r"[^,;]{0,12}?(?:아님|아니|아닌|아닙|않|없(?:음|었|다|습|어)|정정|취소|ruled\s+out|corrected)", re.IGNORECASE)
+_RETRACTED = re.compile(r"틀[렸린림]|잘못\s*(?:말|적|기록|입력|알|측정)|(?<![가-힣])오기|오타|"
+                        r"\b(?:incorrect|wrong|erroneous|mistaken|typo|in\s+error)\b", re.IGNORECASE)  # 같은 문장의 값 뒤: 절이 바뀌어도 철회임
+_DENIED_AFTER = re.compile(r"\s*(?:세|살)?\s*(?:가|이|은|는|라는\s*뜻은)?\s*(?:아님|아니|아닌|아닙)")  # 나이·성별·ECOG: 값 바로 뒤의 부정만
 _DENIED_BEFORE = re.compile(r"\bnot\s+(?:an?\s+)?$", re.IGNORECASE)
 _PAST = re.compile(r"\b(?:previous|prior|former|old|last\s+(?:week|month|year))\b|과거|이전|지난|\d+\s*(?:일|주|개월|달|년)\s*전", re.IGNORECASE)
-_OTHER_PERSON = r"아버지|어머니|부친|모친|남편|아내|배우자|형제|자매|보호자|파트너|공여자|\b(?:donor|father|mother|spouse|husband|wife|partner|sibling|brother|sister)\b"
+_OTHER_PERSON = (r"아버지|아버님|어머니|어머님|부친|모친|엄마|아빠|부모|남편|아내|배우자|형제|자매|보호자|파트너|공여|가족(?!력|사)|(?:다른|옆|타)\s*환자|"
+                 r"(?<![가-힣])(?:딸|아들|동생|언니|오빠|누나|삼촌|이모|고모|할머니|할아버지|친구|장인|장모|사위|며느리|조카)|(?<![가-힣a-z0-9])형(?=의|\s)|"
+                 r"\b(?:donor|father|mother|mom|dad|parents?|spouse|husband|wife|partner|sibling|brother|sister|son|daughter|child(?!\s*-?\s*pugh)|"
+                 r"aunt|uncle|cousin|niece|nephew|friend|grand(?:mother|father)|family(?!\s+history)|(?:another|other)\s+(?:patient|person))\b")
 _ABOUT_OTHER = re.compile(_OTHER_PERSON, re.IGNORECASE)
 _NEXT_TO_OTHER = re.compile(rf"\s*(?:{_OTHER_PERSON})", re.IGNORECASE)  # 값 바로 뒤: "남성 보호자", "62세 아버지"
+_OF_OTHER = re.compile(rf"(?:{_OTHER_PERSON})(?:의|는|은|가|이|'s)?\s*(?:나이|연령|성별|\bage[d]?\b|\bis\b|\bwas\b|:)?\s*(?:는|은|가|이|of)?\s*$", re.IGNORECASE)  # 값 바로 앞
+_SEX_OF_OTHER = re.compile(r"\s*(?:친구|간호사|의사|교수|선생|호르몬|\b(?:nurse|physician|doctor|friend|hormones?)\b)", re.IGNORECASE)  # 성별 단어가 환자를 가리키지 않음
+_NOT_STATED_BEFORE = re.compile(r"(?:\b(?:target|goal|if|unless|assuming|when|at\s+least|at\s+most|over|under|required?)\b|목표|만약|정상|[<>≤≥]=?)\s*$", re.IGNORECASE)
+_NOT_STATED_AFTER = re.compile(r"\s*(?:세|살)?\s*(?:이|가|으로|로|을|를)?\s*(?:목표|되면|이면|라면|[일인]\s*(?:경우|때)|필요|되어야|대상)|"
+                               r"\s*(?:is\s+)?\b(?:required|needed|target|goal)\b", re.IGNORECASE)  # 나이·ECOG: 값 바로 뒤의 조건·목표
+_COMPARE_INSIDE = re.compile(r"[<>≤≥]")  # 이름과 값 사이: "ECOG <= 1", "age >= 62"
+_PAST_AGE_AFTER = re.compile(r"\s*[세살]?\s*(?:에|때|무렵)|\s*(?:years?\s*old\s*)?at\s+(?:diagnosis|onset)", re.IGNORECASE)  # "40세에 진단"
 
 
 def _clause_around(text: str, lo: int, hi: int) -> tuple[str, str]:
@@ -123,19 +140,39 @@ def _clause_around(text: str, lo: int, hi: int) -> tuple[str, str]:
     return text[start:lo], text[hi:end]
 
 
+def _retracted(text: str, hi: int) -> bool:
+    """값을 말한 문장의 뒷부분에서 그 값을 철회했는가."""
+    end = ed._SENTENCE_BOUNDARY.search(text, hi)
+    return bool(_RETRACTED.search(text, hi, end.start() if end else len(text)))
+
+
 def _role(text: str, lo: int, hi: int) -> str | None:
     """검사 수치의 역할: 'measured', 'past', 측정값이 아니면 None."""
     before, after = _clause_around(text, lo, hi)
     if _NOT_A_RESULT.search(before + " " + after) or _ABOUT_OTHER.search(before + " " + after) or _REFERENCE_BEFORE.search(before) \
-            or _COMPARE_BEFORE.search(before) or _COMPARE_AFTER.match(after) or _NEGATED_BEFORE.search(before) or _NEGATED_AFTER.match(after):
+            or _COMPARE_BEFORE.search(before) or _COMPARE_AFTER.match(after) or _NEGATED_BEFORE.search(before) or _NEGATED_AFTER.match(after) \
+            or _WHEN_BEFORE.search(before) or _WHEN_AFTER.match(after) or _retracted(text, hi):
         return None
     return "past" if _PAST.search(before + " " + after) else "measured"
 
 
-def _about_patient(text: str, lo: int, hi: int) -> bool:
+def _about_patient(field: str, text: str, lo: int, hi: int) -> bool:
     """나이·성별·ECOG 값이 환자에 대한 긍정 진술인가. 같은 절의 다른 내용은 보지 않고 값에 붙은 표지만 봅니다."""
     before, after = _clause_around(text, lo, hi)
-    return not (_DENIED_AFTER.match(after) or _DENIED_BEFORE.search(before) or _NEXT_TO_OTHER.match(after))
+    if _DENIED_AFTER.match(after) or _DENIED_BEFORE.search(before) or _NEXT_TO_OTHER.match(after) or _OF_OTHER.search(before) or _retracted(text, hi):
+        return False
+    if field == "sex":
+        return not _SEX_OF_OTHER.match(after)
+    return not (_NOT_STATED_BEFORE.search(before) or _NOT_STATED_AFTER.match(after) or _COMPARE_INSIDE.search(text[lo:hi])
+                or _COMPARE_AFTER.match(after))
+
+
+def _past_mention(field: str, text: str, lo: int, hi: int) -> bool:
+    """지금 값이 아니라 과거 시점의 값인가: "과거 ECOG 1", "40세에 진단"."""
+    before, after = _clause_around(text, lo, hi)
+    if field == "age":
+        return bool(_PAST_AGE_AFTER.match(after) or re.search(r"\bat\s+$", before, re.IGNORECASE))
+    return field == "ecog" and bool(_PAST.search(before + " " + after))
 
 
 # ---------------------------------------------------------------------------- 값 표현
@@ -166,7 +203,7 @@ def _mentions(field: str, text: str) -> list[tuple[str, int, int]]:
         found = [(m.group(1), m.start(), m.end()) for m in pat.finditer(text)]
     else:
         found = [(s, m.start(), m.end()) for s in ("female", "male") for m in _value_pattern("sex", s, None).finditer(text)]
-    return [x for x in found if _about_patient(text, x[1], x[2])]
+    return [x for x in found if _about_patient(field, text, x[1], x[2])]
 
 
 def _uncertain(body: str, lo: int, hi: int) -> bool:
@@ -224,15 +261,17 @@ def ground(field: str, value, source_text: str | None, *, key: str | None = None
     v = _text(value)
     pat = _value_pattern(field, v, unit)
     initial = normalize(field, evidence.split_source(source_text)[0])
-    in_record = any(_about_patient(initial, m.start(), m.end()) for m in pat.finditer(initial)) \
-        or (field == "age" and _from_birth_year(v, initial, reference_date))
+    mentioned = _mentions(field, initial)
+    current = {x for x, lo, hi in mentioned if not _past_mention(field, initial, lo, hi)}
+    in_record = any(_about_patient(field, initial, m.start(), m.end()) and not (current and _past_mention(field, initial, m.start(), m.end()))
+                    for m in pat.finditer(initial)) or (field == "age" and _from_birth_year(v, initial, reference_date))
     stated, hedged = False, False
     answered: set[str] = set()
     usable = _usable_answers(source_text, qa)
     for seg in usable:
         body = normalize(field, seg.body)
         for m in pat.finditer(body):
-            if not _about_patient(body, m.start(), m.end()):
+            if not _about_patient(field, body, m.start(), m.end()):
                 continue
             if _uncertain(body, m.start(), m.end()):
                 hedged = True
@@ -244,8 +283,8 @@ def ground(field: str, value, source_text: str | None, *, key: str | None = None
         if bare is not None:
             answered.add(bare)
             stated = stated or bare == v
-    recorded = {x for x, _, _ in _mentions(field, initial)}
-    if len(answered) > 1 or (recorded and answered - recorded):
+    recorded = current or {x for x, _, _ in mentioned}
+    if len(answered) > 1 or (recorded and answered - recorded) or (field == "ecog" and len(current) > 1):
         return CONFLICT
     if in_record or stated:
         return None
