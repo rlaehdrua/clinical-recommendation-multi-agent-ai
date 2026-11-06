@@ -87,7 +87,7 @@ def load_diagnostics(run_dir: Path, run_ids: set[str] | None = None, scanner=Non
             continue
         try:
             obj = json.loads(line)
-        except json.JSONDecodeError:
+        except (ValueError, RecursionError):  # 깨진 줄, 초장 정수, 깊은 중첩: 그 줄에서 끝냄
             out.problems.append(f"line {n}: corrupt_json")
             continue
         if not isinstance(obj, dict):
