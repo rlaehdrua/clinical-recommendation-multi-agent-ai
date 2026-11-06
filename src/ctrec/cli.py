@@ -64,7 +64,19 @@ def _answerer(kind: str, cases: list[PatientCase]):
     return NoAnswerer()
 
 
-def _candidates(case: PatientCase, trials: dict[str, dict], topic_map: dict, mode: str = "given") -> dict[str, dict]:
+def _who(case: PatientCase, args) -> str:
+    """콘솔에 쓸 환자 표시. --redact-console이면 입력 순번만 (순번은 입력 파일을 가진 사람에게는 ID와 같습니다)."""
+    labels = getattr(args, "console_labels", None)
+    return labels[id(case)] if labels else case.patient_id
+
+
+def _error_kind(e: BaseException) -> str:
+    """예외 종류만. 문구·repr에는 환자 원문이 들어갈 수 있음 (pydantic ValidationError의 input_value 등)."""
+    return type(e).__name__
+
+
+def _candidates(case: PatientCase, trials: dict[str, dict], topic_map: dict, mode: str = "given",
+                who: str | None = None) -> dict[str, dict]:
     """환자별 후보 시험.
 
     screen: 불러온 시험 전체(가상 데모 시험은 --demo일 때만)를 풀로 넘기고, 후보 추림 에이전트가 고름 (candidate_trials·topic-map 무시)
@@ -77,7 +89,7 @@ def _candidates(case: PatientCase, trials: dict[str, dict], topic_map: dict, mod
         return dict(trials)
     missing = [t for t in ids if t not in trials]
     if missing:
-        print(f"[{case.patient_id}] 후보 시험 {missing}이 로드되지 않았습니다. --trials-dir를 확인하세요.")
+        print(f"[{who or case.patient_id}] 후보 시험 {missing}이 로드되지 않았습니다. --trials-dir를 확인하세요.")
     return {t: trials[t] for t in ids if t in trials}
 
 
@@ -170,7 +182,8 @@ def _write_run_meta(out_dir: Path, session: Session, args, fact_dir: Path | None
 def _run_case(case: PatientCase, trials: dict[str, dict], args, answerer) -> Session:
     out_dir = Path(args.out) / case.patient_id
     run_id = f"R-{uuid.uuid4().hex[:12]}"
-    tracer = Tracer(out_dir / "trace.jsonl", verbose=not args.quiet,
+    redact = getattr(args, "redact_console", False)  # 콘솔만 줄임. trace.jsonl·보고서 파일 내용은 그대로
+    tracer = Tracer(out_dir / "trace.jsonl", verbose=not (args.quiet or redact),
                     label=case.patient_id if args.workers > 1 else "")
     fact_dir = _fact_store_dir(args, out_dir)
     from .contract_session import session_class  # CTREC_SESSION=contract -> ContractSession (기본: 기존 Session)
@@ -218,6 +231,8 @@ def _add_common(p: argparse.ArgumentParser) -> None:
                    help="환자 1명당 전체 라운드 합산 최대 질문 수 (질문 예산 실험용, 기본: 라운드당 한도만 적용)")
     p.add_argument("--out", default=str(config.OUTPUT_DIR))
     p.add_argument("--quiet", action="store_true")
+    p.add_argument("--redact-console", action="store_true",
+                   help="콘솔에 환자 ID·판단 근거 문장·진행 기록을 쓰지 않음 (순번과 판정 상태만). 파일 내용은 그대로")
     p.add_argument("--workers", type=int, default=1,
                    help="동시에 처리할 환자 수 (batch 또는 여러 환자 파일). interactive 답변 모드에서는 1로 고정")
     p.add_argument("--input-source", choices=["clinical_record", "self_report", "unknown"], default=None,
@@ -276,6 +291,8 @@ def main(argv: list[str] | None = None) -> None:
             raise RecordConflict("같은 환자 ID가 여러 번 있어 사실 파일이 서로 덮어써집니다. 환자 ID를 확인하세요.")
     except RecordConflict as e:
         sys.exit(f"실행하지 않았습니다: {e}")
+    if args.redact_console:
+        args.console_labels = {id(c): f"#{i}" for i, c in enumerate(cases, 1)}
     answerer = _answerer(args.answers, cases)
 
     topic_map = json.loads(Path(args.topic_map).read_text(encoding="utf-8")) if args.topic_map else {}
@@ -285,7 +302,7 @@ def main(argv: list[str] | None = None) -> None:
 
     def work(case: PatientCase):
         # 환자마다 새 컨텍스트: 토큰 사용량을 환자별로 집계
-        return contextvars.copy_context().run(_run_case, case, _candidates(case, trials, topic_map, args.candidates), args, answerer)
+        return contextvars.copy_context().run(_run_case, case, _candidates(case, trials, topic_map, args.candidates, _who(case, args)), args, answerer)
 
     sessions: list[tuple[PatientCase, Session | None]] = []
     if args.workers > 1 and len(cases) > 1:
@@ -296,10 +313,18 @@ def main(argv: list[str] | None = None) -> None:
                 try:
                     sessions.append((case, fut.result()))
                 except Exception as e:  # 한 환자의 실패가 전체를 멈추지 않도록
-                    print(f"[{case.patient_id}] 실패: {e!r}")
+                    print(f"[{_who(case, args)}] 실패: {_error_kind(e)}")
                     sessions.append((case, None))
     else:
-        sessions = [(c, work(c)) for c in cases]
+        sessions = []
+        for c in cases:
+            try:
+                sessions.append((c, work(c)))
+            except Exception as e:  # 기본 traceback은 예외 문구를 stderr에 씀. 종료 코드는 그대로 1
+                if os.environ.get("CTREC_CLI_TRACEBACK") == "1":  # 합성 데이터로 개발할 때만
+                    raise
+                print(f"[{_who(c, args)}] 실패: {_error_kind(e)} (합성 데이터에서는 CTREC_CLI_TRACEBACK=1로 자세히 볼 수 있음)")
+                raise SystemExit(1) from None
 
     total: dict[str, int] = {}
     for case, session in sessions:
@@ -310,7 +335,10 @@ def main(argv: list[str] | None = None) -> None:
         if session.recommendation:
             rec = session.recommendation
             if rec.recommended:
-                print(f"\n[{case.patient_id}] 추천 그룹: {status_label(rec.recommended[0].match_status)}")
+                print(f"\n[{_who(case, args)}] 추천 그룹: {status_label(rec.recommended[0].match_status)}")
+            if args.redact_console:  # 시험 ID·상태만: 근거 문장에는 환자 원문이 인용될 수 있음
+                print("  " + ", ".join(f"{r.rank}. {r.trial_id}({status_label(r.match_status)})" for r in rec.ranked))
+                continue
             for r in rec.recommended:
                 print(f"  ★ {r.trial_id} ({status_label(r.match_status)}) - {r.rationale[:100]}")
                 for note in r.physician_review:
@@ -323,8 +351,9 @@ def main(argv: list[str] | None = None) -> None:
                                                     for r in others))
             if session.recommendation.no_recommendation_reason:
                 print(f"  {session.recommendation.no_recommendation_reason}")
-        print(f"  -> {Path(args.out) / case.patient_id / 'report.md'}\n")
-    failed = [c.patient_id for c, s in sessions if s is None]
+        if not args.redact_console:  # 경로에 환자 ID가 있음
+            print(f"  -> {Path(args.out) / case.patient_id / 'report.md'}\n")
+    failed = [_who(c, args) for c, s in sessions if s is None]
     print(f"완료 {len(sessions) - len(failed)}/{len(sessions)}명" + (f" (실패: {', '.join(failed)})" if failed else "")
           + f" | 총 호출 {total.get('calls', 0)}회, 입력 {total.get('input_tokens', 0):,} / 출력 "
           f"{total.get('output_tokens', 0):,} / 캐시 읽기 {total.get('cache_read_input_tokens', 0):,} 토큰")

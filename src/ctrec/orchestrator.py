@@ -195,7 +195,8 @@ class Orchestrator:
                 except Exception as e:
                     results.append({"type": "tool_result", "tool_use_id": block.id,
                                     "content": f"Error: {e}", "is_error": True})
-                    s.tracer.log("orchestrator", "tool_error", tool=block.name, message=repr(e))
+                    # 종류만 기록: 예외 문구에는 환자 정보가 있을 수 있음 (콘솔·trace.jsonl, 화면은 web.app이 같은 형식으로 줄임)
+                    s.tracer.log("orchestrator", "tool_error", tool=block.name, message=type(e).__name__)
             messages.append({"role": "user", "content": results})
             if self.done:
                 break
