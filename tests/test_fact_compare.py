@@ -29,13 +29,14 @@ HB = _rule(rule_id="I3", text="Hb >= 9 g/dL", category="lab", field="lab:hemoglo
 DX = _rule(rule_id="I4", text="NSCLC diagnosis", category="diagnosis", structured_evaluable=False)
 
 
-SRC = "환자 기록 요약: NSCLC 진단 확인됨. 62세 여성. ECOG 1. 20세 기록. 16세 기록. ECOG 3 기록"  # 테스트별 프로필 값이 모두 원문에 있음
+SRC = "환자 기록 요약: NSCLC 진단 확인됨. 62세 여성. ECOG 1. 20세 기록. 16세 기록"  # 테스트별 프로필 값이 모두 원문에 있음
 
 
 def _base(profile, rules, monkeypatch=None, llm=None):
     if monkeypatch is not None:
         monkeypatch.setattr(matcher.llm, "structured", llm or _unknown_llm)
-    return matcher.match_trial(profile, _parsed(rules), TRIAL, reference_date=REF, source_text=SRC,
+    source = SRC.replace("ECOG 1", f"ECOG {profile.ecog}") if profile.ecog is not None else SRC  # 한 기록에 ECOG가 둘이면 상충
+    return matcher.match_trial(profile, _parsed(rules), TRIAL, reference_date=REF, source_text=source,
                                input_source=REC)
 
 
