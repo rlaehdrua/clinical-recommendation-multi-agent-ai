@@ -21,7 +21,7 @@
 - WP8은 `inspect_run_checked`와 `render_inspection_html`을 써야 합니다.
 - 이 문서의 검증은 파일 기반 합성 입력으로 한 것입니다. 실제 운영 연결은 별도 검증이 필요합니다.
 - `load_run_v2(scanner=None)`, `to_trace()`, `audit_diagnostics.inspect_run`은 운영용 조회·저장 경로로 쓰지 않습니다.
-- 역전 지표는 `compute_for_runs(run_dirs, scanner=...)`와 기본 `to_dict()`만 화면·API에 쓸 수 있습니다. 조건은 §3과 §5를 봅니다.
+- 역전 지표를 밖으로 내보내는 경로는 `reversal_metrics.export_metrics(run_dirs, scanner)`뿐입니다. 조건은 §3과 §5를 봅니다.
 - 이 작업은 위 경로의 보호만 다룹니다. WP7 전체의 개인정보 보호가 완성되었다는 뜻이 아닙니다.
 
 검사는 **scanner가 아는 값만** 찾습니다. 통과는 "이 scanner로 찾지 못했다"는 뜻이며 안전하다는 뜻이 아닙니다. 그래서 보기의 `value_scan.limit`은 `scanner_known_values_only`이고, `value_scan.status`는 `no_findings` 또는 `withheld`입니다. 화면은 이를 "안전함"으로 바꿔 표시하면 안 됩니다.
@@ -38,7 +38,10 @@
 | 저장 | `to_trace_checked` | 같은 검사. 쓰기 전에 검사하고, 통과하면 `to_trace`와 같은 형식 |
 | 저장 | `to_trace` | **검사 없음** |
 | 조회 | `load_run_v2(run_dir, scanner=s)` | 걸린 기록을 빼고 `line N: sensitive_record:<종류>`. trace 폴백도 동일 |
-| 조회 | `inspect_run_checked` | 정상 기록과 진단에 같은 `CheckedScanner` 적용 |
+| 조회 | `inspect_run_checked` | 정상 기록과 진단에 같은 `CheckedScanner` 적용. 표시할 수 없는 값(무한대 비용)은 값 없는 `AuditError` |
+| 조회 | `export_metrics(run_dirs, scanner)` | scanner 없으면 `AuditError`. 식별자·폴더 이름 없음, `pair_ref`는 호출마다 새 키 |
+| 저장·조회 | 자유 서술 (`free_text`) | 공백·비ASCII가 있거나 256자를 넘는 문자열. 저장은 거부, scanner 조회는 제외. `required_fields`는 기준 항목 이름이라 공백 3개까지 허용 |
+| 읽기 상한 | 파일 64MiB, 문제 줄 10,000 초과 | 끝까지 읽지 않고 `AuditError`. 지표는 그 폴더만 `records_unreadable` 또는 `issues_file_too_large` / `issues_file_too_damaged` |
 
 ### scanner 실패 처리 (`audit.CheckedScanner`)
 
@@ -61,8 +64,9 @@
 - **`forbidden_texts`의 4자 미만 항목**: `sensitive_findings`가 무시합니다. 따옴표·줄바꿈이 있는 문장은 JSON 이스케이프 모양까지 찾지만, 공백·대소문자가 다른 표기는 찾지 못합니다.
 - **`IssueWriter`**: `scanner=None`이면 저장 시 검사가 없습니다. 조회 시 검사가 이를 보완합니다.
 - **`load_run_v2(scanner=None)`·`to_trace`**: 호환을 위해 남겼으므로 직접 호출하면 값이 검사 없이 지나갑니다.
-- **역전 지표**: `scanner`를 넘기면 걸린 기록·진단이 계산에서 빠집니다. 넘기지 않으면 기존처럼 검사 없이 집계하므로, 걸린 기록이 집계 수와 `pair_ref`에 들어가고 `to_dict(identifiers=True)`로는 원시 값이 나옵니다. 호출자가 scanner를 빠뜨리는 것을 코드가 막지는 않습니다.
-- **`pair_ref`**: 고정 소금 없는 SHA-256 앞 12자리입니다. 같은 쌍을 구분하기 위한 값이며, 별칭과 시험 ID 후보를 아는 사람은 대입으로 되찾을 수 있습니다. 비식별화 수단이 아닙니다.
+- **역전 지표**: `compute_for_runs`·`load_run_inputs`의 기본값은 검사 없음입니다. 이때는 걸린 기록이 집계 수와 `pair_ref`에 들어가고 `to_dict(identifiers=True)`로 원시 값이 나옵니다. `write_metrics` 파일은 `value_scan.status`가 `not_scanned`입니다. `src`, `scripts`, `eval`에서 이 함수를 직접 부르면 `tests/test_security_paths.py`가 실패합니다.
+- **`pair_ref`**: 기본 `to_dict()`와 `write_metrics`는 소금 없는 SHA-256 앞 12자리라 후보를 아는 사람이 대입으로 되찾을 수 있습니다. `export_metrics`는 호출마다 키를 새로 만들어 대입과 출력 간 연결을 막습니다. **어느 쪽도 익명화가 아닙니다.** 사건 수, 단계, 경유 상태는 그대로 남습니다.
+- **자유 서술 탐지**: 공백 없는 ASCII 서술(`chest-pain-yesterday`)과 이름, 숫자만 있는 값은 찾지 못합니다.
 - **`Tracer`**: 생성할 때 trace 파일을 비웁니다. 기존 동작이며 검사 실패 여부와 무관합니다.
 
 ## 4. 후속 계약 검토 항목 (`contracts.py` 보류)
@@ -76,7 +80,9 @@
 
 `RecordWriter`의 기본 검사는 ID 모양과 정답 토큰만 보므로, `forbidden_texts`가 없으면 위 필드의 자유 서술을 저장합니다. 근본 해결은 필드 패턴 추가이며, 팀 합의 뒤 별도 작업으로 진행합니다. 패턴을 정하기 전에 실제 값의 형식(`rule_engine/1`, `PA-...|lab_report` 등)을 확인해야 합니다.
 
-별개로 `EffortCost`는 무한대를 허용해, 파일에 `Infinity` 비용이 있으면 `build_v2_view`가 `OverflowError`로 멈춥니다. 값이 새지는 않습니다.
+`audit.has_free_text`가 공백·비ASCII·초장 값을 저장과 조회에서 막지만, 필드 패턴을 대신하지는 않습니다. 기준은 오프라인 사례 201개의 기록 402건 실측값이며, 다른 데이터 세트에서는 오탐 여부를 다시 확인해야 합니다.
+
+별개로 `EffortCost`는 무한대를 허용합니다. `build_v2_view`를 직접 부르면 `OverflowError`가 나고, `inspect_run_checked`는 이를 값 없는 `AuditError`로 바꿉니다. NaN은 계약 검증에서 `invalid_record`가 됩니다.
 
 ## 5. WP8 연결 조건
 
@@ -86,7 +92,7 @@
 4. `AuditError`는 일반 조회 실패로 처리합니다. 검사 없는 경로로 되돌아가면 안 됩니다.
 5. `value_scan`과 `audit_status`를 표시하고, `values_withheld`를 정상 완료로 보이지 않게 합니다.
 6. §4의 자유 서술 위험을 받아들일지, 계약 변경을 먼저 할지 결정합니다.
-7. 역전 지표는 §1과 같은 scanner로 계산한 결과의 기본 `to_dict()`와 `write_metrics` 파일만 내보냅니다. `to_dict(identifiers=True)`와 `compute_for_runs`의 원본 `problems`는 내보내지 않습니다 (§3).
+7. 역전 지표는 §1과 같은 scanner로 `export_metrics`를 호출한 결과만 내보냅니다. `value_scan.status`가 `no_findings`가 아니면 정상 완료로 보이지 않게 합니다 (§3).
 8. 실제 웹 경로에서 위 조건을 별도로 검증합니다. 이 문서의 결과는 운영 연결을 검증한 것이 아닙니다.
 
 ## 6. 호환성
@@ -95,6 +101,8 @@
 - `LoadResult`, `build_v2_view`, `render_v2_html`, trace 이벤트 형식은 그대로입니다. 깨끗한 실행에서 `inspect_run_checked`의 결과는 `inspect_run` 결과에 `value_scan`만 더한 것입니다.
 - 바뀐 메시지: 추가 키는 `<extra>`, 유니온 표시는 `<unknown>`, 다른 계열의 `schema_version`은 `?`입니다.
 - 바뀐 예외: 비 UTF-8 파일은 `UnicodeDecodeError` 대신 `AuditError`입니다. 둘 다 `ValueError`입니다.
+- 추가된 출력: `write_metrics` 파일의 `value_scan`, 오프라인 실행기의 `reversal_metrics.json`. `to_dict()`의 키와 공개 `pair_ref`는 그대로입니다.
+- 바뀐 저장 동작: `sensitive_findings`가 `free_text`를 돌려주므로 공백·비ASCII 값이 든 기록은 저장되지 않습니다. 기존 파일은 지우지 않으며 검사 없는 읽기(`scanner=None`)는 그대로입니다.
 - trace 문제의 `line N`은 파일 줄 번호가 아니라 파싱된 이벤트 순번입니다 (기존 동작).
 
 ## 7. 병합 의존성

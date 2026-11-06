@@ -6,11 +6,13 @@
 ## 1. 사용
 
 ```python
-summary, problems = compute_for_runs(run_dirs, scanner=scanner)   # 폴더마다 따로 계산해 합침. 화면·API용은 scanner 필수
-write_metrics(summary, path, problems)                             # problems는 load_problems 키로 함께 저장
+data = export_metrics(run_dirs, scanner)          # 밖으로 내보낼 때. scanner 없으면 AuditError
+
+summary, problems = compute_for_runs(run_dirs)   # 오프라인 분석. 폴더마다 따로 계산해 합침
+write_metrics(summary, path, problems)           # problems는 load_problems 키로 함께 저장
 ```
 
-`scanner`는 기본값 `None`인 추가 인자입니다. 주지 않으면 기존처럼 값을 검사하지 않으며, 걸린 기록이 집계에 그대로 들어갑니다. 지표를 화면·API로 내보낼 때는 `inspect_run_checked`와 같은 scanner를 넘깁니다. `compute_for_runs`가 돌려주는 `problems`에는 폴더 이름이 있으므로 그대로 출력하지 않고 `write_metrics`로만 내보냅니다.
+운영 코드는 `export_metrics`만 씁니다(`scripts/run_offline_records.py`). `compute_for_runs`의 기본 `scanner=None`은 값을 검사하지 않으며, 걸린 기록이 집계에 그대로 들어갑니다. `problems`에는 폴더 이름이 있으므로 그대로 출력하지 않습니다.
 
 수치는 반드시 `problems`와 함께 봅니다. 폴더 하나가 손상돼도 나머지는 계산하므로, 예외가 없다는 것이 입력이 온전하다는 뜻은 아닙니다.
 
@@ -28,7 +30,8 @@ write_metrics(summary, path, problems)                             # problems는
 | `gaps_withheld_by_violation` | `history_gaps` 중 보류 전이 진단으로 연결된 끊김. 역전에 도달하지 않은 끊김도 포함 |
 | `duplicate_records_ignored` / `conflicting_steps` | 내용이 같은 중복 줄 수 / 내용이 달라 제외한 단계 수 |
 | `load_problems` | `write_metrics`에 넘긴 로드 문제 (§6). 폴더 이름은 `run-<순번>`으로 바뀌고, 형식을 모르는 문제는 `unrecognized_problem`으로만 남음 |
-| `events[].pair_ref` | 같은 (run_id, 환자, 시험)이면 같은 값. 원시 식별자는 `to_dict(identifiers=True)`로만 나옴 |
+| `events[].pair_ref` | 한 출력 안에서 같은 (run_id, 환자, 시험)이면 같은 값. 원시 식별자는 `to_dict(identifiers=True)`로만 나옴. 구분용이며 익명화가 아님 |
+| `value_scan` | `status`: `not_scanned` / `no_findings` / `withheld` / `incomplete`. `no_findings`는 scanner가 찾지 못했다는 뜻이지 안전하다는 뜻이 아님 |
 
 ## 3. `pairs_observed`는 분모가 아닙니다
 
@@ -87,6 +90,7 @@ write_metrics(summary, path, problems)                             # problems는
 | 기록 줄 손상 | 그 줄만 제외 | `line N: corrupt_json` 등 |
 | 진단 줄 손상 | 그 줄만 제외 | `issues line N: corrupt_json` / `not_object` / `invalid_issue:<필드>` / `duplicate_issue` |
 | 진단 파일이 링크·폴더 밖, 읽기 실패 | 진단 없이 계속 | `issues_file_link` / `issues_file_unreadable` |
+| 파일 64MiB 초과 또는 문제 줄 10,000 초과 | 끝까지 읽지 않음. 다른 폴더는 계속 | 기록 파일 `records_unreadable`, 진단 파일 `issues_file_too_large` / `issues_file_too_damaged` |
 | 충돌 단계 있음 | 그 단계 제외 | `conflicting_steps:<수>` |
 | scanner에 걸린 기록 | 같은 단계의 다른 줄까지 제외 (이력 끊김으로 드러남) | `line N: sensitive_record:<종류>` |
 | scanner에 걸린 진단 | 그 줄만 제외 | `issues line N: sensitive_text:<종류>` |
@@ -97,7 +101,7 @@ write_metrics(summary, path, problems)                             # problems는
 - **trace 대체 경로의 정보**: `to_trace`는 `DecisionRecord` 전체를 남기므로 정상 역전·경유 유형·`new_evidence`는 파일과 같습니다(테스트로 출력 전체를 대조). 차단 단계는 trace에도 없으므로 위반 분류는 진단 파일이 있어야 합니다. 이 폴백은 앞으로 trace로 남기는 실행을 위한 것입니다.
 - **진단 파일이 없을 때**: `decision_records.jsonl`이 있는 실행에서는 문제로 보고하지 않습니다. `IssueWriter`는 첫 진단을 쓸 때 파일을 만들므로, 진단 없는 정상 실행도 파일이 없기 때문입니다. 다만 진단 기능 이전 실행과는 구분되지 않습니다.
 - **`load_issues`는 바꾸지 않았습니다.** `IssueWriter` 이어 쓰기와 `offline_records.verify_run`은 손상 시 멈추는 쪽이 맞습니다. 지표 전용 줄 단위 리더는 `reversal_metrics._load_issues_partial`입니다.
-- **비정상 길이**: 4300자리를 넘는 정수와 깊은 중첩 줄은 `corrupt_json`으로 그 줄만 제외합니다. 형식 제한이 있는 필드의 초장 값과 추가 키는 `invalid_record`로만 보고합니다. 파일 크기 상한은 없습니다.
+- **비정상 길이**: 4300자리를 넘는 정수와 깊은 중첩 줄은 `corrupt_json`으로 그 줄만 제외합니다. 형식 제한이 있는 필드의 초장 값과 추가 키는 `invalid_record`로만 보고합니다.
 - **개인정보**: 문제 메시지에는 줄 번호·코드·알려진 필드 이름만 남깁니다. `audit`의 `unsupported_schema:<값>`, `invalid_record:<필드>`는 파일 내용(추가 필드의 키 포함)이 섞일 수 있어 코드만 남깁니다.
 
 ## 7. 후속 과제
