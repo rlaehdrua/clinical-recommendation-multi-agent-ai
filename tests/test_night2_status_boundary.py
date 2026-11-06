@@ -389,7 +389,7 @@ def test_cli_run_prints_and_saves_the_held_copy(monkeypatch, tmp_path, capsys):
     out = tmp_path / "out" / "CLI-T1"
     assert json.loads((out / "conservative_view.json").read_text(encoding="utf-8"))["holds"][0]["display_status"] == "POTENTIAL_MATCH"
     assert "engine_boundary" in json.loads((out / "result.json").read_text(encoding="utf-8"))
-    assert "기록 확인 시 충족 가능" in capsys.readouterr().out
+    assert "★ DEMO-LUNG-001 (기록 확인 시 충족 가능)" in capsys.readouterr().out
 
 
 # ------------------------------------------------------------ 보호 파일 승인이 필요한 경로
