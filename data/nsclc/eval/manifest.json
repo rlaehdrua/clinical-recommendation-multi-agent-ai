@@ -14,12 +14,12 @@
  "config_hash": "a549da3b1171fd52",
  "generator_version": "cohort-gen-2",
  "reference_date": "2026-11-07",
- "generated_at": "2026-11-07T15:04:17+00:00",
- "build_commit": "abf3d372ede6808671472bccca42251f919d2ee1",
+ "generated_at": "2026-11-07T16:14:57+00:00",
+ "build_commit": "996efd6f3406e26820c1c1745c0997223723e847",
  "build_command": "python scripts/build_nsclc_eval.py all",
  "sim": {
   "cohort_id": "nsclc-eval-v1-r00@a549da3b1171fd52+map6c43912c",
-  "cohort_hash": "dda2d3873ad43a05",
+  "cohort_hash": "4bd9143334bb0871",
   "store_hash": "7060c3c400439620",
   "salt": "sim:nsclc-eval-v1-r00",
   "pair_key": "sim_pair_key = <sim 별칭>|<시험> (RunResult.final 쌍 키와 같음)"
