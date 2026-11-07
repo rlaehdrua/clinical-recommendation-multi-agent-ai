@@ -81,7 +81,7 @@ def _answer_links(quote: str, qa_pairs, session_id: str | None) -> list:
 
 def _link_answer(quote: str | None, ref: SourceReference, qa_pairs, session_id: str | None):
     """답변에서 확인된 인용을 질문 단위로 연결. 반환: (새 SourceReference, 보류 사유 | None)."""
-    from .evidence_directness import declared_purpose  # 지연 import: evidence_directness가 이 모듈보다 무거움
+    from .evidence_directness import declared_purpose, hedged  # 지연 import: evidence_directness가 이 모듈보다 무거움
     from .question_contract import non_answer
 
     if qa_pairs is None or ref.ref != "raw_text:answers" or not quote:
@@ -92,6 +92,8 @@ def _link_answer(quote: str | None, ref: SourceReference, qa_pairs, session_id: 
         return ref, "physician_reference"
     if links and all(non_answer(p.answer) for p in links):
         return ref, "non_answer"  # 연결된 문답이 모두 "모름"·거부·미응답 (몇 개든): 모호함보다 먼저 봄
+    if links and hedged(quote):
+        return ref, "uncertain_answer"  # 인용 자체가 추측·불확실 표현: 사실로 저장하지 않음
     if len(links) != 1:
         return ref, None  # 모호하거나 찾지 못함: raw_text:answers 유지
     pair = links[0]
