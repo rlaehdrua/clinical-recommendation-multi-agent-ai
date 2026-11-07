@@ -1,0 +1,468 @@
+{
+ "$defs": {
+  "Adjudication": {
+   "additionalProperties": false,
+   "description": "agreed: 두 라벨러 일치·확신도 3 / adjudicated: 판정자가 결정 / ambiguous: 판정자도 판정 불가 (주 지표 분모 제외)\n/ pending: 아직 판정 전 (동결 불가).",
+   "properties": {
+    "status": {
+     "enum": [
+      "agreed",
+      "adjudicated",
+      "ambiguous",
+      "pending"
+     ],
+     "title": "Status",
+     "type": "string"
+    },
+    "adjudicator_id": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Adjudicator Id"
+    },
+    "adjudicated_at": {
+     "anyOf": [
+      {
+       "format": "date-time",
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Adjudicated At"
+    },
+    "reason": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Reason"
+    },
+    "log_ref": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Log Ref"
+    }
+   },
+   "required": [
+    "status"
+   ],
+   "title": "Adjudication",
+   "type": "object"
+  },
+  "Annotation_UtteranceLabel_": {
+   "additionalProperties": false,
+   "properties": {
+    "labeler_id": {
+     "minLength": 1,
+     "title": "Labeler Id",
+     "type": "string"
+    },
+    "labeled_at": {
+     "format": "date-time",
+     "title": "Labeled At",
+     "type": "string"
+    },
+    "confidence": {
+     "maximum": 3,
+     "minimum": 1,
+     "title": "Confidence",
+     "type": "integer"
+    },
+    "evidence_spans": {
+     "default": [],
+     "items": {
+      "$ref": "#/$defs/Span"
+     },
+     "title": "Evidence Spans",
+     "type": "array"
+    },
+    "note": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Note"
+    },
+    "label": {
+     "$ref": "#/$defs/UtteranceLabel"
+    }
+   },
+   "required": [
+    "labeler_id",
+    "labeled_at",
+    "confidence",
+    "label"
+   ],
+   "title": "Annotation[UtteranceLabel]",
+   "type": "object"
+  },
+  "NeedsExpert": {
+   "additionalProperties": false,
+   "properties": {
+    "flag": {
+     "title": "Flag",
+     "type": "boolean"
+    },
+    "reason": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Reason"
+    }
+   },
+   "required": [
+    "flag"
+   ],
+   "title": "NeedsExpert",
+   "type": "object"
+  },
+  "Source": {
+   "additionalProperties": false,
+   "description": "사례가 어디서 왔는지.",
+   "properties": {
+    "origin": {
+     "enum": [
+      "clinician_synthetic",
+      "separated_llm_draft_reviewed",
+      "deidentified_real",
+      "provided_example",
+      "ctgov_protocol",
+      "fixture"
+     ],
+     "title": "Origin",
+     "type": "string"
+    },
+    "detail": {
+     "minLength": 1,
+     "title": "Detail",
+     "type": "string"
+    },
+    "author_id": {
+     "minLength": 1,
+     "title": "Author Id",
+     "type": "string"
+    },
+    "author_independent_of_engine_work": {
+     "title": "Author Independent Of Engine Work",
+     "type": "boolean"
+    },
+    "created_at": {
+     "format": "date-time",
+     "title": "Created At",
+     "type": "string"
+    },
+    "not_derived_from_existing_sets": {
+     "title": "Not Derived From Existing Sets",
+     "type": "boolean"
+    }
+   },
+   "required": [
+    "origin",
+    "detail",
+    "author_id",
+    "author_independent_of_engine_work",
+    "created_at",
+    "not_derived_from_existing_sets"
+   ],
+   "title": "Source",
+   "type": "object"
+  },
+  "Span": {
+   "additionalProperties": false,
+   "description": "원문(input.text 또는 기록) 안의 문자 오프셋 [start, end).",
+   "properties": {
+    "start": {
+     "minimum": 0,
+     "title": "Start",
+     "type": "integer"
+    },
+    "end": {
+     "minimum": 0,
+     "title": "End",
+     "type": "integer"
+    }
+   },
+   "required": [
+    "start",
+    "end"
+   ],
+   "title": "Span",
+   "type": "object"
+  },
+  "UtteranceInput": {
+   "additionalProperties": false,
+   "description": "엔진에 줄 수 있는 입력. 라벨 정보 없음.\n\nkind=conflict: (기준, 인용, 원문) -> evidence_directness.check\nkind=value: (필드, 값, 단위, 원문) -> value_grounding.ground / ground_lab",
+   "properties": {
+    "kind": {
+     "enum": [
+      "conflict",
+      "value"
+     ],
+     "title": "Kind",
+     "type": "string"
+    },
+    "text": {
+     "minLength": 1,
+     "title": "Text",
+     "type": "string"
+    },
+    "criterion": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Criterion"
+    },
+    "quote": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Quote"
+    },
+    "holds": {
+     "default": "no",
+     "enum": [
+      "yes",
+      "no"
+     ],
+     "title": "Holds",
+     "type": "string"
+    },
+    "field": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Field"
+    },
+    "value": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "integer"
+      },
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Value"
+    },
+    "unit": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Unit"
+    },
+    "reference_date": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Reference Date"
+    }
+   },
+   "required": [
+    "kind",
+    "text"
+   ],
+   "title": "UtteranceInput",
+   "type": "object"
+  },
+  "UtteranceLabel": {
+   "additionalProperties": false,
+   "description": "decision: accept = 이 인용/값으로 확정해도 됨, hold = 확정하면 안 됨.",
+   "properties": {
+    "decision": {
+     "enum": [
+      "accept",
+      "hold"
+     ],
+     "title": "Decision",
+     "type": "string"
+    },
+    "category": {
+     "minLength": 1,
+     "title": "Category",
+     "type": "string"
+    },
+    "hearsay": {
+     "title": "Hearsay",
+     "type": "boolean"
+    },
+    "approx": {
+     "title": "Approx",
+     "type": "boolean"
+    },
+    "conflict": {
+     "title": "Conflict",
+     "type": "boolean"
+    },
+    "threshold_crossing": {
+     "anyOf": [
+      {
+       "type": "boolean"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Threshold Crossing"
+    },
+    "concept_cluster": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Concept Cluster"
+    },
+    "source_priority_note": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Source Priority Note"
+    }
+   },
+   "required": [
+    "decision",
+    "category",
+    "hearsay",
+    "approx",
+    "conflict"
+   ],
+   "title": "UtteranceLabel",
+   "type": "object"
+  }
+ },
+ "additionalProperties": false,
+ "properties": {
+  "item_id": {
+   "minLength": 1,
+   "title": "Item Id",
+   "type": "string"
+  },
+  "needs_expert": {
+   "$ref": "#/$defs/NeedsExpert"
+  },
+  "adjudication": {
+   "$ref": "#/$defs/Adjudication"
+  },
+  "source": {
+   "$ref": "#/$defs/Source"
+  },
+  "layer": {
+   "const": "G-U",
+   "title": "Layer",
+   "type": "string"
+  },
+  "input": {
+   "$ref": "#/$defs/UtteranceInput"
+  },
+  "annotations": {
+   "items": {
+    "$ref": "#/$defs/Annotation_UtteranceLabel_"
+   },
+   "minItems": 1,
+   "title": "Annotations",
+   "type": "array"
+  },
+  "final": {
+   "anyOf": [
+    {
+     "$ref": "#/$defs/UtteranceLabel"
+    },
+    {
+     "type": "null"
+    }
+   ],
+   "default": null
+  }
+ },
+ "required": [
+  "item_id",
+  "needs_expert",
+  "adjudication",
+  "source",
+  "layer",
+  "input",
+  "annotations"
+ ],
+ "title": "UtteranceRecord",
+ "type": "object"
+}

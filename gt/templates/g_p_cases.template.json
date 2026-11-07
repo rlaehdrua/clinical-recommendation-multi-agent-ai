@@ -1,0 +1,36 @@
+{
+ "_template": "TEMPLATE: 실제 사례·라벨이 아닙니다. <...> 칸을 채워 새 파일로 저장하세요. 이 파일 자체는 GT가 아닙니다",
+ "layer": "G-P",
+ "items": [
+  {
+   "item_id": "<P-0001>",
+   "input": {
+    "patient_id": "<환자 ID>",
+    "record_ref": {
+     "path": "<기록 위치 (저장소 밖 가능)>",
+     "sha256": "<64자리 sha256>"
+    },
+    "trial_id": "<NCT...>",
+    "parsed_store_ref": {
+     "path": "<...>",
+     "sha256": "<...>"
+    },
+    "institution_country": "<ISO 국가 코드 또는 빈칸>",
+    "grid": {
+     "gc_item_id": "<C-0001 (국가 격자일 때만)>",
+     "criterion_id": "<rule_id>",
+     "country_cell": "<in_scope|out_of_scope|unknown>",
+     "age_band": "<below_both|between|above_both>"
+    }
+   },
+   "source": {
+    "origin": "<clinician_synthetic|separated_llm_draft_reviewed|deidentified_real|provided_example|ctgov_protocol>",
+    "detail": "<사례가 어디서 왔는지: 작성자, 방법, 원 문서>",
+    "author_id": "<작성자 ID>",
+    "author_independent_of_engine_work": "<true|false>",
+    "created_at": "<ISO 8601 시각>",
+    "not_derived_from_existing_sets": "<true|false: held-out 1-6·회귀·테스트 문장에서 가져오지 않았음>"
+   }
+  }
+ ]
+}

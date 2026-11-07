@@ -1,0 +1,21 @@
+{
+ "_template": "TEMPLATE: 실제 사례·라벨이 아닙니다. <...> 칸을 채워 새 파일로 저장하세요. 이 파일 자체는 GT가 아닙니다",
+ "set_id": "<set7_conflict 등. FIXTURE_ONLY로 시작하면 안 됨>",
+ "gt_version": "<gt-v1.0>",
+ "fixture_only": "<false>",
+ "description": "<세트 설명>",
+ "blinding": {
+  "attested_by": "<GT 책임자>",
+  "attested_at": "<ISO 8601>",
+  "labelers_saw_engine_output": "<false 만 허용>",
+  "adjudicator_saw_engine_output": "<false 만 허용>",
+  "authors_saw_engine_dictionaries": "<false 만 허용>",
+  "engine_fields_absent": "<true 만 허용>",
+  "storage": "<원문 보관 위치>",
+  "statement": "<블라인딩 진술 (20자 이상)>"
+ },
+ "protocol_ref": {
+  "path": "<gt/protocol/annotation_protocol_v1.md>",
+  "sha256": "<...>"
+ }
+}

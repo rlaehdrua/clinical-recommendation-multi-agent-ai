@@ -1,0 +1,27 @@
+{
+ "_template": "TEMPLATE: 실제 사례·라벨이 아닙니다. <...> 칸을 채워 새 파일로 저장하세요. 이 파일 자체는 GT가 아닙니다",
+ "layer": "G-C",
+ "items": [
+  {
+   "item_id": "<C-0001>",
+   "input": {
+    "trial_id": "<NCT...>",
+    "criterion_id": "<동결 파싱본 rule_id>",
+    "criterion_text": "<기준 원문>",
+    "trial_source": "<CT.gov 원문 위치>",
+    "parsed_store_ref": {
+     "path": "<data/parsed/NCT....json>",
+     "sha256": "<64자리 sha256>"
+    }
+   },
+   "source": {
+    "origin": "<clinician_synthetic|separated_llm_draft_reviewed|deidentified_real|provided_example|ctgov_protocol>",
+    "detail": "<사례가 어디서 왔는지: 작성자, 방법, 원 문서>",
+    "author_id": "<작성자 ID>",
+    "author_independent_of_engine_work": "<true|false>",
+    "created_at": "<ISO 8601 시각>",
+    "not_derived_from_existing_sets": "<true|false: held-out 1-6·회귀·테스트 문장에서 가져오지 않았음>"
+   }
+  }
+ ]
+}
