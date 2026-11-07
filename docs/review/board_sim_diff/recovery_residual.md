@@ -3,6 +3,8 @@
 기준: `origin/integration/dcvc` 64a5011 (PR #20 0628cb5 병합 f18f829, PR #25 병합 포함).
 합성 데이터만 사용했고 LLM 호출은 없습니다. `policy.py`·`pipeline.py`는 이 브랜치에서 고치지 않았습니다.
 
+**상태 (2026-11-07):** R1·R2 모두 수정했습니다. 수정 내용과 VERIFICATION_PENDING 8쌍의 실제 원인은 `docs/review/pr20_recovery_fix.md`를 보세요. 아래 패치는 적용하지 않았고, 그 문서의 상태 계약이 대체합니다.
+
 ## 144d226 회귀 결과
 
 | 대상 | 결과 |
