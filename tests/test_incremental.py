@@ -272,10 +272,10 @@ def test_failed_reevaluation_blocks_stale_result(monkeypatch):
     s.add(P, "ecog", 0, source_type="clinical_record")
     real = rule_engine.evaluate
 
-    def flaky(rule, profile):
+    def flaky(rule, profile, *args, **kwargs):
         if rule.field == "ecog":
             raise RuntimeError("민감할 수 있는 메시지 ECOG 0")
-        return real(rule, profile)
+        return real(rule, profile, *args, **kwargs)
     monkeypatch.setattr(incremental.rule_engine, "evaluate", flaky)
     r = update(st0, before, snap(s), parsed, POLICY)
     ecog = _crit(r.state, "I2")

@@ -132,6 +132,38 @@ _OTHER_PERSON = (r"아버지|아버님|어머니|어머님|부친|모친|엄마|
                  r"\b(?:donor|nurse|roommate|bedmate|neighbou?r|index\s+case|father|mother|mom|dad|parents?|spouse|husband|wife|partner|sibling|brother|sister|son|daughter|child(?!\s*-?\s*pugh)|"
                  r"aunt|uncle|cousin|niece|nephew|friend|grand(?:mother|father)|family(?!\s+history)|(?:another|other)\s+(?:patient|person)|not\s+(?:our|the|this|my)\s+patient|(?:neighbou?ring|previous|preceding|next|another|other)\s+case|case\s+(?:discussed|presented|reviewed)\s+(?:before|after|prior))\b")
 _ABOUT_OTHER = re.compile(_OTHER_PERSON, re.IGNORECASE)
+# M: 과거 시점 표현 (L 잔여 '표시 없는 과거 값'). _PAST에 없는 말: 연도만 적은 과거, 진단·입원·항암 당시, 수치의 최저점(nadir)
+_PAST_EXTRA = re.compile(r"\b(?:back\s+in|historic(?:al)?|historically|at\s+(?:the\s+time\s+of\s+)?diagnosis|at\s+baseline\s+in|nadir|"
+                         r"(?:one|two|three|four|five|six|seven|eight|nine|ten|several|a\s+few|many|a|an)\s+(?:days?|weeks?|months?|years?)\s+ago|"
+                         r"during\s+(?:the\s+|his\s+|her\s+|that\s+)?(?:\w+\s+){0,3}(?:admission|hospitali[sz]ation|stay|chemo\w*|cycle|treatment|pregnancy))\b|"
+                         r"재작년|작년|예전|당시|진단\s*(?:시|때)|입원\s*(?:중|때)", re.IGNORECASE)
+_YEAR = re.compile(r"(?<![\d./-])((?:19|20)\d{2})(?![\d/-])")
+_CURRENT = re.compile(r"\b(?:today|today's|tonight|this\s+(?:morning|am|afternoon|evening|week|visit|admission)|now|currently|current|latest|most\s+recent|"
+                      r"am\s+labs|this\s+am)\b|오늘|금일|금번|현재|방금|이번", re.IGNORECASE)
+# 기록이 현재(최근) 결과가 없다고 말함: 시점 표시 없는 값은 지금 값으로 보지 않음
+_NO_CURRENT = re.compile(r"\bno\s+(?:\w+\s+){0,2}(?:recent|current|new|newer|later|follow-?up|repeat)\s+(?:\w+\s+){0,1}(?:labs?|results?|counts?|cbc|values?|bloods?|tests?|assessment)\b|"
+                         r"\bnothing\s+(?:newer|new|more\s+recent|since|later)\b|\bnot\s+been\s+(?:checked|repeated|rechecked|tested|seen)\s+since\b|"
+                         r"\bno\s+(?:later|newer)\b|\bno\s+current\s+(?:\w+\s+)?(?:on\s+file|available|recorded)|"
+                         r"이후\s*(?:추적\s*)?(?:검사|결과)\s*(?:가|는)?\s*없|최근\s*(?:검사|결과)\s*(?:가|는)?\s*없|그\s*뒤로\s*(?:검사|결과)\s*없", re.IGNORECASE)
+
+
+def _ref_year() -> int:
+    from . import config
+    return int(config.reference_date()[:4])
+
+
+def past_text(text: str) -> bool:
+    """이 절이 과거 시점의 값을 말하는가. 현재 표시(today, 오늘 등)가 있으면 과거로 보지 않음.
+
+    연도만 적힌 경우: 기준일의 연도보다 이전이면 과거. 일 단위 날짜가 있으면 이 규칙을 쓰지 않음(날짜 비교는 기간 조건이 맡음)."""
+    if _CURRENT.search(text):
+        return False
+    if _PAST.search(text) or _PAST_EXTRA.search(text):
+        return True
+    if _FULL_DATE.search(text):
+        return False
+    years = [int(y) for y in _YEAR.findall(text)]
+    return bool(years) and max(years) < _ref_year()
 _OWN_SUBJECT = re.compile(r"\b(?:our|this|the)\s+patient\b(?<!not\sour\spatient)(?<!not\sthe\spatient)(?<!not\sthis\spatient)|\bours\b|환자\s*(?:본인|자신)|본인", re.IGNORECASE)
 _NEXT_TO_OTHER = re.compile(rf"(?:\s*(?:세|살|-?old|years?\s+old|남성|여성|남자|여자|male|female))*\s*(?:{_OTHER_PERSON})", re.IGNORECASE)  # 값 바로 뒤: "남성 보호자", "62세 아버지", "62-year-old female donor"
 _OF_OTHER = re.compile(rf"(?:{_OTHER_PERSON})(?:\s*(?:본인|자신))?(?:의|는|은|가|이|'s)?[\s,()]*(?:나이|연령|성별|\bage[d]?\b|\bis\b|\bwas\b|:)?\s*(?:는|은|가|이|of)?\s*$", re.IGNORECASE)  # 값 바로 앞
@@ -158,7 +190,7 @@ _STATUS = re.compile(
     r"복사|붙여\s*넣|자동\s*입력|기본값|이월|\b(?:copied|carr(?:y|ied)[\s-]+forward|copy[\s-]+forward|auto-?(?:populated|filled)|pre-?(?:filled|populated)|template)\b|"  # 측정이 아니라 옮겨 적은 값
     r"폐기|무효|취소|부정확|용혈(?!성)|부적합|오류|신뢰\s*불가|혼입|입력값|검체\s*(?:오염|응고|바뀜|뒤바뀜|혼동|부족|불량|분실|누락)|(?:오염|응고)된?\s*검체|"  # 무효
     r"\b(?:pending|awaiting|awaited|unverified|not\s+yet\s+(?:received|verified|scored)|has\s+not\s+scored|in\s+progress|unable|insufficient|cancell?ed|mislabell?ed|spurious|artifact\w*|artefact\w*|factitious|tbd|to\s+be\s+(?:confirmed|determined)|unreliable|"
-    r"not\s+(?:yet\s+)?(?:done|run|performed|measured|assessed|evaluated|obtained|tested|rechecked|repeated|drawn|resulted|reported|back|available|valid|reliable)|wrong\s+(?:chart|patient|sample)|"
+    r"not\s+(?:yet\s+)?(?:done|run|performed|measured|assessed|evaluated|obtained|tested|rechecked|repeated|drawn|resulted|reported|back|available|valid|reliable|verified|confirmed|released|finali[sz]ed)|wrong\s+(?:chart|patient|sample)|unconfirmed|suppressed|withheld|manual\s+review\s+failed|"
     r"invalid|void(?:ed)?|disregard\w*|lost|discarded|rejected|hemoly[sz]ed|hemolysis|clotted|contaminated|qns|error|erroneous)\b", re.IGNORECASE)
 _FUTURE = re.compile(r"예정|\b(?:ordered|requested|scheduled)\b", re.IGNORECASE)  # 앞으로 할 검사: 같은 절의 수치는 결과가 아니지만 다른 절의 값을 무효로 만들지는 않음
 _WEAK_MARK = re.compile(r"오더|처방|의뢰|요청|접수|신청|미확인")  # 약·협진·원인에도 쓰는 말이라 바로 붙어 있을 때만 검사 상태로 읽음
@@ -194,7 +226,7 @@ _ASSUMED = re.compile(r"가정|추정|추측|\b(?:assum\w*|presum\w*)\b", re.IGN
 _EARLIER_SAMPLE = re.compile(r"첫|처음|먼저|앞선|전회|\b(?:first|earlier|initial)\b", re.IGNORECASE)
 _LABEL_MARK = re.compile(r"\s*[:：]")  # "Pending: procalcitonin"은 뒤가 주어
 _RETEST_VALUE = re.compile(r"(?:재검|재측정|재채혈|repeat)\s*(?:결과|검사|값|result|value)?\s*(?:는|은|이|가|:)?\s*$|(?<!\d)[:：=]\s*$|\b(?:ours|mine)\b(?:\s*\([^)]*\))?\s*(?:is|was)?\s*$", re.IGNORECASE)  # 재검 값, "... resulted: 2.6"
-_BACK_REFERENCE = re.compile(r"(?:위|해당|상기|앞선?|그|이)\s*(?:검체|결과|검사|수치|값|샘플)|실제(?:로)?\s*(?:측정|검사|시행|채혈)|\b(?:that|this|the|above)\s+(?:result|sample|specimen|value|test)\b", re.IGNORECASE)
+_BACK_REFERENCE = re.compile(r"(?:위|해당|상기|앞선?|그|이)\s*(?:검체|결과|검사|수치|값|샘플)|실제(?:로)?\s*(?:측정|검사|시행|채혈)|\b(?:that|this|the|above)\s+(?:result|sample|specimen|value|test|number|reading)\b", re.IGNORECASE)
 
 
 def _other_subject(text: str, key: str | None) -> bool:
@@ -323,15 +355,51 @@ def _under_other_header(text: str, lo: int) -> bool:
     return other is not None and not _OWN_SUBJECT.search(text, other.end(), lo)
 
 
+_OTHER_CASE = re.compile(r"\bnext\s+door\b|\bfor\s+comparison\b|\bsimilar\s+(?:presentation|case)\b|\btumou?r\s+board\s+(?:also\s+)?(?:reviewed|discussed|presented)\b|"
+                         r"\bthat\s+case\b|\b(?:other|another)\s+(?:bed|room|ward)\b|옆\s*(?:방|자리|병실)|다른\s*(?:병실|증례|사례)", re.IGNORECASE)
+_POSSESSIVE = re.compile(r"\b(?:his|her|their)\b(?!\s+own\b)", re.IGNORECASE)
+
+
+_INTRO_OTHER = re.compile(r"\b(?:roommate|bedmate|bed-?neighbou?r)\b", re.IGNORECASE)  # 다른 사람을 장소로 소개: 뒤의 값은 그 사람의 값
+_OWN_BACK = re.compile(r"\b(?:ours|mine|our\s+patient|this\s+patient|the\s+patient)\b|(?<![가-힣])(?:이|본|우리)?\s*환자(?![가-힣]{0,1}(?:분|들))", re.IGNORECASE)
+_POSSESSIVE_BEFORE = re.compile(r"\b(?:his|her|their)\b(?!\s+own\b)(?:\s+[^\s,;:.]+){0,4}\s*$", re.IGNORECASE)
+
+
+def _other_before(text: str, lo: int) -> bool:
+    """같은 문장에서 값 앞에 다른 사람이 소개되고, 그 뒤에 이 환자로 돌아오는 표시가 없는가.
+
+    좁게 봄 (가족력·동반자 언급처럼 다른 사람이 나와도 값과 무관한 문장이 많음):
+    - 장소·증례로 소개된 다른 사람: "roommate in 12A, Hgb 7.1", "Next door in bed 3, total bilirubin 6.8", "tumor board ... for comparison"
+    - 다른 사람이 나온 뒤 값 바로 앞의 소유격: "Her husband ...; his serum creatinine 0.9"
+    """
+    intro = [m for p in (_INTRO_OTHER, _OTHER_CASE) for m in p.finditer(text, 0, lo)]
+    others = list(_ABOUT_OTHER.finditer(text, 0, lo))
+    possessive = bool(others) and bool(_POSSESSIVE_BEFORE.search(text, others[0].end(), lo))
+    if not (intro or possessive):
+        return False
+    last = max(m.end() for m in (intro or others))
+    return not _OWN_BACK.search(text, last, lo)
+
+
+def _possessive_other(body: str, start: int, lo: int) -> bool:
+    """값 앞의 소유격(his/her)이 앞 문장의 다른 사람을 가리키는가: "He cares for his mother. Her ECOG was 2"."""
+    if not _POSSESSIVE.search(body, start, lo):
+        return False
+    prev_end = start
+    prev_start = max((m.end() for m in ed._SENTENCE_BOUNDARY.finditer(body, 0, max(prev_end - 1, 0))), default=0)
+    prev = body[prev_start:prev_end]
+    return bool(_ABOUT_OTHER.search(prev) or _OTHER_CASE.search(prev)) and not _OWN_SUBJECT.search(prev)
+
+
 def _role(text: str, lo: int, hi: int, key: str | None = None) -> str | None:
     """검사 수치의 역할: 'measured', 'past', 측정값이 아니면 None."""
     before, after = _clause_around(text, lo, hi)
-    if _CONDITIONAL_HEAD.search(text[:lo]) or _under_other_header(text, lo) or _ASSUMED.search(after) or _other_variant(text, lo, key) or _no_result(before, after, key) or _REFERENCE_BEFORE.search(before) or _COMPARE_BEFORE.search(before) or _COMPARE_AFTER.match(after) or _NEGATED_BEFORE.search(before) \
+    if _CONDITIONAL_HEAD.search(text[:lo]) or _under_other_header(text, lo) or _other_before(text, lo) or _ASSUMED.search(after) or _other_variant(text, lo, key) or _no_result(before, after, key) or _REFERENCE_BEFORE.search(before) or _COMPARE_BEFORE.search(before) or _COMPARE_AFTER.match(after) or _NEGATED_BEFORE.search(before) \
             or (_NEGATED_AFTER.match(after) and not _CLEAN_AFTER.match(after)) \
             or _WHEN_BEFORE.search(before) or _WHEN_AFTER.match(after) or _retracted(text, hi):
         return None
     note = _PAREN_AFTER.match(text, hi)
-    return "past" if _PAST.search(before + " " + after) or (note and _PAST.search(note.group())) else "measured"
+    return "past" if past_text(before + " " + after) or (note and past_text(note.group())) else "measured"
 
 
 def _about_patient(field: str, text: str, lo: int, hi: int) -> bool:
@@ -339,6 +407,9 @@ def _about_patient(field: str, text: str, lo: int, hi: int) -> bool:
     before, after = _clause_around(text, lo, hi)
     if field != "sex" and (_HEARSAY.search(text[:hi]) or _HEARSAY.search(after)):
         return False
+    s_start = max((m.end() for m in ed._SENTENCE_BOUNDARY.finditer(text, 0, lo)), default=0)
+    if field != "sex" and (_other_before(text[s_start:], lo - s_start) or _possessive_other(text, s_start, lo)):
+        return False  # 같은 문장 앞의 다른 사람, 앞 문장의 다른 사람을 가리키는 소유격 (M)
     if _DENIED_AFTER.match(after) or _DENIED_BEFORE.search(before) or _NEXT_TO_OTHER.match(after) or _OF_OTHER.search(text[:lo]) or _retracted(text, hi):  # 쉼표 너머도 봄: "Her sister, age 41"
         return False
     if field == "sex":
@@ -362,7 +433,7 @@ def _past_mention(field: str, text: str, lo: int, hi: int) -> bool:
     before, after = _clause_around(text, lo, hi)
     if field == "age":
         return bool(_PAST_AGE_AFTER.match(after) or re.search(r"\bat\s+$", before, re.IGNORECASE))
-    return field == "ecog" and bool(_PAST.search(before + " " + after))
+    return field == "ecog" and (past_text(before + " " + after) or bool(_NO_CURRENT.search(text) and not _CURRENT.search(text)))
 
 
 # ---------------------------------------------------------------------------- 값 표현
@@ -453,7 +524,8 @@ def ground(field: str, value, source_text: str | None, *, key: str | None = None
     initial = normalize(field, evidence.split_source(source_text)[0])
     mentioned = _mentions(field, initial)
     current = {x for x, lo, hi in mentioned if not _past_mention(field, initial, lo, hi)}
-    in_record = any(_about_patient(field, initial, m.start(), m.end()) and not (current and _past_mention(field, initial, m.start(), m.end()))
+    in_record = any(_about_patient(field, initial, m.start(), m.end())
+                    and not ((current or field == "ecog") and _past_mention(field, initial, m.start(), m.end()))
                     for m in pat.finditer(initial)) or (field == "age" and _from_birth_year(v, initial, reference_date))
     stated, hedged = False, False
     answered: set[str] = set()
@@ -585,14 +657,32 @@ def _lab_numbers(lab: str, body: str, wanted: str | None = None) -> list[tuple[i
     key = _lab_key(lab)
     wanted = wanted or specimen.required(key)
     out = []
+    no_current = bool(_NO_CURRENT.search(body))
     for start, end in _sentence_spans(body):
         sentence = body[start:end]
         for lo, hi, number, owner in _linked_numbers(sentence, key):
             role = _role(sentence, lo, hi, key) if owner == key else None
+            if role and _possessive_other(body, start, start + lo):
+                role = None  # 앞 문장의 다른 사람을 가리키는 소유격 (M)
+            if role == "measured" and (_copied_note(body, start + hi) or (no_current and not _CURRENT.search(sentence))):
+                role = "past"  # 각주로 복사 표시된 값, 현재 결과가 없다고 적힌 기록의 시점 표시 없는 값 (M)
             if role and not _voided_elsewhere(body, start + lo, start + hi, key) and (
                     wanted == ANY_SPECIMEN or specimen.verdict(key, _value_specimen(body, start + lo, start + hi, key), wanted) != specimen.MISMATCH):
                 out.append((start + lo, start + hi, number, role))
     return out
+
+
+_FOOTNOTE_MARK = re.compile(r"\s*[^\s,;()]*?(\*+|†|‡|#)")
+_COPIED_NOTE = re.compile(r"cop(?:y|ied)|carr(?:y|ied)\s*forward|previous|prior|earlier|old|outside|imported|template|이전|복사|이월|외부", re.IGNORECASE)
+
+
+def _copied_note(body: str, hi: int) -> bool:
+    """값 바로 뒤의 각주 표시가 '복사·이전 기록' 각주를 가리키는가: "Hgb 10.2*" + "*copied from the previous note"."""
+    m = _FOOTNOTE_MARK.match(body, hi)
+    if not m:
+        return False
+    mark = re.escape(m.group(1))
+    return any(_COPIED_NOTE.search(n.group(1)) for n in re.finditer(rf"(?:^|\n)\s*{mark}(?!\*)\s*([^\n]+)", body))
 
 
 def _current_values(numbers: list[tuple[int, int, str, str]]) -> set[str]:
@@ -665,8 +755,8 @@ def ground_lab(lab: str, value, quote: str | None, source_text: str | None, *, k
                 continue  # 검체를 알 수 없는 값을 혈청이라고 추정하지 않음
             if role == "past":
                 continue  # 과거로 표시된 값은 현재 값의 근거가 아님 (현재 값이 없으면 보류)
-            if h.seg.role == "record" and not any(float(x[2]) == float(value) for x in in_record):
-                continue  # 다음 줄의 무효 선언은 구간 안에서 보이지 않음: 기록 전체로 본 결과를 따름
+            if h.seg.role == "record" and not any(float(x[2]) == float(value) and x[3] == "measured" for x in in_record):
+                continue  # 다음 줄의 무효 선언·복사 각주는 구간 안에서 보이지 않음: 기록 전체로 본 결과를 따름 (과거 값이면 보류)
             if _uncertain(body, lo, hi) if h.seg.role == "answer" else ed.hedged(ed._clause(body, lo, hi)):
                 hedged = True
             else:

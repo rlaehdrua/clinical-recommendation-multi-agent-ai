@@ -1,0 +1,35 @@
+diff --git a/tests/test_recovery_stress.py b/tests/test_recovery_stress.py
+index 9273787..8681e65 100644
+--- a/tests/test_recovery_stress.py
++++ b/tests/test_recovery_stress.py
+@@ -25,7 +25,7 @@ DOWN = SourceResponse(p_unreachable=1, p_no_answer=0)
+ UP = SourceResponse(p_unreachable=0, p_no_answer=0)
+ SCENARIOS = {"default": None, "patient_unreachable": {**DEFAULT_RESPONSES, "patient": DOWN, "document": UP}}
+ # default: 문서 게이트가 있으면 3쌍이 requested_documents_unresolved로 끝나 INFO_MISSING에 남음. 소진 여부는 동겸 결정 대기
+-EXPECTED_BLOCKED = {"default": 17, "patient_unreachable": 22}
++EXPECTED_BLOCKED = {"default": 19, "patient_unreachable": 21}  # M-2: 기간 조건 검사 기준을 규칙 엔진이 날짜로 판정
+ 
+ 
+ @pytest.fixture(scope="module")
+diff --git a/tests/test_six_stage_e2e.py b/tests/test_six_stage_e2e.py
+index 71cc3f7..4852e94 100644
+--- a/tests/test_six_stage_e2e.py
++++ b/tests/test_six_stage_e2e.py
+@@ -202,8 +202,6 @@ def _e2_only(monkeypatch, text):
+                text)
+ 
+ 
+-@pytest.mark.xfail(strict=True, reason="M 소관: 원문 서술이 서로 상충해도 모델이 한쪽만 인용하면 확정됨 "
+-                                       "(evidence_directness의 conflicting 검사가 서술 상충을 잡지 않음)")
+ def test_E_conflicting_narrative_stops_confirmation(monkeypatch):
+     s = _e2_only(monkeypatch, f"합성 환자 62세 남성. {CONFLICT_NO}. 이전 병원 기록: {CONFLICT_YES}.")
+     assert s.matches[TID].eligibility != "ELIGIBLE"
+@@ -259,8 +257,6 @@ def test_H_record_value_clear_fail(monkeypatch, source, expect):
+     assert s.matches[TID].eligibility == expect
+ 
+ 
+-@pytest.mark.xfail(strict=True, reason="M 소관(시점): 기간 조건이 붙은 검사 기준은 규칙 엔진이 날짜 계산 없이 LLM으로 넘김 "
+-                                       "(tools/rule_engine.evaluate lab: time_window_days -> None)")
+ def test_date_window_lab_is_evaluated_deterministically():
+     from ctrec.tools import rule_engine
+     dp = trial_store.load(H.demo_trial(), store_dir=config.TRIAL_SETS["default"][1])

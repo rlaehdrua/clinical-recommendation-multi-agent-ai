@@ -86,7 +86,7 @@ def evaluate_trial(view: FactEvidenceView, parsed: ParsedTrial, trial: dict, ref
         for rule in parsed.rules:
             review = matcher._meta(parsed, rule).review
             raw[rule.rule_id] = (matcher._review_assessment(rule, review) if review
-                                 else rule_engine.evaluate(rule, profile))
+                                 else rule_engine.evaluate(rule, profile, reference_date))
     out: dict[str, CriterionAssessment | None] = {}
     reasons: dict[str, str] = {}
     excluded = view.excluded()
