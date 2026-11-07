@@ -121,7 +121,7 @@ def assert_not_evaluated(r: Result, tid: str, code: str) -> None:
     assert r.ranked == [] and r.rec.recommended == []
     assert "부적격 아님" in r.excluded[tid]
     assert label(r.match.match_status) != label("CRITERIA_MATCH")
-    assert ("CLINICIAN_REVIEW", "evaluation_failed") in r.actions
+    assert ("CLINICIAN_REVIEW", "evaluation_failed" if code not in matcher.NO_EVIDENCE_CODES else code) in r.actions
 
 
 def assert_confirmed(r: Result, tid: str) -> None:
