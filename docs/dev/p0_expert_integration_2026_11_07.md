@@ -112,9 +112,9 @@ Git 병합 충돌은 없습니다. 제안 패치 `expert_boundary_matcher.patch`
 
 | 구성 | 결과 |
 |---|---|
-| `b2100d8` 대비 후보 | 아래 최종 보고 참고 |
+| 후보 | 3057 passed, 10 skipped, 3 xfailed, exit 0 |
 | 후보 + #22 + #25 | 3099 passed, 10 skipped, 3 xfailed, exit 0 (`81ba0ae` 기준, 이후 문서만 변경) |
-| WP6 결합 | WP6 테스트 포함 실행 |
+| WP6 결합 (#20 포함, WP6 테스트 실행) | 3204 passed, 9 skipped, 3 xfailed, exit 0 |
 
 xfail 3건은 분류 밖 기준 1건과 N2의 표시 경계 2건입니다. 이번에 xfail을 추가하지 않았습니다. 건너뜀 1건 증가는 PR #20 전의 `test_expert_boundary_wp6.py`이며 검증이 아닙니다. CI는 없어 모두 로컬 실행입니다.
 
