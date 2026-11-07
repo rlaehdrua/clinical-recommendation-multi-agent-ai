@@ -123,6 +123,19 @@ def test_procedural_failure_stays_a_mismatch_not_a_review(env):
 RAW_NO_CONSENT = "Able to give informed consent"
 
 
+@pytest.mark.parametrize("rules", [
+    pytest.param([rule("I1", "Adequate organ function", category="lab", underspecified=True)], id="alone"),
+    pytest.param([rule("I1", "Adequate organ function", category="lab", underspecified=True), rule("I2", CONSENT)],
+                 id="with_procedural"),
+    pytest.param([rule("I1", CONSENT, underspecified=True)], id="procedural_underspecified"),
+])
+def test_unresolved_underspecified_stays_on_its_own_path(env, rules):
+    """대조군: 미확인 underspecified 기준은 P3 대상이 아니라 기존 의사 확인 경로입니다. underspecified 정책은 이 수정과 분리합니다."""
+    r = run("SYN-US", rules)
+    assert (r.match.eligibility, r.match.match_status, r.match.evaluation_error) == ("UNCERTAIN", "NEEDS_REVIEW", None)
+    assert r.pair == C.PairStatus.EXPERT_REVIEW and r.actions == {("CLINICIAN_REVIEW", "criterion_underspecified")}
+
+
 # ------------------------------------------------------------ 저장 결과·Inspector
 @pytest.mark.parametrize("rules, answers, code", REVIEW)
 def test_saved_result_and_inspector_show_the_review_label(env, tmp_path, rules, answers, code):
