@@ -57,6 +57,8 @@ def merge(base: CriterionAssessment, ev: CriterionAssessment) -> CriterionAssess
 
 @dataclass
 class ContractSession(Session):
+    engine_recovery_pending = staticmethod(lambda: False)  # 정책 엔진 모드에서만 실행기가 바꿈 (web/engine_runner.activate)
+
     contract_root: Path | None = None  # IR·계약 사이드카 (기본: 저장소 contracts/)
     contract_parsed_dir: Path | None = None  # 잠긴 기준표 위치 (기본: config.PARSED_DIR, 테스트만 바꿈)
     initial_text: str = ""
@@ -174,7 +176,7 @@ class ContractSession(Session):
             return {"status": "skipped", "reason": f"질문 예산({self.question_budget}개) 소진"}
         targets = self.open_candidates()
         plan = self._contract_plan(targets)
-        llm_needed = bool(super().uncertain()) or self.pending_physician_review()
+        llm_needed = bool(super().uncertain()) or self.pending_physician_review() or self.engine_recovery_pending()
         if not (plan or llm_needed):
             return {"status": "skipped", "reason": "판정 불가 항목과 의사 확인용 미질문 항목 없음"}
         self.rounds += 1

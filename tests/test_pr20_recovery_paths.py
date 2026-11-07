@@ -1,8 +1,8 @@
 """PR #20 복구 경로의 나머지 검증 (합성 데이터, LLM 호출 없음). test_pr20_review_regressions.py가 다루지 않는 경로.
 
 - 앞부분: 실제 Session으로 failed_sources·UNREACHABLE·BLOCKED_FAILURE·DEFER·대체 문서 요청 경로 확인 (통과해야 함)
-- test_residual_*: 병합본에서 재현되는 남은 결함. 기대값은 낮추지 않고 strict xfail로 둠 - 정책이 고쳐지면 XPASS로 실패해
-  표시를 지우게 됩니다. 재현 입력·호출 경로·최소 패치: docs/review/board_sim_diff/recovery_residual.md
+- R1·R2: H에서 strict xfail로 고정했던 결함. 수정 뒤 표시를 지워 통과 테스트로 전환 (기대값은 그대로).
+  재현 입력·호출 경로: docs/review/board_sim_diff/recovery_residual.md, 수정 내용: docs/review/pr20_recovery_fix.md
 """
 
 from __future__ import annotations
@@ -87,19 +87,10 @@ def test_spaced_lab_key_links_the_question_to_its_document(run):
 
 
 def test_rephrase_falls_back_to_a_document_after_second_no_answer(run):
-    """정책 수준: 바꿔 묻기도 "모름"이면 다음 계획에 문서 요청이 나옴. 실행 여부는 아래 Session 결함 테스트."""
+    """바꿔 묻기도 "모름"이면 그 뒤 문서 요청이 실제 Session에서 실행됨 (R2 전에는 계획에만 남고 끝남)."""
     r = run([ECOG, HB, *KEEP_LOOP_OPEN], LegacyAdapterPolicy(rephrase=True))
     ecog = [a.action for a in r.asked if a.action.info_key == "ecog"]
     assert [a.reason_code for a in ecog if a.source_id == PATIENT][-1] == C.REPHRASE
-    assert [(a.action_type, a.source_id) for a in r.policy.propose(r.cohort()) if a.info_key == "ecog"] == [
-        ("REQUEST_DOCUMENT", RECORD)]
-
-
-@pytest.mark.xfail(strict=True, reason="pipeline.py의 질문 루프가 열린 항목만 보고 끝나 정책의 남은 문서 요청이 실행되지 않음")
-def test_residual_session_executes_the_document_the_policy_still_proposes(run):
-    """Session.needs_clarification은 정책의 남은 행동을 보지 않음. base부터 같고 pipeline.py(보호 파일) 영역."""
-    r = run([ECOG, HB, *KEEP_LOOP_OPEN], LegacyAdapterPolicy(rephrase=True))
-    assert r.session.rounds < ROUNDS  # 시나리오 전제: 라운드 한도가 아니라 루프 조건으로 끝남
     assert requests(r, "ecog") == [RECORD]
 
 
