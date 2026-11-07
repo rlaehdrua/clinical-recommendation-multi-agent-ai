@@ -40,7 +40,7 @@
 | 조회 | `load_run_v2(run_dir, scanner=s)` | 걸린 기록을 빼고 `line N: sensitive_record:<종류>`. trace 폴백도 동일 |
 | 조회 | `inspect_run_checked` | 정상 기록과 진단에 같은 `CheckedScanner` 적용. 표시할 수 없는 값(무한대 비용)은 값 없는 `AuditError` |
 | 조회 | `export_metrics(run_dirs, scanner)` | scanner 없으면 `AuditError`. 식별자·폴더 이름 없음, `pair_ref`는 호출마다 새 키 |
-| 저장·조회 | 자유 서술 (`free_text`) | 공백·비ASCII가 있거나 256자를 넘는 문자열. 저장은 거부, scanner 조회는 제외. `required_fields`는 기준 항목 이름이라 공백 3개까지 허용 |
+| 저장·조회 | 자유 서술 (`free_text`) | 공백·비ASCII가 있거나 256자를 넘는 문자열. 저장은 거부, scanner 조회는 제외. `required_fields`는 기준 항목 이름이라 공백 3개까지 허용. `info_key`는 공백이 있으면 `lab:`·`basis:lab:` 뒤 소문자 단어 2~4개만 허용 |
 | 읽기 상한 | 파일 64MiB, 문제 줄 10,000 초과 | 끝까지 읽지 않고 `AuditError`. 지표는 그 폴더만 `records_unreadable` 또는 `issues_file_too_large` / `issues_file_too_damaged` |
 
 ### scanner 실패 처리 (`audit.CheckedScanner`)

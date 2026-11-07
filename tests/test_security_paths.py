@@ -15,8 +15,11 @@ from pydantic import BaseModel
 import test_reversal_metrics as T
 from ctrec.engine import audit
 from ctrec.engine import audit_inspection as ai
+from ctrec.engine import contracts as C
 from ctrec.engine import reversal_metrics as rm
+from ctrec.engine.baselines import policies
 from ctrec.eval_hygiene import LeakScanner
+from ctrec.sim import demo, runner
 
 ROOT = Path(__file__).resolve().parents[1]
 FREE = "환자는 어제 흉통을 호소함"
@@ -369,3 +372,81 @@ def test_no_operational_code_reads_metrics_without_a_scanner():
             for name in ("compute_for_runs", "load_run_inputs", "compute_reversal_metrics", "write_metrics"):
                 unchecked += [f"{f.name}:{c.lineno}:{name}" for c in _calls(f, name)]
     assert unchecked == []
+
+
+# --- info_key의 공백 검사 항목 (PR #20) ---
+
+SPACED_LABS = ["lab:total bilirubin", "lab:creatinine clearance", "lab:absolute neutrophil count"]
+INFO_KEY_NARRATIVES = ["allergic to penicillin", ENGLISH, "john smith 1975-03-02", "basis:allergic to penicillin",
+                       "biomarker:EGFR was positive", "lab:Patient Has Rash", "lab:one two three four five",
+                       "lab: chest pain", "one two three four five six"]
+
+
+def with_info_key(value):
+    base = record()
+    action = C.Action.model_validate({**base.action.model_dump(mode="json"), "info_key": value})  # 계약이 받는 값만 시험
+    return base.model_copy(update={"action": action})
+
+
+@pytest.mark.parametrize("value", [*SPACED_LABS, "basis:lab:total bilirubin", "lab:25-hydroxyvitamin d",
+                                   "lab:white blood cell count"])
+def test_a_spaced_lab_name_in_info_key_is_not_free_text(value):
+    """PR #20의 항목 키. 서술로 보면 WP6 기록이 저장되지 않음."""
+    assert not audit.has_free_text(with_info_key(value))
+
+
+@pytest.mark.parametrize("value", ["age", "ecog", "lab:hemoglobin", "basis:age", "biomarker:EGFR+ALK", "criterion:NCT01:R1",
+                                   "review:underspecified", "retrieve"])
+def test_a_spaceless_info_key_stays_a_code(value):
+    assert not audit.has_free_text(with_info_key(value))
+
+
+@pytest.mark.parametrize("value", SPACED_LABS)
+@pytest.mark.parametrize("field", ["policy_version", "evaluator_version", "fact_version_before", "fact_version_after", "facts_added"])
+def test_the_same_lab_name_outside_info_key_is_free_text(field, value):
+    assert audit.has_free_text(record(**{field: (value,) if field == "facts_added" else value}))
+
+
+@pytest.mark.parametrize("value", INFO_KEY_NARRATIVES)
+def test_narrative_in_info_key_is_free_text_even_within_the_contract_pattern(value):
+    """계약 패턴은 공백 문장을 받음. _FIELD_NAME(ASCII 네 단어)을 그대로 쓰면 앞쪽 값들이 통과함."""
+    assert audit.has_free_text(with_info_key(value))
+
+
+@pytest.mark.parametrize("value", [FREE, "lab:" + "x" * 300], ids=["korean", "too_long"])
+def test_info_key_outside_the_contract_pattern_is_free_text(value):
+    base = record()
+    assert audit.has_free_text(base.model_copy(update={"action": base.action.model_copy(update={"info_key": value})}))
+
+
+def test_required_fields_rule_did_not_change():
+    base = record()
+    def required(*values):
+        return base.model_copy(update={"action": base.action.model_copy(update={"required_fields": values})})
+    assert not audit.has_free_text(required("lab:corrected calcium", "ecog"))
+    assert audit.has_free_text(required("one two three four five"))
+    assert audit.has_free_text(required(FREE))
+
+
+def test_a_narrative_info_key_is_refused_at_write_and_excluded_at_read(tmp_path):
+    good, bad = with_info_key("lab:total bilirubin"), with_info_key(ENGLISH)
+    assert audit.sensitive_findings(good) == []
+    assert audit.sensitive_findings(bad) == [audit.FREE_TEXT]
+    writer = audit.RecordWriter(tmp_path / audit.RECORDS_FILE, good.run_id)
+    writer.write(good)
+    with pytest.raises(audit.AuditError, match=audit.FREE_TEXT):
+        writer.write(bad.model_copy(update={"step": good.step + 1}))
+    assert len(audit.load_records(tmp_path / audit.RECORDS_FILE).records) == 1
+    checked = audit.CheckedScanner(LeakScanner())
+    assert audit.record_findings(good, checked) == []
+    assert audit.record_findings(bad, checked) == [audit.FREE_TEXT]
+
+
+@pytest.mark.parametrize("pid", sorted(set(policies()) - {"no_action"}))  # no_action은 기록을 만들지 않음
+def test_real_wp6_records_with_a_spaced_lab_key_pass_the_free_text_check(pid):
+    """오프라인 실행기가 실제로 만든 기록. 데모에 공백 항목이 없어지면 이 시험은 아무것도 증명하지 않으므로 함께 확인."""
+    cohort = demo.cohort()
+    budget = C.EffortBudget(coordinator_minutes=400, clinician_minutes=60, horizon_steps=10)
+    records = runner.run(runner.build_spec("t", pid, cohort, budget, 1), cohort).records
+    assert records and not [r.action.action_id for r in records if audit.has_free_text(r)]
+    assert any(" " in (r.action.info_key or "") for r in records)

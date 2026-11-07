@@ -607,7 +607,7 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 |---|---|---|
 | 1 | **조회 시 값 검사.** `inspect_run_checked`, `to_trace_checked`, `load_run_v2(scanner)`. scanner가 걸러낸 기록은 값 없이 `sensitive_record:<종류>`로만 보고하고, 문제 메시지에는 파일 내용을 넣지 않음 | `engine/audit.py`, `engine/audit_inspection.py`, `engine/audit_diagnostics.py` |
 | 2 | **지표 내보내기 진입점 `export_metrics`.** scanner가 없으면 `AuditError`. 기본 출력에서 원시 ID를 빼고, 호출마다 다른 키로 `pair_ref`를 만듦. 익명화가 아니라 구분용 값임 | `engine/reversal_metrics.py` |
-| 3 | **자유 서술 저장 거부(`free_text`).** 공백·비ASCII·초장 값이 든 기록은 저장하지 않음. 공백 없는 ASCII 서술은 찾지 못함 | `engine/audit.py` |
+| 3 | **자유 서술 저장 거부(`free_text`).** 공백·비ASCII·초장 값이 든 기록은 저장하지 않음. 공백 없는 ASCII 서술은 찾지 못함. `info_key`의 공백 값(#20)은 `lab:`·`basis:lab:` 뒤 소문자 단어 2~4개인 검사 항목 모양만 허용. 이 모양을 흉내 낸 서술(`lab:has severe rash`)은 구분하지 못함 | `engine/audit.py` |
 | 4 | **읽기 상한.** 감사 파일 64MiB, 문제 줄 10,000 | `engine/audit.py`, `engine/reversal_metrics.py` |
 | 5 | **오프라인 실행기 연결.** 쓰기에 환자 문장 금지 목록, 읽기에 scanner를 넘기고, `reversal_metrics.json`의 `value_scan`이 `no_findings`가 아니면 exit 1 | `offline_records.py`, `scripts/run_offline_records.py` |
 | 6 | **CLI 실패 출력은 예외 종류만.** 합성 데이터 개발용 `CTREC_CLI_TRACEBACK=1`, 콘솔 축소 옵션 `--redact-console`(기본 꺼짐). 오케스트레이터 `tool_error` 기록도 종류만 | `cli.py`, `orchestrator.py` |

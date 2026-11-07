@@ -45,10 +45,13 @@ FREE_TEXT = "free_text"
 KNOWN_SCAN_KINDS = frozenset({"original_id", "label_token", "case_id_shape", "forbidden_text", FREE_TEXT})
 SCAN_OTHER = "other"
 # 계약이 형식을 두지 않는 문자열 필드에 들어온 서술을 찾음 (contracts.py는 바꾸지 않음). 기록 값은 ID·코드뿐이므로 공백·비ASCII는
-# 서술로 봄. required_fields만 'lab:corrected calcium' 같은 기준 항목 이름이 있어 공백을 조금 허용 (201개 사례 기록 402건 실측)
+# 서술로 봄. required_fields와 info_key만 'lab:corrected calcium' 같은 기준 항목 이름이 있어 공백을 조금 허용 (201개 사례 기록 402건 실측).
+# info_key는 계약 패턴이 공백 문장도 받으므로, 공백이 있는 값은 canonical_lab이 만드는 검사 항목 모양((basis:)lab:소문자 단어 2~4개)만 허용.
+# 검사명은 개방 어휘라 'lab:has severe rash'처럼 이 모양을 흉내 낸 서술은 구분하지 못함
 _NOT_CODE = re.compile(r"[^\x21-\x7e]")
 _FIELD_NAME = re.compile(r"[\x21-\x7e]+(?: [\x21-\x7e]+){0,3}")
-_FIELD_NAME_KEYS = frozenset({"required_fields"})
+_INFO_KEY = re.compile(r"[\x21-\x7e]+|(?:basis:)?lab:[a-z0-9-]+(?: [a-z0-9-]+){1,3}")
+_FIELD_NAME_KEYS = {"required_fields": _FIELD_NAME, "info_key": _INFO_KEY}
 _MAX_CODE_CHARS = 256
 
 
@@ -68,7 +71,7 @@ def has_free_text(record: DecisionRecord) -> bool:
     for key, text in _strings(record.model_dump(mode="json")):
         if len(text) > _MAX_CODE_CHARS:
             return True
-        if _FIELD_NAME.fullmatch(text) if key in _FIELD_NAME_KEYS else not _NOT_CODE.search(text):
+        if _FIELD_NAME_KEYS[key].fullmatch(text) if key in _FIELD_NAME_KEYS else not _NOT_CODE.search(text):
             continue
         return True
     return False
