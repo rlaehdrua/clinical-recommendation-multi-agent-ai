@@ -372,13 +372,15 @@ def staff_cases(request: Request) -> dict:
     require_staff(request)
     svc = service()
     out = []
-    for cid in svc.store.case_ids():
-        d = svc.refresh_pairs(svc.store.load(cid))  # 사례 화면과 같은 쌍 상태 (권한이 바뀌면 저장값이 아니라 지금 권한 기준)
+    cases, unreadable = svc.readable_cases()  # 손상된 사례 하나가 목록 전체를 막지 않음 (감사 F-17)
+    for d in cases:
+        cid = d["case_id"]
+        d = svc.refresh_pairs(d)  # 사례 화면과 같은 쌍 상태 (권한이 바뀌면 저장값이 아니라 지금 권한 기준)
         out.append({"case_id": cid, "created_at": d["created_at"], "revision": d["revision"],
                     "synthetic": d["synthetic"], "pair_counts": _pair_counts(d["current"]["pairs"]),
                     "open_requests": sum(1 for r in d["requests"] if r["status"] in ("pending", "requires_document",
                                                                                      "requires_clinician"))})
-    return {"cases": out}
+    return {"cases": out, "unreadable": unreadable}
 
 
 @router.get("/staff/queue")
@@ -502,14 +504,15 @@ def staff_audit(case_id: str, request: Request) -> dict:
 def _open_queue(kind: str, status: str) -> dict:
     svc = service()
     items = []
-    for cid in svc.store.case_ids():
-        d = svc.store.load(cid)
+    cases, unreadable = svc.readable_cases()  # 감사 F-17
+    for d in cases:
+        cid = d["case_id"]
         for r in d["requests"]:
             if r["kind"] == kind and r["status"] == status:
                 items.append({"case_id": cid, "synthetic": d["synthetic"], "request_id": r["request_id"],
                               "info_key": r.get("info_key"), "target_criteria": r["target_criteria"],
                               "reason_code": r["reason_code"], "created_at": r["created_at"]})
-    return {"items": items}
+    return {"items": items, "unreadable": unreadable}
 
 
 @router.get("/verifier/queue")
