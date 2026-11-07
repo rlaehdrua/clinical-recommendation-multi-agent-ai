@@ -101,7 +101,9 @@ def generate_questions(
 ) -> QuestionSet:
     override = _override_var.get()
     if override is not None:
-        return override(profile, matches, qa_log, max_questions, acquisition_plan)
+        qs = override(profile, matches, qa_log, max_questions, acquisition_plan)
+        qs.questions = unique_ids(qs.questions)
+        return qs
     previous = "\n".join(f"- Q: {qa.question} / A: {qa.answer}" for qa in qa_log) or "(없음)"
     user = f"""<patient>
 {profile.model_dump_json(indent=1)}
@@ -128,8 +130,26 @@ def generate_questions(
     )
     # 해소할 수 없는 대상을 뺀 뒤 예산만큼 (LLM이 정한 순서 그대로, 질문 수·예산은 늘리지 않음)
     open_keys = None if acquisition_plan is None else set(acquisition_plan)
-    qs.questions = screen([_normalize(q) for q in qs.questions], matches, open_keys)[:max_questions]
+    qs.questions = unique_ids(screen([_normalize(q) for q in qs.questions], matches, open_keys)[:max_questions])
     return qs
+
+
+def unique_ids(questions: list[ClarifyingQuestion]) -> list[ClarifyingQuestion]:
+    """한 라운드의 질문 ID를 서로 다르게 함. 답변이 question_id로 모이므로 ID가 겹치면 한 답이 두 질문에 붙음 (감사 F-08).
+
+    처음 나온 ID는 그대로 두고, 겹친 질문에만 아직 쓰이지 않은 Q<n>을 새로 붙임 (질문을 버리거나 내용을 바꾸지 않음)."""
+    used = {q.question_id for q in questions}
+    seen: set[str] = set()
+    n = 0
+    for q in questions:
+        if q.question_id in seen:
+            n += 1
+            while f"Q{n}" in used:
+                n += 1
+            q.question_id = f"Q{n}"
+            used.add(q.question_id)
+        seen.add(q.question_id)
+    return questions
 
 
 # ---------------------------------------------------------------------------- 생성 후 코드 검사 (P14 Q1)

@@ -120,7 +120,24 @@ def load(trial: dict, store_dir: Path | None = None) -> ParsedTrial:
     parsed.rule_meta = {rid: RuleMeta.model_validate(m) for rid, m in (rec.get("rule_meta") or {}).items()}
     det = (rec.get("validation") or {}).get("deterministic", {})
     parsed.integrity_issues = [f"{rid}: {m}" for rid, msgs in det.items() for m in msgs]
+    frozen = _frozen_mismatch(trial["trial_id"], store_dir)
+    if frozen:
+        parsed.integrity_issues.append(frozen)  # 경고만 더함: 로드 결과·예외는 그대로 (차단 여부는 팀 결정, 감사 F-11)
     return parsed
+
+
+def _frozen_mismatch(trial_id: str, store_dir: Path | None = None) -> str | None:
+    """잠긴 시험의 파일 sha256이 FROZEN.json과 다르면 integrity_issues 한 줄. 잠금 파일이 없는 저장소(후보 저장소 등)는 검사하지 않음."""
+    try:
+        files = frozen_manifest(store_dir).get("files", {})
+    except (OSError, ValueError, AttributeError):
+        return f"frozen_hash: {FREEZE_FILE}을 읽을 수 없어 {trial_id}의 잠금 해시를 확인하지 못함"
+    want = files.get(trial_id) if isinstance(files, dict) else None
+    if want is None:
+        return None
+    if file_hash(path_for(trial_id, store_dir)) != want:
+        return f"frozen_hash: {trial_id} 파일 sha256이 {FREEZE_FILE}과 다름 (잠긴 기준표가 잠금 이후 바뀜)"
+    return None
 
 
 def get(trial: dict) -> ParsedTrial:

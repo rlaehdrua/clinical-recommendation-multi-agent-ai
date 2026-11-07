@@ -20,6 +20,7 @@ import hmac
 import json
 import logging
 import os
+import re
 import secrets
 import sys
 import threading
@@ -69,6 +70,9 @@ ENDED_TTL_S = _env_int("CTREC_WEB_ENDED_TTL_S", 120)  # 취소·오류·시간 �
 MAX_ACTIVE_PER_CLIENT = _env_int("CTREC_WEB_MAX_ACTIVE_PER_CLIENT", 1)  # 같은 브라우저의 동시 실행 수
 MAX_STARTS_PER_HOUR = _env_int("CTREC_WEB_MAX_STARTS_PER_HOUR", 20)  # 같은 브라우저의 시간당 실행 시작 수
 MAX_BODY_BYTES = 256 * 1024  # 요청 본문 최대 크기
+# 문서 등록 경로만: 문서 계약(최대 2 MB, docs/dev/document_clinician_api_contract.md)의 base64 본문 + JSON 나머지 필드 여유 (감사 F-10)
+MAX_DOCUMENT_BODY_BYTES = (followup_api.verification.MAX_DOCUMENT_BYTES * 4) // 3 + 8 + 4096  # DocumentCreate.content_base64 한도와 같은 식
+_DOCUMENT_ROUTE = re.compile(r"^/api/followup/staff/cases/[^/]+/documents$")
 MAX_TEXT_CHARS = 20000  # 직접 입력 환자 정보 최대 길이
 MAX_ANSWER_CHARS = 2000  # 확인 질문 답변 하나의 최대 길이
 
@@ -78,12 +82,47 @@ app = FastAPI(title="ctrec - Interactive Clinical Trial Recommendation")
 PASSWORD = os.getenv("CTREC_PASSWORD", "")
 
 
-@app.middleware("http")
-async def limit_body(request: Request, call_next):
-    length = request.headers.get("content-length")
-    if length is not None and (not length.isdigit() or int(length) > MAX_BODY_BYTES):
-        return JSONResponse(status_code=413, content={"detail": "요청이 너무 큽니다."})
-    return await call_next(request)
+_TOO_LARGE = "요청이 너무 큽니다."
+
+
+def _body_limit(scope) -> int:
+    """이 요청의 본문 한도 (바이트). 문서 등록(POST)만 문서 계약 크기, 나머지는 MAX_BODY_BYTES."""
+    if scope.get("method") == "POST" and _DOCUMENT_ROUTE.match(scope.get("path", "")):
+        return MAX_DOCUMENT_BODY_BYTES
+    return MAX_BODY_BYTES
+
+
+class _LimitBody:
+    """본문 크기 제한. Content-Length가 있으면 먼저 보고, 없거나(chunked) 실제 본문이 더 길면 읽는 동안 누적 바이트로 막음 (감사 F-09).
+
+    읽는 중에 넘으면 HTTPException(413)을 냄: FastAPI가 본문 파싱 오류로 바꾸지 않고 그대로 다시 올려 같은 413 응답이 됨.
+    """
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+        limit = _body_limit(scope)
+        length = next((v.decode("latin-1") for k, v in scope["headers"] if k == b"content-length"), None)
+        if length is not None and (not length.isdigit() or int(length) > limit):
+            return await JSONResponse(status_code=413, content={"detail": _TOO_LARGE})(scope, receive, send)
+        seen = 0
+
+        async def limited_receive():
+            nonlocal seen
+            message = await receive()
+            if message["type"] == "http.request":
+                seen += len(message.get("body", b""))
+                if seen > limit:
+                    raise HTTPException(status_code=413, detail=_TOO_LARGE)
+            return message
+
+        await self.app(scope, limited_receive, send)
+
+
+app.add_middleware(_LimitBody)  # @app.middleware("http")와 같은 등록 방식이라 다른 미들웨어와의 순서는 그대로
 
 
 @app.middleware("http")
