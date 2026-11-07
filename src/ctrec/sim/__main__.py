@@ -20,6 +20,7 @@ from ..engine import audit
 from ..engine.baselines import policies
 from ..engine.contracts import EffortBudget
 from . import demo, runner, stats
+from .evaluator import DOCUMENT_ASSUMPTION
 from .oracle import ORACLE_ID
 
 COLS = ["policy_id", "reference", "rephrase", "budget_minutes", "seed", "confirmed_eligible",
@@ -51,6 +52,10 @@ def load_cohorts(a) -> list:
     smap, h = FG.load_source_map(a.map), G.config_hash(cfg, sd, cat)
     return [FG.to_sim_cohort(G.generate_cohort(cfg, sd, cat, parsed, sc, rep, h), sd, smap,
                              include_draft=a.include_draft) for rep in _ints(a.replicate)]
+
+
+DOCUMENT_NOTE = (f"문서 확인은 합성 가정({DOCUMENT_ASSUMPTION['authority']})입니다. 확정 수는 운영 성능이 아닙니다: "
+                 f"운영에는 문서 권한이 없어({DOCUMENT_ASSUMPTION['production_authority']}) 진료 기록 필요 기준이 확정되지 않습니다.")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -104,6 +109,7 @@ def main(argv: list[str] | None = None) -> int:
     judge = "규칙 엔진 + 결정적 판정기" if co.judge is not None else "규칙 엔진 범위만"
     print(f"# {runner.CLAIMS}: {', '.join(c.cohort_id for c in cohorts)}, 코호트당 환자 {len(co.patients)}명 x "
           f"시험 {len(co.trials)}개, {judge}" + (" / oracle_upper = 참고 상한(최적값 아님)" if a.oracle else ""))
+    print(f"# {DOCUMENT_NOTE}")
     if a.bootstrap > 0:
         print()
         print("\t".join(CI_COLS))
