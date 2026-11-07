@@ -1,0 +1,21 @@
+# CTREC_POLICY_MODE=engine 강제 실행 (코드 = c62f591), 2026-11-07. 명령: CTREC_POLICY_MODE=engine python -m pytest -q
+# 결과: 16 failed, 5404 passed, 9 skipped, 2 xfailed. 파라미터의 \uXXXX는 pytest가 쓴 한글 이스케이프
+FAILED tests/test_p14_backend_followups.py::test_default_harness_question_targets_no_criterion_so_count_cannot_drop
+FAILED tests/test_p14_backend_followups.py::test_web_reevaluation_reflects_verified_targeted_answer
+FAILED tests/test_team_integration.py::test_questions_carry_choice_fields_to_browser
+FAILED tests/test_team_integration.py::test_invalid_choice_rejected_and_question_stays_open[Q1-yes]
+FAILED tests/test_team_integration.py::test_invalid_choice_rejected_and_question_stays_open[Q1-\uc544\ub9c8\ub3c4]
+FAILED tests/test_team_integration.py::test_invalid_choice_rejected_and_question_stays_open[Q2-2\uc8fc]
+FAILED tests/test_team_integration.py::test_invalid_choice_rejected_and_question_stays_open[Q2-4\uc8fc \uc774\ub0b4, 3\uac1c\uc6d4 \uc774\uc0c1 \uc804]
+FAILED tests/test_team_integration.py::test_invalid_choice_rejected_and_question_stays_open[Q3-\uace0\ud608\uc555, \ucc9c\uc2dd]
+FAILED tests/test_team_integration.py::test_invalid_choice_rejected_and_question_stays_open[Q3-\ub2f9\ub1e8]
+FAILED tests/test_team_integration.py::test_all_answer_types_reach_reanalysis_as_stored_values
+FAILED tests/test_web_integration.py::test_full_flow_questions_answers_and_result
+FAILED tests/test_web_integration.py::test_unknown_run_and_answer_state - Ass...
+FAILED tests/test_web_integration.py::test_sessions_isolated - AssertionError...
+FAILED tests/test_web_security.py::test_other_browser_and_run_id_only_are_denied
+FAILED tests/test_web_security.py::test_csrf_header_and_origin_required - Ass...
+FAILED tests/test_web_security.py::test_answer_timeout_continues_with_unknown
+16 failed, 5404 passed, 9 skipped, 2 xfailed in 475.55s (0:07:55)
+
+[exited with code 0]

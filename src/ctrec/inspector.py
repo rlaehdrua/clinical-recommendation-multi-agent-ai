@@ -243,6 +243,9 @@ _CHANGE_KEYS = VERDICT_KEYS + EVIDENCE_KEYS
 DIRECTNESS_KEYS = ("evidence_directness", "validation_flags", "llm_judgment")
 _LLM_JUDGMENT_KEYS = ("holds", "applicable", "evidence_type", "confidence")  # matcher가 남기는 키만 (그 밖의 키는 읽지 않음)
 _TRIAL_KEYS = ("eligibility", "match_status")
+# NOT_EVALUATED 중 평가 실패가 아닌 경우의 표시 문구 (matcher.NO_EVIDENCE_CODES). 그 밖의 코드는 기존 '평가 실패'
+_ELIG_BY_CODE = {"no_required_criteria": "판정할 필수 기준 없음 · 담당자 확인 필요",
+                 "no_applicable_criteria": "판정할 필수 기준 없음 · 담당자 확인 필요"}
 
 
 def _scalar(v: Any) -> Any:
@@ -578,7 +581,8 @@ def build_view(rec: RunRecord, *, synthetic_details: bool = False) -> dict:
             "trial_id": tid, "title": titles.get(tid), "eligibility": _scalar(elig),
             "match_status": _scalar(m.get("match_status")), **_num(m, ("n_pass", "n_fail", "n_unknown")),
             "matched_cohort": _code(m.get("matched_cohort")),
-            "error": {"stage": _stage(err), "type": error_type(err)} if err else None,
+            "error": {"stage": _stage(err), "type": error_type(err)} if err and err not in _ELIG_BY_CODE else None,
+            "review_code": err if err in _ELIG_BY_CODE else None,
             "rounds": [{"round": e["round"], "eligibility": _scalar(e["rec"].get("eligibility")),
                         "match_status": _scalar(e["rec"].get("match_status")),
                         **_num(e["rec"], ("n_pass", "n_fail", "n_unknown"))} for e in ev],
@@ -839,10 +843,11 @@ def build_view(rec: RunRecord, *, synthetic_details: bool = False) -> dict:
         "n_candidates": len(matches), "pool_size": (screening or {}).get("pool_size"),
         "n_rounds": len(eval_rounds) if evals else None, "rounds": eval_rounds if evals else None,
         "n_questions": None if qa_log is None else len(qa_log),
-        "final": [{"trial_id": t["trial_id"], "eligibility": t["eligibility"], "match_status": t["match_status"]}
-                  for t in trials],
+        "final": [{"trial_id": t["trial_id"], "eligibility": t["eligibility"], "match_status": t["match_status"],
+                   "review_code": t["review_code"]} for t in trials],
         "n_errors": None if errors is None else len(errors),
-        "n_not_evaluated": sum(t["eligibility"] == "NOT_EVALUATED" for t in trials),
+        "n_not_evaluated": sum(t["eligibility"] == "NOT_EVALUATED" and not t["review_code"] for t in trials),
+        "n_no_required": sum(t["eligibility"] == "NOT_EVALUATED" and bool(t["review_code"]) for t in trials),
         "n_anomalies": len(anomalies),
         "sources": [{"name": n, "present": p,
                      # 파일은 있지만 출처 불일치로 표시하지 않은 사실 기록은 '없음'이 아니라 따로 표시
@@ -1013,7 +1018,10 @@ def _directness_cell(c: dict, field: str) -> str:
     return s
 
 
-def _elig(v: Any) -> str:
+def _elig(v: Any, code: str | None = None) -> str:
+    """시험 판정 표시. NOT_EVALUATED는 사유 코드(evaluation_error)가 있으면 그 문구로 구분."""
+    if v == "NOT_EVALUATED" and code in _ELIG_BY_CODE:
+        return f'{_badge(v)} <span class="mut">{html.escape(_ELIG_BY_CODE[code])}</span>'
     return _val("eligibility", v) if v else f'<span class="na">{NONE}</span>'
 
 
@@ -1067,7 +1075,7 @@ def _gap(c: dict) -> str:
     return _val("gap", c["gap"]) + rnd
 
 
-def _change_rows(rows: list[dict], with_verdict: bool = False) -> str:
+def _change_rows(rows: list[dict], with_verdict: bool = False, review: dict | None = None) -> str:
     hdr = ["시험", "기준", "항목", "이전 값", "이후 값", "비교 라운드"]
     if with_verdict:
         hdr.append("이후 라운드의 기준 판정(기록)")
@@ -1075,7 +1083,8 @@ def _change_rows(rows: list[dict], with_verdict: bool = False) -> str:
     for c in rows:
         row = [_e(c["trial_id"]), _e(c.get("rule_id")) if "rule_id" in c else _e(None),
                f'{html.escape(_FIELD.get(c["field"], c["field"]))} <code>{html.escape(c["field"])}</code>',
-               _val(c["field"], c["before"]), _val(c["field"], c["after"]),
+               *(_elig(c[k], (review or {}).get(c["trial_id"])) if c["field"] == "eligibility" else _val(c["field"], c[k])
+                 for k in ("before", "after")),
                f'{_mark(CHANGED)} {_span(c)}']
         if with_verdict:
             row.append(_val("passes", c["passes_after"]))
@@ -1114,9 +1123,12 @@ def _overview(v: dict) -> str:
     if o["n_errors"] or o["n_not_evaluated"]:
         out.append(f'<p class="warn">⚠ 실행 오류 {_e(o["n_errors"])}건 · 평가 실패(NOT_EVALUATED) 시험 '
                    f'{o["n_not_evaluated"]}개가 기록된 실행입니다.</p>')
+    if o["n_no_required"]:
+        out.append(f'<p class="warn">⚠ 판정할 필수 기준이 없어 담당자 확인이 필요한 시험(NOT_EVALUATED, 평가 실패 아님) '
+                   f'{o["n_no_required"]}개가 있습니다.</p>')
     if run["mode"] == "synthetic_details":
         out.append('<p class="warn">합성 데이터 상세 표시: 사실 값·질문 문구·답변을 포함합니다. 실제 환자 실행에는 쓸 수 없습니다.</p>')
-    final = " ".join(f'{_e(f["trial_id"])} {_elig(f["eligibility"])}' for f in o["final"]) or _e(None)
+    final = " ".join(f'{_e(f["trial_id"])} {_elig(f["eligibility"], f["review_code"])}' for f in o["final"]) or _e(None)
     nch, ncr = o["n_changes"], v["changes"]["n_criteria"]
     ch = (f'시험 판정 {nch["trial"]}건 · 기준 판정 {nch["verdict"]}건 (기준 {ncr["verdict"]}개) · '
           f'근거·확인 상태 {nch["evidence"]}건 (기준 {ncr["evidence"]}개)'
@@ -1124,7 +1136,8 @@ def _overview(v: dict) -> str:
           else html.escape(NA + " (연속된 평가 기록이 없음)"))
     backend = o["llm_backend"]
     err = (_mark(NONE) if o["n_errors"] is None else
-           f'오류 {o["n_errors"]}건 · 평가 실패 {o["n_not_evaluated"]}개')
+           f'오류 {o["n_errors"]}건 · 평가 실패 {o["n_not_evaluated"]}개'
+           + (f' · 필수 기준 없음 {o["n_no_required"]}개' if o["n_no_required"] else ""))
     cards = [
         ("실행 백엔드 (run_meta 기록)", f'<span class="big"><code>{_e(backend)}</code></span><br>'
          f'<span class="mut">{html.escape(_BACKEND.get(backend, "기록된 값 그대로"))}</span>'),
@@ -1205,13 +1218,18 @@ def _fact_line(v: dict, x: dict) -> str:
     return s
 
 
-def _trial_line(x: dict) -> str:
+def _review_codes(v: dict) -> dict:
+    """시험 -> NOT_EVALUATED 표시 사유 코드. 평가 실패 시험은 재매칭되지 않으므로 최종 기록의 코드를 라운드 표시에 씀."""
+    return {t["trial_id"]: t["review_code"] for t in v["trials"] if t["review_code"]}
+
+
+def _trial_line(x: dict, review: dict | None = None) -> str:
     parts = []
     for tid, seq in x["trial_evals"].items():
         if not seq:
             parts.append(f'{_e(tid)} {_mark(NONE)} <span class="mut">(이 라운드 판정 기록 없음)</span>')
             continue
-        s = f'{_e(tid)} ' + " → ".join(_elig(e) for e in seq)
+        s = f'{_e(tid)} ' + " → ".join(_elig(e, (review or {}).get(tid)) for e in seq)
         if len(seq) > 1:
             s += f' <span class="mut">(같은 라운드 재평가 {len(seq)}건, trace 순서)</span>'
         chg = [c for c in x["trial_changes"] if c["trial_id"] == tid]
@@ -1260,7 +1278,7 @@ def _timeline(v: dict) -> str:
         out.append(f'<li><h3>{html.escape(title)}</h3><dl class="st">'
                    f'<dt>질문·답변 (QA 라운드 {r})</dt><dd>{_qa_line(x)}</dd>'
                    f'<dt>사실 반영</dt><dd>{_fact_line(v, x)}</dd>'
-                   f'<dt>이 라운드 시험 판정</dt><dd>{_trial_line(x)}</dd>'
+                   f'<dt>이 라운드 시험 판정</dt><dd>{_trial_line(x, _review_codes(v))}</dd>'
                    f'<dt>기준 변화 (직전 평가 기록 대비)</dt><dd>{_criteria_line(x)}</dd>'
                    f'<dt>평가 직후 Decision Loop 진단</dt><dd>{d_s}</dd></dl></li>')
     out.append("</ol>")
@@ -1278,11 +1296,11 @@ def _changes(v: dict) -> str:
         return out[0] + f"<p>{_mark(NA)} 비교할 연속 평가 기록이 없습니다.</p>"
     out.append("<h3>① 시험 수준 판정 변화</h3>")
     if ch["trial"]:
-        out.append(_change_rows(ch["trial"]))
+        out.append(_change_rows(ch["trial"], review=_review_codes(v)))
     else:
         out.append(f"<p>{_mark(SAME)} 비교한 기록 사이 시험 판정 변화 없음</p>")
     if ch["stable_trials"]:
-        out.append("<ul>" + "".join(f'<li>{_e(s["trial_id"])}: 라운드 {_e(s["rounds"])} 기록 모두 {_elig(s["eligibility"])}</li>'
+        out.append("<ul>" + "".join(f'<li>{_e(s["trial_id"])}: 라운드 {_e(s["rounds"])} 기록 모두 {_elig(s["eligibility"], _review_codes(v).get(s["trial_id"]))}</li>'
                                     for s in ch["stable_trials"]) + "</ul>")
     n = ch["n_criteria"]
     out.append(f"<h3>② 기준 수준 판정 변화 <span class=\"mut\">(passes · holds) — 바뀐 기준 {n['verdict']}개, "
@@ -1345,6 +1363,8 @@ def render_html(view: dict) -> str:
           f"{_e(t.get('n_unknown'))}</span>{badge}</summary>")
         if t["error"]:
             w(f'<p class="warn">평가 실패: {_e(t["error"]["stage"])} ({_e(t["error"]["type"])})</p>')
+        if t["review_code"]:
+            w(f'<p class="warn">{html.escape(_ELIG_BY_CODE[t["review_code"]])} <code>{_e(t["review_code"])}</code></p>')
         if t["rounds"]:
             w(_table(["라운드", "판정", "외부 상태", "충족", "불충족", "판정 불가"],
                      [[x["round"], x["eligibility"], x["match_status"], x.get("n_pass"), x.get("n_fail"),
@@ -1524,3 +1544,57 @@ def write_html(view: dict, out: Path) -> Path:
     with out.open("x", encoding="utf-8") as f:  # 배타 생성: 확인과 쓰기 사이에 생긴 파일도 덮어쓰지 않음
         f.write(render_html(view))
     return out
+
+
+# ---------------------------------------------------------------------------
+# 실행 간 비교 (N 감사 2026-11-07, 6단계 J: 이전 결과를 다시 불러와 차이를 봄)
+# ---------------------------------------------------------------------------
+
+COMPARE_SCHEMA = "ctrec.inspector.compare/v1"
+_COMPARE_CRITERION_KEYS = ("holds", "passes", "applicable", "needs_verification", "gap", "evidence_directness", "method")
+
+
+def compare_views(prev: dict, cur: dict) -> dict:
+    """정제된 두 view(build_view 결과)를 비교. 새 판단 없이 기록된 판정·기준·추천만 옮기고, 허용 목록 밖 값은 읽지 않음.
+
+    환자 별칭(run.patient)이 다르면 다른 환자의 실행이므로 비교하지 않고 status=different_patient로 돌려줌.
+    반환: trials(시험별 판정 변화), criteria(기준별 필드 변화), recommendation(추천·제외 목록 변화), added/removed 시험.
+    """
+    p_pat, c_pat = (prev.get("run") or {}).get("patient"), (cur.get("run") or {}).get("patient")
+    out: dict = {"schema": COMPARE_SCHEMA, "status": "ok", "trials": [], "criteria": [], "recommendation": {},
+                 "added_trials": [], "removed_trials": []}
+    if p_pat != c_pat:
+        return {**out, "status": "different_patient"}
+    pt = {t.get("trial_id"): t for t in prev.get("trials") or [] if isinstance(t, dict)}
+    ct = {t.get("trial_id"): t for t in cur.get("trials") or [] if isinstance(t, dict)}
+    out["added_trials"] = sorted(t for t in ct if t not in pt)
+    out["removed_trials"] = sorted(t for t in pt if t not in ct)
+    for tid in sorted(set(pt) & set(ct)):
+        a, b = pt[tid], ct[tid]
+        if (a.get("eligibility"), a.get("match_status")) != (b.get("eligibility"), b.get("match_status")):
+            out["trials"].append({"trial_id": tid, "before": {"eligibility": a.get("eligibility"),
+                                                              "match_status": a.get("match_status")},
+                                  "after": {"eligibility": b.get("eligibility"), "match_status": b.get("match_status")}})
+        pc = {c.get("rule_id"): c for c in a.get("criteria") or [] if isinstance(c, dict)}
+        cc = {c.get("rule_id"): c for c in b.get("criteria") or [] if isinstance(c, dict)}
+        for rid in sorted(set(pc) | set(cc), key=str):
+            x, y = pc.get(rid) or {}, cc.get(rid) or {}
+            diff = {k: {"before": x.get(k), "after": y.get(k)} for k in _COMPARE_CRITERION_KEYS if x.get(k) != y.get(k)}
+            if diff:
+                out["criteria"].append({"trial_id": tid, "rule_id": rid, "changes": diff})
+    pr, cr = prev.get("recommendation") or {}, cur.get("recommendation") or {}
+
+    def ids(rec: dict, key: str) -> list:
+        return [r if isinstance(r, str) else r.get("trial_id") for r in rec.get(key) or [] if isinstance(r, (str, dict))]
+    for key in ("recommended", "excluded"):
+        before, after = ids(pr, key), ids(cr, key)
+        if before != after:
+            out["recommendation"][key] = {"before": before, "after": after}
+    out["changed"] = bool(out["trials"] or out["criteria"] or out["recommendation"] or out["added_trials"]
+                          or out["removed_trials"])
+    return out
+
+
+def compare_runs(prev_dir: Path, cur_dir: Path) -> dict:
+    """저장된 두 실행 폴더를 다시 불러와 비교 (load_run -> build_view(strict) -> compare_views)."""
+    return compare_views(build_view(load_run(prev_dir)), build_view(load_run(cur_dir)))

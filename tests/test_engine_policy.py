@@ -23,6 +23,7 @@ from ctrec.engine.policy import LegacyAdapterPolicy, plan_and_charge, plan_cohor
 from ctrec.eval_hygiene import AliasMap  # noqa: E402
 
 import decision_fixtures as d  # noqa: E402
+from document_support import attest_declared  # noqa: E402
 from test_offline import _rule  # noqa: E402
 
 PLT = _rule(rule_id="I6", text="Platelets >= 100 x10^9/L", category="lab", field="lab:platelets", operator=">=",
@@ -50,7 +51,7 @@ def _state_docs(pid="SYN-PB"):
                 ("lab:hemoglobin", 11.0, {"unit": "g/dL", "observed_at": "2026-09-01"}),
                 ("lab:platelets", 150.0, {"unit": "x10^9/L", "observed_at": "2026-09-01"}), patient=pid)
     meta = {**d.record_meta("I4"), **d.record_meta("I6")}
-    v = d.view({"T1": d.trial("T1", [d.AGE, d.HB, PLT], meta=meta)}, s, source_text="합성 검사 수치",
+    v = d.view({"T1": d.trial("T1", [d.AGE, d.HB, PLT], meta=meta)}, s, source_text="합성 검사 수치 60세",
                input_source="unknown", patient=pid)
     return build_state(v)
 
@@ -63,6 +64,7 @@ def _state_conflict(pid="SYN-PC"):
 
 def _state_expert(pid="SYN-PD"):
     s = d.store(("age", 60, {"unit": "years"}), ("ecog", 1, {}), patient=pid)
+    attest_declared(s, pid)  # 임상의 판단만 남은 쌍: ECOG까지 문서로 확인됨
     v = d.view({"T1": d.trial("T1", [d.AGE, d.ECOG, d.VAGUE])}, s, patient=pid)
     return build_state(v)
 

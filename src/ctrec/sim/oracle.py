@@ -6,7 +6,7 @@
   항상 0이고, 미리 본 결과 = 실제 결과 (공통 난수).
 - 실패할 행동: 환자가 모르는 값을 묻는 질문 등은 "모름"을 기다리지 않고, 그 항목을 담은 문서 정보원 중 성공할 것으로 바로
   바꿈(oracle_document_first). 성공할 대체가 없으면 실행하지 않음(skipped oracle_will_fail). 안전 필수 행동은 그대로 둠.
-- 순서: 안전 필수 -> 규칙 GT가 적격인 열린 쌍을 겨냥한 행동 -> 나머지, 같은 묶음 안에서는 예상 비용이 낮은 순.
+- 순서: 안전 필수 -> 규칙 GT가 적격(판단 기준 대기 적격 포함)인 열린 쌍을 겨냥한 행동 -> 나머지, 같은 묶음 안에서는 예상 비용이 낮은 순.
 
 해석: 탐욕 선택이므로 **엄밀한 최적값이 아닙니다** (최적은 설계 §5의 소규모 완전탐색, 미구현). 정답 라벨은 순환적 규칙 GT.
 웹에서는 쓰지 않습니다 (oracle이 필요).
@@ -20,7 +20,7 @@ from ..engine.contracts import NON_EXECUTING, Action, EffortBudget, Plan, Skippe
 from ..engine.cost import EffortLedger
 from ..engine.policy import LegacyAdapterPolicy, base_fingerprint, item_key
 from .environment import CohortEnvironment
-from .metrics import ELIGIBLE
+from .metrics import ELIGIBLE, PENDING_EXPERT
 
 ORACLE_ID = "oracle_upper"
 ORACLE_VERSION = "oracle_upper/0.1"
@@ -71,7 +71,7 @@ class OracleUpperPolicy(LegacyAdapterPolicy):
         return None
 
     def order_key(self, a: Action) -> tuple:
-        aims = any(self.labels.get(f"{a.patient_alias}|{t}") == ELIGIBLE for t in a.target_trial_ids)
+        aims = any(self.labels.get(f"{a.patient_alias}|{t}") in (ELIGIBLE, PENDING_EXPERT) for t in a.target_trial_ids)
         return (0 if a.safety_required else 1, 0 if aims else 1, a.expected_cost.coordinator_minutes, a.priority,
                 a.patient_alias, a.sequence, a.fingerprint)
 

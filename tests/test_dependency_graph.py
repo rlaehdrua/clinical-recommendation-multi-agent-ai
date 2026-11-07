@@ -151,11 +151,19 @@ def test_llm_only_criterion_dependencies():
 
 
 def test_engine_rule_without_engine_result_is_llm_all_fields():
-    windowed = HB.model_copy(update={"rule_id": "I11", "time_window_days": 28})  # 기간 조건 검사 -> LLM 위임
-    _, _, _, deps = _deps([windowed])
+    no_value = HB.model_copy(update={"rule_id": "I11", "value": None})  # 비교값이 없어 규칙 엔진이 판정 못함 -> LLM 위임
+    _, _, _, deps = _deps([no_value])
     d = deps[("T1", "I11")]
     assert d.resolution == "llm_all_fields" and d.wildcard and d.fields == ["lab:hemoglobin"]
     assert {"lab:hemoglobin", "lab:*"} <= set(d.candidate_fields)
+
+
+def test_windowed_lab_rule_is_engine_field():
+    """M-2: 기간 조건 검사는 규칙 엔진이 검사일로 판정 (기간 밖·날짜 불명도 엔진이 보류) -> 그 검사 항목 하나에만 의존."""
+    windowed = HB.model_copy(update={"rule_id": "I11", "time_window_days": 28})
+    _, _, _, deps = _deps([windowed])
+    d = deps[("T1", "I11")]
+    assert (d.evaluator, d.resolution, d.wildcard, d.fields) == ("rule_engine", "explicit_field", False, ["lab:hemoglobin"])
 
 
 def test_review_rule_depends_on_its_field_only():

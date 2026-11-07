@@ -19,12 +19,13 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import DISCLAIMER, config, llm
+from . import DISCLAIMER, config, conservative_view, llm
 from .agents.answerers import (FactRevealAnswerer, InteractiveAnswerer, NoAnswerer, RoutingAnswerer,
                                SimulatedPatientAnswerer)
 from .agents.recommender import screen_pool
 from .orchestrator import Orchestrator
 from .pipeline import PatientCase, Session, load_patients
+from .schemas import Recommendation
 from .status import MATCH_NOTE
 from .status import label as status_label
 from .tools import ctgov
@@ -149,6 +150,11 @@ def _check_records(case: PatientCase, args, index: int) -> None:
                                  "덮어쓰지 않습니다. 다른 경로를 지정하세요.")
 
 
+def shown_recommendation(session) -> Recommendation:
+    """터미널에 보일 추천: 보수적 표현 사본 (Session의 추천·판정은 그대로)."""
+    return Recommendation.model_validate(conservative_view.build(session).result["recommendation"])
+
+
 def _write_run_meta(out_dir: Path, session: Session, args, fact_dir: Path | None, run_id: str) -> None:
     """실행 메타데이터 (Decision Loop Inspector 입력 계약의 run_meta.json). 환자 정보·경로 원문은 넣지 않음.
 
@@ -179,6 +185,16 @@ def _write_run_meta(out_dir: Path, session: Session, args, fact_dir: Path | None
     (out_dir / "run_meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
+def _write_inspector(out_dir: Path, tracer: Tracer) -> None:
+    """실행 폴더 -> Inspector HTML (정제 보기, 환자 원문·인용·추론 없음). 실패해도 실행 결과는 그대로 두고 종류만 기록."""
+    from . import inspector
+    try:
+        inspector.write_html(inspector.build_view(inspector.load_run(out_dir)), out_dir / "inspector.html")
+        tracer.log("inspector", "written", message="inspector.html")
+    except Exception as e:  # noqa: BLE001 - 보기 생성 실패가 실행 저장을 되돌리지 않음
+        tracer.log("inspector", "error", message=type(e).__name__)
+
+
 def _run_case(case: PatientCase, trials: dict[str, dict], args, answerer) -> Session:
     out_dir = Path(args.out) / case.patient_id
     run_id = f"R-{uuid.uuid4().hex[:12]}"
@@ -207,6 +223,8 @@ def _run_case(case: PatientCase, trials: dict[str, dict], args, answerer) -> Ses
             session.run_fixed()
     session.save(out_dir)
     _write_run_meta(out_dir, session, args, fact_dir, run_id)
+    if getattr(args, "inspector", False):
+        _write_inspector(out_dir, tracer)
     u = session.usage
     tracer.log("pipeline", "saved", message=(
         f"{out_dir} | calls={u.get('calls', 0)} in={u.get('input_tokens', 0)} out={u.get('output_tokens', 0)} "
@@ -247,6 +265,11 @@ def _add_common(p: argparse.ArgumentParser) -> None:
                    help="의존 그래프·부분 재평가 진단을 result.json에 기록 (판정·질문·추천에는 쓰지 않음, 기본 꺼짐)")
     p.add_argument("--demo", action="store_true",
                    help="데모 모드: 가상 데모 시험(DEMO-LUNG-001 등)도 추천에 표시 (기본은 판정만 하고 추천에서 제외)")
+    p.add_argument("--trial-set", choices=sorted(config.TRIAL_SETS), default=None,
+                   help="시험 세트: 시험 원문 폴더와 짝인 파싱본 저장소를 함께 고름 (기본: CTREC_TRIAL_SET 또는 default). "
+                        "nsclc = data/nsclc/trials + data/nsclc/parsed (WP2a, 임상 검수 전). --trials-dir가 없으면 그 세트 전체를 불러옴")
+    p.add_argument("--inspector", action="store_true",
+                   help="실행이 끝나면 실행 폴더에 Decision Loop Inspector HTML(inspector.html, 정제 보기)을 씀 (기존 파일은 덮어쓰지 않음)")
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -266,6 +289,10 @@ def main(argv: list[str] | None = None) -> None:
     print(DISCLAIMER + "\n")
     if args.demo:
         config.DEMO_MODE = True
+    if args.trial_set:  # 시험 원문·파싱본 저장소를 같은 세트로 (trial_store.get이 config.PARSED_DIR를 읽음)
+        config.TRIALS_DIR, config.PARSED_DIR = config.TRIAL_SETS[args.trial_set]
+        if not (args.trials or args.trials_dir or args.nct):
+            args.trials_dir = str(config.TRIALS_DIR)
 
     trials = _load_trials(args)
     if not trials and not args.search:
@@ -333,9 +360,12 @@ def main(argv: list[str] | None = None) -> None:
         for k, v in session.usage.items():
             total[k] = total.get(k, 0) + v
         if session.recommendation:
-            rec = session.recommendation
+            rec = shown_recommendation(session)
             if rec.recommended:
                 print(f"\n[{_who(case, args)}] 추천 그룹: {status_label(rec.recommended[0].match_status)}")
+            if rec.held_out:  # 추천도 확정 제외도 아닌 시험이 출력에서 사라지지 않게 (시험 ID·상태만)
+                print("  근거 확인 대기(확정 제외 아님): " + ", ".join(f"{h.trial_id}({status_label(h.match_status)})"
+                                                         for h in rec.held_out))
             if args.redact_console:  # 시험 ID·상태만: 근거 문장에는 환자 원문이 인용될 수 있음
                 print("  " + ", ".join(f"{r.rank}. {r.trial_id}({status_label(r.match_status)})" for r in rec.ranked))
                 continue
@@ -349,8 +379,8 @@ def main(argv: list[str] | None = None) -> None:
             if others:
                 print("  다른 후보(표시 순서): " + ", ".join(f"{r.rank}. {r.trial_id}({status_label(r.match_status)})"
                                                     for r in others))
-            if session.recommendation.no_recommendation_reason:
-                print(f"  {session.recommendation.no_recommendation_reason}")
+            if rec.no_recommendation_reason:
+                print(f"  {rec.no_recommendation_reason}")
         if not args.redact_console:  # 경로에 환자 ID가 있음
             print(f"  -> {Path(args.out) / case.patient_id / 'report.md'}\n")
     failed = [_who(c, args) for c, s in sessions if s is None]

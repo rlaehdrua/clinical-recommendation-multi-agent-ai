@@ -77,14 +77,16 @@ def evaluate_trial(view: FactEvidenceView, parsed: ParsedTrial, trial: dict, ref
     by_id = {r.rule_id: r for r in parsed.rules}
     raw: dict[str, CriterionAssessment | None] = {}
     if mode == "llm":
-        m = matcher.match_trial(profile, parsed, trial, reference_date=reference_date, source_text=None)
+        # 아래 gate가 같은 문서 요건을 사유 코드와 함께 적용하므로, 여기서는 판정을 먼저 보류하지 않음 (진단 보고용)
+        m = matcher.match_trial(profile, parsed, trial, reference_date=reference_date, source_text=None,
+                                document_check=lambda a, rule: True)
         for a in m.assessments + m.other_cohort_assessments:
             raw[a.rule_id] = a
     else:
         for rule in parsed.rules:
             review = matcher._meta(parsed, rule).review
             raw[rule.rule_id] = (matcher._review_assessment(rule, review) if review
-                                 else rule_engine.evaluate(rule, profile))
+                                 else rule_engine.evaluate(rule, profile, reference_date))
     out: dict[str, CriterionAssessment | None] = {}
     reasons: dict[str, str] = {}
     excluded = view.excluded()

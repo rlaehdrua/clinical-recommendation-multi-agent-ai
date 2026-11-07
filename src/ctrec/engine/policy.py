@@ -26,8 +26,10 @@ LegacyAdapterPolicy
   같은 (환자, 정보원) 요청 비용은 한 번만 청구(EffortLedger). 예산 초과 청구는 원장이 거부.
 - apply_outcome(cohort, action, outcome): 운영 상태(실패 정보원·실패 항목·시도 횟수·확보 소진)만 바꿈. 사실·판정은 바꾸지
   않음 (새 사실은 FactStore -> 판정 계층 재평가를 거쳐야만 판정에 반영). 실패 범위는 contracts.failure_scope:
-  정보원 단위든 항목 단위든 그 항목을 얻을 정보원이 남지 않을 때만 항목을 소진하고(정보원 단위면 같은 정보원에 기대던
-  대상 시험의 다른 항목도), 쌍은 남은 항목이 모두 소진됐을 때만 소진 (cohort_state.items_exhausted). 다른 항목을 검사지
+  실패든, 답한 문서에 gap이 남았든 그 항목을 얻을 정보원이 남지 않을 때만 항목을 소진하고(같은 정보원에 기대던 대상 시험의
+  다른 항목도, _convert가 소진 보류를 내는 항목과 같은 값 - spent_sources·remaining_documents), 쌍은 남은 항목이 모두
+  소진됐을 때만 소진 (cohort_state.items_exhausted). 실패 없이 요청한 문서만 다 쓴 보류(requested_documents_unresolved)는
+  값 확인이 남은 상태라 소진으로 세지 않습니다. 다른 항목을 검사지
   등으로 아직 얻을 수 있으면 쌍은 그대로. 항목 키가 없는 행동과 회복 제거(recovery=False)는 기존처럼 대상 시험 전체를 소진. 소진 시 쌍 상태는 BLOCKED_FAILURE로만
   (contracts.POLICY_TRANSITIONS).
 
@@ -55,6 +57,7 @@ LEGACY_DECLINED_DEFER = "user_declined_or_exhausted"  # decision_policy가 "모�
 # 무응답으로 본 답("잘 모르겠어요" 등)은 기존 정책에서 답이 있는 것으로 남아 보류·재추출로 나옴 -> 같은 대체 규칙을 적용
 LEGACY_HELD = frozenset({LEGACY_DECLINED_DEFER, "answered_but_unresolved"})
 LEGACY_UNREFLECTED = "answered_not_reflected"  # REPARSE 사유
+EXHAUSTED_DEFERS = ("sources_exhausted", "item_sources_exhausted")  # 남은 정보원이 없다는 뜻의 보류 사유
 NO_REQUIRED_REVIEW = "no_required_criteria"  # 필수 기준 0개 쌍의 담당자 검토 사유
 REVIEW_TIER = 6  # decision_policy의 evaluation_failed 검토와 같은 단계
 VERIFICATION_TYPES = frozenset({"ASK_PATIENT", "REQUEST_DOCUMENT", "VERIFY_RECORD", "CLINICIAN_REVIEW"})
@@ -102,7 +105,7 @@ class LegacyAdapterPolicy:
     def __init__(self, cfg: PolicyConfig = DEFAULT_POLICY, catalog: SourceCatalog | None = None,
                  rephrase: bool = False):
         """rephrase: 환자가 알 수 있는 항목의 "모름" 뒤 한 번 다른 말로 다시 물을지 (기본 False = 바로 대체 정보원).
-        WP6 민감도 분석용 (11-06). 웹 질문 렌더러는 아직 REPHRASE 행동의 문구를 따로 만들지 않으므로 웹에서는 끈 채로 둡니다."""
+        WP6 민감도 분석용 (11-06). 웹은 끈 채로 둡니다 (실행기 문구는 web/engine_runner._wording)."""
         self.cfg = cfg
         self.catalog = catalog or SourceCatalog()
         self.rephrase = bool(rephrase)
@@ -164,6 +167,15 @@ class LegacyAdapterPolicy:
                 if s != source and s not in failed_sources and (s, item) not in failed_items
                 and self.catalog[s].kind == "document"]
 
+    def spent_sources(self, ops: OpsState, item: str) -> frozenset[tuple[str, str]]:
+        """그 항목에 다시 쓸 수 없는 (정보원, 항목): 실패한 것(ops.failed_items) + 이미 사용한 문서(tried_key, 답은 있었지만
+        gap이 남음). 정보원 단위 실패는 ops.failed_sources. _convert와 apply_outcome은 이 값으로만 대체를 판단합니다."""
+        return ops.failed_items | {(s, item) for s in self.catalog.sources if ops.attempts.get(tried_key(s, item))}
+
+    def remaining_documents(self, source: str, fields, info_key: str | None, item: str, ops: OpsState) -> list[str]:
+        """사용·실패한 문서를 뺀 남은 대체 문서. 비어 있어야만 그 항목이 소진됩니다 (다음 계획의 소진 보류와 같은 값)."""
+        return self.item_alternatives(source, fields, info_key, item, ops.failed_sources, self.spent_sources(ops, item))
+
     def provides(self, source: str | None, fields) -> bool:
         """정보원이 질문 항목(맥락 항목 제외)을 모두 다루는지 (provides_fields)."""
         src = self.catalog.get(source)
@@ -183,9 +195,7 @@ class LegacyAdapterPolicy:
         reason = _code(la.reason_code)
         fp = la.fingerprint
         item = item_key(la.info_key if la.info_key and _INFO_KEY.match(la.info_key) else None, la.fingerprint)
-        # 이미 요청한 문서(답이 있었지만 gap이 남음)는 실패한 (정보원, 항목)과 같이 대체 후보에서 뺌
-        tried = {(s, item) for s in self.catalog.sources if ops.attempts.get(tried_key(s, item))}
-        blocked = ops.failed_items | tried
+        spent = self.spent_sources(ops, item)
         # 첫 "모름" 뒤 바꿔 묻기 차례인 환자 정보원 (실패 기록 전). 기존 정책이 같은 질문을 다시 내든(시뮬레이터)
         # "모름" 보류를 내든(웹) 같은 바꿔 묻기 행동으로
         pending = sorted(s for s in self.catalog.sources if ops.attempts.get(rephrase_key(s, item)) == REPHRASE_PENDING
@@ -199,9 +209,8 @@ class LegacyAdapterPolicy:
             elif source is not None and (source, item) in ops.failed_items:
                 atype, source, reason = "DEFER", None, "item_sources_exhausted"
         elif source is not None and source in ops.failed_sources:
-            alts = [s for s in self.catalog.alternatives(source, ops.failed_sources) if (s, item) not in ops.failed_items]
-            docs = [] if alts else self.item_alternatives(source, la.required_fact_fields, la.info_key, item,
-                                                          ops.failed_sources, blocked)
+            alts = [s for s in self.catalog.alternatives(source, ops.failed_sources) if (s, item) not in spent]
+            docs = [] if alts else self.remaining_documents(source, la.required_fact_fields, la.info_key, item, ops)
             if alts:
                 source, reason = alts[0], "alternative_source_after_failure"
             elif docs:  # 정보원 자체의 대체가 없어도(환자 연락 불가 등) 그 항목을 담은 문서는 확인할 수 있음
@@ -209,8 +218,7 @@ class LegacyAdapterPolicy:
             else:
                 atype, source, reason = "DEFER", None, "sources_exhausted"
         elif source is not None and (source, item) in ops.failed_items:
-            alts = self.item_alternatives(source, la.required_fact_fields, la.info_key, item, ops.failed_sources,
-                                          blocked)
+            alts = self.remaining_documents(source, la.required_fact_fields, la.info_key, item, ops)
             if alts:
                 atype, source, reason = "REQUEST_DOCUMENT", alts[0], "alternative_source_after_no_answer"
             else:
@@ -225,17 +233,17 @@ class LegacyAdapterPolicy:
             failed = sorted(by_item | {s for s in ops.failed_sources
                                        if s == asked_from or self.provides(s, la.required_fact_fields)})
             if failed:
-                alts = list(dict.fromkeys(a for f in failed for a in self.item_alternatives(
-                    f, la.required_fact_fields, la.info_key, item, ops.failed_sources, blocked)))
+                alts = list(dict.fromkeys(a for f in failed for a in self.remaining_documents(
+                    f, la.required_fact_fields, la.info_key, item, ops)))
                 if alts:
                     atype, source = "REQUEST_DOCUMENT", alts[0]
                     reason = "alternative_source_after_no_answer" if by_item else "alternative_source_after_failure"
                 else:
                     atype, source, reason = "DEFER", None, "item_sources_exhausted"
-        if atype == "REQUEST_DOCUMENT" and source is not None and (source, item) in tried:
+        if atype == "REQUEST_DOCUMENT" and source is not None and (source, item) in spent:
             # 같은 문서를 이미 요청했는데 gap이 남음 -> 다음 문서 정보원, 없으면 그 항목만 보류 (같은 요청 반복 방지)
-            alts = self.item_alternatives(source, la.required_fact_fields, la.info_key, item, ops.failed_sources,
-                                          blocked) if self.recovery else []
+            alts = self.remaining_documents(source, la.required_fact_fields, la.info_key, item,
+                                            ops) if self.recovery else []
             if alts:
                 source, reason = alts[0], "alternative_source_after_unresolved_document"
             else:
@@ -341,16 +349,19 @@ class LegacyAdapterPolicy:
 
     # ------------------------------------------------------------ outcome
     def _cut_off_items(self, cohort: CohortState, alias: str, trials: set[str], ops: OpsState) -> set[str]:
-        """정보원 실패 뒤 대상 시험에서 더 얻을 길이 없는 항목 (그 환자의 다음 계획에서 소진 보류가 될 항목의 info_key)."""
+        """대상 시험에서 더 얻을 길이 없는 항목 (그 환자의 다음 계획에서 소진 보류가 될 항목의 info_key).
+        같은 항목에 실행할 행동이 하나라도 남아 있으면 소진이 아님."""
         st = cohort.patients[alias].legacy_copy()
         gaps = {c.key: c.gap for c in st.criteria()}
-        out = set()
+        out, live = set(), set()
         for seq, la in enumerate(candidates(st, self.cfg)[0]):
             a = self._convert(alias, seq, la, ops, gaps)
-            if a.action_type == "DEFER" and a.reason_code in ("sources_exhausted", "item_sources_exhausted") \
-                    and a.info_key and trials & set(a.target_trial_ids):
+            if a.action_type not in NON_EXECUTING:
+                live.add(a.info_key)
+            elif a.action_type == "DEFER" and a.reason_code in EXHAUSTED_DEFERS and a.info_key \
+                    and trials & set(a.target_trial_ids):
                 out.add(a.info_key)
-        return out
+        return out - live
 
     def apply_outcome(self, cohort: CohortState, action: Action,
                       outcome: ActionOutcome) -> tuple[CohortState, tuple[PairTransition, ...]]:
@@ -373,6 +384,11 @@ class LegacyAdapterPolicy:
         exhausted_items = set(ops.exhausted_items)
         scope = failure_scope(outcome.status, outcome.error_code)
         reason = "sources_exhausted"
+
+        def _ops() -> OpsState:
+            return OpsState(frozenset(failed), MappingProxyType(attempts), frozenset(exhausted),
+                            frozenset(failed_items), frozenset(exhausted_items))
+
         if scope == "source" and action.source_id:
             failed.add(action.source_id)
             item = item_key(action.info_key, base_fp)
@@ -383,16 +399,12 @@ class LegacyAdapterPolicy:
                 # 정보원(검사지 등)으로 얻을 항목이 남은 쌍은 BLOCKED가 아님 - 쌍은 남은 항목이 모두 소진됐을 때만
                 # (cohort_state.items_exhausted). 항목 키가 없는 행동은 항목 단위로 셀 수 없어 기존처럼 시험 전체
                 no_way = not (self.catalog.alternatives(action.source_id, frozenset(failed))
-                              or self.item_alternatives(action.source_id, action.required_fields, action.info_key,
-                                                        item, frozenset(failed), frozenset(failed_items)))
+                              or self.remaining_documents(action.source_id, action.required_fields, action.info_key,
+                                                          item, _ops()))
                 if no_way and not action.info_key:
                     exhausted.update(action.target_trial_ids)
                 elif no_way:
                     exhausted_items.add(action.info_key)
-                exhausted_items |= self._cut_off_items(cohort, alias, set(action.target_trial_ids),
-                                                       OpsState(frozenset(failed), MappingProxyType(attempts),
-                                                                frozenset(exhausted), frozenset(failed_items),
-                                                                frozenset(exhausted_items)))
         elif scope == "item" and action.source_id:
             item = item_key(action.info_key, base_fp)
             rk = rephrase_key(action.source_id, item)
@@ -402,13 +414,14 @@ class LegacyAdapterPolicy:
             else:  # 바꿔 묻기도 "모름"이거나 바꿔 물을 수 없는 항목 -> 항목 실패
                 failed_items.add((action.source_id, item))
                 reason = "item_sources_exhausted"
-                if action.info_key and (not self.recovery or not self.item_alternatives(
-                        action.source_id, action.required_fields, action.info_key, item, frozenset(failed),
-                        frozenset(failed_items))):
+                if action.info_key and (not self.recovery or not self.remaining_documents(
+                        action.source_id, action.required_fields, action.info_key, item, _ops())):
                     exhausted_items.add(action.info_key)
-        new_ops = OpsState(frozenset(failed), MappingProxyType(attempts), frozenset(exhausted),
-                           frozenset(failed_items), frozenset(exhausted_items))
-        new = cohort.with_ops(alias, new_ops)
+        # 실패뿐 아니라 답한 문서에 gap이 남은 경우도 다음 계획의 소진 보류와 같은 기준으로 소진 (소진 판단은 _convert 하나)
+        if self.recovery and (scope is not None or (action.action_type == "REQUEST_DOCUMENT"
+                                                    and outcome.status == "succeeded")):
+            exhausted_items |= self._cut_off_items(cohort, alias, set(action.target_trial_ids), _ops())
+        new = cohort.with_ops(alias, _ops())
         transitions = []
         for tid in action.target_trial_ids:
             before, after = cohort.pair(alias, tid), new.pair(alias, tid)

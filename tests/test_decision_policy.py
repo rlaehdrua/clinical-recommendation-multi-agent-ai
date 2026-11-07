@@ -14,6 +14,7 @@ from ctrec.decision_policy import candidates, validate
 from ctrec.decision_state import build_state, narrowable
 
 import decision_fixtures as d
+from document_support import attest_declared
 
 
 @pytest.fixture(autouse=True)
@@ -63,6 +64,7 @@ def test_conflict_prioritized_as_verify():
 def test_conflict_behind_decided_criterion_flagged():
     """기준선이 MET인데 근거 항목에 나중에 상충 사실이 생기면 안전 확인 (MET를 그대로 믿지 않음)."""
     s = d.store(("age", 60, {"unit": "years"}), ("ecog", 1, {}))
+    attest_declared(s, d.P)
     v = d.view({"T1": d.trial("T1", [d.AGE, d.ECOG])}, s)
     s.add(d.P, "ecog", 3, source_type="self_report")
     v.snapshot = d.fact_changes.take_snapshot(s, d.P)
@@ -151,6 +153,7 @@ def test_validate_blocks_unsafe_actions():
 
 def test_evaluation_records_and_narrowing():
     s = d.store(("age", 60, {"unit": "years"}), ("ecog", 1, {}))
+    attest_declared(s, d.P)
     v = d.view({"T1": d.trial("T1", [d.AGE, d.ECOG, d.EGFR])}, s)
     by = {c.rule_id: c for c in build_state(v).criteria()}
     assert by["I2"].record.engine == "rule_engine" and by["I2"].record.used_fields == ["ecog"]

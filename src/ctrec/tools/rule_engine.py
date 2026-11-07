@@ -136,6 +136,44 @@ def _parse_date(s: str | None) -> date | None:
     return None
 
 
+def _exact_date(s: str | None) -> date | None:
+    """일 단위까지 적힌 날짜(YYYY-MM-DD)만. 월·연도만 있으면 기간 조건을 계산하지 않음 (임의로 1일·말일을 가정하지 않음)."""
+    if not s:
+        return None
+    try:
+        return datetime.strptime(s.strip(), "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def window_status(lab_date: str | None, window_days: int, reference_date: str | None) -> tuple[str, int | None]:
+    """검사일이 기준일 기준 window_days 이내인가. 반환 (inside | outside | undetermined, 경과 일수).
+
+    inside: 0 <= (기준일 - 검사일) <= window_days. 검사일이 기준일보다 뒤(미래)이면 outside로 보지 않고 undetermined
+    (날짜 표기 오류 가능성 - 추정하지 않음). 날짜가 일 단위로 없으면 undetermined."""
+    ref, when = _exact_date(reference_date), _exact_date(lab_date)
+    if ref is None or when is None:
+        return "undetermined", None
+    days = (ref - when).days
+    if days < 0:
+        return "undetermined", days
+    return ("inside" if days <= window_days else "outside"), days
+
+
+def _window_hold(rule: Rule, lab: LabValue, status: str, days: int | None) -> CriterionAssessment:
+    """기간 조건을 날짜로 확인하지 못한 검사값: 값과 관계없이 판정하지 않음 (LLM에도 넘기지 않음 - 날짜를 추정하지 않게)."""
+    if status == "outside":
+        why = f"검사일 {lab.date}은 기준일 {days}일 전 - 기준의 {rule.time_window_days}일 이내가 아님"
+        need = f"{rule.time_window_days}일 이내에 시행한 같은 검사 결과(검사일 포함)"
+    else:
+        why = (f"검사일이 일 단위로 확인되지 않음({lab.date or '날짜 없음'}) - {rule.time_window_days}일 이내인지 계산할 수 없음"
+               if days is None else f"검사일 {lab.date}이 기준일보다 뒤 - 날짜를 확인해야 함")
+        need = f"검사일(연·월·일)과 {rule.time_window_days}일 이내 여부"
+    a = _result(rule, "unknown", f"{lab.name} {lab.value} {lab.unit or ''} ({lab.date or '날짜 미상'}) - \"{lab.source_quote}\"",
+                f"[기간 조건] {why}")
+    return a.model_copy(update={"confidence": "low", "missing_info": need, "validation_flags": ["lab_window_" + status]})
+
+
 def _latest(labs: list[LabValue]) -> LabValue | None:
     """가장 최근 검사값. 값이 하나면 그대로, 여러 개면 모든 날짜를 해석할 수 있을 때만 최신값.
 
@@ -240,7 +278,8 @@ def _evaluate_age(rule: Rule, patient: PatientProfile) -> CriterionAssessment | 
                    f"{shown} = {lo:.0f}~{hi:.0f}일, 기준 {target:g} {rule_unit} = {t:.0f}일 → {_ko(at_lo)}")
 
 
-def evaluate(rule: Rule, patient: PatientProfile) -> CriterionAssessment | None:
+def evaluate(rule: Rule, patient: PatientProfile, reference_date: str | None = None) -> CriterionAssessment | None:
+    """reference_date: 판정 기준일(YYYY-MM-DD). 기간 조건이 붙은 검사 기준에만 씀. 없으면 config.reference_date()."""
     if not rule.structured_evaluable or not rule.field or not rule.operator:
         return None
     field = _norm(rule.field)
@@ -270,8 +309,7 @@ def evaluate(rule: Rule, patient: PatientProfile) -> CriterionAssessment | None:
 
     if field.startswith("lab:"):
         target = _to_float(rule.value)
-        if target is None or rule.operator not in _OPS or rule.time_window_days:
-            # 시간 조건이 붙은 검사는 날짜 해석이 필요하므로 LLM에 위임
+        if target is None or rule.operator not in _OPS:
             return None
         want = canonical_lab(field[4:])
         candidates = [lab for lab in patient.labs if canonical_lab(lab.name) == want and lab.value is not None]
@@ -280,6 +318,16 @@ def evaluate(rule: Rule, patient: PatientProfile) -> CriterionAssessment | None:
         lab = _latest(candidates)
         if lab is None:
             return None  # 같은 검사가 여러 번인데 최신 값을 날짜로 확정할 수 없음 -> LLM에 위임
+        window_note = ""
+        if rule.time_window_days:
+            # 기간 조건 (M-2): 검사일을 날짜로 계산. 확인하지 못하면 판정하지 않고 LLM에도 넘기지 않음 (날짜 추정 금지)
+            if reference_date is None:
+                from .. import config
+                reference_date = config.reference_date()
+            status, days = window_status(lab.date, rule.time_window_days, reference_date)
+            if status != "inside":
+                return _window_hold(rule, lab, status, days)
+            window_note = f" [기간 조건: 기준일 {reference_date}의 {days}일 전 검사, {rule.time_window_days}일 이내]"
         if _nonstandard_count_rule_unit(want, rule.unit):
             return None  # 기준 단위가 이 검사의 표준 단위가 아님 (원문 확인 필요) -> 환자 단위와 관계없이 LLM에 위임
         scaled = _same_scale(lab.value, lab.unit, rule.unit, want)
@@ -290,6 +338,6 @@ def evaluate(rule: Rule, patient: PatientProfile) -> CriterionAssessment | None:
         return _result(rule, "yes" if holds else "no",
                        f"{lab.name} {lab.value} {lab.unit or ''} ({lab.date or '날짜 미상'}) - \"{lab.source_quote}\"",
                        # 판정은 단위 환산한 값(value)으로 하므로 설명도 같은 값으로 (원래 값·단위는 환산 설명 shown에)
-                       f"{shown + ': ' if shown else ''}{value:g} {rule.operator} {rule.value} → {_ko(holds)}")
+                       f"{shown + ': ' if shown else ''}{value:g} {rule.operator} {rule.value} → {_ko(holds)}{window_note}")
 
     return None

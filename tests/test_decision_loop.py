@@ -16,6 +16,7 @@ from ctrec.decision_loop import LoopConfig, guard_reason
 from ctrec.decision_state import Budget, SessionView
 
 import decision_fixtures as d
+from document_support import attest_declared
 
 
 @pytest.fixture(autouse=True)
@@ -23,8 +24,10 @@ def stub_llm(monkeypatch):
     monkeypatch.setattr(matcher.llm, "structured", d.unknown_llm)
 
 
-def _base(*rules_by_trial, facts=None, **kw):
+def _base(*rules_by_trial, facts=None, documents=False, **kw):
     s = d.store(*(facts or [("age", 60, {"unit": "years"})]))
+    if documents:
+        attest_declared(s, d.P)
     trials = {f"T{i + 1}": d.trial(f"T{i + 1}", rules) for i, rules in enumerate(rules_by_trial)}
     return d.view(trials, s, **kw), s
 
@@ -44,7 +47,7 @@ def test_normal_finalize_plans_questions_without_dispatch():
 
 
 def test_sufficient_information():
-    v, _ = _base([d.AGE, d.ECOG], facts=[("age", 60, {"unit": "years"}), ("ecog", 1, {})])
+    v, _ = _base([d.AGE, d.ECOG], facts=[("age", 60, {"unit": "years"}), ("ecog", 1, {})], documents=True)
     r, _ = d.run(v)
     assert d.types(r) == [("FINALIZE", "finalize")] and r.stop_reason == "sufficient_information"
 

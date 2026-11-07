@@ -1,6 +1,6 @@
 """WP6 Runner (설계 §1·§3.1·§6). spec 검증 -> 단계 반복 -> DecisionRecord·지표·manifest. 정책 내부는 바꾸지 않습니다.
 
-단계(라운드)마다
+단계(라운드)마다 - 1~5의 계획·반복 억제·청구·정산은 engine.loop.EngineLoop (웹·CLI의 web.engine_runner와 같은 객체)
 1. policy.propose(CohortState) - 정책은 public에서 만든 상태만 봄 (oracle 없음)
 2. 같은 사실 상태에서 같은 정보원에 이미 시도한 행동(같은 지문·유형·정보원)은 다시 실행하지 않음 (모든 정책 공통).
    같은 질문을 그대로 반복하지 않고, "모름" 뒤 다시 묻는 것은 정책의 바꿔 묻기(policy_config["rephrase"], 지문이 다름)뿐.
@@ -28,14 +28,15 @@ from ..engine import record_producer as rp
 from ..engine.baselines import make_policy
 from ..engine.bundles import SourceCatalog
 from ..engine.cohort_state import CohortState
-from ..engine.contracts import (CONTRACT_VERSION, NON_EXECUTING, SUPPORTED_CONTRACT_VERSIONS, ZERO_COST,
+from ..engine.contracts import (CONTRACT_VERSION, NON_EXECUTING, SUPPORTED_CONTRACT_VERSIONS,
                                 ActionOutcome, DataVersion, DecisionRecord, EffortBudget, ExperimentSpec, canonical_hash)
 from ..engine.cost import EffortLedger
+from ..engine.loop import EngineLoop, repeat_key
 from ..engine.experiment import ExperimentSpecError, catalog_claims, require_catalog_hash
 from .cohort import SimCohort
 from .environment import CohortEnvironment
-from .evaluator import OfflineEvaluator, make_fact, verify_fact
-from .metrics import ELIGIBLE, label_of, summarize
+from .evaluator import DOCUMENT_ASSUMPTION, OfflineEvaluator, make_fact, verify_fact
+from .metrics import correct_resolved, label_of, summarize
 from .oracle import ORACLE_ID, ORACLE_VERSION, OracleUpperPolicy
 from .response_model import ResponseModel, SourceResponse
 
@@ -55,6 +56,9 @@ class RunResult:
     manifest: dict
     final: CohortState = field(repr=False)
     per_patient: dict[str, dict] = field(default_factory=dict, repr=False)  # 별칭 -> 환자별 결과 (부트스트랩 단위)
+    # 종료 시 정책에 남은 실행 행동이 겨누는 쌍 (PairKey.key "<별칭>|<시험>"). 해시·지표 밖 (P 실험의 대기/미해결 구분용)
+    remaining_pairs: frozenset[str] = field(default_factory=frozenset, repr=False)
+    facts: dict = field(default_factory=dict, repr=False)  # 별칭 -> 종료 시 사실 목록 (풀 재평가 대조용, 해시 밖)
 
     @property
     def result_hash(self) -> str:
@@ -81,9 +85,7 @@ def _policy_kwargs(policy_id: str, cfg: dict, seed: int) -> dict:
     return kw
 
 
-def _repeat_key(a) -> tuple:
-    """같은 사실 상태(지문)에서 같은 정보원에 같은 행동. "모름" 뒤 정책이 같은 지문을 문서 요청으로 바꾼 행동은 다른 키."""
-    return (a.patient_alias, a.fingerprint, a.action_type, a.source_id)
+_repeat_key = repeat_key  # 같은 사실 상태(지문)에서 같은 정보원에 같은 행동 (engine.loop, 웹과 같은 기준)
 
 
 def _check(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog) -> None:
@@ -104,6 +106,8 @@ def _git_commit() -> str | None:
     except (OSError, subprocess.SubprocessError):
         return None
 
+
+PRIMARY_PARTS = ("correct_eligible_resolved", "correct_confirmed_eligible", "correct_expert_ready")
 
 def rule_labels(cohort: SimCohort, catalog: SourceCatalog) -> dict[str, str]:
     """규칙 GT (순환적, metrics 참고): 정답 사실 전체를 문서 검증된 기록으로 넣어 같은 평가기로 확정된 쌍만 라벨."""
@@ -149,15 +153,12 @@ def run(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog | None =
     trial_ids = {a: frozenset(s.trials) | frozenset(s.not_evaluated_trials) for a, s in states.items()}
 
     ledger = EffortLedger(spec.budget, catalog)
-    tried: dict[tuple, int] = {}
+    loop = EngineLoop(policy, spec.budget, ledger)  # 웹·CLI(web.engine_runner)와 같은 계획·청구·정산 단계
     records, issues, results, steps = [], [], [], []
-    progress, elapsed, step, suppressed, unfunded = [], 0.0, 0, 0, 0
+    progress, elapsed, step, unfunded = [], 0.0, 0, 0
     termination, rounds = "horizon_reached", 0
     for rnd in range(spec.budget.horizon_steps):
-        cands = policy.propose(co)
-        fresh = [a for a in cands if a.action_type in NON_EXECUTING or _repeat_key(a) not in tried]
-        suppressed += len(cands) - len(fresh)
-        plan = policy.select(fresh, spec.budget, ledger, co)
+        plan = loop.plan(co)
         unfunded += len(plan.safety_unfunded)
         if not plan.selected:
             over = any(s.reason_code == "over_budget" for s in plan.skipped) or plan.safety_unfunded
@@ -165,18 +166,16 @@ def run(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog | None =
             break
         rounds += 1
         round_latency = 0.0
-        for action in plan.selected:
+        for action in loop.dispatch(plan).execute:  # 시뮬레이터: 모두 실행 가능, 라운드 한도 없음 (환경이 미실행을 정함)
             alias = action.patient_alias
             # 응답 난수의 시도 번호 = 같은 (환자, 지문, 유형, 정보원)을 시도한 횟수 (반복을 막으므로 항상 0). 정보원마다 따로
             # 세어, 다른 정보원에 먼저 물어본 횟수(바꿔 묻기 설정 등)가 이 정보원의 응답 운을 바꾸지 않게 함 (공통 난수)
-            attempt = tried.get(_repeat_key(action), 0)
+            attempt = loop.attempt(action)
             ref = f"sim:{step}"
             ex = env.execute(action, attempt, step, ref, facts[alias])
-            tried[_repeat_key(action)] = tried.get(_repeat_key(action), 0) + 1
-            cost, keys = ZERO_COST, ()
+            # 선택 때 같은 원장 사본으로 확인한 순서 그대로 청구 -> 초과 없음. 미실행은 청구 0
+            cost, keys = loop.begin(action, executed=ex.execution != "not_executed")
             if ex.execution != "not_executed":
-                cost, key = ledger.charge(action)  # 선택 때 같은 원장 사본으로 확인한 순서 그대로 -> 초과 없음
-                keys = (key,) if key else ()
                 round_latency = max(round_latency, ex.latency_minutes)
             before, fb = co, snaps[alias]
             reevaluated = frozenset()
@@ -193,7 +192,7 @@ def run(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog | None =
                                     new_fact_ids=tuple(sorted(f.fact_id for f in ex.facts)) if status == "succeeded" else (),
                                     cost_charged=cost, charge_keys=keys, error_code=ex.error_code,
                                     latency_minutes=ex.latency_minutes)
-            after, ptrans = policy.apply_outcome(mid, action, outcome)
+            after, ptrans = loop.settle(mid, action, outcome)
             asked = None if ex.execution == "not_executed" else rp.AskedQuestion(
                 question_id=f"q{step}", action_id=action.action_id, target_criteria=action.target_criteria,
                 purpose=action.purpose, source_ref=ref)
@@ -220,20 +219,23 @@ def run(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog | None =
         rounds = spec.budget.horizon_steps
 
     audit = rp.run_status(results)
+    remaining = frozenset(f"{a.patient_alias}|{t}" for a in loop.fresh(policy.propose(co))
+                          if a.action_type not in NON_EXECUTING for t in a.target_trial_ids)
     per_patient = _per_patient(co, labels, ledger, steps)
     metrics = summarize(initial=initial, final=co, labels=labels, steps=steps,
                         per_patient_minutes=dict(ledger.per_patient), total_cost=ledger.total,
                         elapsed_minutes=elapsed, rounds=rounds, progress=progress, termination=termination,
-                        repeat_suppressed=suppressed, safety_unfunded=unfunded,
+                        repeat_suppressed=loop.suppressed, safety_unfunded=unfunded,
                         audit={"records": audit.records, "warnings": audit.warnings, "blocking": audit.blocking,
                                "status": audit.status})
-    metrics["correct_confirmed_eligible"] = sum(p["correct_confirmed_eligible"] for p in per_patient.values())
+    for k in PRIMARY_PARTS:
+        metrics[k] = sum(p[k] for p in per_patient.values())
     result_hash = canonical_hash({"records": [r.model_dump(mode="json") for r in records],
                                   "issues": [i.model_dump(mode="json") for i in issues], "metrics": metrics})
     manifest = {
         "runner_version": RUNNER_VERSION, "run_id": run_id, "spec": spec.model_dump(mode="json"),
         "spec_hash": spec.spec_hash(), "result_hash": result_hash, "contract_version": CONTRACT_VERSION,
-        "catalog_claims": catalog_claims(catalog), "claims": CLAIMS,
+        "catalog_claims": catalog_claims(catalog), "claims": CLAIMS, "document_authority": DOCUMENT_ASSUMPTION,
         "cohort": {"cohort_id": cohort.cohort_id, "cohort_hash": cohort.digest(), "store_hash": cohort.store_hash(),
                    "patients": len(cohort.patients), "trials": len(cohort.trials)},
         "evaluator": {"id": ev.evaluator_id, "scope": EVALUATOR_SCOPE if cohort.judge is None else JUDGE_SCOPE,
@@ -245,18 +247,24 @@ def run(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog | None =
         "environment": {"python": sys.version.split()[0], "platform": platform.platform(), "commit": _git_commit()},
     }
     manifest["reference_policy"] = spec.policy_id == ORACLE_ID
-    return RunResult(spec, records, issues, metrics, manifest, co, per_patient)
+    return RunResult(spec, records, issues, metrics, manifest, co, per_patient, remaining,
+                     {a: list(v) for a, v in facts.items()})
 
 
 def _per_patient(co: CohortState, labels: dict[str, str], ledger: EffortLedger, steps: list[dict]) -> dict[str, dict]:
-    """환자별 결과. correct_confirmed_eligible = 확정 적격이면서 규칙 GT도 적격 (주 지표, 순환적 GT 기준)."""
+    """환자별 결과 (순환적 규칙 GT 기준).
+    - correct_confirmed_eligible: 확정 적격이면서 규칙 GT도 적격
+    - correct_expert_ready: EXPERT_REVIEW에 도달했고 규칙 GT가 판단 기준 대기 적격 (판단 기준 외 확인 완료, 11-07 결정 1)
+    - correct_eligible_resolved: 둘의 합 = 주 지표. 확정 적격과 판단 대기는 섞지 않도록 따로도 보고"""
     out = {}
     for alias in co.aliases():
         pairs = co.patients[alias].pairs
-        elig = [p for p in pairs if p.status.value == "CONFIRMED_ELIGIBLE"]
+        hits = [correct_resolved(p.status, labels.get(p.pair.key, "")) for p in pairs]
+        confirmed, ready = sum(h[0] for h in hits), sum(h[1] for h in hits)
         out[alias] = {
-            "confirmed_eligible": len(elig),
-            "correct_confirmed_eligible": sum(labels.get(p.pair.key) == ELIGIBLE for p in elig),
+            "confirmed_eligible": sum(p.status.value == "CONFIRMED_ELIGIBLE" for p in pairs),
+            "correct_confirmed_eligible": confirmed, "correct_expert_ready": ready,
+            "correct_eligible_resolved": confirmed + ready,
             "confirmed_ineligible": sum(p.status.value == "CONFIRMED_INELIGIBLE" for p in pairs),
             "coordinator_minutes": round(ledger.per_patient.get(alias, 0.0), 6),
             "questions": sum(s["patient_alias"] == alias and s["action_type"] == "ASK_PATIENT"
@@ -289,7 +297,9 @@ def _row(pid: str, cfg: dict, rp_on: bool, budget: EffortBudget, seed: int, r: R
     return {"policy_id": pid, "policy_config": cfg, "rephrase": rp_on, "budget_minutes": budget.coordinator_minutes,
             "seed": seed, "cohort_id": r.manifest["cohort"]["cohort_id"], "reference": r.manifest["reference_policy"],
             "confirmed_eligible": m["system_confirmed_eligible"],
+            "correct_eligible_resolved": m["correct_eligible_resolved"],
             "correct_confirmed_eligible": m["correct_confirmed_eligible"],
+            "correct_expert_ready": m["correct_expert_ready"], "expert_review": m["status_final"]["EXPERT_REVIEW"],
             "confirmed_ineligible": m["system_confirmed_ineligible"], "confirmed_share": m["system_confirmed_share"],
             "coordinator_minutes": m["active_minutes"]["coordinator"],
             "clinician_minutes": m["active_minutes"]["clinician"], "elapsed_minutes": m["elapsed_minutes"],

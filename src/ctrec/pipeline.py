@@ -19,6 +19,7 @@ from . import (DISCLAIMER, acquisition, config, evidence, evidence_directness, f
                profile_facts, trial_store)
 from .agents import criteria_parser, explainer, matcher, patient_profiler, question_generator, recommender, screener
 from .agents.answerers import Answerer
+from . import evidence_basis
 from .fact_changes import take_snapshot
 from .fact_store import FactStore
 from .schemas import ParsedTrial, PatientProfile, QAPair, Recommendation, TrialMatch
@@ -311,7 +312,9 @@ class Session:
             m = matcher.match_trial(self.profile, self.parsed[tid], self.trials[tid],
                                     reference_date=self.reference_date, source_text=self.case.raw_text,
                                     input_source=self.case.input_source,
-                                    qa=list(self.qa_log), session_id=self.session_id)  # 확인 답변 검증용 (answer_verification)
+                                    qa=list(self.qa_log), session_id=self.session_id,  # 확인 답변 검증용 (answer_verification)
+                                    document_check=evidence_basis.document_check(
+                                        self.fact_store, self.case.patient_id, self.parsed[tid], self.reference_date))
             self.tracer.log("matcher", "done", trial_id=tid, message=m.summary, round=self.rounds, **trace_match(m))
             return tid, m
 
@@ -464,10 +467,15 @@ class Session:
 
     # ----------------------------------------------------------- 단계 ⑥
     def finalize(self) -> None:
-        matches = list(self.matches.values())
+        from . import conservative_view as boundary  # 순환 import 방지
+        # 엔진이 확정하지 않은 쌍은 추천·보고서 입력에서 확정으로 보이지 않음. self.matches(판정)는 그대로, 사본의 표현만 낮춤.
+        # 보류 계산이 실패하면 확인 안 된 결과를 내보내지 않고 이 실행을 오류로 끝냄
+        holds = boundary.evaluate(self)[0]
+        matches = boundary.held_matches(self, holds)
         evaluated = {t: self.trials[t] for t in self.matches}
         self.tracer.log("recommender", "start", n_trials=len(matches))
-        self.recommendation = recommender.recommend(self.profile, matches, evaluated, self.qa_log)
+        self.recommendation = boundary.held_recommendation(
+            recommender.recommend(self.profile, matches, evaluated, self.qa_log), self, holds)
         self.tracer.log("recommender", "done",
                         message=" > ".join(r.trial_id for r in self.recommendation.ranked) or "(추천 없음)")
         self._run_fact_comparison()
@@ -477,9 +485,11 @@ class Session:
         ranked_ids = [r.trial_id for r in self.recommendation.ranked]
         extra = (screener.report_section(self.screening) if self.screening else "")
         extra += acquisition.report_section(self.missing_facts, set(ranked_ids))
+        report_matches, report_rec, report_history = boundary.report_input(
+            matches, self.recommendation, self.match_history, holds)
         self.report = explainer.explain(
-            self.profile, matches, self.recommendation, evaluated, self.qa_log, self.match_history,
-            extra_section=extra,
+            self.profile, report_matches, report_rec, evaluated, self.qa_log, report_history,
+            extra_section=extra + boundary.report_section(holds),
         )
         self.tracer.log("explainer", "done")
 
@@ -527,11 +537,8 @@ class Session:
     def save(self, out_dir: Path) -> None:
         self.usage = llm.usage_snapshot()
         out_dir.mkdir(parents=True, exist_ok=True)
-        (out_dir / "result.json").write_text(
-            json.dumps(self.result(), ensure_ascii=False, indent=2), encoding="utf-8"
-        )
-        if self.report:
-            (out_dir / "report.md").write_text(self.report, encoding="utf-8")
+        from . import conservative_view  # 순환 import 방지
+        conservative_view.save(self, out_dir)  # 저장 경로마다 호출하지 않아도 저장 결과가 같은 기준을 따름
 
     # ----------------------------------------------------------- 내부
     def _snapshot(self, label: str) -> None:

@@ -5,6 +5,7 @@
 1) FactEvidenceView: 환자의 사실을 항목별로 묶은 근거 보기. 사실의 출처·인용·검증 상태·관찰 시점·충돌 관계를 그대로 담음.
    항목 상태
    - agreed         : 단일 값 항목의 사실이 모두 같은 값 (출처·시점이 다른 같은 값의 근거는 모두 보존)
+   검사 사실의 검체가 다르거나 알 수 없으면(specimen.py) to_profile()은 그 값을 쓰지 않음. 구조화 입력의 specimen=None은 확인하지 않은 값으로 그대로 씀
    - contradictory / time_dependent / incomparable : 단일 값 항목의 값이 맞지 않음 -> 값을 고르지 않음
    - multi          : 여러 값 항목(진단·바이오마커 등). 같은 값끼리만 묶고, 값이 다른 쌍(not_compared)의 수를 기록
    to_profile()은 기존 PatientProfile 형태로 바꿔 Matcher·규칙 엔진에 그대로 넣을 수 있게 하되,
@@ -21,7 +22,8 @@
    - observation_window  : 기준의 기간 조건(time_window_days) 안에 관찰된 사실이 확인되지 않음 -> 판정 불가
    - self_report_only    : 진료 기록이 필요한 기준인데 근거가 자기 보고뿐 -> UNVERIFIED (답변 값 보존)
    - unknown_source      : 진료 기록이 필요한 기준인데 근거 출처를 모름 -> UNVERIFIED
-   - declared_unverified : (require_document_verification=True일 때만) clinical_record 선언뿐이고 문서 검증 없음 -> UNVERIFIED
+   - declared_unverified : clinical_record 선언뿐이고 서버 문서 확인이 없음 -> UNVERIFIED. 기본은 충족 쪽(passes=True)에만 적용하고
+                           (Matcher와 같은 요건: evidence_basis), require_document_verification=True면 불충족 쪽도 적용
    진료 기록이 필요한 기준이 아니면 자기 보고·출처 불명 근거도 그대로 인정합니다(미검증 정보를 무조건 불일치로 보지 않음).
 """
 
@@ -33,8 +35,9 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+from . import specimen
 from .agents import matcher
-from .fact_store import MULTI_VALUED_FIELDS, FactStore, PatientFact
+from .fact_store import FactStore, MULTI_VALUED_FIELDS, PatientFact, document_backed
 from .schemas import CriterionAssessment, Fact, LabValue, PatientProfile, Rule, RuleMeta
 from .tools.rule_engine import canonical_lab
 
@@ -48,7 +51,7 @@ _LIST_ATTRS = {"diagnosis": "diagnoses", "biomarker": "biomarkers", "medication"
 
 def tier(f: PatientFact) -> EvidenceTier:
     """사실 하나의 근거 수준. 문서 검증 이력이 있어야 verified (clinical_record 선언만으로는 declared_record)."""
-    if f.verification_status == "document_verified":
+    if document_backed(f):
         return "verified"
     if f.source_type == "clinical_record":
         return "declared_record"
@@ -62,6 +65,7 @@ class FactRef(BaseModel):
     field_name: str
     value: bool | int | float | str
     unit: str | None
+    specimen: str | None = None
     source_type: str
     verification_status: str
     tier: EvidenceTier
@@ -78,7 +82,7 @@ class FieldEvidence(BaseModel):
 
 
 def _ref(f: PatientFact) -> FactRef:
-    return FactRef(fact_id=f.fact_id, field_name=f.field, value=f.value, unit=f.unit, source_type=f.source_type,
+    return FactRef(fact_id=f.fact_id, field_name=f.field, value=f.value, unit=f.unit, specimen=f.specimen, source_type=f.source_type,
                    verification_status=f.verification_status, tier=tier(f), observed_at=f.observed_at,
                    observed_at_text=f.observed_at_text, quote=f.source_reference.quote)
 
@@ -135,7 +139,8 @@ class FactEvidenceView:
                                                              source_quote=r.quote or ""))
             elif name.startswith("lab:"):
                 r = self._agreed(name)
-                if r is not None and isinstance(r.value, (int, float)) and not isinstance(r.value, bool):
+                if r is not None and (r.specimen is None or specimen.verdict(name[4:], r.specimen, specimen.required(name[4:])) == specimen.MATCH) \
+                        and isinstance(r.value, (int, float)) and not isinstance(r.value, bool):  # 사실의 검체가 다르거나 모르면 이 항목의 값으로 쓰지 않음
                     labs.append(LabValue(name=name[4:], value=float(r.value), unit=r.unit, date=r.observed_at,
                                          source_quote=r.quote or ""))
         pd, ds = self._agreed("primary_diagnosis"), self._agreed("disease_stage")
@@ -312,6 +317,19 @@ def relevant_biomarker_facts(rule: Rule, view: "FactEvidenceView") -> tuple[set[
     return wanted, [r for r in facts if not _fact_targets(r) or _fact_targets(r) & wanted]
 
 
+def document_coverage(facts: list[FactRef]) -> str:
+    """근거 전체의 수준: 값마다 가장 강한 근거를 고르고 그중 가장 약한 것. 근거가 없으면 unknown.
+
+    같은 값이면 문서 하나로 충분합니다(문서 + 같은 값의 자기 보고 = verified).
+    값이 다른 항목은 각각 확인돼야 합니다(한 항목의 문서가 다른 항목의 선언을 대신하지 않음)."""
+    best: dict[tuple[str, str], str] = {}
+    for r in facts:
+        key = (r.field_name, _norm(r.value))
+        if key not in best or _TIER_RANK[r.tier] > _TIER_RANK[best[key]]:
+            best[key] = r.tier
+    return min(best.values(), key=_TIER_RANK.__getitem__, default="unknown")
+
+
 def _differing(facts: list[FactRef]) -> bool:
     """값이 다른 사실이 있는가 (같은 값이면 상반된 결과가 아님)."""
     return len({_norm(r.value) for r in facts}) > 1
@@ -389,10 +407,12 @@ def gate(a: CriterionAssessment, rule: Rule, meta: RuleMeta, view: FactEvidenceV
                                                  "self_report": "self_report", "unknown": "unknown"}[best]})
     if meta.required_evidence != "clinical_record":
         return a, None
-    if best == "verified" or (best == "declared_record" and not require_document_verification):
-        return a, None
+    covered = document_coverage(facts)
+    if covered == "verified" or (best in ("verified", "declared_record") and a.passes is False
+                                 and not require_document_verification):
+        return a, None  # 선언된 기록의 불충족은 잠정 부적격으로 남김 (확정 부적격은 decision_state가 문서 확인으로만 인정)
     reason = {"declared_record": "declared_unverified", "self_report": "self_report_only",
-              "unknown": "unknown_source"}[best]
+              "unknown": "unknown_source"}[covered]
     said = "해당 없음" if not a.applicable else a.holds
     update = {"needs_verification": True,
               "missing_info": "진료 기록(검사 결과지, 병리·유전자 보고서 등)으로 확인 필요"}

@@ -8,7 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from ctrec import fact_changes
+from ctrec import evidence_basis, fact_changes
 from ctrec.agents import matcher
 from ctrec.decision_loop import LoopConfig, LoopContext, run_loop
 from ctrec.decision_state import SessionView
@@ -67,7 +67,8 @@ def view(trials: dict, s: FactStore, qa=None, missing=None, source_text=None, in
             continue
         parsed[tid] = p
         matches[tid] = matcher.match_trial(profile, p, t, reference_date=REF, source_text=source_text,
-                                           input_source=input_source)
+                                           input_source=input_source,
+                                           document_check=evidence_basis.document_check(s, patient, p, REF))
     if tweak:
         tweak(matches)
     snap = fact_changes.take_snapshot(s, patient)

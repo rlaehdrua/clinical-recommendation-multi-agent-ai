@@ -17,12 +17,13 @@ import json
 import re
 from types import SimpleNamespace
 
-from .. import llm
+from .. import document_authority, evidence_basis, llm
 from ..agents import matcher
 from ..decision_state import DecisionState, SessionView, build_state
 from ..evidence import ANSWER_MARKER
 from ..fact_changes import FactSnapshot, make_snapshot, snapshot_store
-from ..fact_store import PatientFact, SourceReference, VerificationEvent
+from ..document_authority import ServerAttestation
+from ..fact_store import PatientFact, SourceReference, VerificationEvent, document_backed
 from ..fact_view import FactEvidenceView
 from ..schemas import LLMAssessment, MatcherOutput
 from .cohort import SimFact, SimTrial
@@ -98,28 +99,50 @@ def fact_line(f: SimFact | PatientFact) -> str:
     return f"{f.field}: {v}"
 
 
-def _verified_event(origin: str, before: str = "unknown") -> VerificationEvent:
-    return VerificationEvent(from_status=before, to_status="document_verified", reason="sim_document_check", by=SIM_BY,
-                             document_reference=origin, at=RECORDED_AT)
+class SimDocumentAuthority:
+    """합성 문서 정보원. 운영 권한이 아니며 OfflineEvaluator의 평가 범위 안에서만 켜집니다.
+
+    시뮬레이터의 문서 요청이 값을 확인하면 여기서 증명을 발급합니다. 그래서 시뮬레이터도 Session과 같은 요건을 지납니다:
+    증명 없는 document_verified 사실, 값이 다른 사실로 옮긴 증명은 인정되지 않습니다."""
+
+    def _sign(self, document_id: str, digest: str) -> str:
+        return hashlib.sha256(f"{SIM_BY}|{document_id}|{digest}".encode()).hexdigest()
+
+    def issue(self, f: PatientFact, origin: str) -> ServerAttestation:
+        digest = document_authority.fact_digest(f)
+        return ServerAttestation(document_id=origin, sha256=hashlib.sha256(origin.encode()).hexdigest(), fact_digest=digest,
+                                 verifier=SIM_BY, signature=self._sign(origin, digest))
+
+    def valid(self, attestation: ServerAttestation, fact) -> bool:
+        return (attestation.verifier == SIM_BY and attestation.fact_digest == document_authority.fact_digest(fact)
+                and attestation.signature == self._sign(attestation.document_id, attestation.fact_digest))
+
+
+SIM_AUTHORITY = SimDocumentAuthority()
+# 실행 산출물에 남기는 가정. 시뮬레이터의 확정 수는 서버 문서 계약이 있는 미래를 가정한 값이고, 운영에는 문서 권한이 없음
+DOCUMENT_ASSUMPTION = {"authority": "SimDocumentAuthority", "kind": "synthetic", "assumes": "future_server_document_contract",
+                       "production_authority": "NoDocumentAuthority", "operational_performance": False}
+
+
+def _verified_event(f: PatientFact, origin: str) -> VerificationEvent:
+    return VerificationEvent(from_status=f.verification_status, to_status="document_verified", reason="sim_document_check",
+                             by=SIM_BY, document_reference=origin, attestation=SIM_AUTHORITY.issue(f, origin), at=RECORDED_AT)
 
 
 def make_fact(alias: str, f: SimFact, *, seq: int, origin: str, source_type: str, verified: bool,
               ref_kind: str, ref: str | None) -> PatientFact:
-    """SimFact -> PatientFact (결정적 ID). verified면 문서 검증 이력을 함께 남김 (document_verified는 문서 참조 필요)."""
+    """SimFact -> PatientFact (결정적 ID). verified면 합성 문서 증명을 함께 남김."""
     fid = fact_id(alias, seq, origin, f.field, f.value, f.unit, source_type)
-    history = [_verified_event(origin)] if verified else []
-    return PatientFact(fact_id=fid, patient_id=alias, field=f.field.strip().lower(), value=f.value, unit=f.unit,
-                       source_type=source_type, source_reference=SourceReference(kind=ref_kind, ref=ref,
-                                                                                 quote=fact_line(f)),
-                       verification_status="document_verified" if verified else "unknown",
-                       verification_history=history, observed_at=f.observed_at, recorded_at=RECORDED_AT, version=1)
+    out = PatientFact(fact_id=fid, patient_id=alias, field=f.field.strip().lower(), value=f.value, unit=f.unit,
+                      source_type=source_type, source_reference=SourceReference(kind=ref_kind, ref=ref, quote=fact_line(f)),
+                      verification_status="unknown", observed_at=f.observed_at, recorded_at=RECORDED_AT, version=1)
+    return verify_fact(out, origin) if verified else out
 
 
 def verify_fact(f: PatientFact, origin: str) -> PatientFact:
     """이미 있는 사실을 문서로 확인함 (FactStore.set_verification과 같은 기록: 사유·기록자·문서 참조). 값·출처는 그대로."""
     return f.model_copy(update={"verification_status": "document_verified",
-                                "verification_history": [*f.verification_history,
-                                                         _verified_event(origin, f.verification_status)]})
+                                "verification_history": [*f.verification_history, _verified_event(f, origin)]})
 
 
 def same_value(f: PatientFact, s: SimFact) -> bool:
@@ -139,7 +162,7 @@ def renumber(facts: list[PatientFact]) -> list[PatientFact]:
 
 def on_record(f: PatientFact) -> bool:
     """처음 받은 기록 부분에 쓸 사실: 진료 기록 출처이거나 문서로 확인된 사실 (환자 답변이었어도 문서 확인 뒤에는 기록)."""
-    return f.source_type == "clinical_record" or f.verification_status == "document_verified"
+    return f.source_type == "clinical_record" or document_backed(f)
 
 
 def source_text(facts: list[PatientFact]) -> str:
@@ -170,26 +193,29 @@ class OfflineEvaluator:
     def evaluate(self, alias: str, facts: list[PatientFact],
                  trial_ids: tuple[str, ...] | None = None) -> tuple[DecisionState, FactSnapshot]:
         """trial_ids: 이 환자의 후보 시험 (None = 전체)."""
-        snap = self.snapshot(alias, facts)
-        store = snapshot_store(snap)
-        text = source_text(snap.facts)
-        profile = FactEvidenceView(store, alias).to_profile()
-        parsed, tdict, matches = {}, {}, {}
-        self.client.facts = list(snap.facts)
-        with llm.use_client(self.client):
-            for t in self.trials:
-                if trial_ids is not None and t.trial_id not in trial_ids:
-                    continue
-                p = t.parsed_with_meta()
-                parsed[t.trial_id], tdict[t.trial_id] = p, dict(t.trial)
-                matches[t.trial_id] = matcher.match_trial(profile, p, tdict[t.trial_id],
-                                                          reference_date=self.reference_date, source_text=text,
-                                                          input_source="clinical_record")
-        view = SessionView(session_id=alias, patient_id=alias, snapshot=snap, matches=matches, parsed=parsed,
-                           trials=tdict, reference_date=self.reference_date,
-                           matched_versions={t: snap.version for t in matches})
-        return build_state(view), snap
+        with document_authority.use(SIM_AUTHORITY):  # 합성 문서 증명은 이 범위에서만 유효
+            snap = self.snapshot(alias, facts)
+            store = snapshot_store(snap)
+            text = source_text(snap.facts)
+            profile = FactEvidenceView(store, alias).to_profile()
+            parsed, tdict, matches = {}, {}, {}
+            self.client.facts = list(snap.facts)
+            with llm.use_client(self.client):
+                for t in self.trials:
+                    if trial_ids is not None and t.trial_id not in trial_ids:
+                        continue
+                    p = t.parsed_with_meta()
+                    parsed[t.trial_id], tdict[t.trial_id] = p, dict(t.trial)
+                    # Session과 같은 게이트: input_source는 선언일 뿐이고 document_check가 합성 문서 증명을 확인
+                    matches[t.trial_id] = matcher.match_trial(
+                        profile, p, tdict[t.trial_id], reference_date=self.reference_date, source_text=text,
+                        input_source="clinical_record",
+                        document_check=evidence_basis.document_check(store, alias, p, self.reference_date))
+            view = SessionView(session_id=alias, patient_id=alias, snapshot=snap, matches=matches, parsed=parsed,
+                               trials=tdict, reference_date=self.reference_date,
+                               matched_versions={t: snap.version for t in matches})
+            return build_state(view), snap
 
 
-__all__ = ["OfflineEvaluator", "OfflineMatcherClient", "OfflineLLMRequest", "EVALUATOR_ID", "fact_id", "fact_line",
+__all__ = ["OfflineEvaluator", "OfflineMatcherClient", "OfflineLLMRequest", "EVALUATOR_ID", "DOCUMENT_ASSUMPTION", "SIM_AUTHORITY", "fact_id", "fact_line",
            "make_fact", "verify_fact", "same_value", "source_text"]

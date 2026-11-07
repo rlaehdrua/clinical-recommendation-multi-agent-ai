@@ -17,6 +17,9 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent))
 
+from functools import partial  # noqa: E402
+
+from document_support import documented  # noqa: E402
 from ctrec import evidence_directness as ed, profile_facts, trial_store
 from ctrec.agents import matcher
 from ctrec.fact_store import FactStore
@@ -24,6 +27,9 @@ from ctrec.schemas import CriterionAssessment, Fact, LLMAssessment, MatcherOutpu
 
 from test_decisions import TRIAL, _parsed
 from test_offline import _profile, _rule
+
+documented_match = partial(matcher.match_trial, document_check=documented)  # 게이트가 주제가 아닌 테스트: 문서 확인 있는 경로
+
 
 ROOT = Path(__file__).resolve().parent.parent
 REC = "clinical_record"
@@ -51,7 +57,7 @@ def _llm(monkeypatch, *verdicts):
 def _match_e9(monkeypatch, text, holds, quote, input_source=REC):
     parsed, trial = _e9()
     _llm(monkeypatch, ("E9", holds, "explicit", quote))
-    m = matcher.match_trial(_profile(age=62, sex="male", ecog=None), parsed, trial, reference_date="2026-10-24",
+    m = documented_match(_profile(age=62, sex="male", ecog=None), parsed, trial, reference_date="2026-10-24",
                             source_text=text, input_source=input_source)
     return m, m.assessments[0]
 
@@ -160,7 +166,7 @@ B_TEXT = INIT_CT + "\n\n[추가 확인 정보 - 라운드 1]\nQ: 수술 받은 �
 
 def _match(monkeypatch, rules, verdicts, text, input_source=REC, **profile):
     _llm(monkeypatch, *verdicts)
-    return {a.rule_id: a for a in matcher.match_trial(_profile(**profile), _parsed(rules), TRIAL, source_text=text,
+    return {a.rule_id: a for a in documented_match(_profile(**profile), _parsed(rules), TRIAL, source_text=text,
                                                        input_source=input_source).assessments}
 
 

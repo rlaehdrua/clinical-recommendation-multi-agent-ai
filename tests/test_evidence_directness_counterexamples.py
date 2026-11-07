@@ -15,12 +15,18 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent))
 
+from functools import partial  # noqa: E402
+
+from document_support import documented  # noqa: E402
 from ctrec import evidence_directness as ed, trial_store
 from ctrec.agents import matcher
 from ctrec.schemas import LLMAssessment, MatcherOutput, QAPair, RuleMeta
 
 from test_decisions import TRIAL, _parsed
 from test_offline import _profile, _rule
+
+documented_match = partial(matcher.match_trial, document_check=documented)  # 게이트가 주제가 아닌 테스트: 문서 확인 있는 경로
+
 
 ROOT = Path(__file__).resolve().parent.parent
 REC = "clinical_record"
@@ -38,7 +44,7 @@ def _judge(monkeypatch, rule, text, holds, quote, *, applicable=True, required="
     monkeypatch.setattr(matcher.llm, "structured", lambda *a, **k: MatcherOutput(assessments=[la]))
     p = _parsed([rule])
     p.rule_meta = {rule.rule_id: RuleMeta(required_evidence=required)}
-    m = matcher.match_trial(_profile(), p, TRIAL, reference_date=reference_date, source_text=text, input_source=REC,
+    m = documented_match(_profile(), p, TRIAL, reference_date=reference_date, source_text=text, input_source=REC,
                             qa_log=qa_log)
     return m, m.assessments[0]
 
@@ -195,9 +201,9 @@ def test_frozen_turbt_rule_time_window_read_only(monkeypatch):
     la = LLMAssessment(rule_id="I3", applicable=True, holds="yes", evidence_type="explicit", confidence="high",
                        evidence="TURBT was performed on 2026-07-21", reasoning="scripted", missing_info=None)
     monkeypatch.setattr(matcher.llm, "structured", lambda *a, **k: MatcherOutput(assessments=[la]))
-    late = matcher.match_trial(_profile(), one, trial, reference_date="2026-10-24", source_text=text, input_source=REC)
+    late = documented_match(_profile(), one, trial, reference_date="2026-10-24", source_text=text, input_source=REC)
     assert late.assessments[0].validation_flags == ["time_window_unverified"]  # 95일 > 84일
-    ok = matcher.match_trial(_profile(), one, trial, reference_date="2026-09-01", source_text=text, input_source=REC)
+    ok = documented_match(_profile(), one, trial, reference_date="2026-09-01", source_text=text, input_source=REC)
     assert ok.assessments[0].passes is True
 
 

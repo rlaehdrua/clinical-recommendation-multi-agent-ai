@@ -17,7 +17,7 @@
 
 미결정 (추측해서 구현하지 않음)
 - 기준 성격 분류(adjudication rule / fact_llm / expert)는 M12의 RuleMeta.adjudication이 아직 없어 잠정 규칙
-  `provisional_adjudication`(underspecified -> expert, structured_evaluable -> rule, 그 밖 -> fact_llm)을 씁니다.
+  `provisional_adjudication`(expert_boundary 분류 -> expert, structured_evaluable -> rule, 그 밖 -> fact_llm)을 씁니다.
   호출자가 adjudication을 직접 넘기면 그 값을 씁니다. expert 기준을 평가기가 확정했다면 변환하지 않고 BridgeError.
 """
 
@@ -25,6 +25,7 @@ from __future__ import annotations
 
 from typing import Iterable
 
+from .. import expert_boundary
 from .contracts import ALIAS_PATTERN, CriterionResult, EvidenceRef, PairKey
 
 CONTRACT_EVALUATOR = "contract_evaluator"
@@ -35,9 +36,9 @@ class BridgeError(ValueError):
     pass
 
 
-def provisional_adjudication(rule) -> str:
+def provisional_adjudication(rule, trial_id: str = "") -> str:
     """잠정 기준 성격 분류 (M12 RuleMeta.adjudication 확정 전). 판정 규칙이 아니라 '누가 확정할 수 있는가'의 분류."""
-    if getattr(rule, "underspecified", False):
+    if expert_boundary.clinician_reason(trial_id, rule):
         return "expert"
     return "rule" if getattr(rule, "structured_evaluable", False) else "fact_llm"
 
@@ -49,7 +50,8 @@ def evidence_ref(fact) -> EvidenceRef:
         source = "self_report"  # proposition_store 원칙: 문서 검증 전에는 clinical_record가 아님
     return EvidenceRef(fact_id=fact.fact_id, field="prop:" + fact.proposition.key, source_type=source,
                        verification_status=fact.verification_status, contract_id=fact.contract_id,
-                       contract_version=fact.contract_version)
+                       contract_version=fact.contract_version,
+                       document_reference=getattr(fact, "document_reference", None))
 
 
 def _state(a) -> str:
@@ -91,7 +93,7 @@ def criterion_result_from_assessment(alias: str, trial_id: str, assessment, prov
         raise BridgeError(f"평가기 출처의 사실 {len(missing)}개를 장부에서 찾을 수 없음")
     refs = tuple(evidence_ref(by_id[i]) for i in used)
     state = _state(assessment)
-    adj = adjudication or (provisional_adjudication(rule) if rule is not None else "rule")
+    adj = adjudication or (provisional_adjudication(rule, trial_id) if rule is not None else "rule")
     if adj == "expert" and state != "UNKNOWN":
         raise BridgeError("전문가 판단 기준을 평가기가 확정함 - 변환하지 않음 (임상의만 확정)")
     req = assessment.required_evidence if assessment.required_evidence in ("self_report_ok", "clinical_record") \

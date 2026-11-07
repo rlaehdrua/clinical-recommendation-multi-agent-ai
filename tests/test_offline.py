@@ -103,8 +103,9 @@ def test_not_applicable_conditional_rule_passes():
     from ctrec.schemas import LLMAssessment, MatcherOutput, ParsedTrial
     rule = _rule(rule_id="I9", kind="inclusion", text="Men who can father a child: must use birth control",
                  category="reproductive", structured_evaluable=False)
+    age = _rule(field="age", operator=">=", value="19")  # 해당 없음만으로는 적격 근거가 없음 (R5 P3)
     parsed = ParsedTrial(trial_id="T", title="t", target_population="", intervention_summary="", key_conditions=[],
-                         cohorts=[], rules=[rule], parsing_notes="")
+                         cohorts=[], rules=[rule, age], parsing_notes="")
     fake = MatcherOutput(assessments=[LLMAssessment(rule_id="I9", applicable=False, holds="no", evidence_type="explicit",
                                                     confidence="high", evidence="60세 여성", reasoning="남성 대상 조건", missing_info=None)])
     orig = matcher.llm.structured

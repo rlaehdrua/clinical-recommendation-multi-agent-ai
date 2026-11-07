@@ -10,7 +10,8 @@
       원문에 구체 기준이 없는 underspecified 기준의 unknown은 '의사 확인 필요'로 분류하되 ELIGIBLE을 막음 -
       파서 LLM의 분류 하나로 미확인 기준이 통과 처리되지 않도록)
    - 모두 통과하면 ELIGIBLE
-   - 평가할 기준이 없으면 ELIGIBLE이 아님: 시험 전체는 NOT_EVALUATED(부적격 아님), decide([])는 UNCERTAIN
+   - 실질 기준(이 환자에게 적용되는 절차 외 기준)이 없으면 ELIGIBLE이 아님: 시험 전체는 NOT_EVALUATED(부적격 아님),
+     decide는 UNCERTAIN
      (docs/dev/e1_empty_criteria_safety.md)
 """
 
@@ -19,7 +20,7 @@ from __future__ import annotations
 import json
 import re
 
-from .. import answer_verification, config, evidence, evidence_directness, llm
+from .. import answer_verification, config, evidence, evidence_directness, expert_boundary, llm, value_grounding
 from ..schemas import (CriterionAssessment, LLMAssessment, MatcherOutput, ParsedTrial, PatientProfile, QAPair, Rule,
                        RuleMeta, TrialMatch)
 from ..tools import rule_engine
@@ -56,6 +57,7 @@ SYSTEM = """당신은 임상시험 적격성을 판정하는 '추론·매칭 에
 
 
 LOGISTICS = "consent_or_logistics"
+DECLARED_RECORD_HELD = "declared_record_unverified"  # 진료 기록으로 선언됐으나 서버 문서 확인이 없어 통과를 보류한 기준
 
 
 def is_waivable_logistics(a: CriterionAssessment) -> bool:
@@ -85,12 +87,19 @@ def needs_physician_review(a: CriterionAssessment) -> bool:
     return a.passes is None and a.underspecified
 
 
+def is_substantive(a: CriterionAssessment) -> bool:
+    """적격 확정의 근거가 될 수 있는 기준인가: 이 환자에게 적용되는 절차 외 기준.
+
+    절차 기준은 확인돼도 환자가 시험 대상인지 말해 주지 않고, '해당 없음'은 평가된 내용이 없습니다."""
+    return a.applicable and a.category != LOGISTICS
+
+
 def decide(assessments: list[CriterionAssessment]) -> str:
-    if not assessments:  # 근거가 없으면 확정하지 않음 (부적격도 아님). match_trial을 거치지 않는 호출의 방어선
-        return "UNCERTAIN"
     if any(a.passes is False for a in assessments):
         return "INELIGIBLE"
     if any(is_blocking_unknown(a) for a in assessments):
+        return "UNCERTAIN"
+    if not any(is_substantive(a) for a in assessments):  # 빈 목록 포함: 근거 없이 확정하지 않음 (부적격도 아님)
         return "UNCERTAIN"
     return "ELIGIBLE"
 
@@ -104,7 +113,7 @@ def _select_cohort(assessments: list[CriterionAssessment], cohorts: list[str]):
 
     코호트는 cohorts 목록과 규칙에 실제로 붙은 cohort 값을 모두 사용합니다.
     (파서가 cohorts 목록과 다른 이름을 규칙에 적어도, 서로 다른 코호트 전용 기준이 한꺼번에 적용되지 않도록)
-    같은 적격성이면 결정적 순서로 고름: 판정 불가 항목이 적은 코호트 -> 선언 순서.
+    같은 적격성이면 결정적 순서로 고름: 실질 기준이 있는 코호트 -> 판정 불가 항목이 적은 코호트 -> 선언 순서.
 
     반환: (판정에 적용한 기준 목록, 선택된 코호트 또는 None, 코호트별 적격성)
     """
@@ -121,6 +130,7 @@ def _select_cohort(assessments: list[CriterionAssessment], cohorts: list[str]):
         results[c] = (subset, decide(subset))
     best = min(range(len(labels)), key=lambda i: (
         -_RANK[results[labels[i]][1]],
+        not any(is_substantive(a) for a in results[labels[i]][0]),
         sum(is_blocking_unknown(a) for a in results[labels[i]][0]),
         i,
     ))
@@ -285,12 +295,7 @@ def _review_assessment(rule: Rule, reason: str) -> CriterionAssessment:
     )
 
 
-_FIELD_TEXT = {
-    "ecog": lambda v: rf"(?:ecog|performance\s*status|\bps\b|수행\s*상태|활동도)[^0-9\n]{{0,20}}(?<!\d){re.escape(v)}(?!\d)",
-    "age": lambda v: rf"(?<![\d.]){re.escape(v)}\s*(?:세|살|개월|주|일|years?|yrs?|months?|weeks?|days?|-year|yo\b|y/o)",
-    "sex": lambda v: {"female": r"female|\bwoman\b|\bgirl\b|여성|여자|여아",
-                      "male": r"(?<!fe)male\b|\bman\b|\bboy\b|남성|남자|남아"}.get(v, r"(?!)"),
-}
+_FIELD_TEXT = value_grounding.FIELD_TEXT
 _ENGINE_FIELD = [("ecog", re.compile(r"^ECOG (\S+)$")), ("sex", re.compile(r"^환자 성별 (\S+)$")),
                  ("age", re.compile(r"^환자 나이 (\S+)"))]
 
@@ -335,8 +340,12 @@ def _evidence_source(a: CriterionAssessment, source_text: str | None, input_sour
     return "unknown"
 
 
-def _apply_evidence_policy(a: CriterionAssessment, meta: RuleMeta, source_text: str | None,
-                           input_source: str = "unknown") -> CriterionAssessment:
+_GROUNDING_DIRECTNESS = {"unlocated": "unlocated", "hedged": "hedged", "conflict": "conflicting"}
+
+
+def _apply_evidence_policy(a: CriterionAssessment, meta: RuleMeta, source_text: str | None, input_source: str = "unknown",
+                           *, rule: Rule | None = None, profile: PatientProfile | None = None, key: str | None = None,
+                           qa: list[QAPair] | None = None, reference_date: str | None = None) -> CriterionAssessment:
     """근거 수준 (D2, 아키텍처 §19 User Answer ≠ Verified Clinical Truth).
 
     진료 기록이 필요한 기준을 환자 답변(자기 보고)만으로 판정했으면 판정을 확정하지 않고 UNVERIFIED(판정 불가)로 되돌립니다.
@@ -344,6 +353,16 @@ def _apply_evidence_policy(a: CriterionAssessment, meta: RuleMeta, source_text: 
     """
     a.required_evidence = meta.required_evidence
     a.evidence_source = _evidence_source(a, source_text, input_source)  # type: ignore[assignment]
+    problem = value_grounding.structured_problem(a, rule, profile, source_text, key=key, qa=qa,
+                                                 reference_date=reference_date)
+    if problem and a.required_evidence != "clinical_record":  # 프로필 값이 원문에 없음: 확정 적격·부적격 어느 쪽의 근거도 아님
+        return a.model_copy(update={
+            "holds": "unknown", "passes": None, "confidence": "low", "evidence_source": "none",
+            "evidence_directness": _GROUNDING_DIRECTNESS[problem], "missing_info": a.missing_info or a.criterion_text,
+            "validation_flags": [*a.validation_flags, f"structured_{problem}"],
+            "reasoning": f"[코드 검증: 구조화 값의 원문 근거를 확인하지 못함({problem}) - 판정 보류] {a.reasoning}"})
+    if problem and (problem != "hedged" or a.evidence_source == "record"):
+        a.evidence_source = "unknown"  # 진료 기록 필요 기준은 아래 기존 경로로 문서 확인을 요청 (답변 값으로 꾸미지 않음)
     if not (a.evidence_source in ("self_report", "unknown") and a.required_evidence == "clinical_record"):
         return a
     said = "해당 없음" if not a.applicable else {"yes": "해당", "no": "해당하지 않음"}.get(a.holds, a.holds)
@@ -397,6 +416,10 @@ brief_summary: {trial.get('brief_summary', '')[:3000]}
 # 평가할 기준이 없는 시험의 evaluation_error. 코드만 남기고 시험 원문·환자 정보는 넣지 않음
 CRITERIA_PARSE_EMPTY = "criteria_parse_empty"  # 원문·구조화 조건이 있는데 파싱 결과가 빔
 NO_SOURCE_CRITERIA = "no_source_criteria"  # 원문에도 평가할 조건이 없음
+NO_REQUIRED_CRITERIA = "no_required_criteria"  # 적용 경로의 기준이 절차 기준뿐
+NO_APPLICABLE_CRITERIA = "no_applicable_criteria"  # 절차 외 기준이 있지만 이 환자에게 모두 해당 없음
+# 평가는 했으나 적격을 판단할 기준이 없는 경우: 평가 실패가 아니며 추천에서 빼고 담당자 확인으로 넘김 (P3 확정)
+NO_EVIDENCE_CODES = frozenset({NO_REQUIRED_CRITERIA, NO_APPLICABLE_CRITERIA})
 
 
 def _empty_criteria_code(trial: dict) -> str:
@@ -405,6 +428,13 @@ def _empty_criteria_code(trial: dict) -> str:
     has_source = (str(trial.get("eligibility_criteria") or "").strip() or trial.get("minimum_age")
                   or trial.get("maximum_age") or sex != "ALL")
     return CRITERIA_PARSE_EMPTY if has_source else NO_SOURCE_CRITERIA
+
+
+def no_evidence_code(assessments: list[CriterionAssessment]) -> str | None:
+    """적용 경로에 적격을 판단할 근거가 없으면 원인 코드. 불충족·확인할 항목이 있으면 None (기존 판정을 따름)."""
+    if any(is_substantive(a) or a.passes is False or is_blocking_unknown(a) for a in assessments):
+        return None
+    return NO_APPLICABLE_CRITERIA if any(a.category != LOGISTICS for a in assessments) else NO_REQUIRED_CRITERIA
 
 
 def _no_criteria_match(profile: PatientProfile, parsed: ParsedTrial, trial: dict) -> TrialMatch:
@@ -420,14 +450,17 @@ def _no_criteria_match(profile: PatientProfile, parsed: ParsedTrial, trial: dict
 def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
                 reference_date: str | None = None, source_text: str | None = None,
                 input_source: str = "unknown", qa_log: list[QAPair] | None = None,
-                qa: list[QAPair] | None = None, session_id: str | None = None) -> TrialMatch:
+                qa: list[QAPair] | None = None, session_id: str | None = None,
+                document_check=None) -> TrialMatch:
     """source_text: 환자 원문(확인 질문 답변 포함). 주어지면 LLM 판정의 인용 근거를 원문과 대조합니다.
     input_source: 최초 입력의 선언된 출처(evidence.InputSource). 밝히지 않으면 unknown(진료 기록으로 보지 않음).
     qa_log: 확인 질문 기록(질문 ID·대상 기준·답변). 주어지면 짧은 답변(예/아니요)을 그 질문의 대상 기준에 한해 근거로 씀.
             없으면(현재 Session 기본) 짧은 답변은 근거로 쓰지 않음.
     qa, session_id: Session의 확인 질문 기록과 세션 ID (Session.match가 넘김). 모델 판정이 인용 검증에서 되돌려졌을 때만,
             이 기준을 겨냥한 예/아니요 답이 같은 대상·기간을 물은 것으로 코드가 검증되면 그 문답을 근거로 인정
-            (answer_verification.py). 검증할 수 없으면 기존대로 판정 불가."""
+            (answer_verification.py). 검증할 수 없으면 기존대로 판정 불가.
+    document_check: (판정, 규칙) -> 서버 문서 확인이 있는가 (evidence_basis.document_check). 없으면 어떤 기준도 문서로
+            확인되지 않은 것으로 봅니다: 진료 기록 필요 기준의 통과를 확정하지 않음 (input_source는 선언일 뿐 검증이 아님)."""
     if not parsed.rules:
         return _no_criteria_match(profile, parsed, trial)
     ref = reference_date or config.reference_date()
@@ -439,7 +472,7 @@ def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
         if review:
             results[rule.rule_id] = _review_assessment(rule, review)
             continue
-        res = rule_engine.evaluate(rule, profile)
+        res = rule_engine.evaluate(rule, profile, ref)
         if res is not None:
             if res.passes is not None:
                 res.evidence_directness = "structured"
@@ -526,15 +559,22 @@ def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
                 cohort=rule.cohort,
             )
 
-    all_assessments = [_apply_evidence_policy(results[r.rule_id], _meta(parsed, r), source_text, input_source)
+    all_assessments = [_apply_evidence_policy(results[r.rule_id], _meta(parsed, r), source_text, input_source, rule=r,
+                                              profile=profile, key=f"{parsed.trial_id}:{r.rule_id}", qa=qa, reference_date=ref)
                        for r in parsed.rules]
+    # 진료 기록이 필요한 기준의 통과는 서버 문서 확인이 있을 때만 확정 (Session·시뮬레이터 공통 경계)
+    from .. import evidence_basis
+    all_assessments = [evidence_basis.enforce(a, by_id[a.rule_id], document_check) for a in all_assessments]
     # Q&A 정책 (qa_guard.policy): contract면 계약 없는 확인 답변에 기댄 확정을 UNVERIFIED로. 기본 legacy는 기존과 같음
     from .. import qa_guard
     if qa_guard.policy() == "contract":
         all_assessments = qa_guard.guard_assessments(all_assessments, source_text)
+    # 임상의 판단 기준은 LLM·판정기·문서 근거로 확정하지 않음 (Session·시뮬레이터 공통 경계)
+    all_assessments = expert_boundary.enforce_all(parsed, all_assessments)
     assessments, matched_cohort, cohort_results = _select_cohort(all_assessments, parsed.cohorts)
     other = [a for a in all_assessments if a not in assessments]
-    eligibility = decide(assessments)
+    no_evidence = no_evidence_code(assessments)
+    eligibility = "NOT_EVALUATED" if no_evidence else decide(assessments)
     n_pass = sum(a.passes is True for a in assessments)
     n_fail = sum(a.passes is False for a in assessments)
     n_unknown = sum(a.passes is None for a in assessments)
@@ -554,6 +594,8 @@ def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
         summary += f" [코호트: {matched_cohort}]"
     if failed:
         summary += " | 불충족: " + "; ".join(failed[:3])
+    if no_evidence:
+        summary += f" | 판단할 실질 기준이 없음(부적격 아님) - {no_evidence}"
 
     return TrialMatch(
         patient_id=profile.patient_id,
@@ -568,6 +610,7 @@ def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
         cohort_results=cohort_results,
         other_cohort_assessments=other,
         retried_rule_ids=retried,
+        evaluation_error=no_evidence,
     )
 
 

@@ -17,7 +17,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-from .fact_store import FactStore, PatientFact, SourceReference
+from .fact_store import FactStore, PatientFact, SourceReference, document_backed
 from .propositions import Proposition
 from .question_contract import MappedAnswer, QuestionContract
 
@@ -41,6 +41,7 @@ class PropFact:
     source: str  # self_report (환자 답변) | clinical_record (문서 확인으로 검증된 경우만)
     verification_status: str
     recorded_at: str
+    document_reference: str | None = None  # 문서 권한이 인정한 증명의 문서 ID
 
 
 @dataclass
@@ -104,6 +105,9 @@ class PropositionLedger:
             out.append(PropFact(f.fact_id, Proposition.parse(f.field[len(PREFIX):]), f.value, f.observed_at,
                                 f.session_id, m.group(1), int(m.group(2)), m.group(3), int(m.group(4)), m.group(5),
                                 f.source_reference.quote or "",
-                                "clinical_record" if f.verification_status == "document_verified" else f.source_type,
-                                f.verification_status, f.recorded_at))
+                                "clinical_record" if document_backed(f)
+                                else "self_report" if f.source_type == "clinical_record" else f.source_type,
+                                f.verification_status if document_backed(f) or f.verification_status != "document_verified"
+                                else "unverified", f.recorded_at,
+                                f.verification_history[-1].document_reference if document_backed(f) else None))
         return out

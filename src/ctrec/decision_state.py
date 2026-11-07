@@ -23,6 +23,8 @@ DecisionState는 Session의 현재 상태를 읽기만 해서 만든 사본입�
 
 from __future__ import annotations
 
+import re
+
 import hashlib
 import json
 import time
@@ -37,8 +39,9 @@ from .agents.recommender import is_open
 from .dependency_graph import LLM_CATEGORY_FIELDS
 from .fact_changes import FactSnapshot, make_snapshot, snapshot_store
 from .fact_compare import state as assessment_state
-from .fact_store import FactStore
-from .fact_view import FactEvidenceView, _differing, _engine_field, relevant_biomarker_facts, targets_in
+from .engine.contracts import EvidenceRef
+from .fact_store import FactStore, document_backed
+from .fact_view import FactEvidenceView, _differing, _engine_field, document_coverage, relevant_biomarker_facts, targets_in
 from .schemas import CriterionAssessment, ParsedTrial, QAPair, TrialMatch
 
 ActionType = Literal["ASK_USER", "REQUEST_DOCUMENT", "VERIFY", "RUN_TOOL", "REPARSE", "RETRIEVE", "DEFER",
@@ -110,6 +113,7 @@ class CriterionState(BaseModel):
     fields_are_hints: bool = False
     required_evidence: str = "self_report_ok"
     evidence_refs: list[str] = []
+    document_refs: list[EvidenceRef] = []  # 진료 기록 필요 기준의 근거 중 서버 문서 확인이 있는 사실
     asked: int = 0  # 이 기준을 겨냥한 확인 질문 수
     declined: bool = False  # 모름·거부 답변
     acquisition_status: str | None = None
@@ -160,6 +164,7 @@ class DecisionState(BaseModel):
     fact_ids: list[str] = []
     trials: dict[str, TrialState] = {}
     not_evaluated_trials: list[str] = []
+    no_required_trials: dict[str, str] = {}  # not_evaluated_trials 중 판정할 필수 기준이 없는 시험 -> 사유 코드 (matcher.NO_EVIDENCE_CODES)
     conflicting_fields: dict[str, str] = {}  # 항목 -> 상태 (값은 넣지 않음)
     unverified_fact_ids: list[str] = []  # 검증되지 않은 사실 (document_verified가 아님)
     question_history: list[dict] = []  # {round, question_id, targets, declined}
@@ -274,7 +279,7 @@ def build_state(view: SessionView, overlay: dict[str, CriterionAssessment] | Non
     st = DecisionState(
         session_id=view.session_id, patient_id=view.patient_id, fact_version=view.snapshot.version,
         fact_ids=[f.fact_id for f in view.snapshot.facts], conflicting_fields=fv.excluded(),
-        unverified_fact_ids=[f.fact_id for f in view.snapshot.facts if f.verification_status != "document_verified"],
+        unverified_fact_ids=[f.fact_id for f in view.snapshot.facts if not document_backed(f)],
         question_history=[{"round": q.round, "question_id": q.question_id, "targets": list(q.target),
                            "purpose": q.purpose, "declined": _declined(q.answer)} for q in view.qa_log],
         action_history=list(history or []), budget=budget or Budget())
@@ -282,6 +287,8 @@ def build_state(view: SessionView, overlay: dict[str, CriterionAssessment] | Non
         trial = view.trials.get(tid, {})
         if m.eligibility == "NOT_EVALUATED" or tid not in view.parsed:
             st.not_evaluated_trials.append(tid)  # 판정 실패: MET/NOT_MET으로 바꾸지 않음
+            if m.evaluation_error in matcher.NO_EVIDENCE_CODES:
+                st.no_required_trials[tid] = m.evaluation_error
             continue
         parsed = view.parsed[tid]
         rules = {r.rule_id: r for r in parsed.rules}
@@ -318,12 +325,16 @@ def build_state(view: SessionView, overlay: dict[str, CriterionAssessment] | Non
             requirement: Requirement = ("alternative_cohort" if a.rule_id not in applied
                                         else "waivable" if matcher.is_waivable_logistics(a) else "required")
             refs = _refs(a, rule, fv) if status in ("MET", "NOT_MET") else []
+            if gap == "none" and status == "MET" and a.required_evidence == "clinical_record" \
+                    and document_coverage([r for e in fv.fields.values() for r in e.facts if r.fact_id in refs]) != "verified":
+                gap = "unverified"  # Matcher를 거치지 않은 판정(재평가 overlay, 저장된 결과)도 같은 요건으로 확정하지 않음
             ts.criteria.append(CriterionState(
                 trial_id=tid, rule_id=a.rule_id, kind=a.kind, category=a.category, cohort=a.cohort,
                 requirement=requirement, status=status, source=source, gap=gap,
                 conflict_on_decided=conflict and status in ("MET", "NOT_MET"),
                 basis_tier=_basis_tier(refs, fv) if status in ("MET", "NOT_MET") else None, info_key=ik, fields=fields,
-                fields_are_hints=hints, required_evidence=a.required_evidence, evidence_refs=refs, asked=len(qs),
+                fields_are_hints=hints, required_evidence=a.required_evidence, evidence_refs=refs,
+                document_refs=_document_refs(view, refs) if a.required_evidence == "clinical_record" else [], asked=len(qs),
                 declined=bool(qs) and all(_declined(q.answer) for q in qs),
                 acquisition_status=mf.status if mf else None,
                 record=_record(a, rule, parsed, refs, version, model)))
@@ -339,6 +350,17 @@ def _basis_tier(refs: list[str], fv: FactEvidenceView) -> str:
     tiers = {r.fact_id: r.tier for e in fv.fields.values() for r in e.facts}
     found = [tiers[i] for i in refs if i in tiers]
     return min(found, key=_TIER_ORDER.__getitem__) if found else "unknown"
+
+
+_NOT_REF_FIELD = re.compile(r"[^A-Za-z0-9_:()./+\-]")
+
+
+def _document_refs(view: SessionView, refs: list[str]) -> list[EvidenceRef]:
+    wanted = set(refs)
+    return [EvidenceRef(fact_id=f.fact_id, field=_NOT_REF_FIELD.sub("_", f.field)[:200],  # 사실 항목에는 공백이 있음 (lab:white blood cell count)
+                        source_type=f.source_type if f.source_type in ("clinical_record", "self_report") else "unknown",
+                        verification_status="document_verified", document_reference=f.verification_history[-1].document_reference)
+            for f in view.snapshot.facts if f.fact_id in wanted and document_backed(f)]
 
 
 def _classify_mismatch(ts: TrialState, m: TrialMatch) -> None:

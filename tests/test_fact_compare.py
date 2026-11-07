@@ -8,6 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
+from document_support import attest_declared, documented
 from ctrec import config, store_patch, trial_store
 from ctrec.agents import matcher
 from ctrec.fact_compare import compare_session, compare_trial, evaluate_trial
@@ -29,14 +30,15 @@ HB = _rule(rule_id="I3", text="Hb >= 9 g/dL", category="lab", field="lab:hemoglo
 DX = _rule(rule_id="I4", text="NSCLC diagnosis", category="diagnosis", structured_evaluable=False)
 
 
-SRC = "환자 기록 요약: NSCLC 진단 확인됨"
+SRC = "환자 기록 요약: NSCLC 진단 확인됨. 62세 여성. ECOG 1. 20세 기록. 16세 기록"  # 테스트별 프로필 값이 모두 원문에 있음
 
 
 def _base(profile, rules, monkeypatch=None, llm=None):
     if monkeypatch is not None:
         monkeypatch.setattr(matcher.llm, "structured", llm or _unknown_llm)
-    return matcher.match_trial(profile, _parsed(rules), TRIAL, reference_date=REF, source_text=SRC,
-                               input_source=REC)
+    source = SRC.replace("ECOG 1", f"ECOG {profile.ecog}") if profile.ecog is not None else SRC  # 한 기록에 ECOG가 둘이면 상충
+    return matcher.match_trial(profile, _parsed(rules), TRIAL, reference_date=REF, source_text=source,
+                               input_source=REC, document_check=documented)
 
 
 def _unknown_llm(model, system, user, **k):
@@ -51,10 +53,13 @@ def _no_llm(*a, **k):
     raise AssertionError("LLM이 호출되면 안 됨")
 
 
-def _store(*facts) -> FactStore:
+def _store(*facts, documents=True) -> FactStore:
+    """documents: 기록 사실을 합성 문서로 확인 (사실 근거 비교의 대조군). 게이트 자체를 볼 때만 False."""
     s = FactStore()
     for field, value, kw in facts:
         s.add(P, field, value, **{"source_type": REC, **kw})
+    if documents:
+        attest_declared(s, P)
     return s
 
 
@@ -99,10 +104,15 @@ def test_met_to_unknown_due_to_self_report(monkeypatch):
 
 def test_declared_record_strict_mode(monkeypatch):
     base = _base(_profile(ecog=1), [ECOG], monkeypatch)
-    s = _store(("ecog", 1, {}))
-    assert _by_rule(_compare(s, base, [ECOG]))["I1"]["change"] == "same"
-    strict = _by_rule(_compare(s, base, [ECOG], require_document_verification=True))["I1"]
-    assert (strict["change"], strict["cause"]) == ("met_to_unknown", "declared_unverified")
+    s = _store(("ecog", 1, {}), documents=False)
+    for kw in ({}, {"require_document_verification": True}):  # 통과는 어느 모드에서도 문서가 있어야 함 (Matcher와 같은 요건)
+        c = _by_rule(_compare(s, base, [ECOG], **kw))["I1"]
+        assert (c["change"], c["cause"]) == ("met_to_unknown", "declared_unverified")
+    low = _base(_profile(ecog=3), [ECOG], monkeypatch)
+    s3 = _store(("ecog", 3, {}), documents=False)
+    assert _by_rule(_compare(s3, low, [ECOG]))["I1"]["change"] == "same"  # 잠정 부적격은 유지
+    strict = _by_rule(_compare(s3, low, [ECOG], require_document_verification=True))["I1"]
+    assert strict["cause"] == "declared_unverified" and strict["fact"] == "UNKNOWN"
 
 
 def test_conflict_changes_met_to_unknown(monkeypatch):
@@ -178,7 +188,7 @@ def test_llm_mode_trial_level_and_cohorts(monkeypatch):
     parsed = _parsed(rules, cohorts=["A", "B"])
     monkeypatch.setattr(matcher.llm, "structured", _llm_yes({"I5": SRC}))
     base = matcher.match_trial(_profile(age=62, ecog=1), parsed, TRIAL, reference_date=REF, source_text=SRC,
-                               input_source=REC)
+                               input_source=REC, document_check=documented)
     assert base.eligibility == "ELIGIBLE"
     s = _store(("age", 62, {"unit": "years"}), ("ecog", 1, {"source_type": "self_report"}),
                ("diagnosis", "NSCLC", {"source_reference": {"kind": "input_text", "quote": "NSCLC 진단"}}))
@@ -207,7 +217,7 @@ def test_trial_level_upgrade_is_risk(monkeypatch):
         rule_id="I3", applicable=True, holds="unknown", evidence_type="absent", confidence="low", evidence="근거 없음",
         reasoning="r", missing_info="Hb")]))
     base = matcher.match_trial(_profile(labs=[]), parsed, TRIAL, reference_date=REF, source_text=SRC,
-                               input_source=REC)
+                               input_source=REC, document_check=documented)
     assert base.eligibility == "UNCERTAIN"
     s = _store(("lab:hemoglobin", 11.0, {"unit": "g/dL", "observed_at": "2026-10-01"}))
     fact, reasons, fm = evaluate_trial(FactEvidenceView(s, P), parsed, TRIAL, REF, "llm")

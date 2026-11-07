@@ -35,6 +35,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response, StreamingRes
 from pydantic import BaseModel, Field
 
 from .. import DISCLAIMER, config, llm, web_metering
+from ..agents import matcher
 from ..agents.recommender import is_open, screen_pool
 from ..orchestrator import Orchestrator
 from ..pipeline import PatientCase, Session, load_patients
@@ -43,8 +44,10 @@ from ..schemas import ClarifyingQuestion
 from ..status import MATCH_NOTE
 from ..tools import ctgov
 from ..trace import Tracer
+from .. import conservative_view
 from . import engine_runner
 from . import access, budget, cohort_board, display, paid_gate, retention
+from . import followup_api
 
 STATIC = Path(__file__).parent / "static"
 log = logging.getLogger("ctrec.web")
@@ -339,7 +342,12 @@ _TRACE_DROP = frozenset({"profile", "screening", "assessments", "evaluation_erro
 
 
 def _client_record(rec: dict) -> dict:
+    code = rec.get("evaluation_error")  # 오류 원문은 보내지 않고, 고정 사유 코드만 진행 카드 문구에 씀
     rec = {k: v for k, v in rec.items() if k not in _TRACE_DROP}
+    if rec.get("match_status") == "CRITERIA_MATCH":  # 진행 중 값은 엔진 확인 전: 화면의 '중간 판정'으로만 보임
+        rec["match_status"] = rec.get("eligibility") or "UNCERTAIN"
+    if code in matcher.NO_EVIDENCE_CODES:
+        rec["review_code"] = code
     if (rec.get("agent"), rec.get("event")) not in _ERROR_TRACES:
         return rec
     kind = str(rec.get("message", "")).split("(", 1)[0].split(":", 1)[0].strip() or "Error"
@@ -450,11 +458,12 @@ def _execute_run(run: Run, req: RunRequest, case: PatientCase, trials: dict[str,
             raise budget.BudgetStop(run.budget.stopped)
         if out_dir is not None:
             session.save(out_dir)
+        shown = conservative_view.build(session, display.redact_errors(session.result()), session.report)
         with run.lock:  # 취소 요청과 경합: 아직 running일 때만 결과를 보내고, 같은 잠금 안에서 completed로 확정
             if run.state == "running":
                 run.state = "completed"
-                run.emit("result", result=display.redact_errors(session.result()), report=session.report, match_note=MATCH_NOTE,
-                         display=_display(session),
+                run.emit("result", result=shown.result, report=shown.report, match_note=MATCH_NOTE,
+                         display=conservative_view.adjust_display(_display(session), shown.holds),
                          trials={tid: {"title": t.get("title"), "overall_status": t.get("overall_status"),
                                        "url": (t.get("source") or {}).get("url")} for tid, t in session.trials.items()})
     except budget.BudgetStop as e:
@@ -515,7 +524,8 @@ def index() -> FileResponse:
 # 화면 정적 파일: 이름을 정해 둔 파일만 (경로 조작 불가). 외부 라이브러리는 VENDOR.md 참고
 STATIC_FILES = {"app.js": "text/javascript", "app.css": "text/css", "marked.min.js": "text/javascript",
                 "purify.min.js": "text/javascript", "logo.svg": "image/svg+xml",
-                "cohort.js": "text/javascript", "cohort.css": "text/css"}
+                "cohort.js": "text/javascript", "cohort.css": "text/css", "followup.js": "text/javascript",
+                "staff.js": "text/javascript", "staff.css": "text/css"}  # staff.*: 같은 페이지의 연구 담당자 탭
 
 
 @app.get("/static/{name}")
@@ -611,6 +621,12 @@ def _latest_cohort_set() -> tuple[Path, dict] | None:
         return None
     report = max(sets, key=lambda p: p.stat().st_mtime)
     return report.parent, json.loads(report.read_text(encoding="utf-8"))
+
+
+@app.get("/staff")
+def staff_page() -> FileResponse:
+    """연구 담당자 탭으로 여는 같은 화면 (index.html, staff.js가 경로를 보고 탭을 고름). 데이터는 담당자 키가 있어야 읽힘."""
+    return FileResponse(STATIC / "index.html", headers={"Cache-Control": "no-cache"})
 
 
 @app.get("/cohort")
@@ -802,6 +818,10 @@ async def stream_events(run_id: str, request: Request) -> StreamingResponse:
 
     return StreamingResponse(gen(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+# 추가 정보 확인 흐름 (환자 -> 연구 담당자 -> 환자 -> 재평가). 계약: docs/dev/followup_api_contract.md
+app.include_router(followup_api.router)
 
 
 def main() -> None:

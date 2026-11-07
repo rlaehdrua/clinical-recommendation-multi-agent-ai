@@ -12,6 +12,9 @@
 - 검사 사실의 날짜 = 기준일 - lab_age_days (기간 조건 기준이 기존 규칙 엔진에서 그대로 작동)
 - 환자별 후보 시험, 기준별 슬롯(criterion_slots: 환경이 그 슬롯의 사실만 드러냄)
 - 판정기: 슬롯 사전의 연결(Binding)로 CategoricalJudge (기본 auto·reviewed만, include_draft로 검수 전 포함)
+- 임상의 판단 기준(판단 슬롯을 쓰는 기준, is_expert_slot): 시뮬레이터에서는 underspecified로 표시해 엔진이 담당의
+  판단(physician_review -> EXPERT_REVIEW)으로 보내고, 판정기는 값이 있어도 판정하지 않음 (11-07 팀 결정 1, 서연 #20 리뷰 2:
+  파서 플래그가 underspecified=False인 judge.life_expectancy 등이 BLOCKED로 가던 문제). 엔진·웹의 정의는 바꾸지 않음
 옮기지 않는 것: 생성기의 쌍 라벨(oracle.pair_label)·assume_pass. 시뮬레이터의 규칙 GT는 같은 평가기로 정답 사실을 판정해
 다시 만들고, 검수 전 기준은 '충족으로 간주'하지 않고 라벨 없음으로 둡니다 (설계 §3.4, Q-G3).
 """
@@ -34,6 +37,27 @@ from .cohort import SimCohort, SimFact, SimTrial, make_cohort
 from .judge import CategoricalJudge, encode
 
 NUMERIC_RAW = frozenset({"age", "ecog"})
+# 임상의 판단 슬롯: #22의 cohort.spec.EXPERT_SLOT_PREFIX·EXPERT_SLOTS와 같은 값 (병합 뒤 그쪽 함수로 교체, 테스트가 일치 확인).
+# 결정 5(cm.serious_organ_disease·cm.immune_onc 추가)는 임상 검수 확인 대기
+EXPERT_SLOT_PREFIX = "judge."
+EXPERT_SLOTS = frozenset({"dx.disease_setting", "tx.recent_radiotherapy", "cm.cardiac", "other.tumor_tissue",
+                          "judge.life_expectancy", "judge.investigator_unsuitable"})
+
+
+def is_expert_slot(slot: str | None) -> bool:
+    return bool(slot) and (slot.startswith(EXPERT_SLOT_PREFIX) or slot in EXPERT_SLOTS)
+
+
+def mark_expert(trials: list[SimTrial], expert_rules: frozenset[str]) -> list[SimTrial]:
+    """판단 기준을 underspecified로 표시한 시험 사본 (원본 기준은 바꾸지 않음)."""
+    out = []
+    for t in trials:
+        p = t.parsed.model_copy(deep=True)
+        for r in p.rules:
+            if f"{t.trial_id}:{r.rule_id}" in expert_rules:
+                r.underspecified = True
+        out.append(SimTrial(p, t.trial, t.rule_meta))
+    return out
 
 
 class ConversionError(ValueError):
@@ -153,11 +177,15 @@ def to_sim_cohort(cohort: Cohort, sd: SlotDictionary, smap: SourceMap, trials: l
         patients.append((p.patient_id, public, truth, tuple(p.candidate_trials)))
 
     criterion_slots = {f"{t}:{r.rule_id}": tuple(r.slots()) for t, refs in pub.rules.items() for r in refs}
+    expert_rules = frozenset(k for k, slots in criterion_slots.items() if any(is_expert_slot(s) for s in slots))
+    trials = mark_expert(trials, expert_rules)
     field_slots = {f: s for s, m in smap.slots.items() for f in m.fields
                    if (f in NUMERIC_RAW or f.startswith("lab:")) and s in sd.slots and sd.slots[s].kind == "numeric"}
-    judge = CategoricalJudge(sd.bindings, sd.slots, cohort.reference_date, field_slots, include_draft=include_draft)
+    judge = CategoricalJudge(sd.bindings, sd.slots, cohort.reference_date, field_slots, include_draft=include_draft,
+                             expert_rules=expert_rules)
     return make_cohort(f"{cohort.cohort_id}@{cohort.config_hash}+map{smap.digest()[:8]}", cohort.reference_date, trials,
                        patients, salt or f"sim:{cohort.cohort_id}", criterion_slots, judge)
 
 
-__all__ = ["SourceMap", "SlotMap", "ConversionError", "load_source_map", "load_trials", "slot_facts", "to_sim_cohort"]
+__all__ = ["SourceMap", "SlotMap", "ConversionError", "load_source_map", "load_trials", "slot_facts", "to_sim_cohort",
+           "is_expert_slot", "mark_expert", "EXPERT_SLOTS", "EXPERT_SLOT_PREFIX"]

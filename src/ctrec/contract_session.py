@@ -21,14 +21,14 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from . import acquisition
+from . import acquisition, expert_boundary
 from .agents import matcher, question_generator
 from .evaluator import evaluate
 from .ir_review import Registry
 from .pipeline import Session, trace_match
 from .proposition_store import PropositionLedger
 from .propositions import Proposition
-from .qa_guard import downgrade, qa_dependent, recompose
+from .qa_guard import downgrade, evaluation_failed, qa_dependent, recompose
 from .question_contract import ContractRegistry, map_answer, render
 from .schemas import ClarifyingQuestion, CriterionAssessment, QAPair, TrialMatch
 from .tools.rule_engine import passes as rule_passes
@@ -57,6 +57,8 @@ def merge(base: CriterionAssessment, ev: CriterionAssessment) -> CriterionAssess
 
 @dataclass
 class ContractSession(Session):
+    engine_recovery_pending = staticmethod(lambda: False)  # 정책 엔진 모드에서만 실행기가 바꿈 (web/engine_runner.activate)
+
     contract_root: Path | None = None  # IR·계약 사이드카 (기본: 저장소 contracts/)
     contract_parsed_dir: Path | None = None  # 잠긴 기준표 위치 (기본: config.PARSED_DIR, 테스트만 바꿈)
     initial_text: str = ""
@@ -106,7 +108,7 @@ class ContractSession(Session):
 
     def _contract_and_guard(self, m: TrialMatch) -> TrialMatch:
         parsed = self.parsed.get(m.trial_id)
-        if m.eligibility == "NOT_EVALUATED" or parsed is None:
+        if evaluation_failed(m) or parsed is None:
             return m
         current = {a.rule_id: a for a in m.assessments + m.other_cohort_assessments}
         replaced = {rid: downgrade(a) for rid, a in current.items()
@@ -124,6 +126,11 @@ class ContractSession(Session):
             if res.decided and res.assessment is not None:
                 base = replaced.get(rule.rule_id, current[rule.rule_id])
                 replaced[rule.rule_id] = merge(base, res.assessment)
+        for rule in parsed.rules:  # 임상의 판단 기준은 LLM·계약 평가기 어느 쪽 판정도 확정으로 남기지 않음
+            a = replaced.get(rule.rule_id, current.get(rule.rule_id))
+            held = expert_boundary.enforce(m.trial_id, rule, a) if a is not None else None
+            if held is not a:
+                replaced[rule.rule_id] = held
         if not replaced:
             return m
         new = recompose(m, parsed, replaced)
@@ -174,7 +181,7 @@ class ContractSession(Session):
             return {"status": "skipped", "reason": f"질문 예산({self.question_budget}개) 소진"}
         targets = self.open_candidates()
         plan = self._contract_plan(targets)
-        llm_needed = bool(super().uncertain()) or self.pending_physician_review()
+        llm_needed = bool(super().uncertain()) or self.pending_physician_review() or self.engine_recovery_pending()
         if not (plan or llm_needed):
             return {"status": "skipped", "reason": "판정 불가 항목과 의사 확인용 미질문 항목 없음"}
         self.rounds += 1

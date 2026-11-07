@@ -17,6 +17,7 @@ from ctrec.decision_policy import candidates
 from ctrec.decision_state import build_state
 
 import decision_fixtures as d
+from document_support import attest
 
 
 @pytest.fixture(autouse=True)
@@ -29,7 +30,7 @@ def _age_store(age: int | None, *, verified=True, source="clinical_record", extr
     s = d.store(*facts)
     if verified and age is not None:
         f = s.facts(d.P, "age")[0]
-        s.set_verification(f.fact_id, "document_verified", reason="합성 문서 확인", by="test", document_reference="DOC-1")
+        attest(s, f.fact_id)
     return s
 
 
