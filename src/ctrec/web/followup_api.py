@@ -5,6 +5,8 @@
   (Path=/api/followup/cases/<case_id>). 서버는 SHA-256만 저장. 없는 사례·권한 없음은 같은 404.
 - 연구 담당자: X-CTREC-Staff-Key 헤더가 서버 설정 CTREC_STAFF_KEY와 같아야 함 (설정이 없으면 담당자 API 전체 503).
   X-CTREC-Staff-Id(영문·숫자 1~64자)는 기록용 이름. 계정 인증을 대신하지 않습니다.
+  발표용 데모 예외(DEMO_STAFF): 오프라인 데모 서버(scripts/followup_demo_server.py --demo-staff)만 켤 수 있고(환경 변수로는
+  켤 수 없음), 켜져 있어도 루프백 접속에만 키 없이 담당자 권한을 줌. 데모 서버 자체가 루프백 전용·합성 데이터만 씀.
 - 담당자는 환자 답변을 대신 입력할 수 없음: 응답 API는 환자 쿠키만 받고, 담당자·검증자·임상의 헤더가 붙은 응답 요청은 403.
 - 문서 검증자(X-CTREC-Verifier-Key/-Id)와 임상의(X-CTREC-Clinician-Key/-Id)는 연구 담당자와 다른 권한입니다.
   지금 있는 권한은 합성 시험 전용(CTREC_VERIFICATION_MODE=synthetic, followup/verification.py)뿐이며 합성 사례에만 동작합니다.
@@ -51,6 +53,9 @@ MAX_TEXT_CHARS = 20000
 MAX_ANSWER_CHARS = 2000
 
 _SERVICE: FollowupService | None = None
+DEMO_STAFF = False  # 발표용 데모 서버만 True로 바꿈 (모듈 속성, 설정·환경 변수 아님)
+DEMO_STAFF_ID = "demo-staff"
+LOOPBACK = frozenset({"127.0.0.1", "::1"})
 
 
 def _app():
@@ -162,8 +167,16 @@ def require_clinician(request: Request) -> str:
     return _require_role(request, CLINICIAN_HEADER, CLINICIAN_ID_HEADER, "clinician_key", "clinician_forbidden")
 
 
+def demo_staff(request: Request) -> bool:
+    """발표용 데모 예외가 이 요청에 적용되는가 (데모 서버가 켰고, 루프백 접속)."""
+    return DEMO_STAFF and request.client is not None and request.client.host in LOOPBACK
+
+
 def require_staff(request: Request) -> str:
     _single_role(request, STAFF_HEADER)
+    if demo_staff(request):
+        sid = request.headers.get(STAFF_ID_HEADER, DEMO_STAFF_ID)
+        return sid if STAFF_ID.match(sid) else DEMO_STAFF_ID
     key = _staff_key()
     if not key:
         raise HTTPException(503, {"code": "staff_access_not_configured",
@@ -266,6 +279,16 @@ class ResponseBody(BaseModel):
     client_response_id: str | None = Field(default=None, pattern=r"^[A-Za-z0-9._-]{1,64}$")
 
 
+@router.get("/trials")
+def catalog_trials() -> dict:
+    """이 흐름이 평가할 수 있는 시험 (화면의 후보 목록). 공개 정보만 - /api/trials와 같은 항목."""
+    cat = service().catalog
+    out = [{"trial_id": tid, "title": t.get("title") or t.get("brief_title") or "",
+            "overall_status": t.get("overall_status"), "synthetic": cat.name != "trial_store"}
+           for tid, t in cat.trials.items()]
+    return {"catalog": cat.name, "synthetic": cat.name != "trial_store", "trials": out}
+
+
 @router.post("/cases", status_code=201)
 def create_case(body: CaseCreate, request: Request, response: Response) -> dict:
     access.check_state_changing(request)
@@ -329,6 +352,14 @@ class StatusChange(BaseModel):
     status: str = Field(pattern=r"^(unreachable|document_unavailable|cancelled)$")
 
 
+@router.get("/staff/session")
+def staff_session(request: Request) -> dict:
+    """화면이 연결 방식을 고름: 발표용 데모면 키 없이 바로, 아니면 담당자 키 입력. 비밀값은 돌려주지 않음."""
+    if demo_staff(request):
+        return {"mode": "demo", "staff_id": DEMO_STAFF_ID}
+    return {"mode": "key", "configured": bool(_staff_key())}
+
+
 @router.get("/staff/cases")
 def staff_cases(request: Request) -> dict:
     require_staff(request)
@@ -375,6 +406,15 @@ def staff_set_status(case_id: str, request_id: str, body: StatusChange, request:
         out = service().set_status(case_id, request_id, body.status, staff_id=sid)
     return {"request": out["request"], "routed": [r["request_id"] for r in out["routed"]],
             "case": staff_case_view(out["case"])}
+
+
+@router.get("/staff/insight")
+def staff_insight(request: Request) -> dict:
+    """질문별 코디네이터 작업 시간 보기 (web/followup_insight). 판정은 바꾸지 않음."""
+    require_staff(request)
+    from .followup_insight import insight
+    with _flow():
+        return insight(service())
 
 
 @router.get("/staff/cases/{case_id}/inspector")

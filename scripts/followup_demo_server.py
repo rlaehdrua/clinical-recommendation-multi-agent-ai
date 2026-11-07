@@ -8,9 +8,10 @@
 - --synthetic-verification: 합성 시험 전용 문서 검증자·임상의 권한 (CTREC_VERIFICATION_MODE=synthetic).
   서명 비밀(CTREC_SYNTHETIC_SIGNING_SECRET)을 고정하지 않으면 재시작할 때마다 바뀌어 이전 증명·판단이 인정되지 않음.
   계약: docs/dev/document_clinician_api_contract.md
+  --demo-staff: 발표용. 이 서버(루프백 전용)에서는 담당자 탭이 키 없이 바로 열림 (followup_api.DEMO_STAFF).
 
 실행:
-    python scripts/followup_demo_server.py --port 8010
+    python scripts/followup_demo_server.py --port 8010 [--demo-staff]
     # 환자 화면: POST http://127.0.0.1:8010/api/followup/cases  (X-CTREC-Request: 1)
     # 담당자:    GET  http://127.0.0.1:8010/api/followup/staff/cases  (X-CTREC-Staff-Key: <키>)
 계약: docs/dev/followup_api_contract.md
@@ -51,6 +52,7 @@ def main() -> None:
     ap.add_argument("--store", type=Path, default=config.OUTPUT_DIR / "followup-demo")
     ap.add_argument("--synthetic-verification", action="store_true",
                     help="합성 시험 전용 문서 검증자·임상의 권한을 켬 (키가 환경 변수에 없으면 새로 만듦)")
+    ap.add_argument("--demo-staff", action="store_true", help="발표용: 담당자 키 없이 담당자 탭을 엶 (루프백 접속만)")
     args = ap.parse_args()
     if args.host not in ("127.0.0.1", "::1", "localhost"):
         sys.exit("오프라인 데모 서버는 루프백 주소에서만 실행합니다.")
@@ -73,6 +75,9 @@ def main() -> None:
     pipeline.patient_profiler.profile_patient = latest_mention_profiler
     web.TEST_LLM_BACKEND = "fake"  # 대역만 설치된 프로세스: 실제 호출 허가 게이트 대신 (환경 변수로는 켤 수 없음)
     followup_api.configure(FollowupService(CaseStore(args.store), synthetic_catalog()))
+    if args.demo_staff:
+        followup_api.DEMO_STAFF = True
+        print("발표용 데모: 담당자 탭이 키 없이 열립니다 (이 컴퓨터에서만, 합성 데이터)", flush=True)
     print(f"followup demo (offline, synthetic): http://{args.host}:{args.port}  store={args.store}", flush=True)
     try:
         uvicorn.run(web.app, host=args.host, port=args.port, log_level="warning")
