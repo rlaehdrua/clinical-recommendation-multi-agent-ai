@@ -286,10 +286,9 @@ def test_age_after_a_parenthesis_keeps_its_owner(text, grounded):
     assert (vg.ground("age", 62, f"폐암 환자. {text}", reference_date="2026-11-07") is None) is grounded
 
 
-@pytest.mark.parametrize("text", ["Creatinine 1.2 mg/dL and urine protein negative on CMP.", "CMP: creatinine 1.2 mg/dL, urine output normal.", "CBC done. Creatinine 1.2 mg/dL, blood pressure stable."])
+@pytest.mark.parametrize("text", ["CMP: creatinine 1.2 mg/dL, urine output normal.", "CBC done. Creatinine 1.2 mg/dL, blood pressure stable."])
 def test_a_specimen_word_about_something_else_does_not_move_the_value(text):
-    assert vg._value_specimen(text, text.index("1.2"), text.index("1.2") + 3, "creatinine") in ("blood", None)
-    assert vg.lab_specimen("lab:creatinine", 1.2, text, text) != "urine"
+    assert vg.lab_specimen("lab:creatinine", 1.2, text, text) == "blood"
 
 
 def test_blood_pressure_alone_is_not_blood_context():
@@ -312,3 +311,35 @@ def test_residual_leak_in_an_llm_quote_is_held(monkeypatch, text):
     rule = _rule(rule_id="I3", text="Adequate serum creatinine, albumin, ANC, WBC and bilirubin", category="lab", structured_evaluable=False)
     x = _run(monkeypatch, "T1", [rule], {"I3": RuleMeta(required_evidence="self_report_ok")}, {"I3": ("yes", text)}, f"폐암 환자. {text}")
     assert x["match"].eligibility == "UNCERTAIN" and x["pair"].status.value == "INFO_MISSING"
+
+
+@pytest.mark.parametrize("text, kind", [("creatinine (urine) 1.2 mg/dL", "urine"), ("Creatinine 1.2 mg/dL (spot urine)", "urine"), ("Creatinine 1.2 mg/dL (CSF)", "csf"),
+                                        ("Creatinine 1.2 mg/dL (serum). Urine dipstick negative.", "blood"), ("Serum creatinine 1.2 mg/dL. Urine dipstick negative.", "blood")])
+def test_stated_specimen_is_recorded_on_the_fact_not_just_held(text, kind):
+    assert vg.lab_specimen("lab:creatinine", 1.2, text, text) == kind
+
+
+def test_note_after_the_name_in_a_criterion_is_read():
+    assert sp.required("glucose", "Glucose (CSF) >= 40 mg/dL") == "csf"
+
+
+def test_a_urine_criterion_on_a_plain_field_reads_the_criterion_text(run):
+    rule = CR.model_copy(update={"text": "Urine creatinine <= 1.5 mg/dL"})
+    text = "Urine creatinine 1.2 mg/dL"
+    confirmed(case(run, text, rule, cr(1.2, text)))
+    text = "Serum creatinine 1.2 mg/dL"
+    held(case(run, text, rule, cr(1.2, text)))
+
+
+def test_header_about_another_patient_reaches_past_a_comma():
+    assert hb_grounded("Same ward, not our patient, bed 4: Hb 12 g/dL") is not None
+
+
+@pytest.mark.parametrize("text", ["Our patient ECOG 2 per oncology; the donor ECOG 0", "our patient ECOG 2; the neighbouring case (ECOG 0) is irrelevant"])
+def test_another_persons_ecog_does_not_conflict(text):
+    assert vg.ground("ecog", 2, f"폐암 환자. {text}") is None
+
+
+def test_another_lab_on_urine_leaves_the_value_unclear_not_urine():
+    text = "Creatinine 1.2 mg/dL and urine protein negative on CMP."
+    assert vg.lab_specimen("lab:creatinine", 1.2, text, text) == sp.UNCLEAR

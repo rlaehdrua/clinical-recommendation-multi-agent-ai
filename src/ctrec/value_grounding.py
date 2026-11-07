@@ -357,11 +357,6 @@ def _about_patient(field: str, text: str, lo: int, hi: int) -> bool:
                 or _COMPARE_AFTER.match(after))
 
 
-def _of_someone_else(text: str, lo: int, hi: int) -> bool:
-    """값이 바로 앞이나 뒤의 다른 사람에게 붙어 있는가: "the neighbouring case (ECOG 0)"."""
-    return bool(_OF_OTHER.search(text[:lo]) or _NEXT_TO_OTHER.match(text, hi))
-
-
 def _past_mention(field: str, text: str, lo: int, hi: int) -> bool:
     """지금 값이 아니라 과거 시점의 값인가: "과거 ECOG 1", "40세에 진단"."""
     before, after = _clause_around(text, lo, hi)
@@ -457,7 +452,7 @@ def ground(field: str, value, source_text: str | None, *, key: str | None = None
     pat = _value_pattern(field, v, unit)
     initial = normalize(field, evidence.split_source(source_text)[0])
     mentioned = _mentions(field, initial)
-    current = {x for x, lo, hi in mentioned if not _past_mention(field, initial, lo, hi) and not _of_someone_else(initial, lo, hi)}
+    current = {x for x, lo, hi in mentioned if not _past_mention(field, initial, lo, hi)}
     in_record = any(_about_patient(field, initial, m.start(), m.end()) and not (current and _past_mention(field, initial, m.start(), m.end()))
                     for m in pat.finditer(initial)) or (field == "age" and _from_birth_year(v, initial, reference_date))
     stated, hedged = False, False
