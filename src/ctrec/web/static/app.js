@@ -826,7 +826,7 @@ function noRecommendation(rec, display) {
   let html = `<div class="callout">현재 추천할 수 있는 임상시험이 없어요.`;
   if (kinds) {
     const label = { mismatch: "모집 중이지만 맞지 않는 조건이 있는 시험", closed: "모집이 끝난 시험", demo: "가상 데모 시험(실제 시험 아님)",
-      not_evaluated: "평가에 실패한 시험(부적격 아님)", unknown: "그 밖의 이유로 제외된 시험" };
+      not_evaluated: "평가에 실패한 시험(부적격 아님)", engine_hold: "근거 확인이 필요한 시험(확정 제외 아님)", unknown: "그 밖의 이유로 제외된 시험" };
     const items = Object.entries(kinds).filter(([k, v]) => k !== "null" && v.length).map(([k, v]) => `<li>${esc(label[k] || label.unknown)} ${v.length}개</li>`);
     if (items.length) html += `<ul>${items.join("")}</ul>`;
   }

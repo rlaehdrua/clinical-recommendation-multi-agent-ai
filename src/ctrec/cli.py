@@ -19,12 +19,13 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import DISCLAIMER, config, llm
+from . import DISCLAIMER, config, conservative_view, llm
 from .agents.answerers import (FactRevealAnswerer, InteractiveAnswerer, NoAnswerer, RoutingAnswerer,
                                SimulatedPatientAnswerer)
 from .agents.recommender import screen_pool
 from .orchestrator import Orchestrator
 from .pipeline import PatientCase, Session, load_patients
+from .schemas import Recommendation
 from .status import MATCH_NOTE
 from .status import label as status_label
 from .tools import ctgov
@@ -147,6 +148,11 @@ def _check_records(case: PatientCase, args, index: int) -> None:
         if os.path.lexists(fact_dir / f"{pid}.json"):
             raise RecordConflict(f"{who}: --fact-store-dir {fact_dir}에 이 환자의 사실 파일이 이미 있습니다. "
                                  "덮어쓰지 않습니다. 다른 경로를 지정하세요.")
+
+
+def shown_recommendation(session) -> Recommendation:
+    """터미널에 보일 추천: 보수적 표현 사본 (Session의 추천·판정은 그대로)."""
+    return Recommendation.model_validate(conservative_view.build(session).result["recommendation"])
 
 
 def _write_run_meta(out_dir: Path, session: Session, args, fact_dir: Path | None, run_id: str) -> None:
@@ -333,9 +339,12 @@ def main(argv: list[str] | None = None) -> None:
         for k, v in session.usage.items():
             total[k] = total.get(k, 0) + v
         if session.recommendation:
-            rec = session.recommendation
+            rec = shown_recommendation(session)
             if rec.recommended:
                 print(f"\n[{_who(case, args)}] 추천 그룹: {status_label(rec.recommended[0].match_status)}")
+            if rec.held_out:  # 추천도 확정 제외도 아닌 시험이 출력에서 사라지지 않게 (시험 ID·상태만)
+                print("  근거 확인 대기(확정 제외 아님): " + ", ".join(f"{h.trial_id}({status_label(h.match_status)})"
+                                                         for h in rec.held_out))
             if args.redact_console:  # 시험 ID·상태만: 근거 문장에는 환자 원문이 인용될 수 있음
                 print("  " + ", ".join(f"{r.rank}. {r.trial_id}({status_label(r.match_status)})" for r in rec.ranked))
                 continue
@@ -349,8 +358,8 @@ def main(argv: list[str] | None = None) -> None:
             if others:
                 print("  다른 후보(표시 순서): " + ", ".join(f"{r.rank}. {r.trial_id}({status_label(r.match_status)})"
                                                     for r in others))
-            if session.recommendation.no_recommendation_reason:
-                print(f"  {session.recommendation.no_recommendation_reason}")
+            if rec.no_recommendation_reason:
+                print(f"  {rec.no_recommendation_reason}")
         if not args.redact_console:  # 경로에 환자 ID가 있음
             print(f"  -> {Path(args.out) / case.patient_id / 'report.md'}\n")
     failed = [_who(c, args) for c, s in sessions if s is None]

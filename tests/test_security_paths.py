@@ -282,13 +282,14 @@ def _raise_pydantic(*a):
 
 def _session(*a):
     r = SimpleNamespace(rank=1, trial_id="NCT0", match_status="eligible", rationale=f"r {SYN}", physician_review=[f"p {SYN}"])
-    rec = SimpleNamespace(recommended=[r], ranked=[r], selection_reason=f"s {SYN}", no_recommendation_reason=f"n {SYN}")
+    rec = SimpleNamespace(recommended=[r], ranked=[r], selection_reason=f"s {SYN}", no_recommendation_reason=f"n {SYN}", held_out=[])
     return SimpleNamespace(usage={}, recommendation=rec)
 
 
 def _cli(monkeypatch, tmp_path, fake, *extra, n=2):
     from ctrec import cli
     monkeypatch.setattr(cli, "_run_case", fake)
+    monkeypatch.setattr(cli, "shown_recommendation", lambda s: s.recommendation)  # 대역 Session에는 표현 사본이 없음. 실제 사본 경로는 test_night2_status_boundary
     out = io.StringIO()
     with contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
         code = 0
