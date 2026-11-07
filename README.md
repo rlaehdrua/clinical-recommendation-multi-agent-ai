@@ -613,7 +613,7 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 
 - 판단 기준(기대 여명)을 T-C에 더한 데모(400분, seed 1): GT 판단 기준 대기 적격 3쌍, legacy_greedy·full_dcvc 모두 확정 적격 3 + 판단 기준 외 확인 완료 2 = 주 지표 5, 불일치 0. 기본 데모(판단 기준 없음)의 결과는 바뀌지 않음.
 - 생성기 예시 코호트는 여전히 모든 정책 0: 미연결(검수 전) 기준이 남은 쌍은 라벨을 만들지 않기 때문(결정 3의 축소 범위가 나와야 함).
-- 전체 테스트(`.env` 없는 작업 트리): 2,475 passed, 6 skipped.
+- 전체 테스트(`.env` 없는 작업 트리, #24 병합 후 integration 위): 2,795 passed, 6 skipped.
 
 ### 2026-11-07 — WP7 감사 기록의 저장·조회·지표·콘솔 경로 보안 (원문·ID 노출 차단, 읽기 상한)
 
