@@ -20,11 +20,10 @@ const STATUS = {
   INSUFFICIENT_INFORMATION: ["추가 정보 필요", "warn", "확인 못 한 정보 있음 · 불충족 아님"],
   CRITERIA_MISMATCH: ["공개 기준 불충족", "bad", "맞지 않는 조건 있음"],
   NOT_EVALUATED: ["평가 실패", "warn", "평가 오류 · 부적격 아님"],
-  NO_REQUIRED: ["판정할 필수 기준 없음 · 담당자 확인 필요", "warn", "평가 오류 아님 · 부적격 아님"],  // NOT_EVALUATED 중 사유 코드로 구분한 표시
 };
 // 진행 중 카드의 내부 판정 (최종 결과 전 중간 값)
 const INTERIM = { ELIGIBLE: ["중간 판정: 기준 충족", "ok"], INELIGIBLE: ["중간 판정: 기준 불충족", "bad"], UNCERTAIN: ["중간 판정: 확인 필요", "warn"],
-  NOT_EVALUATED: ["평가 실패", "warn"], NO_REQUIRED: STATUS.NO_REQUIRED };
+  NOT_EVALUATED: ["평가 실패", "warn"], NO_REQUIRED: ["판정할 필수 기준 없음 · 담당자 확인 필요", "warn", "평가 오류 아님 · 부적격 아님"] };  // NO_REQUIRED: 서버 상태값이 아니라 NOT_EVALUATED를 사유 코드로 구분한 표시
 const RECRUIT = { RECRUITING: ["모집 중","ok"], NOT_YET_RECRUITING: ["모집 예정","ok"], COMPLETED: ["모집 완료","bad"], TERMINATED: ["조기 종료","bad"],
   WITHDRAWN: ["철회","bad"], ACTIVE_NOT_RECRUITING: ["모집 종료","bad"], SUSPENDED: ["중단","bad"], ENROLLING_BY_INVITATION: ["초청 모집","warn"],
   UNKNOWN: ["모집 상태 미확인","warn"] };
@@ -872,7 +871,7 @@ function resultCard(tid, status, extra) {
   status = shownStatus(status, d);
   return `<article class="rec${extra && extra.top ? " top" : ""}">${badges(tid, status, info)}
     <div><h3 class="rtitle">${extra && extra.rank ? `<span class="rank" aria-label="표시 순서 ${esc(extra.rank)}">${esc(extra.rank)}.</span> ` : ""}${esc(ttl)}</h3>${origLine(ttl, info.title)}
-      <p class="rmeta mt4">${esc(tid)} · ${esc((STATUS[status] || [])[2] || "")}</p></div>
+      <p class="rmeta mt4">${esc(tid)} · ${esc((STATUS[status] || INTERIM[status] || [])[2] || "")}</p></div>
     ${extra && extra.note ? `<p class="hint m0">${esc(extra.note)}</p>` : ""}
     ${condStat(m, d)}${card ? compareBlock(card) : ""}${todoBox(m, d, false)}
     <div class="actions"><button class="btn ghost" type="button" data-detail="${esc(tid)}">자세히 보기</button></div></article>`;
@@ -957,7 +956,7 @@ function renderDetail(tid) {
   const status = shownStatus(r.match_status || (m && m.match_status) || null, d), ttl = koTitle(tid, info.title || "");
   const said = Object.fromEntries(((d && d.record_checks) || []).map(x => [x.rule_id, x.said]));
   let html = `<div class="dhead"><div class="dmeta">${badges(tid, status, info)}</div><h2 id="detail-h" tabindex="-1">${esc(ttl)}</h2>${origLine(ttl, info.title)}
-    <p class="hint m0">${esc(tid)} · ${esc((STATUS[status] || [])[2] || "")}</p>${trialLink(tid, info)}</div>`;
+    <p class="hint m0">${esc(tid)} · ${esc((STATUS[status] || INTERIM[status] || [])[2] || "")}</p>${trialLink(tid, info)}</div>`;
   if (card && compareBlock(card)) html += `<section class="sec">${compareBlock(card)}</section>`;
   if (r.key_matches || r.key_concerns || r.next_steps) html += `<section class="sec"><h3>AI가 정리한 내용</h3>
     <div class="two">${aiList("맞는 점", r.key_matches, "good")}${aiList("확인할 점", r.key_concerns, "check")}</div>${aiList("다음 단계 제안", r.next_steps)}</section>`;

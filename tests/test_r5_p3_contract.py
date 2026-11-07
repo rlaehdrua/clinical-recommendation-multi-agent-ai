@@ -190,7 +190,7 @@ def test_progress_record_carries_only_the_fixed_code():
 
 def test_screen_text_has_the_review_label():
     js = (Path(web_app.__file__).parent / "static" / "app.js").read_text(encoding="utf-8")
-    assert f'NO_REQUIRED: ["{LABEL}"' in js and "needs_review:" in js
+    assert f'NO_REQUIRED: ["{LABEL}"' in js and "needs_review:" in js  # 서버 상태표(STATUS)에는 넣지 않음
 
 
 # ------------------------------------------------------------ CLI
