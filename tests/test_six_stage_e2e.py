@@ -172,8 +172,10 @@ def test_CD_unknown_or_no_response_preserves_state(monkeypatch, answers):
     assert s.matches[TID].eligibility == "UNCERTAIN"
 
 
-@pytest.mark.xfail(strict=True, reason="O 소관: 실패한 질문 반복 - unresolved 대상 질문이 다음 라운드에 다시 나감 "
-                                       "(Session.clarify / question_generator.screen이 acquisition 상태를 보지 않음)")
+@pytest.mark.xfail(strict=True, reason="기본 Session 경로(/api/runs·CLI), O 소관: 실패한 질문 반복 - unresolved 대상 "
+                                       "질문이 다음 라운드에 다시 나감 (Session.clarify / question_generator.screen이 acquisition "
+                                       "상태를 보지 않음). Follow-up API 경로는 해결됨: test_six_stage_followup.py. "
+                                       "제안: docs/proposals/n_o1_no_repeat_failed_question.patch")
 @pytest.mark.parametrize("cls,answers", [(Session, {1: {"Q1": "모름"}}), (ContractSession, {1: {"Q1": "둘 다 해당 없음"}})],
                          ids=["session_unknown", "contract_answered"])
 def test_CD_failed_question_is_not_repeated(monkeypatch, cls, answers):
@@ -182,8 +184,9 @@ def test_CD_failed_question_is_not_repeated(monkeypatch, cls, answers):
     assert asked.count(f"{TID}:E2") == 1
 
 
-@pytest.mark.xfail(strict=True, reason="O/P 소관: '모름' 뒤 대체 문서·기록 경로가 없음 - comorbidity 확보 계획의 대안이 비어 "
-                                       "있고 legacy 경로는 문서 요청·임상의 행동을 만들지 않음")
+@pytest.mark.xfail(strict=True, reason="기본 Session 경로, O/P 소관: '모름' 뒤 대체 문서·기록 경로가 없음 - comorbidity "
+                                       "확보 계획의 대안이 비어 있고 legacy 경로는 문서 요청·임상의 행동을 만들지 않음. "
+                                       "Follow-up API 경로는 대체 요청을 만듦 (정보원 대응은 P-1)")
 def test_C_unknown_offers_alternative_source(monkeypatch):
     s = run(monkeypatch, H.Scenario(profile_full, verdicts_ild_missing, ild_question), TEXT_NO_ILD,
             {1: {"Q1": "모름"}, 2: {"Q1": "모름"}})
@@ -290,8 +293,9 @@ def test_J_compare_refuses_different_patients(monkeypatch, tmp_path):
     assert inspector.compare_runs(tmp_path / "a", tmp_path / "b")["status"] == "different_patient"
 
 
-@pytest.mark.xfail(strict=True, reason="O 소관: 새 세션으로 상태 이전 없음 - fact_store_dir는 저장만 하고 어떤 Session도 "
-                                       "FactStore.load로 불러오지 않음 (CLI는 기존 사실 파일을 거부)")
+@pytest.mark.xfail(strict=True, reason="기본 Session 경로, O 소관: 새 세션으로 상태 이전 없음 - fact_store_dir는 저장만 하고 "
+                                       "어떤 Session도 FactStore.load로 불러오지 않음 (CLI는 기존 사실 파일을 거부). "
+                                       "Follow-up API는 사례 저장·복원으로 해결 (test_six_stage_followup.py)")
 def test_J_new_session_can_resume_saved_facts(monkeypatch, tmp_path):
     run(monkeypatch, H.Scenario(profile_full, verdicts_full), TEXT_FULL, fact_store_dir=tmp_path / "facts")
     assert (tmp_path / "facts" / "SYN-N-1.json").exists()
