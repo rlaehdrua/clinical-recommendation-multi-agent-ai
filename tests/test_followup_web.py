@@ -169,7 +169,8 @@ def test_staff_key_is_required_unless_demo_server(env, monkeypatch):
 
 def test_demo_staff_still_cannot_answer_for_the_patient(env, monkeypatch):
     patient = h.browser()
-    case = F._create(patient)
+    # 나이(자기 보고 허용)를 빼서 환자 질문이 있게 함: P 근거 경로 뒤 검사 항목은 환자 질문이 아니라 문서 확인
+    case = F._create(patient, text=F.TEXT_NO_AGE)
     monkeypatch.setattr(followup_api, "DEMO_STAFF", True)
     c = _loopback()
     pid = next(p["proposal_id"] for p in c.get(f"/api/followup/staff/cases/{case['case_id']}").json()["proposals"]
