@@ -18,7 +18,7 @@ from test_p0_grounding_attacks import block, pair  # noqa: E402
 from test_p0_lab_semantics_session import ranked  # noqa: E402
 from test_p0_session_grounding import (HB, OPEN, PID, Q_AGE, Q_HB, Q_SEX, SELF_OK, Tracer, confirmed, hb, held, prof, run)  # noqa: E402,F401
 
-from ctrec import config, pipeline, status, value_grounding as vg  # noqa: E402
+from ctrec import config, conservative_view as cv, pipeline, value_grounding as vg  # noqa: E402
 from ctrec.agents import matcher  # noqa: E402
 from ctrec.pipeline import PatientCase, Session  # noqa: E402
 from ctrec.schemas import ClarifyingQuestion, LabValue, LLMAssessment, MatcherOutput, QuestionSet  # noqa: E402
@@ -157,17 +157,17 @@ def test_c2_layers_as_they_are_now(run, monkeypatch):
     assert o.a.passes is True and not o.a.validation_flags
 
 
-@pytest.mark.xfail(strict=True, reason="C2: 추천·표시가 PairStatus를 읽지 않음. 수정은 N5 소관 (status.py, recommender.py, web/display.py). 고쳐지면 이 표시를 지울 것")
 def test_c2_pending_pair_is_not_shown_as_a_criteria_match(run, monkeypatch):
     o = c2_case(run)
-    rec = ranked(o, monkeypatch)
+    ranked(o, monkeypatch)
+    shown = cv.build(o.session).result  # 출력 경계 (Session.matches의 판정 값은 그대로 둠)
     assert o.status == "VERIFICATION_PENDING"
-    assert status.external_status(o.match) != "CRITERIA_MATCH" and rec.ranked[0].match_status != "CRITERIA_MATCH"
+    assert shown["matches"]["T1"]["match_status"] != "CRITERIA_MATCH"
+    assert shown["recommendation"]["ranked"][0]["match_status"] != "CRITERIA_MATCH"
 
 
-@pytest.mark.xfail(strict=True, reason="C2: 화면 묶음에도 확인 대기 표시가 없음. 값 상충 기준은 충족으로만 묶임. 수정은 N5 소관")
 def test_c2_web_view_tells_the_reader_to_check_the_record(run, monkeypatch):
     o = c2_case(run)
     ranked(o, monkeypatch)
-    view = display.build(o.session)["trials"]["T1"]
+    view = cv.adjust_display(display.build(o.session), cv.evaluate(o.session)[0])["trials"]["T1"]  # 웹 result 이벤트와 같은 호출
     assert view["groups"]["I3"] != display.MET or view["record_checks"]

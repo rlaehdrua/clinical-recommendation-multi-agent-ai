@@ -395,15 +395,30 @@ def build(session, result: dict | None = None, report: str | None = None) -> Vie
     return View(out, shown_report, holds, engine, claims)
 
 
+def _recheck(d: dict, hold: Hold | None) -> dict:
+    """보류 사유가 된 기준을 충족 묶음에서 기록 확인 묶음으로 옮긴 사본. 기준 판정(assessments)은 그대로."""
+    from .web.display import MET, RECORD_CHECK  # 웹 화면 값
+
+    moved = [r for r in (hold.rule_ids if hold and hold.side != "mismatch" else ()) if (d.get("groups") or {}).get(r) == MET]
+    if not moved:
+        return d
+    groups = {r: RECORD_CHECK if r in moved else g for r, g in d["groups"].items()}
+    counts: dict[str, int] = {}
+    for g in groups.values():
+        counts[g] = counts.get(g, 0) + 1
+    return {**d, "groups": groups, "counts": counts,
+            "record_checks": [*(d.get("record_checks") or []), *({"rule_id": r, "said": "unclear"} for r in moved)]}
+
+
 def adjust_display(info: dict | None, holds: dict[str, Hold]) -> dict | None:
-    """web.display.build 결과의 제외 종류를 사본에서 맞춤: 다툼 중인 불충족을 '맞지 않음'으로 세지 않음."""
-    outs = [t for t, h in holds.items() if h.side == "mismatch"]
-    if not info or not outs:
+    """web.display.build 결과를 사본에서 맞춤: 다툼 중인 불충족을 '맞지 않음'으로 세지 않고, 보류된 기준을 '충족'으로 묶지 않음."""
+    if not info or not holds:
         return info
-    trials = {t: {**d, "exclusion": HELD_EXCLUSION} if t in outs and d.get("exclusion") == "mismatch" else d
+    outs = [t for t, h in holds.items() if h.side == "mismatch"]
+    trials = {t: {**d, "exclusion": HELD_EXCLUSION} if t in outs and d.get("exclusion") == "mismatch" else _recheck(d, holds.get(t))
               for t, d in (info.get("trials") or {}).items()}
     out = {**info, "trials": trials}
-    if info.get("no_recommendation"):
+    if outs and info.get("no_recommendation"):
         kinds = {k: [t for t in v if t not in outs] for k, v in info["no_recommendation"].items()}
         out["no_recommendation"] = {**kinds, HELD_EXCLUSION: outs}
     return out

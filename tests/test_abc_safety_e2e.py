@@ -106,6 +106,28 @@ def test_documents_release_only_the_document_boundary(tmp_path, unstated_ecog):
     assert got["SELF"] == ("ELIGIBLE", "CONFIRMED_ELIGIBLE", "CRITERIA_MATCH")
 
 
+def test_a_test_attestation_means_nothing_under_the_production_authority(tmp_path, production):
+    """증명이 있어도 현재 권한이 인정해야 함: 합성 권한이 발급한 증명을 운영 조건에 그대로 넣음."""
+    with run(tmp_path, {"T": [HB, AGE]}, RECORD) as r:
+        assert outcome(r.s) == ("UNCERTAIN", "VERIFICATION_PENDING", "POTENTIAL_MATCH")
+
+
+@pytest.mark.parametrize("attested", [False, True], ids=["production", "attested"])
+def test_a_value_the_source_does_not_state_is_not_confirmed(tmp_path, monkeypatch, attested):
+    """환자값 근거(N2)만 막는 사례: self_report_ok 기준이고 프로필 값이 원문과 다름. 문서 증명으로 풀리지 않음."""
+    real = night.profiler
+
+    def wrong_age(pid, raw, reference_date=None):
+        p = real(pid, raw, reference_date)
+        p.age, p.age_value = 30, 30
+        return p
+    monkeypatch.setattr(night, "profiler", wrong_age)
+    with document_authority.use(AUTHORITY if attested else NoDocumentAuthority()):
+        with run(tmp_path, {"T": [AGE]}, "", documented=attested) as r:
+            got = outcome(r.s)
+    assert got[0] != "ELIGIBLE" and got[1] != "CONFIRMED_ELIGIBLE" and got[2] != "CRITERIA_MATCH"
+
+
 # ------------------------------------------------------------ 사례별: Session 전 출력 + WP6
 # 이름: 시험 규칙, 원문, Run 인자, 운영 권한에서의 (판정, 엔진, 표시), 합성 증명 조건의 (판정, 엔진, 표시)
 HELD = ("UNCERTAIN", "VERIFICATION_PENDING", "POTENTIAL_MATCH")
@@ -120,6 +142,9 @@ CASES = {
     "no_answer": ([HISTORY, AGE], "", {"answer": "", "rounds": 2}, ("UNCERTAIN", "INFO_MISSING", "INSUFFICIENT_INFORMATION"), None),
     "conflicting_values": ([HB, AGE], "Hb 8 g/dL on 2026-09-01. Hb 10 g/dL on 2026-09-01.", {},
                            ("UNCERTAIN", "VERIFICATION_PENDING", "INSUFFICIENT_INFORMATION"), ("UNCERTAIN", "VERIFICATION_PENDING", "INSUFFICIENT_INFORMATION")),
+    # 문서 게이트가 닿지 않는 기준(self_report_ok): 판정 ELIGIBLE이 남고, 막는 것은 출력 경계뿐
+    "conflict_on_self_report_rule": ([HB, AGE], night.RISE, {"gate": False}, ("ELIGIBLE", "VERIFICATION_PENDING", "POTENTIAL_MATCH"),
+                                     ("ELIGIBLE", "VERIFICATION_PENDING", "POTENTIAL_MATCH")),
 }
 
 
