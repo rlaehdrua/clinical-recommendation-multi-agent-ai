@@ -14,7 +14,8 @@ from __future__ import annotations
 import random
 from collections import defaultdict
 
-DEFAULT_METRICS = ("correct_confirmed_eligible", "confirmed_eligible", "confirmed_ineligible", "coordinator_minutes",
+DEFAULT_METRICS = ("correct_eligible_resolved", "correct_confirmed_eligible", "correct_expert_ready",
+                   "confirmed_eligible", "confirmed_ineligible", "coordinator_minutes",
                    "questions")
 SETTING = ("rephrase", "budget_minutes")
 

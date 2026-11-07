@@ -36,7 +36,7 @@ from ..engine.experiment import ExperimentSpecError, catalog_claims, require_cat
 from .cohort import SimCohort
 from .environment import CohortEnvironment
 from .evaluator import DOCUMENT_ASSUMPTION, OfflineEvaluator, make_fact, verify_fact
-from .metrics import ELIGIBLE, label_of, summarize
+from .metrics import correct_resolved, label_of, summarize
 from .oracle import ORACLE_ID, ORACLE_VERSION, OracleUpperPolicy
 from .response_model import ResponseModel, SourceResponse
 
@@ -106,6 +106,8 @@ def _git_commit() -> str | None:
     except (OSError, subprocess.SubprocessError):
         return None
 
+
+PRIMARY_PARTS = ("correct_eligible_resolved", "correct_confirmed_eligible", "correct_expert_ready")
 
 def rule_labels(cohort: SimCohort, catalog: SourceCatalog) -> dict[str, str]:
     """규칙 GT (순환적, metrics 참고): 정답 사실 전체를 문서 검증된 기록으로 넣어 같은 평가기로 확정된 쌍만 라벨."""
@@ -226,7 +228,8 @@ def run(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog | None =
                         repeat_suppressed=loop.suppressed, safety_unfunded=unfunded,
                         audit={"records": audit.records, "warnings": audit.warnings, "blocking": audit.blocking,
                                "status": audit.status})
-    metrics["correct_confirmed_eligible"] = sum(p["correct_confirmed_eligible"] for p in per_patient.values())
+    for k in PRIMARY_PARTS:
+        metrics[k] = sum(p[k] for p in per_patient.values())
     result_hash = canonical_hash({"records": [r.model_dump(mode="json") for r in records],
                                   "issues": [i.model_dump(mode="json") for i in issues], "metrics": metrics})
     manifest = {
@@ -249,14 +252,19 @@ def run(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog | None =
 
 
 def _per_patient(co: CohortState, labels: dict[str, str], ledger: EffortLedger, steps: list[dict]) -> dict[str, dict]:
-    """환자별 결과. correct_confirmed_eligible = 확정 적격이면서 규칙 GT도 적격 (주 지표, 순환적 GT 기준)."""
+    """환자별 결과 (순환적 규칙 GT 기준).
+    - correct_confirmed_eligible: 확정 적격이면서 규칙 GT도 적격
+    - correct_expert_ready: EXPERT_REVIEW에 도달했고 규칙 GT가 판단 기준 대기 적격 (판단 기준 외 확인 완료, 11-07 결정 1)
+    - correct_eligible_resolved: 둘의 합 = 주 지표. 확정 적격과 판단 대기는 섞지 않도록 따로도 보고"""
     out = {}
     for alias in co.aliases():
         pairs = co.patients[alias].pairs
-        elig = [p for p in pairs if p.status.value == "CONFIRMED_ELIGIBLE"]
+        hits = [correct_resolved(p.status, labels.get(p.pair.key, "")) for p in pairs]
+        confirmed, ready = sum(h[0] for h in hits), sum(h[1] for h in hits)
         out[alias] = {
-            "confirmed_eligible": len(elig),
-            "correct_confirmed_eligible": sum(labels.get(p.pair.key) == ELIGIBLE for p in elig),
+            "confirmed_eligible": sum(p.status.value == "CONFIRMED_ELIGIBLE" for p in pairs),
+            "correct_confirmed_eligible": confirmed, "correct_expert_ready": ready,
+            "correct_eligible_resolved": confirmed + ready,
             "confirmed_ineligible": sum(p.status.value == "CONFIRMED_INELIGIBLE" for p in pairs),
             "coordinator_minutes": round(ledger.per_patient.get(alias, 0.0), 6),
             "questions": sum(s["patient_alias"] == alias and s["action_type"] == "ASK_PATIENT"
@@ -289,7 +297,9 @@ def _row(pid: str, cfg: dict, rp_on: bool, budget: EffortBudget, seed: int, r: R
     return {"policy_id": pid, "policy_config": cfg, "rephrase": rp_on, "budget_minutes": budget.coordinator_minutes,
             "seed": seed, "cohort_id": r.manifest["cohort"]["cohort_id"], "reference": r.manifest["reference_policy"],
             "confirmed_eligible": m["system_confirmed_eligible"],
+            "correct_eligible_resolved": m["correct_eligible_resolved"],
             "correct_confirmed_eligible": m["correct_confirmed_eligible"],
+            "correct_expert_ready": m["correct_expert_ready"], "expert_review": m["status_final"]["EXPERT_REVIEW"],
             "confirmed_ineligible": m["system_confirmed_ineligible"], "confirmed_share": m["system_confirmed_share"],
             "coordinator_minutes": m["active_minutes"]["coordinator"],
             "clinician_minutes": m["active_minutes"]["clinician"], "elapsed_minutes": m["elapsed_minutes"],

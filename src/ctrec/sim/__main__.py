@@ -24,7 +24,8 @@ from .evaluator import DOCUMENT_ASSUMPTION
 from .oracle import ORACLE_ID
 
 COLS = ["policy_id", "reference", "rephrase", "budget_minutes", "seed", "confirmed_eligible",
-        "correct_confirmed_eligible", "confirmed_ineligible",
+        "correct_eligible_resolved", "correct_confirmed_eligible", "correct_expert_ready", "expert_review",
+        "confirmed_ineligible",
         "coordinator_minutes", "elapsed_minutes", "actions", "questions", "rephrased", "no_answer",
         "rule_gt_disagreements", "termination", "audit"]
 
