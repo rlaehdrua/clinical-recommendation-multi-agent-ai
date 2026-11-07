@@ -1,0 +1,34 @@
+diff --git a/src/ctrec/agents/question_generator.py b/src/ctrec/agents/question_generator.py
+index 8d788ef..e8ae2ba 100644
+--- a/src/ctrec/agents/question_generator.py
++++ b/src/ctrec/agents/question_generator.py
+@@ -127,7 +127,8 @@ def generate_questions(
+         effort=config.EFFORT["question_generator"],
+     )
+     # 해소할 수 없는 대상을 뺀 뒤 예산만큼 (LLM이 정한 순서 그대로, 질문 수·예산은 늘리지 않음)
+-    qs.questions = screen([_normalize(q) for q in qs.questions], matches)[:max_questions]
++    open_keys = None if acquisition_plan is None else set(acquisition_plan)
++    qs.questions = screen([_normalize(q) for q in qs.questions], matches, open_keys)[:max_questions]
+     return qs
+ 
+ 
+@@ -192,7 +193,8 @@ def unresolvable(q: ClarifyingQuestion, criterion: str) -> str | None:
+     return None
+ 
+ 
+-def screen(questions: list[ClarifyingQuestion], matches: list[TrialMatch]) -> list[ClarifyingQuestion]:
++def screen(questions: list[ClarifyingQuestion], matches: list[TrialMatch],
++           open_keys: set[str] | None = None) -> list[ClarifyingQuestion]:
+     """적격성 질문의 target에서 지금 판정 불가인 기준이 아니거나 답으로 확정할 수 없는 기준을 빼고, 대상이 모두 빠진 질문은 버림.
+ 
+     의사 참고용 질문과 처음부터 target이 없는 질문은 그대로 둡니다(판정 근거로 쓰지 않거나 대상을 확인할 수 없음).
+@@ -204,7 +206,8 @@ def screen(questions: list[ClarifyingQuestion], matches: list[TrialMatch]) -> li
+         if q.purpose != "eligibility" or not q.target:
+             out.append(q)
+             continue
+-        keep = [t for t in q.target if t in criteria and unresolvable(q, criteria[t]) is None]
++        keep = [t for t in q.target if t in criteria and unresolvable(q, criteria[t]) is None
++                and (open_keys is None or t in open_keys)]
+         if keep:
+             q.target = keep
+             out.append(q)
