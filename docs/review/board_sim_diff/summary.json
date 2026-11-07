@@ -1,0 +1,209 @@
+{
+ "script_version": 1,
+ "cohorts": 20,
+ "generator_config_hash": [
+  "95d95c7c3bdc8188"
+ ],
+ "trial_store_hash": "91cc081525bd4e9d",
+ "input_sha256": {
+  "data/cohort/generator_config.json": "67f42ada126d1cc391a4a398dffbc48e22b68f7c7f3a7a03bf9de5fa1c5d8e40",
+  "data/cohort/slot_dictionary.draft.json": "b642bbea19b65d5c6f577c6d64bd1fb94edd1931564c6a5d577640462deb1ba3",
+  "data/cohort/source_catalog.json": "d0b23f62c695888015d5e3d9be461f8fcc6c314d64dd91b74618e9c62cdf8c3a",
+  "data/cohort/source_map.json": "a17b8c77c04644e105879720e6750f3a91cc8070175cabaef23b76caf845ad88"
+ },
+ "pairs_total": 900,
+ "cross_tab_board_simtruth_simpublic": [
+  {
+   "board": "CONFIRMED_INELIGIBLE",
+   "sim_truth": "CONFIRMED_INELIGIBLE",
+   "sim_public": "INFO_MISSING",
+   "pairs": 20
+  },
+  {
+   "board": "CONFIRMED_INELIGIBLE",
+   "sim_truth": "CONFIRMED_INELIGIBLE",
+   "sim_public": "VERIFICATION_PENDING",
+   "pairs": 208
+  },
+  {
+   "board": "CONFIRMED_INELIGIBLE",
+   "sim_truth": "INFO_MISSING",
+   "sim_public": "INFO_MISSING",
+   "pairs": 170
+  },
+  {
+   "board": "INFO_MISSING",
+   "sim_truth": "CONFIRMED_INELIGIBLE",
+   "sim_public": "INFO_MISSING",
+   "pairs": 43
+  },
+  {
+   "board": "INFO_MISSING",
+   "sim_truth": "INFO_MISSING",
+   "sim_public": "INFO_MISSING",
+   "pairs": 378
+  },
+  {
+   "board": "NOT_EVALUATED",
+   "sim_truth": "INFO_MISSING",
+   "sim_public": "INFO_MISSING",
+   "pairs": 81
+  }
+ ],
+ "groups": {
+  "board_CI_sim_IM": 170,
+  "board_IM_sim_CI": 43
+ },
+ "driving_rule_rows_by_group_and_mechanism": [
+  {
+   "group": "board_CI_sim_IM",
+   "mechanism": "sim_gate:time_window_unverified",
+   "rows": 175
+  },
+  {
+   "group": "board_IM_sim_CI",
+   "mechanism": "info_asymmetry:hidden_slot_in_truth_view",
+   "rows": 45
+  }
+ ],
+ "driving_rule_rows_by_trial_rule": [
+  {
+   "group": "board_CI_sim_IM",
+   "trial_id": "NCT06125405",
+   "rule_id": "I10",
+   "slots": "med.steroid_sparing_recent",
+   "rows": 6
+  },
+  {
+   "group": "board_CI_sim_IM",
+   "trial_id": "NCT06125405",
+   "rule_id": "I11",
+   "slots": "med.steroid_sparing_recent",
+   "rows": 12
+  },
+  {
+   "group": "board_CI_sim_IM",
+   "trial_id": "NCT06125405",
+   "rule_id": "I8",
+   "slots": "med.steroid_sparing_recent",
+   "rows": 43
+  },
+  {
+   "group": "board_CI_sim_IM",
+   "trial_id": "NCT06125405",
+   "rule_id": "I9",
+   "slots": "med.steroid_sparing_recent",
+   "rows": 29
+  },
+  {
+   "group": "board_CI_sim_IM",
+   "trial_id": "NCT07087314",
+   "rule_id": "I11",
+   "slots": "med.steroid_sparing_recent",
+   "rows": 73
+  },
+  {
+   "group": "board_CI_sim_IM",
+   "trial_id": "NCT07087314",
+   "rule_id": "I7",
+   "slots": "lab.hemoglobin;med.transfusion_or_gf_7d",
+   "rows": 9
+  },
+  {
+   "group": "board_CI_sim_IM",
+   "trial_id": "NCT07087314",
+   "rule_id": "I8",
+   "slots": "lab.platelets",
+   "rows": 1
+  },
+  {
+   "group": "board_CI_sim_IM",
+   "trial_id": "NCT07087314",
+   "rule_id": "I9",
+   "slots": "lab.absolute neutrophil count",
+   "rows": 2
+  },
+  {
+   "group": "board_IM_sim_CI",
+   "trial_id": "NCT06125405",
+   "rule_id": "E10",
+   "slots": "cm.heme_endocrine",
+   "rows": 1
+  },
+  {
+   "group": "board_IM_sim_CI",
+   "trial_id": "NCT06125405",
+   "rule_id": "E11",
+   "slots": "cm.serious_organ_disease",
+   "rows": 1
+  },
+  {
+   "group": "board_IM_sim_CI",
+   "trial_id": "NCT06125405",
+   "rule_id": "E2",
+   "slots": "lab.white blood cell count",
+   "rows": 3
+  },
+  {
+   "group": "board_IM_sim_CI",
+   "trial_id": "NCT06125405",
+   "rule_id": "E3",
+   "slots": "lab.hemoglobin",
+   "rows": 2
+  },
+  {
+   "group": "board_IM_sim_CI",
+   "trial_id": "NCT06125405",
+   "rule_id": "I5",
+   "slots": "lab.egfr",
+   "rows": 15
+  },
+  {
+   "group": "board_IM_sim_CI",
+   "trial_id": "NCT06530004",
+   "rule_id": "E5",
+   "slots": "cm.immune_onc;cm.severe_drug_immunosuppression",
+   "rows": 8
+  },
+  {
+   "group": "board_IM_sim_CI",
+   "trial_id": "NCT06530004",
+   "rule_id": "E7",
+   "slots": "lab.egfr",
+   "rows": 5
+  },
+  {
+   "group": "board_IM_sim_CI",
+   "trial_id": "NCT07087314",
+   "rule_id": "I5",
+   "slots": "lab.egfr",
+   "rows": 10
+  }
+ ],
+ "sim_public_status_by_group": [
+  {
+   "group": "board_CI_sim_IM",
+   "sim_public": "INFO_MISSING",
+   "pairs": 170
+  },
+  {
+   "group": "board_IM_sim_CI",
+   "sim_public": "INFO_MISSING",
+   "pairs": 43
+  }
+ ],
+ "generator_pair_label_by_group": [
+  {
+   "group": "board_CI_sim_IM",
+   "label": "INELIGIBLE",
+   "pairs": 170
+  },
+  {
+   "group": "board_IM_sim_CI",
+   "label": "INELIGIBLE",
+   "pairs": 43
+  }
+ ],
+ "agree_CI_with_no_common_failing_rule": 20,
+ "note": "mechanism은 코드 경로이며 어느 쪽이 맞는지의 판정이 아님"
+}

@@ -1,0 +1,24 @@
+diff --git a/src/ctrec/engine/policy.py b/src/ctrec/engine/policy.py
+index 9baf33d..7b05b38 100644
+--- a/src/ctrec/engine/policy.py
++++ b/src/ctrec/engine/policy.py
+@@ -402,10 +402,18 @@ class LegacyAdapterPolicy:
+             else:  # 바꿔 묻기도 "모름"이거나 바꿔 물을 수 없는 항목 -> 항목 실패
+                 failed_items.add((action.source_id, item))
+                 reason = "item_sources_exhausted"
++                # _convert와 같이 이미 요청한 문서는 남은 대체로 세지 않음 (답은 있었지만 gap이 남은 문서)
++                tried = {(s, item) for s in self.catalog.sources if attempts.get(tried_key(s, item))}
+                 if action.info_key and (not self.recovery or not self.item_alternatives(
+                         action.source_id, action.required_fields, action.info_key, item, frozenset(failed),
+-                        frozenset(failed_items))):
++                        frozenset(failed_items) | tried)):
+                     exhausted_items.add(action.info_key)
++        elif self.recovery and outcome.status == "succeeded" and failed and action.action_type == "REQUEST_DOCUMENT":
++            # 정보원이 끊긴 환자의 문서가 답했는데 gap이 남으면 다음 계획의 소진 보류가 실패 없이 생김 -> 같은 기준으로 소진
++            exhausted_items |= self._cut_off_items(cohort, alias, set(action.target_trial_ids),
++                                                   OpsState(frozenset(failed), MappingProxyType(attempts),
++                                                            frozenset(exhausted), frozenset(failed_items),
++                                                            frozenset(exhausted_items)))
+         new_ops = OpsState(frozenset(failed), MappingProxyType(attempts), frozenset(exhausted),
+                            frozenset(failed_items), frozenset(exhausted_items))
+         new = cohort.with_ops(alias, new_ops)
