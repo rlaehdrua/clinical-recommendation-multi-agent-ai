@@ -19,6 +19,7 @@ from . import (DISCLAIMER, acquisition, config, evidence, evidence_directness, f
                profile_facts, trial_store)
 from .agents import criteria_parser, explainer, matcher, patient_profiler, question_generator, recommender, screener
 from .agents.answerers import Answerer
+from . import evidence_basis
 from .fact_changes import take_snapshot
 from .fact_store import FactStore
 from .schemas import ParsedTrial, PatientProfile, QAPair, Recommendation, TrialMatch
@@ -311,7 +312,9 @@ class Session:
             m = matcher.match_trial(self.profile, self.parsed[tid], self.trials[tid],
                                     reference_date=self.reference_date, source_text=self.case.raw_text,
                                     input_source=self.case.input_source,
-                                    qa=list(self.qa_log), session_id=self.session_id)  # 확인 답변 검증용 (answer_verification)
+                                    qa=list(self.qa_log), session_id=self.session_id,  # 확인 답변 검증용 (answer_verification)
+                                    document_check=evidence_basis.document_check(
+                                        self.fact_store, self.case.patient_id, self.parsed[tid], self.reference_date))
             self.tracer.log("matcher", "done", trial_id=tid, message=m.summary, round=self.rounds, **trace_match(m))
             return tid, m
 

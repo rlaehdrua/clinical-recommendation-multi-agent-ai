@@ -138,7 +138,8 @@ def _lab_trial_match(monkeypatch, quote: str, source: str, input_source: str = "
     la = LLMAssessment(rule_id="I1", applicable=True, holds="yes", evidence_type="explicit", confidence="high",
                        evidence=quote, reasoning="r", missing_info=None)
     monkeypatch.setattr(matcher.llm, "structured", lambda *a, **k: MatcherOutput(assessments=[la]))
-    return matcher.match_trial(_profile(), _parsed([rule]), TRIAL, source_text=source, input_source=input_source)
+    return matcher.match_trial(_profile(), _parsed([rule]), TRIAL, source_text=source, input_source=input_source,
+                               document_check=lambda a, r: True)
 
 
 def test_self_reported_biomarker_is_unverified(monkeypatch):
@@ -192,7 +193,7 @@ def test_rule_engine_lab_from_answer_is_self_report():
                  operator=">=", value="9", unit="g/dL")
     p = _profile(labs=[LabValue(name="hemoglobin", value=11.0, unit="g/dL", date=None, source_quote="혈색소 11 정도였어요")])
     src = "기록\n\n[추가 확인 정보 - 라운드 1]\nQ: 혈색소?\nA: 혈색소 11 정도였어요"
-    m = matcher.match_trial(p, _parsed([rule]), TRIAL, source_text=src)
+    m = matcher.match_trial(p, _parsed([rule]), TRIAL, source_text=src, document_check=lambda a, r: True)
     a = m.assessments[0]
     assert a.method == "rule_engine" and a.needs_verification and a.passes is None and a.self_reported_holds == "yes"
 

@@ -16,12 +16,18 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent))
 
+from functools import partial  # noqa: E402
+
+from document_support import documented  # noqa: E402
 from ctrec.agents import matcher
 from ctrec.pipeline import PatientCase, Session, load_patients
 from ctrec.schemas import LabValue, LLMAssessment, MatcherOutput
 
 from test_decisions import TRIAL, _parsed
 from test_offline import _profile, _rule
+
+documented_match = partial(matcher.match_trial, document_check=documented)  # 게이트가 주제가 아닌 테스트: 문서 확인 있는 경로
+
 
 ECOG_RULE = _rule(rule_id="I1", text="ECOG performance status 0-1", category="performance_status",
                   field="ecog", operator="<=", value="1")
@@ -43,7 +49,7 @@ def _egfr_initial_match(monkeypatch, input_source: str | None):
                        evidence="EGFR exon 19 deletion 양성", reasoning="r", missing_info=None)
     monkeypatch.setattr(matcher.llm, "structured", lambda *a, **k: MatcherOutput(assessments=[la]))
     kw = {} if input_source is None else {"input_source": input_source}
-    return matcher.match_trial(_profile(), _parsed([EGFR_RULE]), TRIAL, source_text=src, **kw)
+    return documented_match(_profile(), _parsed([EGFR_RULE]), TRIAL, source_text=src, **kw)
 
 
 def test_initial_input_declared_clinical_record_is_record(monkeypatch):
@@ -73,7 +79,7 @@ def test_initial_input_unknown_source_is_not_record(monkeypatch, input_source):
 
 def test_initial_unknown_source_keeps_self_report_ok_verdict():
     """자기 보고로 충분한 기준(나이)은 최초 입력 출처가 unknown이어도 판정이 그대로."""
-    m = matcher.match_trial(_profile(age=62), _parsed([AGE_RULE]), TRIAL, source_text="62세 여성 폐암.")
+    m = documented_match(_profile(age=62), _parsed([AGE_RULE]), TRIAL, source_text="62세 여성 폐암.")
     a = m.assessments[0]
     assert a.evidence_source == "unknown" and a.passes is True and m.eligibility == "ELIGIBLE"
 
@@ -128,7 +134,7 @@ class _NullTracer:
 def test_ecog_from_answer_only_is_unverified():
     """기록에 없는 ECOG를 답변으로만 얻었으면 self_report -> UNVERIFIED (이전에는 무조건 record)."""
     src = "62세 여성 폐암 4기." + _answers("일상생활 활동 정도는?", "ECOG 1이라고 들었어요")
-    m = matcher.match_trial(_profile(ecog=1), _parsed([ECOG_RULE]), TRIAL, source_text=src, input_source=RECORD)
+    m = documented_match(_profile(ecog=1), _parsed([ECOG_RULE]), TRIAL, source_text=src, input_source=RECORD)
     a = m.assessments[0]
     assert a.method == "rule_engine"
     assert a.evidence_source == "self_report"
@@ -139,14 +145,14 @@ def test_ecog_from_answer_only_is_unverified():
 def test_ecog_in_record_stays_record_after_answers():
     """진료 기록에 ECOG가 있으면 다른 질문에 답한 뒤에도 record (기존 정상 판정 유지)."""
     src = "62세 여성 폐암 4기. ECOG PS 1." + _answers("흡연력?", "없어요")
-    m = matcher.match_trial(_profile(ecog=1), _parsed([ECOG_RULE]), TRIAL, source_text=src, input_source=RECORD)
+    m = documented_match(_profile(ecog=1), _parsed([ECOG_RULE]), TRIAL, source_text=src, input_source=RECORD)
     a = m.assessments[0]
     assert a.evidence_source == "record" and not a.needs_verification and a.passes is True
 
 
 def test_profile_field_without_answers_follows_initial_source():
     """확인 질문 전에는 최초 입력이 유일한 출처 -> 진료 기록으로 선언됐으면 record (기존 동작 유지)."""
-    m = matcher.match_trial(_profile(ecog=1), _parsed([ECOG_RULE]), TRIAL, source_text="62세 여성 폐암 4기, 활동도 1.",
+    m = documented_match(_profile(ecog=1), _parsed([ECOG_RULE]), TRIAL, source_text="62세 여성 폐암 4기, 활동도 1.",
                             input_source=RECORD)
     a = m.assessments[0]
     assert a.evidence_source == "record" and not a.needs_verification and a.passes is True
@@ -155,7 +161,7 @@ def test_profile_field_without_answers_follows_initial_source():
 def test_ecog_in_self_reported_initial_input_is_unverified():
     """최초 입력이 자기 보고면 그 안의 ECOG 값도 self_report (답변이 있어도 마찬가지)."""
     src = "제가 직접 적습니다. 62세 여성 폐암, ECOG 1이라고 들었어요." + _answers("흡연력?", "없어요")
-    m = matcher.match_trial(_profile(ecog=1), _parsed([ECOG_RULE]), TRIAL, source_text=src, input_source="self_report")
+    m = documented_match(_profile(ecog=1), _parsed([ECOG_RULE]), TRIAL, source_text=src, input_source="self_report")
     a = m.assessments[0]
     assert a.evidence_source == "self_report" and a.needs_verification and a.passes is None
 
@@ -163,7 +169,7 @@ def test_ecog_in_self_reported_initial_input_is_unverified():
 def test_ecog_found_nowhere_after_answers_is_unknown():
     """답변이 있는데 ECOG 값이 기록·답변 어디에서도 확인되지 않으면 unknown -> 기록으로 인정하지 않음."""
     src = "62세 여성 폐암 4기." + _answers("흡연력?", "없어요")
-    m = matcher.match_trial(_profile(ecog=1), _parsed([ECOG_RULE]), TRIAL, source_text=src, input_source=RECORD)
+    m = documented_match(_profile(ecog=1), _parsed([ECOG_RULE]), TRIAL, source_text=src, input_source=RECORD)
     a = m.assessments[0]
     assert a.evidence_source == "unknown"
     assert a.needs_verification and a.passes is None
@@ -175,7 +181,7 @@ def test_ecog_found_nowhere_after_answers_is_unknown():
 def test_self_report_ok_rule_needs_a_stated_value():
     """자기 보고로 충분한 기준(나이)도 값이 원문·답변에 없으면 판정하지 않음 (팀 결정, 이전에는 판정 유지)."""
     src = "폐암 4기 환자." + _answers("흡연력?", "없어요")
-    m = matcher.match_trial(_profile(age=62), _parsed([AGE_RULE]), TRIAL, source_text=src, input_source=RECORD)
+    m = documented_match(_profile(age=62), _parsed([AGE_RULE]), TRIAL, source_text=src, input_source=RECORD)
     a = m.assessments[0]
     assert a.method == "rule_engine" and a.passes is None and not a.needs_verification
     assert m.eligibility == "UNCERTAIN"
@@ -186,7 +192,7 @@ def test_lab_quote_found_nowhere_after_answers_is_unknown():
     """lab 인용이 기록·답변 어디에도 없으면 record가 아님 (이전에는 기본값 record)."""
     p = _profile(labs=[LabValue(name="hemoglobin", value=11.0, unit="g/dL", date=None, source_quote="Hb eleven")])
     src = "62세 여성 폐암." + _answers("흡연력?", "없어요")
-    m = matcher.match_trial(p, _parsed([HB_RULE]), TRIAL, source_text=src, input_source=RECORD)
+    m = documented_match(p, _parsed([HB_RULE]), TRIAL, source_text=src, input_source=RECORD)
     a = m.assessments[0]
     assert a.method == "rule_engine" and a.evidence_source == "unknown"
     assert a.needs_verification and a.passes is None and a.self_reported_holds is None
@@ -195,7 +201,7 @@ def test_lab_quote_found_nowhere_after_answers_is_unknown():
 def test_lab_quote_in_record_stays_record():
     p = _profile(labs=[LabValue(name="hemoglobin", value=11.0, unit="g/dL", date=None, source_quote="Hb 11.0 g/dL")])
     src = "62세 여성 폐암. Hb 11.0 g/dL." + _answers("흡연력?", "없어요")
-    m = matcher.match_trial(p, _parsed([HB_RULE]), TRIAL, source_text=src, input_source=RECORD)
+    m = documented_match(p, _parsed([HB_RULE]), TRIAL, source_text=src, input_source=RECORD)
     a = m.assessments[0]
     assert a.evidence_source == "record" and a.passes is True and not a.needs_verification
 
@@ -207,7 +213,7 @@ def _llm_ecog_match(monkeypatch, src: str):
     la = LLMAssessment(rule_id="I1", applicable=True, holds="yes", evidence_type="explicit", confidence="high",
                        evidence="ecog: 1", reasoning="r", missing_info=None)
     monkeypatch.setattr(matcher.llm, "structured", lambda *a, **k: MatcherOutput(assessments=[la]))
-    return matcher.match_trial(_profile(ecog=1), _parsed([rule]), TRIAL, source_text=src, input_source=RECORD)
+    return documented_match(_profile(ecog=1), _parsed([rule]), TRIAL, source_text=src, input_source=RECORD)
 
 
 def test_llm_field_ref_from_answer_is_unverified(monkeypatch):

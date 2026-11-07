@@ -8,6 +8,7 @@
 원칙
 - 출처(source_type)와 검증 상태(verification_status)는 별개입니다. 출처가 clinical_record라고 적혀 있어도
   검증 상태는 그대로 unknown이며, document_verified는 문서 참조와 사유를 함께 기록할 때만 부여합니다.
+  판정은 상태 문자열이 아니라 document_backed로 봅니다: 현재 문서 권한이 인정한 증명이 없으면 검증이 아닙니다.
 - 사실의 값은 고치지 않습니다. 같은 항목의 새 정보는 새 사실로 추가하고, 이전 사실은 그대로 남깁니다(version, previous_fact_id).
   바뀌는 것은 검증 상태(이력과 함께 기록)와 충돌 표시(같은 항목의 사실들로부터 다시 계산)뿐입니다.
 - 같은 항목의 값이 다르면 둘 다 남기고 관계를 표시합니다. 최신 값이나 검증된 값을 자동으로 채택하지 않습니다.
@@ -32,6 +33,9 @@ from pathlib import Path
 from typing import Literal, Union
 
 from pydantic import BaseModel, Field
+
+from . import document_authority
+from .document_authority import ServerAttestation
 
 FORMAT_VERSION = 1
 
@@ -69,6 +73,7 @@ class VerificationEvent(BaseModel):
     reason: str
     by: str
     document_reference: str | None = None
+    attestation: ServerAttestation | None = None  # 서버 문서 확인 증명. 없으면 서버 검증이 아님
     at: str
 
 
@@ -149,6 +154,18 @@ def relation(a: PatientFact, b: PatientFact) -> Relation:
     return "contradictory"
 
 
+def document_backed(f: PatientFact) -> bool:
+    """서버가 문서로 확인한 값인가. 상태 문자열·문서 참조 문자열만으로는 아님: 현재 권한이 인정한 증명이 마지막 이력에 있어야 함.
+
+    운영 기본 권한(NoDocumentAuthority)은 아무것도 인정하지 않으므로 지금 운영 경로에서는 항상 False입니다."""
+    if f.verification_status != "document_verified" or not f.verification_history:
+        return False
+    last = f.verification_history[-1]
+    att = last.attestation
+    return (last.to_status == "document_verified" and att is not None and att.document_id == last.document_reference
+            and att.fact_digest == document_authority.fact_digest(f) and document_authority.current().valid(att, f))
+
+
 class FactStore:
     """환자별 사실 목록. root를 주면 save()/load()로 <root>/<patient_id>.json에 저장합니다."""
 
@@ -223,6 +240,20 @@ class FactStore:
             from_status=f.verification_status, to_status=status, reason=reason.strip(), by=by.strip(),
             document_reference=(document_reference or None), at=_now()))
         f.verification_status = status  # type: ignore[assignment]
+        return f
+
+    def attest(self, fact_id: str, attestation: ServerAttestation, authority: document_authority.DocumentAuthority,
+               *, reason: str, by: str) -> PatientFact:
+        """서버가 확인한 문서로 검증 기록. 호출자가 만든 문자열이 아니라 권한 객체가 인정한 증명을 요구."""
+        f = self.get(fact_id)
+        if not (reason or "").strip() or not (by or "").strip():
+            raise FactStoreError("검증 상태를 바꾸려면 사유(reason)와 기록자(by)가 필요함")
+        if attestation.fact_digest != document_authority.fact_digest(f) or not authority.valid(attestation, f):
+            raise FactStoreError("서버가 확인하지 않은 문서 증명")
+        f.verification_history.append(VerificationEvent(
+            from_status=f.verification_status, to_status="document_verified", reason=reason.strip(), by=by.strip(),
+            document_reference=attestation.document_id, attestation=attestation, at=_now()))
+        f.verification_status = "document_verified"  # type: ignore[assignment]
         return f
 
     # ------------------------------------------------------------ 충돌

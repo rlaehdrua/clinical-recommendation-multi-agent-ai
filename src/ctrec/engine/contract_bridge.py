@@ -50,7 +50,8 @@ def evidence_ref(fact) -> EvidenceRef:
         source = "self_report"  # proposition_store 원칙: 문서 검증 전에는 clinical_record가 아님
     return EvidenceRef(fact_id=fact.fact_id, field="prop:" + fact.proposition.key, source_type=source,
                        verification_status=fact.verification_status, contract_id=fact.contract_id,
-                       contract_version=fact.contract_version)
+                       contract_version=fact.contract_version,
+                       document_reference=getattr(fact, "document_reference", None))
 
 
 def _state(a) -> str:

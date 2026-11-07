@@ -95,7 +95,8 @@ def test_both_outcomes_are_exercised():
 @pytest.mark.parametrize("p,trial", PAIRS, ids=[f"{p[0]}-{t}" for p, t in PAIRS])
 def test_session_matches_the_independent_comparison(run, monkeypatch, p, trial):
     rules = [r for r, *_ in TRIALS[trial]]
-    o = run(p[6], rules, profile_of(p), meta=META, input_source="clinical_record")
+    # 적격 쪽은 합성 서버 문서로 확인한 대조군. 부적격 쪽은 선언만으로도 잠정 부적격을 유지
+    o = run(p[6], rules, profile_of(p), meta=META, input_source="clinical_record", documents=expected(p, TRIALS[trial]))
     if expected(p, TRIALS[trial]):
         assert (o.match.eligibility, o.status, o.match.match_status) == ("ELIGIBLE", "CONFIRMED_ELIGIBLE", "CRITERIA_MATCH")
         assert ranked(o, monkeypatch).ranked[0].rank == 1
