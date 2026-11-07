@@ -136,16 +136,12 @@ function renderSummary(s, list) {
   if (!s || !s.cases) { q$("#st-summary").innerHTML = '<div class="empty">아직 사례가 없습니다. 환자 탭에서 "연구진 확인 요청"으로 시작하면 여기에 나타납니다.</div>'; return; }
   const open = list.reduce((n, c) => n + (c.open_requests || 0), 0);
   const ms = (s.milestones || []).filter(m => m.c_order_minutes != null);
-  const last = ms[ms.length - 1];
-  const saved = last && last.patient_order_minutes != null ? last.patient_order_minutes - last.c_order_minutes : null;
+  const last = ms[ms.length - 1];  // 환자 순서와의 비교는 화면에 두지 않음 (11-07 결정: 순서 우열은 WP6 시뮬레이터로 판단)
   q$("#st-summary").innerHTML = `<div class="tiles">
       <div class="tile"><div class="k">열린 사례</div><div class="v">${h(s.cases)}명</div><div class="s">진행 중 요청 ${h(open)}건</div></div>
       <div class="tile info"><div class="k">남은 확인 (추천 계획)</div><div class="v">${h(s.items)}건</div><div class="s">모두 하면 약 ${h(min(s.minutes_all))}</div></div>
       <div class="tile ok"><div class="k">판정이 정해질 수 있는 쌍</div><div class="v">${h(s.decidable_pairs)}개</div>
-        <div class="s">${last ? `추천 순서로 ${h(min(last.c_order_minutes))}이면 도달` : "지금 계획으로는 없음"}</div></div>
-      <div class="tile${saved != null && saved > 0 ? " ok" : ""}"><div class="k">환자 순서로 할 때와 비교</div>
-        <div class="v">${saved == null ? "-" : saved > 0 ? `${h(min(saved))} 절약` : saved < 0 ? `${h(min(-saved))} 더 듦` : "같음"}</div>
-        <div class="s">${last && last.patient_order_minutes != null ? `환자 순서 ${h(min(last.patient_order_minutes))}` : ""}</div></div></div>
+        <div class="s">${last ? `추천 순서로 ${h(min(last.c_order_minutes))}이면 도달` : "지금 계획으로는 없음"}</div></div></div>
     <p class="hint m0">같은 환자·같은 연락은 한 번만 청구하는 비용 원장 그대로 계산한 예상 분입니다(가정 비용). '판정이 정해질 수 있는'은 답이 실제로 나온다고 볼 때의 상한이며,
       모름·연락 불가·상충이면 정해지지 않습니다. 아래 '질문별'에서 적은 시간에 많은 판정에 닿는 확인을 고르세요.</p>`;
 }

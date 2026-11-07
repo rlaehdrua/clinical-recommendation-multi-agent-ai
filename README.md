@@ -610,6 +610,7 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 | 3 | 담당자 탭: 데모 서버면 연결 칸 없이 '발표용 데모 · 자동 연결됨'으로 바로 열림. 화면은 키를 모르고 보내지도 않음. 실제 서버는 지금처럼 키 입력 | `src/ctrec/web/static/staff.js` |
 | 4 | 테스트 3건(전체 5,042 passed, 5 skipped, 1 xfailed): 기본은 루프백이어도 키 필요, 데모 예외는 루프백만(외부 접속은 키 필요 - 루프백 검사를 빼면 실패 확인), 데모에서도 담당자는 환자 답변 불가, `DEMO_STAFF = True`는 데모 서버 스크립트에만 있음 | `tests/test_followup_web.py` |
 
+- **순서 비교 칸 제거 (동겸 결정):** 담당자 요약의 '환자 순서로 할 때와 비교' 칸을 뺌. 데모 4명에서 추천 순서가 13분 더 걸렸고(3명일 때는 같음), C 순서는 '분당 판정 수'를 직접 최적화하지 않음 - 순서 우열은 WP6 시뮬레이터로 판단. `/staff/insight`는 두 곡선을 그대로 돌려줌.
 - 발표 실행: `CTREC_STAFF_KEY=<아무 값> python scripts/followup_demo_server.py --port 8011 --demo-staff` → http://127.0.0.1:8011/ 에서 환자 ↔ 연구 담당자 탭만 오가면 됨.
 - Chrome 확인: 담당자 탭·`/staff` 모두 키 입력 없이 '자동 연결됨', 콘솔 오류 0.
 
