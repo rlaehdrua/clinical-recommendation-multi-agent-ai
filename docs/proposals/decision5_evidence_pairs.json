@@ -1,0 +1,4260 @@
+{
+ "note": "결정 5 전·후 쌍 단위 근거 (읽기 전용 재현, 4f81460 + #43). (쌍 없음) = 재생성으로 그 쌍이 상대 쪽 코호트에 없음",
+ "cohort_board": {
+  "marked_rules": {
+   "NCT06125405": [
+    "E11"
+   ],
+   "NCT06530004": [
+    "E5"
+   ],
+   "NCT07087314": []
+  },
+  "fixed_patients": {
+   "control_confirmed_eligible_before": 81,
+   "control_after_of_those": {
+    "EXPERT_REVIEW": 81
+   },
+   "by_trial_cause": {
+    "NCT06530004|E5|EXPERT_REVIEW": 72,
+    "NCT06125405|E11|EXPERT_REVIEW": 9
+   },
+   "gate_confirmed_eligible": [
+    0,
+    0
+   ],
+   "totals": {
+    "gate_before": {
+     "INFO_MISSING": 421,
+     "CONFIRMED_INELIGIBLE": 398,
+     "NOT_EVALUATED": 81
+    },
+    "gate_after": {
+     "INFO_MISSING": 349,
+     "CONFIRMED_INELIGIBLE": 368,
+     "EXPERT_REVIEW": 183
+    },
+    "control_before": {
+     "INFO_MISSING": 421,
+     "CONFIRMED_INELIGIBLE": 398,
+     "CONFIRMED_ELIGIBLE": 81
+    },
+    "control_after": {
+     "INFO_MISSING": 349,
+     "CONFIRMED_INELIGIBLE": 368,
+     "EXPERT_REVIEW": 183
+    }
+   },
+   "gate_changes": {
+    "INFO_MISSING->EXPERT_REVIEW": 89,
+    "NOT_EVALUATED->EXPERT_REVIEW": 81,
+    "CONFIRMED_INELIGIBLE->INFO_MISSING": 17,
+    "CONFIRMED_INELIGIBLE->EXPERT_REVIEW": 13
+   },
+   "moved": [
+    {
+     "pair": "neph-null-r00|P011|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-null-r01|P020|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-null-r04|P002|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-null-r04|P019|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-source-r00|P002|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-source-r00|P006|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-source-r00|P014|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-source-r00|P017|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-source-r01|P001|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-source-r01|P005|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-source-r01|P008|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-source-r01|P013|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-source-r01|P014|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-source-r01|P016|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-source-r01|P018|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-source-r01|P019|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-source-r02|P002|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-source-r02|P005|NCT06125405",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E11"
+     ],
+     "unbound_rules": 14
+    },
+    {
+     "pair": "neph-k3-catalog-source-r02|P008|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-source-r02|P009|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-source-r02|P010|NCT06125405",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E11"
+     ],
+     "unbound_rules": 14
+    },
+    {
+     "pair": "neph-k3-catalog-source-r02|P016|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-source-r02|P020|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-source-r03|P002|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-source-r03|P004|NCT06125405",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E11"
+     ],
+     "unbound_rules": 14
+    },
+    {
+     "pair": "neph-k3-catalog-source-r03|P007|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-source-r03|P008|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-source-r03|P010|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-source-r03|P012|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-source-r03|P013|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-source-r03|P017|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-source-r04|P005|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-source-r04|P009|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-source-r04|P011|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-source-r04|P012|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-source-r04|P015|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-perslot-r00|P001|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-perslot-r00|P005|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-perslot-r00|P009|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-perslot-r00|P011|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-perslot-r00|P017|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-perslot-r00|P019|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-perslot-r01|P001|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-perslot-r01|P004|NCT06125405",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E11"
+     ],
+     "unbound_rules": 14
+    },
+    {
+     "pair": "neph-k3-catalog-perslot-r01|P005|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-perslot-r01|P012|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-perslot-r01|P016|NCT06125405",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E11"
+     ],
+     "unbound_rules": 14
+    },
+    {
+     "pair": "neph-k3-catalog-perslot-r02|P009|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-perslot-r02|P010|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-perslot-r02|P015|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-perslot-r02|P016|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-perslot-r02|P019|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-perslot-r02|P020|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-perslot-r03|P001|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-perslot-r03|P004|NCT06125405",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E11"
+     ],
+     "unbound_rules": 14
+    },
+    {
+     "pair": "neph-k3-catalog-perslot-r03|P004|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-perslot-r03|P007|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-perslot-r03|P009|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-perslot-r03|P011|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-perslot-r03|P015|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-perslot-r03|P016|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-perslot-r03|P020|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-perslot-r04|P012|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-perslot-r04|P013|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-perslot-r04|P014|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k3-catalog-perslot-r04|P020|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k2-enroll1-r00|P001|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k2-enroll1-r00|P002|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k2-enroll1-r00|P010|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k2-enroll1-r00|P013|NCT06125405",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E11"
+     ],
+     "unbound_rules": 14
+    },
+    {
+     "pair": "neph-k2-enroll1-r01|P001|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k2-enroll1-r01|P005|NCT06125405",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E11"
+     ],
+     "unbound_rules": 14
+    },
+    {
+     "pair": "neph-k2-enroll1-r01|P006|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k2-enroll1-r01|P018|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k2-enroll1-r02|P016|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k2-enroll1-r03|P008|NCT06125405",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E11"
+     ],
+     "unbound_rules": 14
+    },
+    {
+     "pair": "neph-k2-enroll1-r03|P014|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k2-enroll1-r03|P015|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k2-enroll1-r04|P001|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k2-enroll1-r04|P014|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    },
+    {
+     "pair": "neph-k2-enroll1-r04|P018|NCT06530004",
+     "control_before": "CONFIRMED_ELIGIBLE",
+     "control_after": "EXPERT_REVIEW",
+     "gate_before": "NOT_EVALUATED",
+     "gate_after": "EXPERT_REVIEW",
+     "cause": [
+      "E5"
+     ],
+     "unbound_rules": 9
+    }
+   ]
+  },
+  "regenerated": {
+   "totals": {
+    "gate": {
+     "INFO_MISSING": 357,
+     "EXPERT_REVIEW": 176,
+     "CONFIRMED_INELIGIBLE": 366,
+     "NOT_EVALUATED": 1
+    },
+    "control": {
+     "INFO_MISSING": 357,
+     "EXPERT_REVIEW": 176,
+     "CONFIRMED_INELIGIBLE": 366,
+     "CONFIRMED_ELIGIBLE": 1
+    }
+   },
+   "test_moved": {
+    "NCT07087314": 1
+   }
+  }
+ },
+ "recovery_stress": {
+  "summary": {
+   "A": {
+    "default": {
+     "BLOCKED_FAILURE": 19,
+     "CONFIRMED_INELIGIBLE": 24,
+     "INFO_MISSING": 35,
+     "VERIFICATION_PENDING": 2
+    },
+    "patient_unreachable": {
+     "BLOCKED_FAILURE": 21,
+     "CONFIRMED_INELIGIBLE": 25,
+     "INFO_MISSING": 34
+    }
+   },
+   "B_fixed": {
+    "default": {
+     "BLOCKED_FAILURE": 19,
+     "CONFIRMED_INELIGIBLE": 23,
+     "INFO_MISSING": 36,
+     "VERIFICATION_PENDING": 2
+    },
+    "patient_unreachable": {
+     "BLOCKED_FAILURE": 21,
+     "CONFIRMED_INELIGIBLE": 24,
+     "INFO_MISSING": 35
+    }
+   },
+   "C_fixed": {
+    "default": {
+     "BLOCKED_FAILURE": 19,
+     "CONFIRMED_INELIGIBLE": 19,
+     "INFO_MISSING": 39,
+     "VERIFICATION_PENDING": 3
+    },
+    "patient_unreachable": {
+     "BLOCKED_FAILURE": 21,
+     "CONFIRMED_INELIGIBLE": 20,
+     "INFO_MISSING": 38,
+     "VERIFICATION_PENDING": 1
+    }
+   },
+   "B_regen": {
+    "default": {
+     "INFO_MISSING": 42,
+     "BLOCKED_FAILURE": 16,
+     "CONFIRMED_INELIGIBLE": 20,
+     "VERIFICATION_PENDING": 2
+    },
+    "patient_unreachable": {
+     "INFO_MISSING": 34,
+     "BLOCKED_FAILURE": 24,
+     "CONFIRMED_INELIGIBLE": 21,
+     "VERIFICATION_PENDING": 1
+    }
+   },
+   "C_regen": {
+    "default": {
+     "INFO_MISSING": 42,
+     "BLOCKED_FAILURE": 16,
+     "CONFIRMED_INELIGIBLE": 20,
+     "VERIFICATION_PENDING": 2
+    },
+    "patient_unreachable": {
+     "INFO_MISSING": 34,
+     "BLOCKED_FAILURE": 24,
+     "CONFIRMED_INELIGIBLE": 21,
+     "VERIFICATION_PENDING": 1
+    }
+   }
+  },
+  "diff": {
+   "B_fixed": {
+    "default": {
+     "left_blocked": [],
+     "entered_blocked": [],
+     "same_pairs": 80,
+     "pairs_a": 80,
+     "pairs_b": 80
+    },
+    "patient_unreachable": {
+     "left_blocked": [],
+     "entered_blocked": [],
+     "same_pairs": 80,
+     "pairs_a": 80,
+     "pairs_b": 80
+    }
+   },
+   "C_fixed": {
+    "default": {
+     "left_blocked": [],
+     "entered_blocked": [],
+     "same_pairs": 80,
+     "pairs_a": 80,
+     "pairs_b": 80
+    },
+    "patient_unreachable": {
+     "left_blocked": [],
+     "entered_blocked": [],
+     "same_pairs": 80,
+     "pairs_a": 80,
+     "pairs_b": 80
+    }
+   },
+   "B_regen": {
+    "default": {
+     "left_blocked": [
+      {
+       "pair": "neph-null-r00|PA-02a7527d3daaa15a|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r00|PA-819665c6019ac8ba|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r00|PA-e5e7569313bce834|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r01|PA-d2f1fe4a5c55757e|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r02|PA-471c2a9207082f59|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r02|PA-83e40f8f009e62a7|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r02|PA-ffadd16ed3e2c400|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-221734bb31e1c80d|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-c09cd615515ccba1|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I5:unverified",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-c0c067e2eb707339|NCT07087314",
+       "to": "CONFIRMED_INELIGIBLE",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-cdcb2cad04bc7e88|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I5:unverified",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-cf8fccd106a94bff|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-f1d2e1ae759cb77f|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing"
+       ]
+      }
+     ],
+     "entered_blocked": [
+      {
+       "pair": "neph-null-r00|PA-14dd658c395cfb07|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r00|PA-33f5b73d200e5038|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I5:unverified",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r01|PA-636854f87a6970d4|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r01|PA-85eed340c28805c1|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I5:unverified",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r01|PA-a3c8cf36f0cb3091|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r02|PA-1a86c5ba475d2c8d|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r02|PA-3384185606d4ea7a|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r02|PA-4fae12a5b8827af0|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r02|PA-76db8c4c0139996d|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-c475d1f26d70e7cf|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing"
+       ]
+      }
+     ],
+     "same_pairs": 28,
+     "pairs_a": 80,
+     "pairs_b": 80
+    },
+    "patient_unreachable": {
+     "left_blocked": [
+      {
+       "pair": "neph-null-r00|PA-02a7527d3daaa15a|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r00|PA-819665c6019ac8ba|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r00|PA-e5e7569313bce834|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r00|PA-f0d6a37e435d2fe0|NCT07087314",
+       "to": "CONFIRMED_INELIGIBLE",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r01|PA-0178d76bb66d5141|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r01|PA-d2f1fe4a5c55757e|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r02|PA-471c2a9207082f59|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r02|PA-83e40f8f009e62a7|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r02|PA-ffadd16ed3e2c400|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-221734bb31e1c80d|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-c09cd615515ccba1|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-c0c067e2eb707339|NCT07087314",
+       "to": "CONFIRMED_INELIGIBLE",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-cdcb2cad04bc7e88|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-cf8fccd106a94bff|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-f1d2e1ae759cb77f|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing"
+       ]
+      }
+     ],
+     "entered_blocked": [
+      {
+       "pair": "neph-null-r00|PA-14dd658c395cfb07|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r00|PA-33f5b73d200e5038|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r00|PA-5092d9812a126bb1|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r00|PA-b715e6c179ae1e48|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r00|PA-f2129a26eb27ba1b|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r01|PA-636854f87a6970d4|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r01|PA-85eed340c28805c1|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r01|PA-a3c8cf36f0cb3091|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r02|PA-1a86c5ba475d2c8d|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r02|PA-3384185606d4ea7a|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r02|PA-4fae12a5b8827af0|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r02|PA-76db8c4c0139996d|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r02|PA-8c5317b5dcefaec8|NCT07087314",
+       "from": "CONFIRMED_INELIGIBLE",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r02|PA-c3fe3dfeb4fb7b91|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-438cb8fee959a9a9|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-795b2f56ceee8e6d|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-846c20528e0c7f77|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-c475d1f26d70e7cf|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing"
+       ]
+      }
+     ],
+     "same_pairs": 28,
+     "pairs_a": 80,
+     "pairs_b": 80
+    }
+   },
+   "C_regen": {
+    "default": {
+     "left_blocked": [
+      {
+       "pair": "neph-null-r00|PA-02a7527d3daaa15a|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r00|PA-819665c6019ac8ba|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r00|PA-e5e7569313bce834|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r01|PA-d2f1fe4a5c55757e|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r02|PA-471c2a9207082f59|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r02|PA-83e40f8f009e62a7|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r02|PA-ffadd16ed3e2c400|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-221734bb31e1c80d|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-c09cd615515ccba1|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I5:unverified",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-c0c067e2eb707339|NCT07087314",
+       "to": "CONFIRMED_INELIGIBLE",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-cdcb2cad04bc7e88|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I5:unverified",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-cf8fccd106a94bff|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-f1d2e1ae759cb77f|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing"
+       ]
+      }
+     ],
+     "entered_blocked": [
+      {
+       "pair": "neph-null-r00|PA-14dd658c395cfb07|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r00|PA-33f5b73d200e5038|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I5:unverified",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r01|PA-636854f87a6970d4|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r01|PA-85eed340c28805c1|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I5:unverified",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r01|PA-a3c8cf36f0cb3091|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r02|PA-1a86c5ba475d2c8d|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r02|PA-3384185606d4ea7a|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r02|PA-4fae12a5b8827af0|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r02|PA-76db8c4c0139996d|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-c475d1f26d70e7cf|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing"
+       ]
+      }
+     ],
+     "same_pairs": 28,
+     "pairs_a": 80,
+     "pairs_b": 80
+    },
+    "patient_unreachable": {
+     "left_blocked": [
+      {
+       "pair": "neph-null-r00|PA-02a7527d3daaa15a|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r00|PA-819665c6019ac8ba|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r00|PA-e5e7569313bce834|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r00|PA-f0d6a37e435d2fe0|NCT07087314",
+       "to": "CONFIRMED_INELIGIBLE",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r01|PA-0178d76bb66d5141|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r01|PA-d2f1fe4a5c55757e|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r02|PA-471c2a9207082f59|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r02|PA-83e40f8f009e62a7|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r02|PA-ffadd16ed3e2c400|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-221734bb31e1c80d|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-c09cd615515ccba1|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-c0c067e2eb707339|NCT07087314",
+       "to": "CONFIRMED_INELIGIBLE",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-cdcb2cad04bc7e88|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-cf8fccd106a94bff|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-f1d2e1ae759cb77f|NCT07087314",
+       "to": "(쌍 없음)",
+       "gaps_before": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing"
+       ]
+      }
+     ],
+     "entered_blocked": [
+      {
+       "pair": "neph-null-r00|PA-14dd658c395cfb07|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r00|PA-33f5b73d200e5038|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r00|PA-5092d9812a126bb1|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r00|PA-b715e6c179ae1e48|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r00|PA-f2129a26eb27ba1b|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r01|PA-636854f87a6970d4|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r01|PA-85eed340c28805c1|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r01|PA-a3c8cf36f0cb3091|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r02|PA-1a86c5ba475d2c8d|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r02|PA-3384185606d4ea7a|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r02|PA-4fae12a5b8827af0|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r02|PA-76db8c4c0139996d|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r02|PA-8c5317b5dcefaec8|NCT07087314",
+       "from": "CONFIRMED_INELIGIBLE",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r02|PA-c3fe3dfeb4fb7b91|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-438cb8fee959a9a9|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I11:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-795b2f56ceee8e6d|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-846c20528e0c7f77|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing",
+        "I7:missing",
+        "I8:missing",
+        "I9:missing"
+       ]
+      },
+      {
+       "pair": "neph-null-r03|PA-c475d1f26d70e7cf|NCT07087314",
+       "from": "(쌍 없음)",
+       "gaps_after": [
+        "E10:missing",
+        "E11:missing",
+        "E12:missing",
+        "E13:missing",
+        "E14:missing",
+        "E15:missing",
+        "E1:missing",
+        "E2:missing",
+        "E3:missing",
+        "E4:missing",
+        "E5:missing",
+        "E6:missing",
+        "E7:missing",
+        "E8:missing",
+        "E9:missing",
+        "I10:missing",
+        "I12:missing",
+        "I4:missing",
+        "I6:missing"
+       ]
+      }
+     ],
+     "same_pairs": 28,
+     "pairs_a": 80,
+     "pairs_b": 80
+    }
+   }
+  }
+ }
+}
