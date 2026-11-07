@@ -10,6 +10,7 @@
   맞추고, 값·단위는 그대로 둡니다(단위 환산 없음).
 - 누락은 사실로 만들지 않습니다: None, 빈 문자열, sex="unknown", 값이 없는 검사. missing_or_ambiguous는 '없음'의
   기록이라 사실로 옮기지 않습니다.
+- 원문의 수치가 환자의 측정값이 아니면(미측정, 결과 대기, 무효, 타인, 기관 기준) 사실로 만들지 않습니다(value_grounding.not_measured).
 - 나이: 원문 표기(age_value, age_unit)가 있으면 그 값과 단위, 없으면 age(년).
 
 출처·검증 상태
@@ -43,7 +44,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Sequence
 
-from . import evidence
+from . import evidence, value_grounding
 from .fact_store import (_PATIENT_ID, FactStore, FactStoreError, PatientFact, SourceReference, _check_value,
                          _norm_field)
 from .schemas import Fact, LabValue, PatientProfile, QAPair
@@ -60,7 +61,7 @@ class IngestResult:
     duplicates: list[str] = field(default_factory=list)  # 이미 있어 만들지 않은 사실의 fact_id
     skipped: list[str] = field(default_factory=list)  # 값이 없어 옮기지 않은 항목
     rejected: list[tuple[str, str]] = field(default_factory=list)  # (항목, 사유): 이름·값이 저장소 규칙에 맞지 않아 옮기지 못함
-    # qa_pairs를 넘겼을 때만 채움: 사실로 만들지 않은 항목 (항목, 사유: "non_answer" | "physician_reference")
+    # 사실로 만들지 않은 항목 (항목, 사유). "not_measured"는 항상, "non_answer" | "physician_reference"는 qa_pairs를 넘겼을 때만
     withheld: list[tuple[str, str]] = field(default_factory=list)
 
 
@@ -197,6 +198,9 @@ def ingest_profile(store: FactStore, profile: PatientProfile, *, raw_text: str |
             _check_value(name, value)
         except FactStoreError as e:
             result.rejected.append((name, str(e)))
+            continue
+        if value_grounding.not_measured(name, value, quote, raw_text, unit=unit):
+            result.withheld.append((name, "not_measured"))  # 원문의 수치가 예정·무효·타인·기관 기준이면 환자 사실이 아님
             continue
         source_type, ref = _locate(quote, raw_text, input_source)
         ref, withhold = _link_answer(quote, ref, qa_pairs, session_id)

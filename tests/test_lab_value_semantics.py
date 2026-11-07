@@ -72,8 +72,9 @@ def test_stated_current_value_wins_over_the_past_one(text):
     assert lab(12.0, text, known={"12"}) in (U, C)  # 과거 값만 옮긴 프로필
 
 
-def test_past_value_alone_is_still_the_only_measurement():
-    assert lab(12.0, "이전 검사 Hb 12 g/dL", known={"12"}) is None
+def test_a_past_value_alone_is_not_a_current_measurement():
+    """계약 변경 (D+E): 과거로 표시된 값만 있으면 현재 값의 근거가 아님. 예전에는 유일한 측정값으로 인정했음."""
+    assert lab(12.0, "이전 검사 Hb 12 g/dL", known={"12"}) in (U, C)
 
 
 def test_undated_different_values_are_a_conflict():
