@@ -506,7 +506,8 @@ class CriterionChange(_Frozen):
 REASON_CONTRADICTING_EVIDENCE = "contradicting_evidence"  # 확정 뒤 반대 근거가 들어와 확인 대기로 내림
 REASON_EVIDENCE_REVERIFIED = "evidence_reverified"  # 별도 근거 확인 뒤 다시 확정 (반대 확정 포함)
 REVERSAL_REASON_CODES = frozenset({REASON_CONTRADICTING_EVIDENCE, REASON_EVIDENCE_REVERIFIED,
-                                   "evidence_withdrawn", "evaluation_failed", "expert_review_requested"})
+                                   "evidence_withdrawn", "evaluation_failed", "expert_review_requested",
+                                   "no_required_criteria", "no_applicable_criteria"})
 
 
 class PairTransition(_Frozen):

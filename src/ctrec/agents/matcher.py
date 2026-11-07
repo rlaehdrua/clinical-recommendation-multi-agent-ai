@@ -10,7 +10,8 @@
       원문에 구체 기준이 없는 underspecified 기준의 unknown은 '의사 확인 필요'로 분류하되 ELIGIBLE을 막음 -
       파서 LLM의 분류 하나로 미확인 기준이 통과 처리되지 않도록)
    - 모두 통과하면 ELIGIBLE
-   - 평가할 기준이 없으면 ELIGIBLE이 아님: 시험 전체는 NOT_EVALUATED(부적격 아님), decide([])는 UNCERTAIN
+   - 실질 기준(이 환자에게 적용되는 절차 외 기준)이 없으면 ELIGIBLE이 아님: 시험 전체는 NOT_EVALUATED(부적격 아님),
+     decide는 UNCERTAIN
      (docs/dev/e1_empty_criteria_safety.md)
 """
 
@@ -86,12 +87,19 @@ def needs_physician_review(a: CriterionAssessment) -> bool:
     return a.passes is None and a.underspecified
 
 
+def is_substantive(a: CriterionAssessment) -> bool:
+    """적격 확정의 근거가 될 수 있는 기준인가: 이 환자에게 적용되는 절차 외 기준.
+
+    절차 기준은 확인돼도 환자가 시험 대상인지 말해 주지 않고, '해당 없음'은 평가된 내용이 없습니다."""
+    return a.applicable and a.category != LOGISTICS
+
+
 def decide(assessments: list[CriterionAssessment]) -> str:
-    if not assessments:  # 근거가 없으면 확정하지 않음 (부적격도 아님). match_trial을 거치지 않는 호출의 방어선
-        return "UNCERTAIN"
     if any(a.passes is False for a in assessments):
         return "INELIGIBLE"
     if any(is_blocking_unknown(a) for a in assessments):
+        return "UNCERTAIN"
+    if not any(is_substantive(a) for a in assessments):  # 빈 목록 포함: 근거 없이 확정하지 않음 (부적격도 아님)
         return "UNCERTAIN"
     return "ELIGIBLE"
 
@@ -105,7 +113,7 @@ def _select_cohort(assessments: list[CriterionAssessment], cohorts: list[str]):
 
     코호트는 cohorts 목록과 규칙에 실제로 붙은 cohort 값을 모두 사용합니다.
     (파서가 cohorts 목록과 다른 이름을 규칙에 적어도, 서로 다른 코호트 전용 기준이 한꺼번에 적용되지 않도록)
-    같은 적격성이면 결정적 순서로 고름: 판정 불가 항목이 적은 코호트 -> 선언 순서.
+    같은 적격성이면 결정적 순서로 고름: 실질 기준이 있는 코호트 -> 판정 불가 항목이 적은 코호트 -> 선언 순서.
 
     반환: (판정에 적용한 기준 목록, 선택된 코호트 또는 None, 코호트별 적격성)
     """
@@ -122,6 +130,7 @@ def _select_cohort(assessments: list[CriterionAssessment], cohorts: list[str]):
         results[c] = (subset, decide(subset))
     best = min(range(len(labels)), key=lambda i: (
         -_RANK[results[labels[i]][1]],
+        not any(is_substantive(a) for a in results[labels[i]][0]),
         sum(is_blocking_unknown(a) for a in results[labels[i]][0]),
         i,
     ))
@@ -407,6 +416,10 @@ brief_summary: {trial.get('brief_summary', '')[:3000]}
 # 평가할 기준이 없는 시험의 evaluation_error. 코드만 남기고 시험 원문·환자 정보는 넣지 않음
 CRITERIA_PARSE_EMPTY = "criteria_parse_empty"  # 원문·구조화 조건이 있는데 파싱 결과가 빔
 NO_SOURCE_CRITERIA = "no_source_criteria"  # 원문에도 평가할 조건이 없음
+NO_REQUIRED_CRITERIA = "no_required_criteria"  # 적용 경로의 기준이 절차 기준뿐
+NO_APPLICABLE_CRITERIA = "no_applicable_criteria"  # 절차 외 기준이 있지만 이 환자에게 모두 해당 없음
+# 평가는 했으나 적격을 판단할 기준이 없는 경우: 평가 실패가 아니며 추천에서 빼고 담당자 확인으로 넘김 (P3 확정)
+NO_EVIDENCE_CODES = frozenset({NO_REQUIRED_CRITERIA, NO_APPLICABLE_CRITERIA})
 
 
 def _empty_criteria_code(trial: dict) -> str:
@@ -415,6 +428,13 @@ def _empty_criteria_code(trial: dict) -> str:
     has_source = (str(trial.get("eligibility_criteria") or "").strip() or trial.get("minimum_age")
                   or trial.get("maximum_age") or sex != "ALL")
     return CRITERIA_PARSE_EMPTY if has_source else NO_SOURCE_CRITERIA
+
+
+def no_evidence_code(assessments: list[CriterionAssessment]) -> str | None:
+    """적용 경로에 적격을 판단할 근거가 없으면 원인 코드. 불충족·확인할 항목이 있으면 None (기존 판정을 따름)."""
+    if any(is_substantive(a) or a.passes is False or is_blocking_unknown(a) for a in assessments):
+        return None
+    return NO_APPLICABLE_CRITERIA if any(a.category != LOGISTICS for a in assessments) else NO_REQUIRED_CRITERIA
 
 
 def _no_criteria_match(profile: PatientProfile, parsed: ParsedTrial, trial: dict) -> TrialMatch:
@@ -553,7 +573,8 @@ def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
     all_assessments = expert_boundary.enforce_all(parsed, all_assessments)
     assessments, matched_cohort, cohort_results = _select_cohort(all_assessments, parsed.cohorts)
     other = [a for a in all_assessments if a not in assessments]
-    eligibility = decide(assessments)
+    no_evidence = no_evidence_code(assessments)
+    eligibility = "NOT_EVALUATED" if no_evidence else decide(assessments)
     n_pass = sum(a.passes is True for a in assessments)
     n_fail = sum(a.passes is False for a in assessments)
     n_unknown = sum(a.passes is None for a in assessments)
@@ -573,6 +594,8 @@ def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
         summary += f" [코호트: {matched_cohort}]"
     if failed:
         summary += " | 불충족: " + "; ".join(failed[:3])
+    if no_evidence:
+        summary += f" | 판단할 실질 기준이 없음(부적격 아님) - {no_evidence}"
 
     return TrialMatch(
         patient_id=profile.patient_id,
@@ -587,6 +610,7 @@ def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
         cohort_results=cohort_results,
         other_cohort_assessments=other,
         retried_rule_ids=retried,
+        evaluation_error=no_evidence,
     )
 
 

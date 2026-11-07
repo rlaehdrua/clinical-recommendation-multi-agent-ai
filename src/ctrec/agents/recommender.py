@@ -17,7 +17,7 @@ from ..schemas import (
     ExcludedTrial, PatientProfile, QAPair, RankedTrial, Recommendation, RecommendationDraft, TrialMatch,
 )
 from ..status import GROUP_ORDER, LABEL_KO, label
-from .matcher import DECLARED_RECORD_HELD, is_blocking_unknown, needs_physician_review, needs_record_check
+from .matcher import DECLARED_RECORD_HELD, NO_EVIDENCE_CODES, is_blocking_unknown, needs_physician_review, needs_record_check
 
 # 참여 신청이 가능한 모집 상태. UNKNOWN(직접 입력한 시험 등)은 막지 않고 확인 필요로 표시
 OPEN_STATUSES = {"RECRUITING", "NOT_YET_RECRUITING", "UNKNOWN"}
@@ -124,10 +124,18 @@ def no_recommendation_reason(matches: list[TrialMatch], trials: dict[str, dict])
     if failed:
         # 평가 실패 시험이 있으면 '기준에 맞지 않음'으로 단정하지 않고 실패 사실을 명시
         others = [m for m in matches if m.eligibility != "NOT_EVALUATED"]
-        note = (f" 평가에 실패한 시험 {len(failed)}개({', '.join(m.trial_id for m in failed)})는 "
-                f"적격 여부를 판정하지 못했으므로(부적격 아님) 재평가 또는 담당자 확인이 필요합니다.")
+        review = [m for m in failed if m.evaluation_error in NO_EVIDENCE_CODES]  # 평가 실패가 아니라 판정할 기준이 없음
+        broken = [m for m in failed if m not in review]
+        note = ""
+        if broken:
+            note += (f" 평가에 실패한 시험 {len(broken)}개({', '.join(m.trial_id for m in broken)})는 "
+                     f"적격 여부를 판정하지 못했으므로(부적격 아님) 재평가 또는 담당자 확인이 필요합니다.")
+        if review:
+            note += (f" 판정할 필수 기준이 없는 시험 {len(review)}개({', '.join(m.trial_id for m in review)})는 "
+                     f"적격 여부를 판정하지 못했으므로(부적격 아님) 담당자 확인이 필요합니다.")
         if not others:
-            return "모든 후보 임상시험의 평가에 실패해 추천할 수 있는 임상시험이 없습니다." + note
+            cause = ("의 평가에 실패해" if not review else "에 판정할 필수 기준이 없어" if not broken else "을 판정하지 못해")
+            return f"모든 후보 임상시험{cause} 추천할 수 있는 임상시험이 없습니다." + note
         return no_recommendation_reason(others, trials) + note
     closed = [m for m in matches if not is_open(trials[m.trial_id])]
     closed_fit = [m for m in closed if is_candidate(m)]
@@ -286,9 +294,10 @@ def _validate(draft: RecommendationDraft, patient_id: str, matches: list[TrialMa
             continue
         t = trials[m.trial_id]
         if m.eligibility == "NOT_EVALUATED":
-            excluded.append(ExcludedTrial(trial_id=m.trial_id, reason=(
-                f"평가 실패로 적격 여부를 판정하지 못함(부적격 아님) - 재평가 또는 담당자 확인 필요. "
-                f"원인: {(m.evaluation_error or '')[:200]}")))
+            head = ("판정할 필수 기준이 없어 적격 여부를 판정하지 못함(부적격 아님) - 담당자 확인 필요."
+                    if m.evaluation_error in NO_EVIDENCE_CODES
+                    else "평가 실패로 적격 여부를 판정하지 못함(부적격 아님) - 재평가 또는 담당자 확인 필요.")
+            excluded.append(ExcludedTrial(trial_id=m.trial_id, reason=f"{head} 원인: {(m.evaluation_error or '')[:200]}"))
         elif not is_open(t):
             excluded.append(ExcludedTrial(trial_id=m.trial_id, reason=_closed_reason(m, t)))
         elif is_demo(t) and not config.DEMO_MODE:

@@ -105,9 +105,14 @@ def guard_assessments(assessments: list[CriterionAssessment], source_text: str |
             for a in assessments]
 
 
+def evaluation_failed(match: TrialMatch) -> bool:
+    """평가 자체가 없는 시험인가. 기준별 판정이 있는 NOT_EVALUATED(적용할 실질 기준 없음)는 경계·재계산 대상입니다."""
+    return match.eligibility == "NOT_EVALUATED" and not match.assessments
+
+
 def recompose(match: TrialMatch, parsed: ParsedTrial, replaced: dict[str, CriterionAssessment]) -> TrialMatch:
     """기준별 판정 일부를 바꾼 뒤 시험 적격성·코호트·요약을 matcher와 같은 규칙으로 다시 계산."""
-    if match.eligibility == "NOT_EVALUATED" or not replaced:
+    if evaluation_failed(match) or not replaced:
         return match
     current = {a.rule_id: a for a in match.assessments + match.other_cohort_assessments}
     order = [r.rule_id for r in parsed.rules if r.rule_id in current] + \
@@ -115,7 +120,8 @@ def recompose(match: TrialMatch, parsed: ParsedTrial, replaced: dict[str, Criter
     all_assessments = [replaced.get(rid, current[rid]) for rid in order]
     assessments, cohort, cohort_results = matcher._select_cohort(all_assessments, parsed.cohorts)
     other = [a for a in all_assessments if a not in assessments]
-    eligibility = matcher.decide(assessments)
+    no_evidence = matcher.no_evidence_code(assessments)
+    eligibility = "NOT_EVALUATED" if no_evidence else matcher.decide(assessments)
     n_pass = sum(a.passes is True for a in assessments)
     n_fail = sum(a.passes is False for a in assessments)
     n_unknown = sum(a.passes is None for a in assessments)
@@ -130,17 +136,20 @@ def recompose(match: TrialMatch, parsed: ParsedTrial, replaced: dict[str, Criter
         summary += f" [코호트: {cohort}]"
     if failed:
         summary += " | 불충족: " + "; ".join(failed[:3])
+    if no_evidence:
+        summary += f" | 판단할 실질 기준이 없음(부적격 아님) - {no_evidence}"
     # match_status는 비워 두면 TrialMatch 검증기가 바뀐 판정으로 다시 계산 (status.external_status)
     return TrialMatch(**{**{k: getattr(match, k) for k in TrialMatch.model_fields},
                          "eligibility": eligibility, "assessments": assessments, "other_cohort_assessments": other,
                          "matched_cohort": cohort, "cohort_results": cohort_results, "n_pass": n_pass,
-                         "n_fail": n_fail, "n_unknown": n_unknown, "summary": summary, "match_status": None})
+                         "n_fail": n_fail, "n_unknown": n_unknown, "summary": summary, "match_status": None,
+                         "evaluation_error": no_evidence})
 
 
 def guard_match(match: TrialMatch, parsed: ParsedTrial, source_text: str | None, *,
                 initial_text: str | None = None, qa_log: list[QAPair] | None = None) -> TrialMatch:
     """계약 없는 답변에 기댄 확정 판정을 되돌리고 시험 판정을 다시 계산."""
-    if match.eligibility == "NOT_EVALUATED":
+    if evaluation_failed(match):
         return match
     replaced = {a.rule_id: downgrade(a) for a in match.assessments + match.other_cohort_assessments
                 if qa_dependent(a, source_text, initial_text=initial_text, qa_log=qa_log)}
