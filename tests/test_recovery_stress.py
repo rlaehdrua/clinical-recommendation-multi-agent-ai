@@ -25,7 +25,13 @@ DOWN = SourceResponse(p_unreachable=1, p_no_answer=0)
 UP = SourceResponse(p_unreachable=0, p_no_answer=0)
 SCENARIOS = {"default": None, "patient_unreachable": {**DEFAULT_RESPONSES, "patient": DOWN, "document": UP}}
 # default: 문서 게이트가 있으면 3쌍이 requested_documents_unresolved로 끝나 INFO_MISSING에 남음. 소진 여부는 동겸 결정 대기
-EXPECTED_BLOCKED = {"default": 17, "patient_unreachable": 22}
+# M-2(기간 조건 검사 기준을 규칙 엔진이 검사일로 판정) 뒤 값. Q-M 점검에서 쌍 단위로 확인:
+# - default 17 -> 19: NCT07087314 3쌍이 INFO_MISSING -> BLOCKED. 7일 기간 조건 I7·I8·I9의 값이 기간 밖이라 근거가 되지 않아
+#   unverified -> missing이 되고 정보원이 소진됨 (K에서 원인 미상으로 남았던 requested_documents_unresolved 3쌍)
+# - 두 시나리오 모두 1쌍(NCT07087314)이 BLOCKED -> CONFIRMED_INELIGIBLE: 기간 안 혈소판 I8이 규칙 엔진으로 불충족. 시뮬레이터
+#   GT 라벨도 ineligible (확정 부적격 전체가 라벨과 일치, 확정 적격 0)
+# - 아래 불변식(소진 쌍이 BLOCKED 아닌 채 남지 않음, 기록 없는 BLOCKED 0, 실행 가능한 행동이 남은 BLOCKED 0)은 M 전후 모두 성립
+EXPECTED_BLOCKED = {"default": 19, "patient_unreachable": 21}
 
 
 @pytest.fixture(scope="module")

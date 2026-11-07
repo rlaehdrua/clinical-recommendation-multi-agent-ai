@@ -1,0 +1,546 @@
+{
+ "conflict": [
+  {
+   "text": "PMH: HTN, DM2. No history of ILD. Social: former smoker. Outside records: steroid-treated pneumonitis 2024 (prednisone taper over 8 weeks).",
+   "criterion": "History of interstitial lung disease or pneumonitis requiring steroids",
+   "quote": "No history of ILD.",
+   "expected": "hold",
+   "category": "contradiction"
+  },
+  {
+   "text": "ROS: denies seizures. PMH: epilepsy since age 20, on levetiracetam 500 mg BID, last seizure 2025.",
+   "criterion": "History of seizure disorder",
+   "quote": "ROS: denies seizures.",
+   "expected": "hold",
+   "category": "contradiction"
+  },
+  {
+   "text": "Problem list: Hepatitis B, chronic (on entecavir). HPI: No history of hepatitis. Presents for second opinion.",
+   "criterion": "Active hepatitis B or C infection",
+   "quote": "No history of hepatitis.",
+   "expected": "hold",
+   "category": "contradiction"
+  },
+  {
+   "text": "과거력: 결핵 없음. 고혈압 약 복용 중. 의뢰서: 2023년 타원에서 폐결핵으로 6개월 항결핵제 복용 완료.",
+   "criterion": "History of active tuberculosis",
+   "quote": "결핵 없음",
+   "expected": "hold",
+   "category": "contradiction"
+  },
+  {
+   "text": "Denies autoimmune disease. Meds: methotrexate 15 mg weekly and folic acid for rheumatoid arthritis.",
+   "criterion": "Active autoimmune disease requiring systemic treatment in the past 2 years",
+   "quote": "Denies autoimmune disease.",
+   "expected": "hold",
+   "category": "contradiction"
+  },
+  {
+   "text": "뇌전이 없음. 2026.10 brain MRI 판독: 우측 전두엽 8mm 조영증강 병변, 전이 의심.",
+   "criterion": "Untreated or symptomatic brain metastases",
+   "quote": "뇌전이 없음.",
+   "expected": "hold",
+   "category": "contradiction"
+  },
+  {
+   "text": "No prior malignancy. Surgical hx: right hemicolectomy 2018 for colon adenocarcinoma, stage II.",
+   "criterion": "History of another primary malignancy",
+   "quote": "No prior malignancy.",
+   "expected": "hold",
+   "category": "contradiction"
+  },
+  {
+   "text": "심부전 병력 없음 (환자 진술). 문제목록: 울혈성 심부전, EF 30%, 이뇨제 복용 중.",
+   "criterion": "Congestive heart failure",
+   "quote": "심부전 병력 없음",
+   "expected": "hold",
+   "category": "contradiction"
+  },
+  {
+   "text": "HIV negative per patient. Lab 2025: HIV-1 RNA detectable; currently on bictegravir/emtricitabine/TAF.",
+   "criterion": "Known HIV infection",
+   "quote": "HIV negative per patient.",
+   "expected": "hold",
+   "category": "contradiction"
+  },
+  {
+   "text": "간질성 폐질환 과거력 부인함. 흉부 CT 판독(2025): 양측 기저부 UIP 패턴, 특발성 폐섬유증 추정.",
+   "criterion": "History of interstitial lung disease",
+   "quote": "간질성 폐질환 과거력 부인함.",
+   "expected": "hold",
+   "category": "contradiction"
+  },
+  {
+   "text": "No history of organ transplant. Immunosuppression: tacrolimus and mycophenolate s/p deceased-donor renal transplant 2016.",
+   "criterion": "Prior allogeneic organ transplant",
+   "quote": "No history of organ transplant.",
+   "expected": "hold",
+   "category": "contradiction"
+  },
+  {
+   "text": "Denies prior MI or stroke. Assessment: hx of left MCA CVA 2022 with residual right-sided weakness.",
+   "criterion": "History of stroke or transient ischemic attack",
+   "quote": "Denies prior MI or stroke.",
+   "expected": "hold",
+   "category": "contradiction"
+  },
+  {
+   "text": "자가면역질환 없음. 피부과 협진 기록: 중등도 판상 건선으로 아달리무맙 투여 중.",
+   "criterion": "Active autoimmune disease requiring systemic treatment",
+   "quote": "자가면역질환 없음.",
+   "expected": "hold",
+   "category": "contradiction"
+  },
+  {
+   "text": "Template ROS: negative for bleeding disorders. HPI: known hemophilia A, on factor VIII prophylaxis twice weekly.",
+   "criterion": "Known bleeding diathesis or coagulopathy",
+   "quote": "negative for bleeding disorders",
+   "expected": "hold",
+   "category": "contradiction"
+  },
+  {
+   "text": "과거 방사선 폐렴 없음. 타원 기록: 2025년 흉부 방사선치료 후 방사선 폐렴으로 프레드니솔론 치료받음.",
+   "criterion": "History of non-infectious pneumonitis that required steroids",
+   "quote": "과거 방사선 폐렴 없음.",
+   "expected": "hold",
+   "category": "contradiction"
+  },
+  {
+   "text": "No history of ILD. Family hx: mother had pulmonary fibrosis and died at 74.",
+   "criterion": "History of interstitial lung disease or pneumonitis requiring steroids",
+   "quote": "No history of ILD.",
+   "expected": "accept",
+   "category": "family_distractor"
+  },
+  {
+   "text": "환자 본인 간염 병력 없음. 가족력: 부친 B형 간염 보균자.",
+   "criterion": "Active hepatitis B or C infection",
+   "quote": "환자 본인 간염 병력 없음.",
+   "expected": "accept",
+   "category": "family_distractor"
+  },
+  {
+   "text": "Denies seizures. Brother has epilepsy, well controlled.",
+   "criterion": "History of seizure disorder",
+   "quote": "Denies seizures.",
+   "expected": "accept",
+   "category": "family_distractor"
+  },
+  {
+   "text": "자가면역질환 없음. 여동생이 루푸스로 치료 중.",
+   "criterion": "Active autoimmune disease requiring systemic treatment",
+   "quote": "자가면역질환 없음.",
+   "expected": "accept",
+   "category": "family_distractor"
+  },
+  {
+   "text": "No history of interstitial lung disease. Hx of COPD (GOLD 2) on tiotropium.",
+   "criterion": "History of interstitial lung disease or pneumonitis requiring steroids",
+   "quote": "No history of interstitial lung disease.",
+   "expected": "accept",
+   "category": "different_condition"
+  },
+  {
+   "text": "No history of hepatitis B or C. Ultrasound: hepatic steatosis, likely metabolic.",
+   "criterion": "Active hepatitis B or C infection",
+   "quote": "No history of hepatitis B or C.",
+   "expected": "accept",
+   "category": "different_condition"
+  },
+  {
+   "text": "뇌전이 없음. 과거 뇌수막종 수술(2015), 병리 양성.",
+   "criterion": "Untreated or symptomatic brain metastases",
+   "quote": "뇌전이 없음.",
+   "expected": "accept",
+   "category": "different_condition"
+  },
+  {
+   "text": "Denies brain metastases. Known liver and T10 bone metastases on recent PET.",
+   "criterion": "Untreated or symptomatic brain metastases",
+   "quote": "Denies brain metastases.",
+   "expected": "accept",
+   "category": "different_condition"
+  },
+  {
+   "text": "ILD ruled out on HRCT 2026-10. No history of pneumonitis.",
+   "criterion": "History of interstitial lung disease or pneumonitis requiring steroids",
+   "quote": "No history of pneumonitis.",
+   "expected": "accept",
+   "category": "ruled_out"
+  },
+  {
+   "text": "결핵 의심되었으나 객담 AFB 3회 음성 및 PCR 음성으로 배제됨. 결핵 과거력 없음.",
+   "criterion": "History of active tuberculosis",
+   "quote": "결핵 과거력 없음.",
+   "expected": "accept",
+   "category": "ruled_out"
+  },
+  {
+   "text": "Brain MRI 2026-10-30: no evidence of intracranial metastasis. Denies headache or focal deficits.",
+   "criterion": "Untreated or symptomatic brain metastases",
+   "quote": "no evidence of intracranial metastasis",
+   "expected": "accept",
+   "category": "ruled_out"
+  },
+  {
+   "text": "HIV screening negative (4th-gen Ag/Ab, 2026-10). No known HIV.",
+   "criterion": "Known HIV infection",
+   "quote": "No known HIV.",
+   "expected": "accept",
+   "category": "ruled_out"
+  },
+  {
+   "text": "No history of ILD. ROS: no cough, no dyspnea. PMH reviewed: negative for interstitial lung disease.",
+   "criterion": "History of interstitial lung disease or pneumonitis requiring steroids",
+   "quote": "No history of ILD.",
+   "expected": "accept",
+   "category": "consistent_negation"
+  },
+  {
+   "text": "심부전 없음. 문제목록에도 심부전 없음; 심초음파 EF 62%.",
+   "criterion": "Congestive heart failure",
+   "quote": "심부전 없음.",
+   "expected": "accept",
+   "category": "consistent_negation"
+  },
+  {
+   "text": "Denies bleeding disorders. Asked whether family members have bleeding problems; pt did not know.",
+   "criterion": "Known bleeding diathesis or coagulopathy",
+   "quote": "Denies bleeding disorders.",
+   "expected": "accept",
+   "category": "consistent_negation"
+  }
+ ],
+ "window": [
+  {
+   "text": "Hgb 10.2 g/dL on 2026-10-20.",
+   "field": "hemoglobin",
+   "value": 10.2,
+   "unit": "g/dL",
+   "window_days": 28,
+   "reference_date": "2026-11-07",
+   "lab_date": "2026-10-20",
+   "expected": "inside",
+   "category": "exact_date_iso"
+  },
+  {
+   "text": "2026년 10월 20일 혈소판 155 x10^3/uL.",
+   "field": "platelets",
+   "value": 155,
+   "unit": "x10^3/uL",
+   "window_days": 28,
+   "reference_date": "2026-11-07",
+   "lab_date": "2026-10-20",
+   "expected": "inside",
+   "category": "exact_date_korean"
+  },
+  {
+   "text": "Creatinine 0.9 mg/dL (collected 10/31/2026).",
+   "field": "creatinine",
+   "value": 0.9,
+   "unit": "mg/dL",
+   "window_days": 7,
+   "reference_date": "2026-11-07",
+   "lab_date": "2026-10-31",
+   "expected": "inside",
+   "category": "boundary_exact"
+  },
+  {
+   "text": "ANC 1.8 x10^9/L, drawn 2026-11-07 07:30.",
+   "field": "absolute neutrophil count",
+   "value": 1.8,
+   "unit": "x10^9/L",
+   "window_days": 7,
+   "reference_date": "2026-11-07",
+   "lab_date": "2026-11-07",
+   "expected": "inside",
+   "category": "same_day"
+  },
+  {
+   "text": "2026.11.01 채혈 총빌리루빈 1.0 mg/dL.",
+   "field": "total bilirubin",
+   "value": 1.0,
+   "unit": "mg/dL",
+   "window_days": 14,
+   "reference_date": "2026-11-07",
+   "lab_date": "2026-11-01",
+   "expected": "inside",
+   "category": "exact_date_korean"
+  },
+  {
+   "text": "Albumin 3.6 g/dL - specimen date 10/10/2026.",
+   "field": "albumin",
+   "value": 3.6,
+   "unit": "g/dL",
+   "window_days": 28,
+   "reference_date": "2026-11-07",
+   "lab_date": "2026-10-10",
+   "expected": "inside",
+   "category": "boundary_exact"
+  },
+  {
+   "text": "ALT 40 U/L on Oct 24, 2026.",
+   "field": "alt",
+   "value": 40,
+   "unit": "U/L",
+   "window_days": 14,
+   "reference_date": "2026-11-07",
+   "lab_date": "2026-10-24",
+   "expected": "inside",
+   "category": "boundary_exact"
+  },
+  {
+   "text": "INR 1.1 (2026-10-15 시행).",
+   "field": "inr",
+   "value": 1.1,
+   "unit": null,
+   "window_days": 28,
+   "reference_date": "2026-11-07",
+   "lab_date": "2026-10-15",
+   "expected": "inside",
+   "category": "exact_date_iso"
+  },
+  {
+   "text": "Glucose 101 mg/dL, collection 11/05/2026 06:45.",
+   "field": "glucose",
+   "value": 101,
+   "unit": "mg/dL",
+   "window_days": 7,
+   "reference_date": "2026-11-07",
+   "lab_date": "2026-11-05",
+   "expected": "inside",
+   "category": "exact_date_us"
+  },
+  {
+   "text": "2026년 11월 2일 백혈구 4.6 x10^3/uL.",
+   "field": "white blood cell count",
+   "value": 4.6,
+   "unit": "x10^3/uL",
+   "window_days": 14,
+   "reference_date": "2026-11-07",
+   "lab_date": "2026-11-02",
+   "expected": "inside",
+   "category": "exact_date_korean"
+  },
+  {
+   "text": "Hgb 9.6 g/dL collected 2026-10-09.",
+   "field": "hemoglobin",
+   "value": 9.6,
+   "unit": "g/dL",
+   "window_days": 28,
+   "reference_date": "2026-11-07",
+   "lab_date": "2026-10-09",
+   "expected": "outside",
+   "category": "near_boundary"
+  },
+  {
+   "text": "2026년 10월 1일 혈소판 120 x10^3/uL.",
+   "field": "platelets",
+   "value": 120,
+   "unit": "x10^3/uL",
+   "window_days": 28,
+   "reference_date": "2026-11-07",
+   "lab_date": "2026-10-01",
+   "expected": "outside",
+   "category": "exact_date_korean"
+  },
+  {
+   "text": "Creatinine 1.0 mg/dL on 10/30/2026.",
+   "field": "creatinine",
+   "value": 1.0,
+   "unit": "mg/dL",
+   "window_days": 7,
+   "reference_date": "2026-11-07",
+   "lab_date": "2026-10-30",
+   "expected": "outside",
+   "category": "near_boundary"
+  },
+  {
+   "text": "ANC 2.0 x10^9/L, 2026-10-23.",
+   "field": "absolute neutrophil count",
+   "value": 2.0,
+   "unit": "x10^9/L",
+   "window_days": 14,
+   "reference_date": "2026-11-07",
+   "lab_date": "2026-10-23",
+   "expected": "outside",
+   "category": "near_boundary"
+  },
+  {
+   "text": "Total bilirubin 0.8 mg/dL - drawn Sept 15, 2026.",
+   "field": "total bilirubin",
+   "value": 0.8,
+   "unit": "mg/dL",
+   "window_days": 28,
+   "reference_date": "2026-11-07",
+   "lab_date": "2026-09-15",
+   "expected": "outside",
+   "category": "exact_date_us"
+  },
+  {
+   "text": "2026.08.20 알부민 3.8 g/dL.",
+   "field": "albumin",
+   "value": 3.8,
+   "unit": "g/dL",
+   "window_days": 28,
+   "reference_date": "2026-11-07",
+   "lab_date": "2026-08-20",
+   "expected": "outside",
+   "category": "exact_date_korean"
+  },
+  {
+   "text": "ALT 33 U/L (09/30/2026).",
+   "field": "alt",
+   "value": 33,
+   "unit": "U/L",
+   "window_days": 28,
+   "reference_date": "2026-11-07",
+   "lab_date": "2026-09-30",
+   "expected": "outside",
+   "category": "exact_date_us"
+  },
+  {
+   "text": "INR 1.0 - 2026-10-24 검사.",
+   "field": "inr",
+   "value": 1.0,
+   "unit": null,
+   "window_days": 7,
+   "reference_date": "2026-11-07",
+   "lab_date": "2026-10-24",
+   "expected": "outside",
+   "category": "exact_date_iso"
+  },
+  {
+   "text": "Glucose 95 mg/dL on 2026-07-02.",
+   "field": "glucose",
+   "value": 95,
+   "unit": "mg/dL",
+   "window_days": 28,
+   "reference_date": "2026-11-07",
+   "lab_date": "2026-07-02",
+   "expected": "outside",
+   "category": "exact_date_iso"
+  },
+  {
+   "text": "2026년 10월 9일 백혈구 5.0 x10^3/uL.",
+   "field": "white blood cell count",
+   "value": 5.0,
+   "unit": "x10^3/uL",
+   "window_days": 28,
+   "reference_date": "2026-11-07",
+   "lab_date": "2026-10-09",
+   "expected": "outside",
+   "category": "near_boundary"
+  },
+  {
+   "text": "Hgb 11.0 g/dL in October 2026.",
+   "field": "hemoglobin",
+   "value": 11.0,
+   "unit": "g/dL",
+   "window_days": 28,
+   "reference_date": "2026-11-07",
+   "lab_date": null,
+   "expected": "undetermined",
+   "category": "month_only"
+  },
+  {
+   "text": "Recently, platelets 180 x10^3/uL per outside clinic.",
+   "field": "platelets",
+   "value": 180,
+   "unit": "x10^3/uL",
+   "window_days": 28,
+   "reference_date": "2026-11-07",
+   "lab_date": null,
+   "expected": "undetermined",
+   "category": "vague_relative"
+  },
+  {
+   "text": "지난달 크레아티닌 0.85 mg/dL.",
+   "field": "creatinine",
+   "value": 0.85,
+   "unit": "mg/dL",
+   "window_days": 28,
+   "reference_date": "2026-11-07",
+   "lab_date": null,
+   "expected": "undetermined",
+   "category": "vague_relative"
+  },
+  {
+   "text": "CT chest 2026-10-22 stable. ANC 2.3 x10^9/L.",
+   "field": "absolute neutrophil count",
+   "value": 2.3,
+   "unit": "x10^9/L",
+   "window_days": 28,
+   "reference_date": "2026-11-07",
+   "lab_date": null,
+   "expected": "undetermined",
+   "category": "other_test_date"
+  },
+  {
+   "text": "Labs drawn 10/02/2026 and 10/28/2026; total bilirubin 1.1 mg/dL (not stated which draw).",
+   "field": "total bilirubin",
+   "value": 1.1,
+   "unit": "mg/dL",
+   "window_days": 28,
+   "reference_date": "2026-11-07",
+   "lab_date": null,
+   "expected": "undetermined",
+   "category": "ambiguous_two_dates"
+  },
+  {
+   "text": "알부민 3.9 g/dL (검사일 미기재).",
+   "field": "albumin",
+   "value": 3.9,
+   "unit": "g/dL",
+   "window_days": 28,
+   "reference_date": "2026-11-07",
+   "lab_date": null,
+   "expected": "undetermined",
+   "category": "no_date"
+  },
+  {
+   "text": "ALT 52 U/L a few weeks ago.",
+   "field": "alt",
+   "value": 52,
+   "unit": "U/L",
+   "window_days": 14,
+   "reference_date": "2026-11-07",
+   "lab_date": null,
+   "expected": "undetermined",
+   "category": "vague_relative"
+  },
+  {
+   "text": "INR 1.3, 2026년 가을 검사.",
+   "field": "inr",
+   "value": 1.3,
+   "unit": null,
+   "window_days": 28,
+   "reference_date": "2026-11-07",
+   "lab_date": null,
+   "expected": "undetermined",
+   "category": "season_only"
+  },
+  {
+   "text": "Glucose 140 mg/dL - date per patient 'around Halloween'.",
+   "field": "glucose",
+   "value": 140,
+   "unit": "mg/dL",
+   "window_days": 7,
+   "reference_date": "2026-11-07",
+   "lab_date": null,
+   "expected": "undetermined",
+   "category": "vague_relative"
+  },
+  {
+   "text": "2026년 10월 외래에서 백혈구 6.1 x10^3/uL.",
+   "field": "white blood cell count",
+   "value": 6.1,
+   "unit": "x10^3/uL",
+   "window_days": 14,
+   "reference_date": "2026-11-07",
+   "lab_date": null,
+   "expected": "undetermined",
+   "category": "month_only"
+  }
+ ]
+}
