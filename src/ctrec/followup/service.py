@@ -35,6 +35,7 @@ from __future__ import annotations
 
 import contextlib
 import hashlib
+import logging
 import secrets
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -70,6 +71,8 @@ FALLBACK_TYPES = ("REQUEST_DOCUMENT", "VERIFY_RECORD", "CLINICIAN_REVIEW")
 # Follow-up은 임상 검토 요청(clinician_review, requires_clinician)으로 담당 의료진에게 넘길 수 있으므로 같은 예산에
 # 임상의 시간만 더함. 0이면 원문에 구체 기준이 없는 기준·임상의 전용 기준의 검토(CLINICIAN_REVIEW)가 언제나 over_budget으로
 # 빠져 담당자에게 제안되지 않음 (Q-P 통합 점검에서 NSCLC E3·E4·I2로 확인).
+log = logging.getLogger(__name__)
+
 FOLLOWUP_BUDGET = DEFAULT_BUDGET.model_copy(update={"clinician_minutes": DEFAULT_BUDGET.coordinator_minutes})
 
 
@@ -1278,11 +1281,23 @@ class FollowupService:
                                     "history_notice": INSPECTOR_HISTORY_NOTICE}
         return view
 
+    def readable_cases(self) -> tuple[list[dict], list[str]]:
+        """목록·대기열용: 읽을 수 있는 사례와 읽지 못한 사례 id (감사 F-17). 손상된 사례 하나가 목록 전체를 500으로 만들지 않게
+        건너뛰고, 조용히 사라지지 않도록 id를 돌려줌 (응답의 unreadable). 원문·예외 메시지는 기록하지 않음 (종류만)."""
+        good, bad = [], []
+        for cid in self.store.case_ids():
+            try:
+                good.append(self.store.load(cid))
+            except (ValueError, OSError) as e:  # JSONDecodeError는 ValueError
+                log.warning("followup case unreadable: %s (%s)", cid, type(e).__name__)
+                bad.append(cid)
+        return good, bad
+
     def staff_queue(self) -> dict:
         """모든 열린 사례를 한 코호트로 보고 DCV+C가 고른 순서 (Cohort C 우선순위). 판정은 바꾸지 않음."""
         states, ops, case_of, requested, sessions = {}, {}, {}, [], {}
-        for cid in self.store.case_ids():
-            data = self.store.load(cid)
+        cases, unreadable = self.readable_cases()
+        for data in cases:
             session = self._restore(data)
             with self._scope(data, session):  # 사례마다 그 사례의 권한으로 (다른 사례의 증명·판단은 무효)
                 view = self._view(session)
@@ -1293,7 +1308,7 @@ class FollowupService:
             sessions[data["alias"]] = session
             requested += data["requests"]
         if not states:
-            return {"items": []}
+            return {"items": [], "unreadable": unreadable}
         co = CohortState.from_decision_states(states, ops=ops)
         plan = self._plan(co, requested)
         items = []
@@ -1307,4 +1322,4 @@ class FollowupService:
                           "reason_code": a.reason_code, "safety_required": a.safety_required,
                           "request_id": req["request_id"] if req else None,
                           "request_status": req["status"] if req else None})
-        return {"items": items, "cases": len(states)}
+        return {"items": items, "cases": len(states), "unreadable": unreadable}

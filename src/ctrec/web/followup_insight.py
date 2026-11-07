@@ -97,8 +97,9 @@ def _minutes_to(curve: list[dict], n: int) -> float | None:
 
 def insight(svc: FollowupService) -> dict:
     states, ops, case_of, requested = {}, {}, {}, []
-    for cid in svc.store.case_ids():
-        data = svc.refresh_pairs(svc.store.load(cid))  # 사례 화면과 같은 지금 권한의 쌍 상태·제안 (저장값이 아니라)
+    cases, unreadable = svc.readable_cases()  # 감사 F-17
+    for data in cases:
+        data = svc.refresh_pairs(data)  # 사례 화면과 같은 지금 권한의 쌍 상태·제안 (저장값이 아니라)
         session = svc._restore(data)  # staff_queue와 같은 복원 (판정을 다시 만들지 않음)
         with svc._scope(data, session):  # staff_queue와 같이 사례마다 그 사례의 문서·임상의 권한으로
             view = svc._view(session)
@@ -111,7 +112,7 @@ def insight(svc: FollowupService) -> dict:
         case_of[alias] = data
         requested += data["requests"]  # staff_queue와 같은 요청 기록 (공통 엔진 루프가 청구·반복 억제)
     if not states:
-        return {"questions": [], "summary": {"cases": 0}}
+        return {"questions": [], "summary": {"cases": 0}, "unreadable": unreadable}
     co = CohortState.from_decision_states({a: s["ds"] for a, s in states.items()}, ops=ops)
     pol = svc.policy_factory()
     plan = svc._plan(co, requested)
@@ -167,7 +168,7 @@ def insight(svc: FollowupService) -> dict:
     out.sort(key=lambda g: g["best_rank"])
     total = c_curve[-1]["decided_pairs"] if c_curve else 0
     marks = sorted({max(1, total // 2), total} - {0})
-    return {"questions": out, "summary": {
+    return {"questions": out, "unreadable": unreadable, "summary": {
         "cases": len(states), "items": len(items),
         "minutes_all": c_curve[-1]["minutes"] if c_curve else 0.0, "decidable_pairs": total,
         "milestones": [{"pairs": n, "c_order_minutes": _minutes_to(c_curve, n), "patient_order_minutes": _minutes_to(p_curve, n)}
