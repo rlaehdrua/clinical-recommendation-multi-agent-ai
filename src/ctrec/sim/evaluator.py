@@ -84,6 +84,8 @@ def fact_id(*parts) -> str:
 def fact_line(f: SimFact | PatientFact) -> str:
     """원문 한 줄 = 사실의 인용문. 나이·성별·ECOG는 Matcher가 원문에서 찾는 표기(matcher._FIELD_TEXT)를 따름."""
     v = f.value
+    if isinstance(v, float) and v.is_integer() and f.field in ("age", "ecog"):
+        v = int(v)  # 생성기 값 15.0 -> "나이 15세" (환자값 근거 검사가 원문 표기와 맞춰 봄)
     if f.field == "age":
         return f"나이 {v}세"
     if f.field == "sex":

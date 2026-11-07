@@ -223,3 +223,29 @@ def test_reversal_metrics_read_real_offline_runs(runs):
     assert problems == [] and s.runs == len(results) and s.pairs_observed > 0
     assert s.conflicting_steps == s.duplicate_records_ignored == s.history_gaps == 0
     assert s.events == [] and s.direct_reversal_violations == 0
+
+
+class _UnreachableRecovering(_UnreachablePolicy):
+    recovery = True  # 기본 정책과 같은 회복 (연락 불가 뒤 문서 정보원으로)
+
+
+def test_session_unreachable_moves_to_documents_with_default_recovery(tmp_path):
+    """실제 Session E2E (선우 결함 2): 기본 회복 정책에서 연락 불가 뒤 그 항목은 보류가 아니라 문서 요청으로 이어지고,
+    문서가 남아 있는 동안 쌍을 BLOCKED_FAILURE로 보내지 않음."""
+    hcs, _, sc = _load()
+    pol = _UnreachableRecovering()
+    checked = 0
+    for i, hc in enumerate(hcs):
+        r = orc.record_case(hc, TRIALS, sc, tmp_path / f"c{i}", policy=pol)
+        asked = [rd for rd in r.rounds if rd.action.action_type == "ASK_PATIENT"]
+        if not asked or r.final_cohort is None:
+            continue
+        alias = asked[0].action.patient_alias
+        assert "patient_interview" in r.final_cohort.ops[alias].failed_sources
+        for rd in asked:
+            nxt = [a for a in pol.propose(r.final_cohort) if a.info_key and a.info_key == rd.action.info_key]
+            if any(a.action_type == "REQUEST_DOCUMENT" for a in nxt):
+                checked += 1
+                assert not any(a.action_type == "DEFER" for a in nxt)
+                assert all(t.after != C.PairStatus.BLOCKED_FAILURE for t in rd.policy_transitions or ())
+    assert checked >= 1

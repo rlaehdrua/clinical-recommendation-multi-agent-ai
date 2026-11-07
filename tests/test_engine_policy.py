@@ -510,3 +510,91 @@ def test_pair_without_required_criteria_goes_to_clinician_review():
 
 def test_no_review_added_when_every_pair_has_required_criteria():
     assert not [a for a in LegacyAdapterPolicy().propose(_cohort()) if a.reason_code == "no_required_criteria"]
+
+
+# ------------------------------------------------------------ PR #20 리뷰 회귀 (선우·서연 11-07 재현)
+def _state_ecog_hb(pid="SYN-PF"):
+    """ECOG·Hb 정보 없음. T1은 ECOG·Hb, T2는 ECOG만 필요. Hb는 검사지(lab_report)로도 얻을 수 있음."""
+    s = d.store(("age", 60, {"unit": "years"}), patient=pid)
+    v = d.view({"T1": d.trial("T1", [d.AGE, d.ECOG, d.HB]), "T2": d.trial("T2", [d.AGE, d.ECOG])}, s, patient=pid)
+    return build_state(v)
+
+
+def test_source_failure_blocks_only_pairs_with_no_way_left_for_every_item():
+    """연락 불가 뒤 ECOG 문서도 실패하면 ECOG만 필요한 T2만 BLOCKED. T1은 Hb 검사지 요청이 남아 그대로 (선우 결함 1)."""
+    co = CohortState.from_decision_states({PA: _state_ecog_hb()})
+    pol = LegacyAdapterPolicy()
+    ecog = _ask(pol, co, "ecog")
+    co2, tr = pol.apply_outcome(co, ecog, C.ActionOutcome(action_id=ecog.action_id, status="no_response",
+                                                          error_code=C.UNREACHABLE))
+    assert tr == ()  # 문서가 남아 있음
+    doc = next(a for a in pol.propose(co2) if a.info_key == "ecog")
+    assert (doc.action_type, doc.source_id) == ("REQUEST_DOCUMENT", "medical_record")
+    co3, tr = pol.apply_outcome(co2, doc, C.ActionOutcome(action_id=doc.action_id, status="failed",
+                                                          error_code="document_unavailable"))
+    assert co3.ops[PA].exhausted_trials == frozenset() and co3.ops[PA].exhausted_items == frozenset({"ecog"})
+    assert co3.pair(PA, "T1").status == C.PairStatus.INFO_MISSING
+    assert [(t.pair.trial_id, t.after, t.reason_code) for t in tr] == [
+        ("T2", C.PairStatus.BLOCKED_FAILURE, "sources_exhausted")]
+    hb = next(a for a in pol.propose(co3) if a.info_key == "lab:hemoglobin")
+    assert (hb.action_type, hb.source_id) == ("REQUEST_DOCUMENT", "lab_report")
+    co4, tr = pol.apply_outcome(co3, hb, C.ActionOutcome(action_id=hb.action_id, status="failed",
+                                                         error_code="document_unavailable"))
+    assert co4.pair(PA, "T1").status == C.PairStatus.BLOCKED_FAILURE  # 마지막 항목까지 길이 끊기면 소진
+    assert [(t.pair.trial_id, t.after) for t in tr] == [("T1", C.PairStatus.BLOCKED_FAILURE)]
+
+
+def test_source_failure_without_recovery_still_blocks_the_target_trials():
+    """회복 제거(ablation)는 기존 동작 그대로: 대체가 없으면 대상 시험 전체 소진."""
+    co = CohortState.from_decision_states({PA: _state_ecog_hb()})
+    pol = LegacyAdapterPolicy()
+    pol.recovery = False
+    ecog = _ask(pol, co, "ecog")
+    co2, _ = pol.apply_outcome(co, ecog, C.ActionOutcome(action_id=ecog.action_id, status="no_response",
+                                                         error_code=C.UNREACHABLE))
+    assert co2.ops[PA].exhausted_trials == frozenset({"T1", "T2"})
+
+
+def test_legacy_defer_after_unreachable_becomes_document_request():
+    """실제 Session 경로 (선우 결함 2): 연락 불가는 failed_sources에만 기록됨. 기존 정책의 보류도 문서 요청으로."""
+    pol = LegacyAdapterPolicy()
+    ops = {PA: OpsState(failed_sources=frozenset({"patient_interview"}))}
+    co = CohortState.from_decision_states({PA: _declined_state("ecog")}, ops=ops)
+    moved = next(a for a in pol.propose(co) if a.info_key == "ecog")
+    assert (moved.action_type, moved.reason_code, moved.source_id) == (
+        "REQUEST_DOCUMENT", "alternative_source_after_failure", "medical_record")
+    other = CohortState.from_decision_states({PA: _declined_state("ecog")},
+                                             ops={PA: OpsState(failed_sources=frozenset({"lab_report"}))})
+    held = next(a for a in pol.propose(other) if a.info_key == "ecog")  # ECOG와 무관한 정보원 실패는 보류 그대로
+    assert (held.action_type, held.reason_code) == ("DEFER", "user_declined_or_exhausted")
+
+
+def test_legacy_reparse_becomes_rephrase_when_pending():
+    """"잘 모르겠어요"처럼 기존 목록 밖의 무응답은 기존 정책이 재추출(REPARSE)을 냄 -> 바꿔 묻기 차례면 바꿔 묻기로."""
+    from types import MappingProxyType
+    from ctrec.engine.policy import REPHRASE_PENDING, rephrase_key
+    st = _state_missing()
+    for t in st.trials.values():
+        for c in t.criteria:
+            if c.info_key == "ecog":
+                c.asked, c.declined = 1, False  # 답은 있으나 반영 안 됨
+    pol = LegacyAdapterPolicy(rephrase=True)
+    legacy = [a for a in candidates(st, pol.cfg)[0] if a.info_key == "ecog"]
+    assert [(a.action_type, a.reason_code) for a in legacy] == [("REPARSE", "answered_not_reflected")]
+    ops = {PA: OpsState(attempts=MappingProxyType({rephrase_key("patient_interview", "ecog"): REPHRASE_PENDING}))}
+    co = CohortState.from_decision_states({PA: st}, ops=ops)
+    asked = next(a for a in pol.propose(co) if a.info_key == "ecog")
+    assert (asked.action_type, asked.reason_code, asked.source_id) == ("ASK_PATIENT", C.REPHRASE, "patient_interview")
+
+
+@pytest.mark.parametrize("key", ["lab:absolute neutrophil count", "lab:total bilirubin", "lab:creatinine clearance"])
+def test_info_key_with_spaces_is_kept(key):
+    """NSCLC 검사명에는 공백이 있음 (서연 리뷰). info_key가 빠지면 항목 키가 지문으로 바뀌어 시험 사이 공유·소진이 끊김."""
+    from ctrec.engine.policy import _INFO_KEY
+    assert _INFO_KEY.match(key)
+    a = C.Action(action_id="PA-0123456789abcdef:x", action_type="REQUEST_DOCUMENT",
+                 patient_alias="PA-0123456789abcdef", source_id="lab_report", reason_code="x", fingerprint="x", tier=3, policy_version="t",
+                 info_key=key)
+    assert a.info_key == key
+    for bad in (" " + key, key + " ", "lab:a\nb"):
+        assert not _INFO_KEY.match(bad)

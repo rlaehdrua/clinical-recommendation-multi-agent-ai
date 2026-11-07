@@ -313,3 +313,12 @@ def test_unreachable_patient_still_allows_document_requests():
                                                             error_code=C.UNREACHABLE))
     assert set(ask.target_trial_ids) <= co3.ops[ask.patient_alias].exhausted_trials  # 회복 끔: 바로 보류
     assert isinstance(co3, CohortState)
+
+
+def test_fact_line_writes_whole_number_age_without_decimal():
+    """생성기 나이 15.0 -> "나이 15세" (환자값 근거 검사가 원문 표기와 맞춰 봄, 선우 리뷰)."""
+    from ctrec.sim.evaluator import fact_line
+    from ctrec.sim.cohort import SimFact
+    assert fact_line(SimFact(field="age", value=15.0)) == "나이 15세"
+    assert fact_line(SimFact(field="ecog", value=1.0)) == "ECOG 1"
+    assert fact_line(SimFact(field="age", value=15.5)) == "나이 15.5세"

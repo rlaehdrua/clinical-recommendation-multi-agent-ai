@@ -9,6 +9,8 @@
 4. 실행한 행동만 원장에 청구 (실패·무응답도 청구, 미실행은 0). 새 사실·문서 확인이 있으면 그 환자를 전체 재평가
 5. policy.apply_outcome (운영 상태만) -> record_producer.build_step -> DecisionRecord v2 / 진단
 종료: horizon_steps 도달, 고를 행동 없음, 예산 소진. 종료 사유는 지표에 남김.
+oracle_upper(sim.oracle)만 환경·규칙 GT를 받아 만들고, 나머지 정책은 engine 등록표(make_policy)에서 만듭니다.
+환자별 결과(RunResult.per_patient)는 부트스트랩 신뢰구간(sim.stats)의 단위입니다.
 
 결정성: 같은 spec·코호트·카탈로그·응답 모델 -> 같은 result_hash (기록·진단·지표의 정규화 해시). 시각·경로·호스트는
 manifest에만 두고 해시에 넣지 않습니다. 실제 LLM 호출은 0건이며 오프라인 Matcher 대역 요청 수만 manifest에 남깁니다.
@@ -33,7 +35,8 @@ from ..engine.experiment import ExperimentSpecError, catalog_claims, require_cat
 from .cohort import SimCohort
 from .environment import CohortEnvironment
 from .evaluator import OfflineEvaluator, make_fact, verify_fact
-from .metrics import label_of, summarize
+from .metrics import ELIGIBLE, label_of, summarize
+from .oracle import ORACLE_ID, ORACLE_VERSION, OracleUpperPolicy
 from .response_model import ResponseModel, SourceResponse
 
 RUNNER_VERSION = "wp6_runner/0.1"
@@ -51,6 +54,7 @@ class RunResult:
     metrics: dict
     manifest: dict
     final: CohortState = field(repr=False)
+    per_patient: dict[str, dict] = field(default_factory=dict, repr=False)  # 별칭 -> 환자별 결과 (부트스트랩 단위)
 
     @property
     def result_hash(self) -> str:
@@ -62,8 +66,9 @@ def build_spec(experiment_id: str, policy_id: str, cohort: SimCohort, budget: Ef
                ablations: tuple[str, ...] = ()) -> ExperimentSpec:
     catalog = catalog or SourceCatalog()
     cfg = dict(policy_config or {})
-    pol = make_policy(policy_id, catalog=catalog, **_policy_kwargs(policy_id, cfg, seed))
-    return ExperimentSpec(experiment_id=experiment_id, policy_id=policy_id, policy_version=pol.version,
+    version = ORACLE_VERSION if policy_id == ORACLE_ID else \
+        make_policy(policy_id, catalog=catalog, **_policy_kwargs(policy_id, cfg, seed)).version
+    return ExperimentSpec(experiment_id=experiment_id, policy_id=policy_id, policy_version=version,
                           policy_config=cfg, seed=seed, budget=budget, ablations=tuple(ablations),
                           data_version=DataVersion(frozen_store_hash=cohort.store_hash(), cohort_hash=cohort.digest(),
                                                    source_catalog_hash=catalog.digest()))
@@ -118,12 +123,16 @@ def run(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog | None =
         responses: dict[str, SourceResponse] | None = None) -> RunResult:
     catalog = catalog or SourceCatalog()
     _check(spec, cohort, catalog)
-    policy = make_policy(spec.policy_id, catalog=catalog, **_policy_kwargs(spec.policy_id, spec.policy_config,
-                                                                           spec.seed))
-    if policy.version != spec.policy_version:
-        raise ExperimentSpecError("policy_version_mismatch")
     model = ResponseModel(spec.seed, responses)
     env = CohortEnvironment(cohort, catalog, model)
+    labels = rule_labels(cohort, catalog)
+    if spec.policy_id == ORACLE_ID:  # 참고 상한: 환경(응답 결과)과 규칙 GT를 아는 유일한 정책
+        policy = OracleUpperPolicy(env, labels, catalog=catalog, **spec.policy_config)
+    else:
+        policy = make_policy(spec.policy_id, catalog=catalog, **_policy_kwargs(spec.policy_id, spec.policy_config,
+                                                                               spec.seed))
+    if policy.version != spec.policy_version:
+        raise ExperimentSpecError("policy_version_mismatch")
     ev = OfflineEvaluator(cohort.trials, cohort.reference_date, cohort.judge)
     run_id = f"sim-{spec.spec_hash()}"
 
@@ -211,12 +220,14 @@ def run(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog | None =
         rounds = spec.budget.horizon_steps
 
     audit = rp.run_status(results)
-    metrics = summarize(initial=initial, final=co, labels=rule_labels(cohort, catalog), steps=steps,
+    per_patient = _per_patient(co, labels, ledger, steps)
+    metrics = summarize(initial=initial, final=co, labels=labels, steps=steps,
                         per_patient_minutes=dict(ledger.per_patient), total_cost=ledger.total,
                         elapsed_minutes=elapsed, rounds=rounds, progress=progress, termination=termination,
                         repeat_suppressed=suppressed, safety_unfunded=unfunded,
                         audit={"records": audit.records, "warnings": audit.warnings, "blocking": audit.blocking,
                                "status": audit.status})
+    metrics["correct_confirmed_eligible"] = sum(p["correct_confirmed_eligible"] for p in per_patient.values())
     result_hash = canonical_hash({"records": [r.model_dump(mode="json") for r in records],
                                   "issues": [i.model_dump(mode="json") for i in issues], "metrics": metrics})
     manifest = {
@@ -233,7 +244,24 @@ def run(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog | None =
         "llm": {"real_calls": 0, "offline_matcher_requests": ev.client.requests},
         "environment": {"python": sys.version.split()[0], "platform": platform.platform(), "commit": _git_commit()},
     }
-    return RunResult(spec, records, issues, metrics, manifest, co)
+    manifest["reference_policy"] = spec.policy_id == ORACLE_ID
+    return RunResult(spec, records, issues, metrics, manifest, co, per_patient)
+
+
+def _per_patient(co: CohortState, labels: dict[str, str], ledger: EffortLedger, steps: list[dict]) -> dict[str, dict]:
+    """환자별 결과. correct_confirmed_eligible = 확정 적격이면서 규칙 GT도 적격 (주 지표, 순환적 GT 기준)."""
+    out = {}
+    for alias in co.aliases():
+        pairs = co.patients[alias].pairs
+        elig = [p for p in pairs if p.status.value == "CONFIRMED_ELIGIBLE"]
+        out[alias] = {
+            "confirmed_eligible": len(elig),
+            "correct_confirmed_eligible": sum(labels.get(p.pair.key) == ELIGIBLE for p in elig),
+            "confirmed_ineligible": sum(p.status.value == "CONFIRMED_INELIGIBLE" for p in pairs),
+            "coordinator_minutes": round(ledger.per_patient.get(alias, 0.0), 6),
+            "questions": sum(s["patient_alias"] == alias and s["action_type"] == "ASK_PATIENT"
+                             and s["execution"] != "not_executed" for s in steps)}
+    return out
 
 
 def compare(cohort: SimCohort, policy_ids: list[str], budgets: list[EffortBudget], seeds: list[int],
@@ -259,15 +287,18 @@ def compare(cohort: SimCohort, policy_ids: list[str], budgets: list[EffortBudget
 def _row(pid: str, cfg: dict, rp_on: bool, budget: EffortBudget, seed: int, r: RunResult) -> dict:
     m = r.metrics
     return {"policy_id": pid, "policy_config": cfg, "rephrase": rp_on, "budget_minutes": budget.coordinator_minutes,
-            "seed": seed, "confirmed_eligible": m["system_confirmed_eligible"],
+            "seed": seed, "cohort_id": r.manifest["cohort"]["cohort_id"], "reference": r.manifest["reference_policy"],
+            "confirmed_eligible": m["system_confirmed_eligible"],
+            "correct_confirmed_eligible": m["correct_confirmed_eligible"],
             "confirmed_ineligible": m["system_confirmed_ineligible"], "confirmed_share": m["system_confirmed_share"],
             "coordinator_minutes": m["active_minutes"]["coordinator"],
             "clinician_minutes": m["active_minutes"]["clinician"], "elapsed_minutes": m["elapsed_minutes"],
             "actions": sum(m["actions_executed"].values()), "questions": m["patient_burden"]["questions"],
             "rephrased": m["patient_burden"]["rephrased"], "no_answer": m["patient_burden"]["no_answer"],
             "rule_gt_disagreements": m["rule_gt"]["rule_gt_disagreements"],
-            "false_confirmed_eligible_vs_rule_gt": m["rule_gt"]["confirmed_eligible_gt_ineligible"],
-            "termination": m["termination"], "audit": m["audit"]["status"], "result_hash": r.result_hash}
+            "confirmed_eligible_rule_gt_disagree": m["rule_gt"]["confirmed_eligible_gt_ineligible"],
+            "termination": m["termination"], "audit": m["audit"]["status"], "result_hash": r.result_hash,
+            "per_patient": r.per_patient}
 
 
 __all__ = ["run", "build_spec", "compare", "rule_labels", "RunResult", "RUNNER_VERSION", "CLAIMS"]

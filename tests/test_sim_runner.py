@@ -183,12 +183,16 @@ def test_policy_view_starts_from_public_facts_only(cohort, wide_runs):
 
 
 def test_sim_package_defines_no_policy_engine():
-    """M14: 정책은 engine/에만 (sim/에는 propose·select를 가진 클래스가 없음 - oracle_upper가 생기면 허용 목록)."""
+    """M14: 정책은 engine/에만 (sim/에는 propose·select를 가진 클래스가 없음). 예외는 참고 상한 oracle_upper 하나 (설계 §5)."""
+    allowed = {("oracle.py", "OracleUpperPolicy")}
+    found = set()
     for f in sorted((SRC / "sim").glob("*.py")):
         for node in ast.walk(ast.parse(f.read_text(encoding="utf-8"))):
             if isinstance(node, ast.ClassDef):
                 meths = {n.name for n in node.body if isinstance(n, ast.FunctionDef)}
-                assert not {"propose", "select"} <= meths, f"{f.name}:{node.name}"
+                if {"propose", "select"} <= meths:
+                    found.add((f.name, node.name))
+    assert found == allowed
 
 
 # ------------------------------------------------------------ 공통 난수

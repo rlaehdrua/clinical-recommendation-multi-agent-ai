@@ -599,6 +599,48 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 
 수정할 때마다 무엇을 왜 바꿨는지 여기에 기록합니다. 최신 항목이 위에 옵니다.
 
+### 2026-11-07 — WP6 5차: PR #20 리뷰 결함 수정 - 정보원 실패 뒤 조기 BLOCKED, 연락 불가 뒤 문서 전환, 공백 info_key (#20)
+
+배경: 선우·서연 리뷰(11-07)에서 병합 전 수정이 필요한 결함 2건이 재현됐습니다. (1) 정보원 하나가 실패하면 그 행동의 항목만 보고 시험 전체를 소진해, 다른 필수 항목을 검사지 등으로 아직 얻을 수 있어도 `BLOCKED_FAILURE`가 됨(합성 데모 40 seed에서 full_dcvc BLOCKED 134쌍 중 12쌍). (2) 실제 Session에서 연락 불가는 `failed_sources`에만 기록되는데, 기존 정책 보류(`user_declined_or_exhausted`)의 복구 분기는 `failed_items`만 봐서 문서 요청으로 넘어가지 않음. 함께 지적된 공백 info_key·나이 표기·지표 이름도 고쳤습니다.
+
+| # | 변경 | 파일 |
+|---|---|---|
+| 1 | **결함 1:** 정보원 단위 실패 뒤 시험 전체가 아니라 **길이 끊긴 항목만 소진**(이 행동의 항목 + 같은 정보원에 기대던 대상 시험의 다른 항목 - 다음 계획에서 소진 보류가 될 항목). 쌍은 남은 항목이 모두 소진됐을 때만 BLOCKED(`items_exhausted`, 11-04 Q-D2와 같은 규칙). 항목 키가 없는 행동과 회복 제거(`recovery=False`)는 기존처럼 대상 시험 전체 | `src/ctrec/engine/policy.py` |
+| 2 | **결함 2:** 기존 정책의 보류·재추출 복구 분기가 항목 실패뿐 아니라 그 항목을 묻던(문진 경로)·다루는 정보원의 실패(`failed_sources`)도 봄 → 문서 요청(`alternative_source_after_failure`). 무관한 정보원 실패는 보류 그대로 | `src/ctrec/engine/policy.py` |
+| 3 | **바꿔 묻기:** 차례인데 기존 정책이 재추출(REPARSE `answered_not_reflected`)을 내는 경우("잘 모르겠어요"처럼 기존 목록 밖의 무응답)도 바꿔 묻기로 | `src/ctrec/engine/policy.py` |
+| 4 | **공백 info_key:** `lab:absolute neutrophil count`·`lab:total bilirubin`·`lab:creatinine clearance`가 형식 검사에서 빠져 항목 키가 지문으로 바뀌던 문제. 형식을 `contracts.INFO_KEY_PATTERN` 하나로 두고 가운데 공백 허용(앞뒤 공백·줄바꿈은 거부) | `src/ctrec/engine/contracts.py`, `src/ctrec/engine/policy.py` |
+| 5 | 원문 한 줄 표기: 정수인 실수 나이·ECOG는 소수점 없이(`15.0` → "나이 15세") - 환자값 근거 검사(P0)와 맞춤 | `src/ctrec/sim/evaluator.py` |
+| 6 | 비교표 열 이름 `false_confirmed_eligible_vs_rule_gt` → `confirmed_eligible_rule_gt_disagree` (규칙 GT는 순환적이라 False Eligible로 쓰지 않음, 서연 요청) | `src/ctrec/sim/runner.py` |
+| 7 | 테스트 9건: 선우 재현(ECOG 문서 실패 뒤 T1은 Hb 검사지가 남아 INFO_MISSING, T2만 BLOCKED, Hb까지 실패하면 T1도 BLOCKED), 회복 제거는 기존 동작, 연락 불가 뒤 보류 → 문서(무관한 정보원 실패는 보류), REPARSE → 바꿔 묻기, 공백 info_key 3종, 나이 표기, **기본 회복 정책의 실제 Session E2E**(연락 불가 뒤 그 항목이 보류가 아니라 문서 요청, 문서가 남은 동안 BLOCKED 전이 없음) | `tests/test_engine_policy.py`, `tests/test_offline_records.py`, `tests/test_sim_generator.py` |
+
+- 데모 재실행(seed 1~5): 180분 full_dcvc 정답 확정 적격 3.2 → 3.0(차이 +0.8 [−1.2, 3.0]), 나머지 칸은 4차 표와 같음.
+- 분리한 후속(기본 꺼진 바꿔 묻기 관련): 바꿔 묻기 비용이 예산을 넘을 때 더 싼 문서 대안을 내지 않음, 웹 렌더러가 다른 문구를 만들지 않음. integration에도 있는 마지막 항목 "모름" 뒤 Session 종료 문제는 별도.
+- 전체 테스트(`.env` 없는 작업 트리): 2,443 passed, 5 skipped.
+
+### 2026-11-06 — WP6 4차: 참고 상한 `oracle_upper`와 환자 단위 부트스트랩 신뢰구간 (#20)
+
+배경: 정책 간 차이가 0~2건 수준이라 응답 운인지 구분할 방법이 없었고, 제안 정책이 "미래를 알면 어디까지 가는가" 대비 어디쯤인지 볼 기준이 없었습니다(설계 §4 반복, §5 `oracle_upper`).
+
+| # | 변경 | 파일 |
+|---|---|---|
+| 1 | **`oracle_upper`:** 숨긴 값과 응답 결과를 아는 참고 정책. 후보는 다른 정책과 같은 `propose`(같은 행동 공간·원장·예산). 환경으로 결과를 미리 보고(시도 번호 0 = 실제와 같음), 실패할 행동은 성공할 문서 정보원으로 바로 바꾸거나(`oracle_document_first`) 실행하지 않음(`oracle_will_fail`). 안전 필수 행동은 그대로. 순서는 안전 → 규칙 GT 적격 쌍 → 나머지, 같은 묶음은 비용 순. **탐욕 선택이라 엄밀한 최적값이 아님**(최적은 §5 소규모 완전탐색, 미구현). engine 등록표에 없고 웹에서 쓰지 않음, manifest `reference_policy: true` | `src/ctrec/sim/oracle.py` (신규), `src/ctrec/sim/runner.py` |
+| 2 | 실행기: 규칙 GT를 실행 전에 한 번 계산해 지표와 oracle이 같이 씀. 주 지표 `correct_confirmed_eligible`(확정 적격이면서 규칙 GT 적격). 환자별 결과 `RunResult.per_patient`(확정 적격·정답 확정 적격·확정 부적격·코디네이터 분·질문 수), 비교표 행에 `cohort_id`·`reference`·`per_patient` | `src/ctrec/sim/runner.py` |
+| 3 | **부트스트랩:** 단위 = 환자(코호트, 별칭), seed별 결과는 평균. 추정치 = 코호트당 합계, 95% 백분위 구간, 기준 정책 대비 **짝지은** 차이(같은 재표본). 정책마다 환자·seed 조합이 다르면 거부. 난수 고정(같은 입력 → 같은 구간). 한계: 환자들이 예산을 나눠 쓰는 결합을 무시하므로 구간이 실제보다 좁을 수 있음 | `src/ctrec/sim/stats.py` (신규) |
+| 4 | CLI: `--oracle`, `--bootstrap N`(기본 2000, 0이면 끔), `--reference`(기본 `legacy_greedy`), `--replicate 0,1,2`(생성기 코호트 여러 개를 합쳐 환자 단위를 늘림). 비교표에 `reference`·`correct_confirmed_eligible` 열 | `src/ctrec/sim/__main__.py` |
+| 5 | 테스트 11건 + 수정 1건: oracle은 등록표 밖·manifest 표시, 미리 본 결과 = 실제(안전 필수 외 실패 0), 환자가 모르는 값은 바로 문서, 데모에서 주 지표가 모든 정책 이상, 환자별 합 = 실행 지표, 부트스트랩 결정성·구간이 추정치를 감쌈·추정치 = seed 평균, 자기 자신과의 차이는 구간까지 0, 짝 안 맞는 행 거부, CLI. sim 패키지의 정책 클래스는 `OracleUpperPolicy` 하나만 허용(M14 정적 검사). 미리 보기를 끄거나 짝을 어긋나게 하면 실패하는 것 확인 | `tests/test_sim_stats_oracle.py` (신규), `tests/test_sim_runner.py` |
+
+- 데모(합성·상대 비교, 환자 6명, seed 1~5, 주 지표 = 정답 확정 적격, 차이는 `legacy_greedy` 대비):
+
+  | 예산(분) | legacy_greedy | full_dcvc | oracle_upper |
+  |---|---|---|---|
+  | 90 | 0 | 0 (차이 0) | 3.0 [0.8, 5.4] (차이 +3.0 [0.8, 5.4]) |
+  | 180 | 2.2 [0.6, 4.0] | 3.2 [0.0, 6.4] (차이 +1.0 [−1.6, 3.8]) | 4.6 [1.0, 8.8] (차이 +2.4 [0.2, 5.2]) |
+  | 400 | 5.0 [1.0, 9.0] | 5.0 (차이 0) | 5.0 (차이 0, 코디네이터 분 −135 [−176, −93]) |
+
+  180분에서 full_dcvc의 +1.0은 구간이 0을 포함해 응답 운과 구분되지 않습니다. 환자 6명이라 구간이 넓습니다.
+- 생성기 예시 코호트(replicate 0·1, 환자 40명, 240분): oracle_upper를 포함해 모든 정책이 0. 검수 전 기준 때문에 규칙 GT 적격 라벨 자체가 0건입니다(2차 기록 참고).
+- 전체 테스트(`.env` 없는 작업 트리): 2,434 passed, 5 skipped.
+
 ### 2026-11-06 — WP6 3차: "모름" 뒤 같은 질문 반복을 없애고 바꿔 묻기로 교체 (#20)
 
 배경: 2차의 재질문 2회는 같은 질문(같은 행동 지문)을 그대로 다시 보내는 것이었고, 달라지는 것은 응답 난수의 시도 번호뿐이었습니다. 환자가 원래 모르는 값(검사 수치 등)은 몇 번 물어도 "모름"이고, 원장이 같은 항목을 두 번 청구하지 않아 비용도 0분으로 잡혔습니다. 11-06 결정: 같은 내용 재질문은 의미가 없으므로 삭제하고, 다른 말로 다시 묻는 바꿔 묻기를 넣습니다. 2차 표의 5번(`max_item_attempts`·`--ask-attempts`)을 대체합니다.
