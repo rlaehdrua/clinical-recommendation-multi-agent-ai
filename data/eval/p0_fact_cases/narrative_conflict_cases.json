@@ -1,0 +1,100 @@
+{
+ "author": "서연(데이터)",
+ "written": "2026-11-08",
+ "clinical_review": "미완료",
+ "independence": "판정 구현 코드(ctrec.value_grounding, ctrec.evidence_directness 등)를 열어 보지 않고 원문 처리 원칙만으로 기대값을 정함. 평가 스크립트의 입력 형식(scripts/eval_m_holdout.py)과 held-out 6 사례 문장은 읽었으므로 held-out 6과 완전히 독립은 아님",
+ "expected_values": "accept = 그 값을 사실로 채택 / hold = 채택하지 않고 보류 / conflict = 상충으로 탐지(보류 이상)",
+ "note": "합성 문장. 실제 기록의 빈도·분포를 대표하지 않음",
+ "cases": [
+  {
+   "case_id": "N01",
+   "category": "negation_reversed",
+   "criterion": "History of pneumonitis requiring steroids",
+   "quote": "Denies ILD or pneumonitis.",
+   "text": "Denies ILD or pneumonitis. Later in the visit the patient recalls prednisone treatment for radiation pneumonitis in 2025.",
+   "expected": "conflict",
+   "basis": "부정 뒤 같은 방문에서 번복 (스테로이드 치료 폐렴)"
+  },
+  {
+   "case_id": "N02",
+   "category": "negation_reversed",
+   "criterion": "Active autoimmune disease requiring systemic treatment",
+   "quote": "자가면역질환 없다고 함",
+   "text": "처음 문진에서 자가면역질환 없다고 함. 재문진에서 루푸스로 hydroxychloroquine 복용 중이라고 정정함.",
+   "expected": "conflict",
+   "basis": "부정 뒤 정정 (전신 치료 중 루푸스)"
+  },
+  {
+   "case_id": "N03",
+   "category": "negation_reversed",
+   "criterion": "History of another primary malignancy",
+   "quote": "No prior cancer.",
+   "text": "No prior cancer. Same-day addendum: treated for papillary thyroid carcinoma in 2021 with thyroidectomy and radioiodine.",
+   "expected": "conflict",
+   "basis": "부정 뒤 추가 기록으로 번복 (다른 원발암)"
+  },
+  {
+   "case_id": "N04",
+   "category": "negation_reversed",
+   "criterion": "Known HIV infection",
+   "quote": "HIV 음성",
+   "text": "초진 기록: HIV 음성. 추가 문진: 2019년 HIV 진단 후 항레트로바이러스제 복용 중이라고 밝힘.",
+   "expected": "conflict",
+   "basis": "부정 뒤 번복 (HIV 치료 중)"
+  },
+  {
+   "case_id": "N05",
+   "category": "negation_reversed",
+   "criterion": "Congestive heart failure",
+   "quote": "Denies heart failure.",
+   "text": "Denies heart failure. Addendum: echo 2026-10 shows EF 28%; started sacubitril/valsartan for HFrEF.",
+   "expected": "conflict",
+   "basis": "부정 뒤 추가 기록 (심초음파 EF 28%)"
+  },
+  {
+   "case_id": "N06",
+   "category": "control_consistent",
+   "criterion": "History of interstitial lung disease",
+   "quote": "Denies ILD.",
+   "text": "Denies ILD. HRCT 2026-10: no interstitial abnormality.",
+   "expected": "accept",
+   "basis": "부정과 영상이 일치"
+  },
+  {
+   "case_id": "N07",
+   "category": "control_consistent",
+   "criterion": "Active autoimmune disease requiring systemic treatment",
+   "quote": "자가면역질환 없음.",
+   "text": "자가면역질환 없음. 재문진에서도 없음을 확인함. 복용 약: 암로디핀.",
+   "expected": "accept",
+   "basis": "부정이 재확인됨"
+  },
+  {
+   "case_id": "N08",
+   "category": "control_consistent",
+   "criterion": "Known HIV infection",
+   "quote": "No known HIV.",
+   "text": "No known HIV. HIV Ag/Ab screen negative on 2026-10-20.",
+   "expected": "accept",
+   "basis": "부정과 검사가 일치"
+  },
+  {
+   "case_id": "N09",
+   "category": "control_consistent",
+   "criterion": "Congestive heart failure",
+   "quote": "Denies heart failure.",
+   "text": "Denies heart failure. Echo 2026-10: EF 60%, normal chamber size.",
+   "expected": "accept",
+   "basis": "부정과 심초음파가 일치"
+  },
+  {
+   "case_id": "N10",
+   "category": "control_consistent",
+   "criterion": "History of another primary malignancy",
+   "quote": "No prior malignancy.",
+   "text": "No prior malignancy. Problem list reviewed with the patient: none.",
+   "expected": "accept",
+   "basis": "부정이 문제 목록과 일치"
+  }
+ ]
+}

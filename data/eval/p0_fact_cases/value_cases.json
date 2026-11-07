@@ -1,0 +1,390 @@
+{
+ "author": "서연(데이터)",
+ "written": "2026-11-08",
+ "clinical_review": "미완료",
+ "independence": "판정 구현 코드(ctrec.value_grounding, ctrec.evidence_directness 등)를 열어 보지 않고 원문 처리 원칙만으로 기대값을 정함. 평가 스크립트의 입력 형식(scripts/eval_m_holdout.py)과 held-out 6 사례 문장은 읽었으므로 held-out 6과 완전히 독립은 아님",
+ "expected_values": "accept = 그 값을 사실로 채택 / hold = 채택하지 않고 보류 / conflict = 상충으로 탐지(보류 이상)",
+ "note": "합성 문장. 실제 기록의 빈도·분포를 대표하지 않음",
+ "cases": [
+  {
+   "case_id": "V01",
+   "category": "conflict_same_item",
+   "field": "hemoglobin",
+   "value": 11.4,
+   "unit": "g/dL",
+   "text": "CBC 2026-11-05: Hb 9.6 g/dL. Same-day progress note: Hb 11.4 g/dL.",
+   "expected": "hold",
+   "basis": "같은 날 같은 항목에 9.6과 11.4 - 어느 쪽이 맞는지 원문으로 정할 수 없음"
+  },
+  {
+   "case_id": "V02",
+   "category": "conflict_same_item",
+   "field": "platelets",
+   "value": 152,
+   "unit": "10^9/L",
+   "text": "외래 검사지: 혈소판 152 x10^9/L. 같은 날 간호 기록: 혈소판 98 x10^9/L.",
+   "expected": "hold",
+   "basis": "같은 날 두 출처 값이 다름"
+  },
+  {
+   "case_id": "V03",
+   "category": "conflict_same_item",
+   "field": "creatinine",
+   "value": 1.1,
+   "unit": "mg/dL",
+   "text": "Lab report: creatinine 1.1 mg/dL. Discharge summary lists creatinine 1.9 mg/dL for the same draw.",
+   "expected": "hold",
+   "basis": "같은 채혈의 값이 문서마다 다름"
+  },
+  {
+   "case_id": "V04",
+   "category": "conflict_same_item",
+   "field": "absolute neutrophil count",
+   "value": 1.6,
+   "unit": "10^9/L",
+   "text": "ANC 1.6 x10^9/L reported; a repeat run on the same sample gave ANC 0.9 x10^9/L.",
+   "expected": "hold",
+   "basis": "같은 검체 재측정 값이 다름"
+  },
+  {
+   "case_id": "V05",
+   "category": "conflict_same_item",
+   "field": "total bilirubin",
+   "value": 1.0,
+   "unit": "mg/dL",
+   "text": "Total bilirubin 1.0 mg/dL (lab A) and 2.3 mg/dL (lab B), both dated 2026-11-04.",
+   "expected": "hold",
+   "basis": "같은 날짜 두 검사실 값이 다름"
+  },
+  {
+   "case_id": "V06",
+   "category": "conflict_timepoint_old",
+   "field": "hemoglobin",
+   "value": 8.7,
+   "unit": "g/dL",
+   "text": "Hb 8.7 g/dL on 2026-08-02. Hb 10.9 g/dL on 2026-11-05.",
+   "expected": "hold",
+   "basis": "8.7은 이후 값(10.9)으로 대체된 과거 값"
+  },
+  {
+   "case_id": "V07",
+   "category": "conflict_timepoint_old",
+   "field": "ecog",
+   "value": 2,
+   "unit": null,
+   "text": "ECOG 2 in July after surgery; today (2026-11-06) the oncologist recorded ECOG 1.",
+   "expected": "hold",
+   "basis": "ECOG 2는 과거, 현재 기록은 1"
+  },
+  {
+   "case_id": "V08",
+   "category": "conflict_timepoint_old",
+   "field": "platelets",
+   "value": 85,
+   "unit": "10^9/L",
+   "text": "Platelets 85 x10^9/L last month; CBC 2026-11-07 platelets 160 x10^9/L.",
+   "expected": "hold",
+   "basis": "85는 지난달 값, 오늘 값 160"
+  },
+  {
+   "case_id": "V09",
+   "category": "conflict_timepoint_old",
+   "field": "creatinine clearance",
+   "value": 38,
+   "unit": "mL/min",
+   "text": "크레아티닌 청소율 38 mL/min (2026-06), 2026-11-03 재검 62 mL/min.",
+   "expected": "hold",
+   "basis": "38은 이전 검사, 재검 62"
+  },
+  {
+   "case_id": "V10",
+   "category": "conflict_timepoint_old",
+   "field": "absolute neutrophil count",
+   "value": 0.8,
+   "unit": "10^9/L",
+   "text": "ANC 2.4 x10^9/L on 2026-11-06. During the September chemo cycle ANC was 0.8 x10^9/L.",
+   "expected": "hold",
+   "basis": "0.8은 9월 항암 중 값"
+  },
+  {
+   "case_id": "V11",
+   "category": "conflict_timepoint_latest",
+   "field": "hemoglobin",
+   "value": 10.9,
+   "unit": "g/dL",
+   "text": "Hb 8.7 g/dL on 2026-08-02. Hb 10.9 g/dL on 2026-11-05.",
+   "expected": "accept",
+   "basis": "가장 최근 날짜의 검사값 - 정상 대조 (과잉 보류 확인)"
+  },
+  {
+   "case_id": "V12",
+   "category": "conflict_timepoint_latest",
+   "field": "platelets",
+   "value": 160,
+   "unit": "10^9/L",
+   "text": "Platelets 85 x10^9/L last month; CBC 2026-11-07 platelets 160 x10^9/L.",
+   "expected": "accept",
+   "basis": "오늘 날짜 검사값 - 정상 대조"
+  },
+  {
+   "case_id": "V13",
+   "category": "hearsay_doctor",
+   "field": "hemoglobin",
+   "value": 12,
+   "unit": null,
+   "text": "I think my doctor said my hemoglobin was about 12.",
+   "expected": "hold",
+   "basis": "의사 말을 기억으로 전함 + 'about'"
+  },
+  {
+   "case_id": "V14",
+   "category": "hearsay_doctor",
+   "field": "creatinine",
+   "value": 1.2,
+   "unit": null,
+   "text": "의사 선생님이 신장 수치가 1.2라고 했던 것 같아요.",
+   "expected": "hold",
+   "basis": "의사 말을 기억으로 전함"
+  },
+  {
+   "case_id": "V15",
+   "category": "hearsay_doctor",
+   "field": "platelets",
+   "value": 140,
+   "unit": null,
+   "text": "My oncologist mentioned, I believe, that my platelets were 140.",
+   "expected": "hold",
+   "basis": "'I believe' - 기억에 의존한 전언"
+  },
+  {
+   "case_id": "V16",
+   "category": "hearsay_doctor",
+   "field": "total bilirubin",
+   "value": 1.0,
+   "unit": null,
+   "text": "주치의가 빌리루빈은 정상이라고 했던 것 같은데, 숫자는 1.0이었나 싶어요.",
+   "expected": "hold",
+   "basis": "전언 + 숫자 불확실"
+  },
+  {
+   "case_id": "V17",
+   "category": "hearsay_doctor",
+   "field": "absolute neutrophil count",
+   "value": 2,
+   "unit": null,
+   "text": "Pt recalls the doctor saying her ANC was 'around 2'.",
+   "expected": "hold",
+   "basis": "전언 + 'around'"
+  },
+  {
+   "case_id": "V18",
+   "category": "hearsay_family",
+   "field": "hemoglobin",
+   "value": 10.5,
+   "unit": null,
+   "text": "Daughter says her mother's hemoglobin was 10.5 at the last visit; no report brought.",
+   "expected": "hold",
+   "basis": "가족 전언, 결과지 없음"
+  },
+  {
+   "case_id": "V19",
+   "category": "hearsay_family",
+   "field": "platelets",
+   "value": 110,
+   "unit": null,
+   "text": "아들 말로는 아버지 혈소판이 110이었다고 함. 결과지 없음.",
+   "expected": "hold",
+   "basis": "가족 전언"
+  },
+  {
+   "case_id": "V20",
+   "category": "hearsay_family",
+   "field": "creatinine",
+   "value": 0.9,
+   "unit": null,
+   "text": "Husband reports her creatinine was 0.9 last week (no report available).",
+   "expected": "hold",
+   "basis": "배우자 전언"
+  },
+  {
+   "case_id": "V21",
+   "category": "hearsay_family",
+   "field": "ecog",
+   "value": 0,
+   "unit": null,
+   "text": "Wife says his ECOG is 0 because he walks 5 km a day. No clinician assessment yet.",
+   "expected": "hold",
+   "basis": "가족이 수행도를 평가 - 의료진 평가 아님"
+  },
+  {
+   "case_id": "V22",
+   "category": "hearsay_family",
+   "field": "inr",
+   "value": 1.1,
+   "unit": null,
+   "text": "보호자(딸)가 INR이 1.1이었다고 전함, 확인 불가.",
+   "expected": "hold",
+   "basis": "가족 전언, 확인 불가"
+  },
+  {
+   "case_id": "V23",
+   "category": "uncertain",
+   "field": "hemoglobin",
+   "value": 9,
+   "unit": null,
+   "text": "Hb maybe 9 or 10, I don't remember exactly.",
+   "expected": "hold",
+   "basis": "택일 + 기억 불확실"
+  },
+  {
+   "case_id": "V24",
+   "category": "uncertain",
+   "field": "platelets",
+   "value": 100,
+   "unit": null,
+   "text": "혈소판이 100에서 150 사이였던 것 같아요.",
+   "expected": "hold",
+   "basis": "범위 + '것 같다'"
+  },
+  {
+   "case_id": "V25",
+   "category": "uncertain",
+   "field": "creatinine",
+   "value": 1.5,
+   "unit": null,
+   "text": "Creatinine probably around 1.5?",
+   "expected": "hold",
+   "basis": "'probably around' + 물음표"
+  },
+  {
+   "case_id": "V26",
+   "category": "uncertain",
+   "field": "absolute neutrophil count",
+   "value": 1.5,
+   "unit": null,
+   "text": "ANC was something like 1.5, not sure.",
+   "expected": "hold",
+   "basis": "'something like' + 'not sure'"
+  },
+  {
+   "case_id": "V27",
+   "category": "uncertain",
+   "field": "inr",
+   "value": 1.3,
+   "unit": null,
+   "text": "INR 1.3쯤? 정확하지 않음.",
+   "expected": "hold",
+   "basis": "'쯤' + '정확하지 않음'"
+  },
+  {
+   "case_id": "V28",
+   "category": "control_self_certain",
+   "field": "age",
+   "value": 64,
+   "unit": null,
+   "text": "I am 64 years old; date of birth 1962-03-14 on my ID.",
+   "expected": "accept",
+   "basis": "본인 진술 + 생년월일 일치"
+  },
+  {
+   "case_id": "V29",
+   "category": "control_self_certain",
+   "field": "age",
+   "value": 58,
+   "unit": null,
+   "text": "Patient states: I'm 58.",
+   "expected": "accept",
+   "basis": "확실한 본인 나이 진술"
+  },
+  {
+   "case_id": "V30",
+   "category": "control_self_certain",
+   "field": "age",
+   "value": 47,
+   "unit": null,
+   "text": "환자 본인: 나이 47세.",
+   "expected": "accept",
+   "basis": "확실한 본인 나이 진술"
+  },
+  {
+   "case_id": "V31",
+   "category": "control_self_certain",
+   "field": "age",
+   "value": 67,
+   "unit": null,
+   "text": "본인 진술: 1959년생, 만 67세.",
+   "expected": "accept",
+   "basis": "생년과 만 나이가 맞음 (기준일 2026-11-07)"
+  },
+  {
+   "case_id": "V32",
+   "category": "control_self_certain",
+   "field": "sex",
+   "value": "female",
+   "unit": null,
+   "text": "Sex: female (self-identified, matches ID).",
+   "expected": "accept",
+   "basis": "본인 진술 + 신분증 일치"
+  },
+  {
+   "case_id": "V33",
+   "category": "control_document",
+   "field": "hemoglobin",
+   "value": 11.8,
+   "unit": "g/dL",
+   "text": "CBC 2026-11-05: Hb 11.8 g/dL.",
+   "expected": "accept",
+   "basis": "날짜 있는 검사 결과"
+  },
+  {
+   "case_id": "V34",
+   "category": "control_document",
+   "field": "platelets",
+   "value": 210,
+   "unit": "10^9/L",
+   "text": "Lab report 2026-11-04: platelets 210 x10^9/L.",
+   "expected": "accept",
+   "basis": "날짜 있는 검사 결과"
+  },
+  {
+   "case_id": "V35",
+   "category": "control_document",
+   "field": "creatinine",
+   "value": 0.9,
+   "unit": "mg/dL",
+   "text": "검사 결과지(2026-11-06): 크레아티닌 0.9 mg/dL.",
+   "expected": "accept",
+   "basis": "날짜 있는 검사 결과지"
+  },
+  {
+   "case_id": "V36",
+   "category": "control_document",
+   "field": "total bilirubin",
+   "value": 0.7,
+   "unit": "mg/dL",
+   "text": "Chemistry 2026-11-03: total bilirubin 0.7 mg/dL.",
+   "expected": "accept",
+   "basis": "날짜 있는 검사 결과"
+  },
+  {
+   "case_id": "V37",
+   "category": "control_document",
+   "field": "absolute neutrophil count",
+   "value": 3.2,
+   "unit": "10^9/L",
+   "text": "CBC with differential 2026-11-05: ANC 3.2 x10^9/L.",
+   "expected": "accept",
+   "basis": "날짜 있는 검사 결과"
+  },
+  {
+   "case_id": "V38",
+   "category": "control_document",
+   "field": "ecog",
+   "value": 1,
+   "unit": null,
+   "text": "Oncology clinic note 2026-11-06: ECOG performance status 1.",
+   "expected": "accept",
+   "basis": "의료진 평가 기록"
+  }
+ ]
+}
