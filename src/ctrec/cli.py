@@ -185,6 +185,16 @@ def _write_run_meta(out_dir: Path, session: Session, args, fact_dir: Path | None
     (out_dir / "run_meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
+def _write_inspector(out_dir: Path, tracer: Tracer) -> None:
+    """실행 폴더 -> Inspector HTML (정제 보기, 환자 원문·인용·추론 없음). 실패해도 실행 결과는 그대로 두고 종류만 기록."""
+    from . import inspector
+    try:
+        inspector.write_html(inspector.build_view(inspector.load_run(out_dir)), out_dir / "inspector.html")
+        tracer.log("inspector", "written", message="inspector.html")
+    except Exception as e:  # noqa: BLE001 - 보기 생성 실패가 실행 저장을 되돌리지 않음
+        tracer.log("inspector", "error", message=type(e).__name__)
+
+
 def _run_case(case: PatientCase, trials: dict[str, dict], args, answerer) -> Session:
     out_dir = Path(args.out) / case.patient_id
     run_id = f"R-{uuid.uuid4().hex[:12]}"
@@ -213,6 +223,8 @@ def _run_case(case: PatientCase, trials: dict[str, dict], args, answerer) -> Ses
             session.run_fixed()
     session.save(out_dir)
     _write_run_meta(out_dir, session, args, fact_dir, run_id)
+    if getattr(args, "inspector", False):
+        _write_inspector(out_dir, tracer)
     u = session.usage
     tracer.log("pipeline", "saved", message=(
         f"{out_dir} | calls={u.get('calls', 0)} in={u.get('input_tokens', 0)} out={u.get('output_tokens', 0)} "
@@ -253,6 +265,11 @@ def _add_common(p: argparse.ArgumentParser) -> None:
                    help="의존 그래프·부분 재평가 진단을 result.json에 기록 (판정·질문·추천에는 쓰지 않음, 기본 꺼짐)")
     p.add_argument("--demo", action="store_true",
                    help="데모 모드: 가상 데모 시험(DEMO-LUNG-001 등)도 추천에 표시 (기본은 판정만 하고 추천에서 제외)")
+    p.add_argument("--trial-set", choices=sorted(config.TRIAL_SETS), default=None,
+                   help="시험 세트: 시험 원문 폴더와 짝인 파싱본 저장소를 함께 고름 (기본: CTREC_TRIAL_SET 또는 default). "
+                        "nsclc = data/nsclc/trials + data/nsclc/parsed (WP2a, 임상 검수 전). --trials-dir가 없으면 그 세트 전체를 불러옴")
+    p.add_argument("--inspector", action="store_true",
+                   help="실행이 끝나면 실행 폴더에 Decision Loop Inspector HTML(inspector.html, 정제 보기)을 씀 (기존 파일은 덮어쓰지 않음)")
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -272,6 +289,10 @@ def main(argv: list[str] | None = None) -> None:
     print(DISCLAIMER + "\n")
     if args.demo:
         config.DEMO_MODE = True
+    if args.trial_set:  # 시험 원문·파싱본 저장소를 같은 세트로 (trial_store.get이 config.PARSED_DIR를 읽음)
+        config.TRIALS_DIR, config.PARSED_DIR = config.TRIAL_SETS[args.trial_set]
+        if not (args.trials or args.trials_dir or args.nct):
+            args.trials_dir = str(config.TRIALS_DIR)
 
     trials = _load_trials(args)
     if not trials and not args.search:
