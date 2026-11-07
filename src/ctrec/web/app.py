@@ -78,12 +78,45 @@ app = FastAPI(title="ctrec - Interactive Clinical Trial Recommendation")
 PASSWORD = os.getenv("CTREC_PASSWORD", "")
 
 
-@app.middleware("http")
-async def limit_body(request: Request, call_next):
-    length = request.headers.get("content-length")
-    if length is not None and (not length.isdigit() or int(length) > MAX_BODY_BYTES):
-        return JSONResponse(status_code=413, content={"detail": "요청이 너무 큽니다."})
-    return await call_next(request)
+_TOO_LARGE = "요청이 너무 큽니다."
+
+
+def _body_limit(scope) -> int:
+    """이 요청의 본문 한도 (바이트)."""
+    return MAX_BODY_BYTES
+
+
+class _LimitBody:
+    """본문 크기 제한. Content-Length가 있으면 먼저 보고, 없거나(chunked) 실제 본문이 더 길면 읽는 동안 누적 바이트로 막음 (감사 F-09).
+
+    읽는 중에 넘으면 HTTPException(413)을 냄: FastAPI가 본문 파싱 오류로 바꾸지 않고 그대로 다시 올려 같은 413 응답이 됨.
+    """
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+        limit = _body_limit(scope)
+        length = next((v.decode("latin-1") for k, v in scope["headers"] if k == b"content-length"), None)
+        if length is not None and (not length.isdigit() or int(length) > limit):
+            return await JSONResponse(status_code=413, content={"detail": _TOO_LARGE})(scope, receive, send)
+        seen = 0
+
+        async def limited_receive():
+            nonlocal seen
+            message = await receive()
+            if message["type"] == "http.request":
+                seen += len(message.get("body", b""))
+                if seen > limit:
+                    raise HTTPException(status_code=413, detail=_TOO_LARGE)
+            return message
+
+        await self.app(scope, limited_receive, send)
+
+
+app.add_middleware(_LimitBody)  # @app.middleware("http")와 같은 등록 방식이라 다른 미들웨어와의 순서는 그대로
 
 
 @app.middleware("http")
