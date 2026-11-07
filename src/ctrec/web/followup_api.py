@@ -198,6 +198,16 @@ class ResponseBody(BaseModel):
     client_response_id: str | None = Field(default=None, pattern=r"^[A-Za-z0-9._-]{1,64}$")
 
 
+@router.get("/trials")
+def catalog_trials() -> dict:
+    """이 흐름이 평가할 수 있는 시험 (화면의 후보 목록). 공개 정보만 - /api/trials와 같은 항목."""
+    cat = service().catalog
+    out = [{"trial_id": tid, "title": t.get("title") or t.get("brief_title") or "",
+            "overall_status": t.get("overall_status"), "synthetic": cat.name != "trial_store"}
+           for tid, t in cat.trials.items()]
+    return {"catalog": cat.name, "synthetic": cat.name != "trial_store", "trials": out}
+
+
 @router.post("/cases", status_code=201)
 def create_case(body: CaseCreate, request: Request, response: Response) -> dict:
     access.check_state_changing(request)

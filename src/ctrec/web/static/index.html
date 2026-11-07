@@ -11,6 +11,7 @@
 <script src="/static/marked.min.js" defer></script>
 <script src="/static/purify.min.js" defer></script>
 <script src="/static/app.js" defer></script>
+<script src="/static/followup.js" defer></script>
 </head>
 <body>
 <a class="skip" href="#input-panel">본문으로 건너뛰기</a>
@@ -84,6 +85,15 @@
         <select id="patient"></select>
         <div class="case mt8" id="preview" aria-live="polite" aria-label="예시 사례 내용"></div>
       </div>
+      <fieldset class="cand-mode" id="flow-mode">
+        <legend>진행 방식</legend>
+        <label><input type="radio" name="flow-mode" value="run" checked> 바로 분석 · AI가 그 자리에서 추가 질문</label>
+        <label><input type="radio" name="flow-mode" value="followup"> 연구진 확인 요청 · 연구 담당자가 부족한 정보를 요청하면 나중에 답변</label>
+      </fieldset>
+      <div class="stack" id="fu-setup" hidden>
+        <p class="hint m0" id="fu-trials-hint">연구진이 확인할 임상시험을 고르세요.</p>
+        <div class="trial-list" id="fu-trials" role="group" aria-label="연구진 확인을 요청할 임상시험"></div>
+      </div>
       <details class="adv" id="advanced">
         <summary>비교할 임상시험 설정 <span class="hint" id="trial-count"></span></summary>
         <div class="stack mt8">
@@ -149,6 +159,10 @@
   <section aria-labelledby="result-h">
     <h2 id="result-h" class="sr-only" tabindex="-1">추천 결과 <span class="usage" id="usage"></span></h2>
     <div class="stack">
+      <section class="panel" id="fu-panel" aria-labelledby="fu-h" hidden>
+        <h2 id="fu-h" tabindex="-1"><span>연구진 요청</span> <button class="btn ghost sm" id="fu-refresh" type="button">새 요청 확인</button></h2>
+        <div class="body stack" id="fu-body"></div>
+      </section>
       <div id="final"><div class="empty">분석이 끝나면 결과가 표시됩니다.</div></div>
       <button class="btn ghost block" id="new-run" type="button">처음부터 다시 찾기</button>
     </div>

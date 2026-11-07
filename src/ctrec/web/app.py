@@ -524,7 +524,8 @@ def index() -> FileResponse:
 # 화면 정적 파일: 이름을 정해 둔 파일만 (경로 조작 불가). 외부 라이브러리는 VENDOR.md 참고
 STATIC_FILES = {"app.js": "text/javascript", "app.css": "text/css", "marked.min.js": "text/javascript",
                 "purify.min.js": "text/javascript", "logo.svg": "image/svg+xml",
-                "cohort.js": "text/javascript", "cohort.css": "text/css"}
+                "cohort.js": "text/javascript", "cohort.css": "text/css", "followup.js": "text/javascript",
+                "staff.js": "text/javascript", "staff.css": "text/css"}
 
 
 @app.get("/static/{name}")
@@ -620,6 +621,12 @@ def _latest_cohort_set() -> tuple[Path, dict] | None:
         return None
     report = max(sets, key=lambda p: p.stat().st_mtime)
     return report.parent, json.loads(report.read_text(encoding="utf-8"))
+
+
+@app.get("/staff")
+def staff_page() -> FileResponse:
+    """연구 담당자 화면 (추가 정보 확인 흐름). 데이터는 /api/followup/staff/* - 담당자 키가 있어야 읽힘."""
+    return FileResponse(STATIC / "staff.html", headers={"Cache-Control": "no-cache"})
 
 
 @app.get("/cohort")
