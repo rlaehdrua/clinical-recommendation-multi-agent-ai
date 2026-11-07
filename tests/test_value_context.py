@@ -3,6 +3,7 @@
 `data/value_context_regression.json`은 이전 독립 평가 3회분과 개발용 세트입니다. 코드를 이 세트로 고쳤으므로 **더 이상 독립 평가가 아니고**
 회귀 세트입니다. 통과 수를 일반 성능으로 읽으면 안 됩니다. 표현은 임상 검수를 받지 않았습니다.
 `known_over_hold`는 알고 남겨 둔 과잉 보류입니다(안전 쪽, 사람 확인으로 넘어감).
+`specimen_unstated`는 검체가 적혀 있지 않아 계약상 보류되는 값입니다(specimen.py). 측정 상태는 맞으므로 검체 규칙을 빼면 근거가 됩니다.
 """
 
 from __future__ import annotations
@@ -27,6 +28,7 @@ from ctrec.schemas import RuleMeta  # noqa: E402
 
 DATA = json.loads((Path(__file__).parent / "data" / "value_context_regression.json").read_text(encoding="utf-8"))
 KNOWN_OVER_HOLD = set(DATA["known_over_hold"])
+SPECIMEN_UNSTATED = set(DATA["specimen_unstated"])
 NEGATIVE = [(name, x) for name, part in DATA["sets"].items() for x in part["negative"]]
 POSITIVE = [(name, x) for name, part in DATA["sets"].items() for x in part["positive"]]
 HB_NARRATIVE = _rule(rule_id="I3", text="Adequate hemoglobin (Hb >= 9 g/dL)", category="lab", structured_evaluable=False)
@@ -81,7 +83,7 @@ def contract_run(run, monkeypatch):
 # ------------------------------------------------------------ 회귀 세트 (독립 평가 아님)
 def test_the_regression_set_is_not_empty_and_lists_only_its_own_texts():
     assert len(NEGATIVE) >= 220 and len(POSITIVE) >= 215
-    assert KNOWN_OVER_HOLD <= {x["text"] for _, x in POSITIVE}
+    assert (KNOWN_OVER_HOLD | SPECIMEN_UNSTATED) <= {x["text"] for _, x in POSITIVE}
 
 
 @pytest.mark.parametrize("name, x", NEGATIVE, ids=[f"{n}-{i}" for i, (n, _) in enumerate(NEGATIVE)])
@@ -91,10 +93,16 @@ def test_regression_negative_is_never_grounded(name, x):
 
 @pytest.mark.parametrize("name, x", POSITIVE, ids=[f"{n}-{i}" for i, (n, _) in enumerate(POSITIVE)])
 def test_regression_positive_stays_grounded(name, x):
-    if x["text"] in KNOWN_OVER_HOLD:
+    if x["text"] in KNOWN_OVER_HOLD or x["text"] in SPECIMEN_UNSTATED:
         assert grounded(x) is not None  # 푸는 변경은 여기서 드러나고 목록에서 뺌
     else:
         assert grounded(x) is None
+
+
+@pytest.mark.parametrize("x", [x for _, x in POSITIVE if x["text"] in SPECIMEN_UNSTATED], ids=lambda x: x["text"][:30])
+def test_specimen_unstated_is_held_by_the_specimen_rule_alone(x, monkeypatch):
+    monkeypatch.setattr(vg.specimen, "MULTI_SPECIMEN", frozenset())
+    assert grounded(x) is None
 
 
 # ------------------------------------------------------------ 잔여 8건, 과잉 보류 3건: 실제 경로
