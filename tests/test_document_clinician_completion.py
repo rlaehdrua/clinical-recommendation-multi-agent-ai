@@ -138,18 +138,18 @@ def code(r) -> str:
     return r.json()["detail"]["code"]
 
 
+LAB_TEXT = TEXT + "\nPlatelets 180 x10^9/L"  # 환자가 처음 입력에서 말한 검사값 (자기 보고)
+
+
 def answered_lab_case(patient, staff):
-    """T-A: 혈소판·ANC를 환자가 답함 -> 자기 보고라 확인 대기. 그 뒤 문서 검토 요청 (혈소판·ANC·ECOG)."""
-    cid = create(patient, ["T-A", "T-D"])
+    """T-A: 환자가 처음 입력에서 혈소판 값을 말함(자기 보고), ANC는 없음. 그 뒤 문서 검토 요청 (혈소판·ANC·ECOG).
+
+    P 근거 경로(full_dcvc 0.2): 진료 기록 필요 기준(검사·ECOG)은 환자 질문이 아니라 처음부터 문서 확인으로 제안됨.
+    (P 이전에는 혈소판·ANC를 환자에게 물어 자기 보고를 만든 뒤 문서로 확인했음)"""
+    cid = create(patient, ["T-A", "T-D"], text=LAB_TEXT)
     case = staff_case(staff, cid)
-    out = make_requests(staff, cid, proposal(case, "lab:platelets", "ASK_PATIENT")["proposal_id"],
-                        proposal(case, "lab:absolute neutrophil count", "ASK_PATIENT")["proposal_id"])
-    reqs = {r["request_id"]: r for r in out["case"]["requests"]}
-    for rid in out["created"]:
-        text = "Platelets 180 x10^9/L" if reqs[rid]["info_key"] == "lab:platelets" else "ANC 2.1 x10^9/L"
-        answer(patient, cid, rid, text)
-    case = staff_case(staff, cid)
-    assert case["pairs"]["T-A"]["status"] == "VERIFICATION_PENDING"
+    assert case["pairs"]["T-A"]["status"] == "INFO_MISSING"  # ANC 정보 없음
+    assert not [p for p in case["proposals"] if p["action_type"] == "ASK_PATIENT" and p["info_key"].startswith("lab:")]
     docs = [p for p in case["proposals"] if p["action_type"] == "REQUEST_DOCUMENT" and p["target_trials"] == ["T-A"]]
     assert {p["info_key"] for p in docs} == {"lab:platelets", "lab:absolute neutrophil count", "ecog"}
     out = make_requests(staff, cid, *[p["proposal_id"] for p in docs])
@@ -495,10 +495,12 @@ def test_clinician_judgment_flow_and_staleness(env):
     after = staff_case(staff, cid)
     assert after["pairs"]["T-D"]["status"] == CE and after["judgments"] == staff_case(staff, cid)["judgments"]
 
-    # 환자 사실이 바뀜 -> 이전 판단은 인정되지 않음 -> 다시 EXPERT_REVIEW + 새 임상 검토 요청
-    p = proposal(after, "lab:platelets", "ASK_PATIENT")
-    q = make_requests(staff, cid, p["proposal_id"])["created"][0]
-    answer(patient, cid, q, "Platelets 180 x10^9/L")
+    # 환자 사실이 바뀜 (문서 검증자가 문서의 새 검사값을 기록) -> 이전 판단은 인정되지 않음 -> 다시 EXPERT_REVIEW
+    # + 새 임상 검토 요청. P 근거 경로 뒤 검사값은 환자 질문이 아니라 문서 확인으로만 들어옴
+    anc = proposal(after, "lab:absolute neutrophil count", "REQUEST_DOCUMENT")
+    q = make_requests(staff, cid, anc["proposal_id"])["created"][0]
+    verify(staff_client(), cid, q, doc, [{"field": "lab:absolute neutrophil count", "value": 2.1, "unit": "x10^9/L",
+                                          "observed_at": "2026-10-01"}])
     case = staff_case(staff, cid)
     assert case["pairs"]["T-D"]["status"] == "EXPERT_REVIEW"
     open_reviews = [r for r in case["requests"] if r["kind"] == "clinician_review" and r["status"] == "requires_clinician"]
@@ -519,9 +521,8 @@ def test_clinician_cannot_close_document_or_patient_criteria(env):
     patient, staff, clinician = h.browser(), staff_client(), staff_client()
     cid = create(patient, ["T-A"])
     case = staff_case(staff, cid)
-    rid = make_requests(staff, cid, proposal(case, "lab:platelets", "ASK_PATIENT")["proposal_id"])["created"][0]
-    r = patient.post(f"/api/followup/cases/{cid}/requests/{rid}/response", json={"unknown": True})
-    assert r.status_code == 200
+    # P 근거 경로: 혈소판(진료 기록 필요)은 처음부터 문서 확인 요청
+    make_requests(staff, cid, proposal(case, "lab:platelets", "REQUEST_DOCUMENT")["proposal_id"])
     for _ in range(6):  # 문서 정보원을 모두 소진 -> 임상 검토
         case = staff_case(staff, cid)
         open_doc = [x for x in case["requests"] if x["kind"] == "document_review" and x["status"] == "requires_document"]

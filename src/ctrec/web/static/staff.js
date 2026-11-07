@@ -31,6 +31,8 @@ const REQ = {
   pending: ["accent", "환자 답변 대기"], answered: ["ok", "답변 반영"], unknown: ["warn", "환자 '모름'"], unreachable: ["warn", "연락 안 됨"],
   requires_document: ["warn", "서류 확인 필요"], requires_clinician: ["violet", "의료진 판단 필요"], document_unavailable: ["muted", "서류 확인 불가"],
   superseded: ["muted", "대체됨"], cancelled: ["muted", "취소"],
+  // #39 완료 상태: 문서 검증자·임상의 역할만 만들 수 있음 (담당자 화면에는 입력 수단 없음). 판정 인정 여부는 서버 권한이 정함
+  document_verified: ["ok", "서류 검증됨 (검증자)"], clinician_decided: ["ok", "의료진 판단됨"],
 };
 // 담당자가 바꿀 수 있는 상태 (followup.models.STAFF_TRANSITIONS와 같음). 완료(답변·서류 확인·판단)는 없음
 const MOVES = { ask_patient: { pending: ["unreachable", "cancelled"] }, document_review: { requires_document: ["document_unavailable", "cancelled"] },
