@@ -98,7 +98,7 @@ def test_real_measurements_are_accepted(value, text, quote):
 
 
 @pytest.mark.parametrize("name,value,text", [("potassium", 4.1, "potassium 4.1 mmol/L"), ("potassium", 4.1, "칼륨 4.1 mmol/L"), ("sodium", 140.0, "Na 나트륨 140 mmol/L"),
-                                             ("calcium", 9.2, "calcium 9.2 mg/dL"), ("albumin", 3.5, "albumin 3.5 g/dL"), ("tsh", 0.05, "TSH 0.05 mIU/L"),
+                                             ("calcium", 9.2, "calcium 9.2 mg/dL"), ("albumin", 3.5, "serum albumin 3.5 g/dL"), ("tsh", 0.05, "TSH 0.05 mIU/L"),
                                              ("ferritin", 80.0, "ferritin 80 ng/mL")])
 def test_unlisted_labs_link_by_their_own_name(name, value, text):
     assert lab(value, text, name) is None

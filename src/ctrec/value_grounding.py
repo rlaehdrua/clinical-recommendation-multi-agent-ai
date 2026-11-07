@@ -18,6 +18,7 @@ Session은 LLM이 만든 PatientProfile로 규칙 엔진을 돌립니다. 원문
 - 값 자체가 서술의 주어나 칸 이름이면 결과 보고가 아닙니다(`_value_is_subject`): "혈색소 12 항목은 ...", "Hgb 12 belongs to ...". 측정을 긍정하는 서술만 허용합니다.
 - 가정은 문장 범위입니다: 조건절이 값보다 앞이면 값이 다른 절에 있어도 측정값이 아닙니다.
 - 문장 단위로 보므로 "62세인데 혈색소는 몰라요"의 나이는 인정되고 혈색소는 인정되지 않습니다.
+- 검체 종류도 값의 일부입니다(specimen.py). 소변·뇌척수액 값은 혈청 기준의 값이 아니므로 근거와 충돌 계산에서 뺍니다. 같은 이름으로 여러 검체를 재는 검사는 검체를 알 수 없으면 근거로 쓰지 않습니다.
 - 값의 임상적 의미는 판단하지 않습니다. 적혀 있는지만 봅니다. 문서 검증 여부는 근거 수준(evidence.py) 쪽입니다.
 """
 
@@ -27,7 +28,7 @@ import re
 from datetime import date
 from functools import lru_cache
 
-from . import evidence, evidence_directness as ed
+from . import evidence, evidence_directness as ed, specimen
 from .tools.rule_engine import LAB_ALIASES, _norm, _norm_unit, canonical_lab
 
 UNLOCATED, HEDGED, CONFLICT = "unlocated", "hedged", "conflict"
@@ -104,7 +105,7 @@ def normalize(field: str, text: str) -> str:
 
 # ---------------------------------------------------------------------------- 수치의 역할
 _NOT_A_RESULT = re.compile(r"\b(?:target|goal|aim|desired|threshold|cut-?off|trigger|maintain|keep|(?<!without\s)(?<!no\s)transfus\w*|if|unless|should|in\s+case|provided|"
-                           r"assum\w*|suppose\w*|hypothetical\w*|example|would|once|until|hop(?:e|es|ed|ing|efully)|expect\w*|predicted|project\w*|anticipat\w*|required?|requires|needed|needs?|plan(?:ned|s)?|"
+                           r"assum\w*|suppose\w*|hypothetical\w*|example|would|once|until|hop(?:e|es|ed|ing|efully)|expect\w*|predicted|project\w*|anticipat\w*|required?|requires|(?<!not\s)needed|needs?|plan(?:ned|s)?|"
                            r"estimated(?!\s+(?:gfr|glomerular|cr)))\b|e\.g\.|목표|유지|역치|수혈(?!\s*없이)|라면|다면|이면|되면|만약|가정|가상|예시|"
                            r"(?<![가-힣])예\s*[:：)]|희망|필요|맞추|[어여]야|[일인]\s*(?:경우|때)|예상", re.IGNORECASE)
 _WHEN_BEFORE = re.compile(r"\b(?:when|whenever)\b", re.IGNORECASE)  # 뒤쪽의 when은 측정 시점: "Hb 12 when admitted"
@@ -129,10 +130,11 @@ _PAST = re.compile(r"\b(?:previous|previously|prior|former|old|last\s+(?:week|mo
 _OTHER_PERSON = (r"아버지|아버님|어머니|어머님|부친|모친|엄마|아빠|부모|남편|아내|배우자|형제|자매|보호자|파트너|공여|기증자|헌혈자|제공자|타인|동명이인|가족(?!력|사)|(?:다른|옆|타)\s*(?:침대|병상|환자|사람)|간호사|담당의|주치의|"
                  r"(?<![가-힣])(?:딸|아들|동생|언니|오빠|누나|삼촌|이모|고모|할머니|할아버지|친구|장인|장모|사위|며느리|조카)|(?<![가-힣a-z0-9])형(?=의|\s)|"
                  r"\b(?:donor|nurse|roommate|bedmate|neighbou?r|index\s+case|father|mother|mom|dad|parents?|spouse|husband|wife|partner|sibling|brother|sister|son|daughter|child(?!\s*-?\s*pugh)|"
-                 r"aunt|uncle|cousin|niece|nephew|friend|grand(?:mother|father)|family(?!\s+history)|(?:another|other)\s+(?:patient|person))\b")
+                 r"aunt|uncle|cousin|niece|nephew|friend|grand(?:mother|father)|family(?!\s+history)|(?:another|other)\s+(?:patient|person)|not\s+(?:our|the|this|my)\s+patient|(?:neighbou?ring|previous|preceding|next|another|other)\s+case|case\s+(?:discussed|presented|reviewed)\s+(?:before|after|prior))\b")
 _ABOUT_OTHER = re.compile(_OTHER_PERSON, re.IGNORECASE)
+_OWN_SUBJECT = re.compile(r"\b(?:our|this|the)\s+patient\b(?<!not\sour\spatient)(?<!not\sthe\spatient)(?<!not\sthis\spatient)|\bours\b|환자\s*(?:본인|자신)|본인", re.IGNORECASE)
 _NEXT_TO_OTHER = re.compile(rf"(?:\s*(?:세|살|-?old|years?\s+old|남성|여성|남자|여자|male|female))*\s*(?:{_OTHER_PERSON})", re.IGNORECASE)  # 값 바로 뒤: "남성 보호자", "62세 아버지", "62-year-old female donor"
-_OF_OTHER = re.compile(rf"(?:{_OTHER_PERSON})(?:\s*(?:본인|자신))?(?:의|는|은|가|이|'s)?[\s,(]*(?:나이|연령|성별|\bage[d]?\b|\bis\b|\bwas\b|:)?\s*(?:는|은|가|이|of)?\s*$", re.IGNORECASE)  # 값 바로 앞
+_OF_OTHER = re.compile(rf"(?:{_OTHER_PERSON})(?:\s*(?:본인|자신))?(?:의|는|은|가|이|'s)?[\s,()]*(?:나이|연령|성별|\bage[d]?\b|\bis\b|\bwas\b|:)?\s*(?:는|은|가|이|of)?\s*$", re.IGNORECASE)  # 값 바로 앞
 _HEARSAY = re.compile(rf"\b(?:per|according\s+to)\s+(?:the\s+|her\s+|his\s+|my\s+|their\s+)?(?:{_OTHER_PERSON})|(?:{_OTHER_PERSON})\s*(?:의\s*)?말(?:로는|씀으로는|에\s*따르면)", re.IGNORECASE)  # 나이·ECOG를 다른 사람의 말로만 전함
 _NOT_AGE = re.compile(r"\b(?:bone|gestational|mental|skeletal|biological)\s+(?:age\s*)?$|골\s*연령\s*$", re.IGNORECASE)  # 달력 나이가 아님
 _STATED_ONLY = re.compile(r"\b(?:temporarily|system\s+shows?|typo)\b|임시|오타", re.IGNORECASE)
@@ -141,19 +143,21 @@ _NOT_STATED_BEFORE = re.compile(r"(?:\b(?:target|goal|if|unless|assuming|when|at
 _NOT_STATED_AFTER = re.compile(r"\s*(?:세|살)?\s*(?:이|가|으로|로|을|를)?\s*(?:목표|되면|이면|라면|[일인]\s*(?:경우|때)|필요|되어야|대상)|"
                                r"\s*(?:is\s+)?\b(?:required|needed|target|goal)\b", re.IGNORECASE)  # 나이·ECOG: 값 바로 뒤의 조건·목표
 _COMPARE_INSIDE = re.compile(r"[<>≤≥]")  # 이름과 값 사이: "ECOG <= 1", "age >= 62"
+_LEGEND = re.compile(r"\b(?:legend|scale|key)\b|범례|척도|서식|양식", re.IGNORECASE)  # "Form legend: ECOG 0 = fully active"는 평가가 아니라 등급 설명
+_DEFINES = re.compile(r"\s*[=:：]\s*[^\d\s]")
 _PAST_AGE_AFTER = re.compile(r"\s*[세살]?\s*(?:에|때|무렵)|\s*(?:years?\s*old\s*)?at\s+(?:diagnosis|onset)", re.IGNORECASE)  # "40세에 진단"
 
 
 # ---------------------------------------------------------------------------- 검사 상태
 _STATUS = re.compile(
-    r"미(?:측정|시행|실시|수행|채혈|채취|검사|완료|보고|판독|입력|회신|수신|도착|제출)|미검(?![가-힣])|(?:측정|검사|시행|채혈)\s*(?:을|를|은|는)?\s*(?:안|못)\s*(?:함|했|됨|된|하|받)|"  # 하지 않음
-    r"(?:측정|검사|채혈|평가|판정)\s*(?:전(?![가-힣])|불가)|(?:시행|측정|채혈|실시|검사)(?:\s*자체)?\s*(?:된|한|을|를|은|는)?\s*(?:적\s*(?:이|은|도)?\s*)?(?:없|안\s*(?:함|했|됨|된)|못\s*(?:함|했))|"
+    r"미검증|미(?:측정|시행|실시|수행|채혈|채취|검사|완료|보고|판독|입력|회신|수신|도착|제출)|미검(?![가-힣])|(?:측정|검사|시행|채혈)\s*(?:을|를|은|는)?\s*(?:안|못)\s*(?:함|했|됨|된|하|받)|"  # 하지 않음
+    r"(?:측정|검사|채혈|평가|판정|보고)\s*(?:전(?![가-힣])|불가)|(?:시행|측정|채혈|실시|검사)(?:\s*자체)?\s*(?:된|한|을|를|은|는)?\s*(?:적\s*(?:이|은|도)?\s*)?(?:없|안\s*(?:함|했|됨|된)|못\s*(?:함|했))|"
     r"\bnever\s+(?:\w+\s+){0,2}(?:collected|drawn|performed|done|run|sent|received|reached|tested|measured|obtained)\b|\bno\s+(?:specimen|sample|draw|blood)\s+(?:\w+\s+){0,2}(?:collected|drawn|obtained|received|reached|yet)\b|"
     r"결과\s*(?:가|는)?\s*(?:대기|안\s*나|아직)|대기\s*(?:중|상태)|(?<![가-힣])대기(?![가-힣])|(?:판독|분석|처리)\s*중|"  # 결과 전
     r"보류|미정|요망|펜딩|팬딩|(?:환자|본인)\s*(?:의\s*)?(?:값|수치)\s*(?:이|가)?\s*아|"
     r"복사|붙여\s*넣|자동\s*입력|기본값|이월|\b(?:copied|carr(?:y|ied)[\s-]+forward|copy[\s-]+forward|auto-?(?:populated|filled)|pre-?(?:filled|populated)|template)\b|"  # 측정이 아니라 옮겨 적은 값
     r"폐기|무효|취소|부정확|용혈(?!성)|부적합|오류|신뢰\s*불가|혼입|입력값|검체\s*(?:오염|응고|바뀜|뒤바뀜|혼동|부족|불량|분실|누락)|(?:오염|응고)된?\s*검체|"  # 무효
-    r"\b(?:pending|awaiting|awaited|in\s+progress|unable|insufficient|cancell?ed|mislabell?ed|spurious|artifact\w*|artefact\w*|factitious|tbd|to\s+be\s+(?:confirmed|determined)|unreliable|"
+    r"\b(?:pending|awaiting|awaited|unverified|not\s+yet\s+(?:received|verified|scored)|has\s+not\s+scored|in\s+progress|unable|insufficient|cancell?ed|mislabell?ed|spurious|artifact\w*|artefact\w*|factitious|tbd|to\s+be\s+(?:confirmed|determined)|unreliable|"
     r"not\s+(?:yet\s+)?(?:done|run|performed|measured|assessed|evaluated|obtained|tested|rechecked|repeated|drawn|resulted|reported|back|available|valid|reliable)|wrong\s+(?:chart|patient|sample)|"
     r"invalid|void(?:ed)?|disregard\w*|lost|discarded|rejected|hemoly[sz]ed|hemolysis|clotted|contaminated|qns|error|erroneous)\b", re.IGNORECASE)
 _FUTURE = re.compile(r"예정|\b(?:ordered|requested|scheduled)\b", re.IGNORECASE)  # 앞으로 할 검사: 같은 절의 수치는 결과가 아니지만 다른 절의 값을 무효로 만들지는 않음
@@ -189,7 +193,7 @@ _RESULT_VOID = re.compile(r"(?:결과|값|수치|검체(?:로)?|샘플(?:로)?|\
 _ASSUMED = re.compile(r"가정|추정|추측|\b(?:assum\w*|presum\w*)\b", re.IGNORECASE)
 _EARLIER_SAMPLE = re.compile(r"첫|처음|먼저|앞선|전회|\b(?:first|earlier|initial)\b", re.IGNORECASE)
 _LABEL_MARK = re.compile(r"\s*[:：]")  # "Pending: procalcitonin"은 뒤가 주어
-_RETEST_VALUE = re.compile(r"(?:재검|재측정|재채혈|repeat)\s*(?:결과|검사|값|result|value)?\s*(?:는|은|이|가|:)?\s*$|(?<!\d)[:：=]\s*$", re.IGNORECASE)  # 재검 값, "... resulted: 2.6"
+_RETEST_VALUE = re.compile(r"(?:재검|재측정|재채혈|repeat)\s*(?:결과|검사|값|result|value)?\s*(?:는|은|이|가|:)?\s*$|(?<!\d)[:：=]\s*$|\b(?:ours|mine)\b(?:\s*\([^)]*\))?\s*(?:is|was)?\s*$", re.IGNORECASE)  # 재검 값, "... resulted: 2.6"
 _BACK_REFERENCE = re.compile(r"(?:위|해당|상기|앞선?|그|이)\s*(?:검체|결과|검사|수치|값|샘플)|실제(?:로)?\s*(?:측정|검사|시행|채혈)|\b(?:that|this|the|above)\s+(?:result|sample|specimen|value|test)\b", re.IGNORECASE)
 
 
@@ -311,10 +315,18 @@ def _no_result(before: str, after: str, key: str | None) -> bool:
         or _value_is_subject(after) or _status_marked(before, after, key=key)
 
 
+def _under_other_header(text: str, lo: int) -> bool:
+    """값 앞의 머리글이 다른 환자를 가리키는가: "Same ward, bed 4 (not our patient): creatinine 3.4"."""
+    colon = max(text.rfind(":", 0, lo), text.rfind("：", 0, lo))
+    head = text[:colon] if colon >= 0 else ""
+    other = _ABOUT_OTHER.search(head)
+    return other is not None and not _OWN_SUBJECT.search(text, other.end(), lo)
+
+
 def _role(text: str, lo: int, hi: int, key: str | None = None) -> str | None:
     """검사 수치의 역할: 'measured', 'past', 측정값이 아니면 None."""
     before, after = _clause_around(text, lo, hi)
-    if _CONDITIONAL_HEAD.search(text[:lo]) or _ASSUMED.search(after) or _other_variant(text, lo, key) or _no_result(before, after, key) or _REFERENCE_BEFORE.search(before) or _COMPARE_BEFORE.search(before) or _COMPARE_AFTER.match(after) or _NEGATED_BEFORE.search(before) \
+    if _CONDITIONAL_HEAD.search(text[:lo]) or _under_other_header(text, lo) or _ASSUMED.search(after) or _other_variant(text, lo, key) or _no_result(before, after, key) or _REFERENCE_BEFORE.search(before) or _COMPARE_BEFORE.search(before) or _COMPARE_AFTER.match(after) or _NEGATED_BEFORE.search(before) \
             or (_NEGATED_AFTER.match(after) and not _CLEAN_AFTER.match(after)) \
             or _WHEN_BEFORE.search(before) or _WHEN_AFTER.match(after) or _retracted(text, hi):
         return None
@@ -335,12 +347,19 @@ def _about_patient(field: str, text: str, lo: int, hi: int) -> bool:
         return False
     if _INSTITUTION.search(before + " " + after) or _status_marked(before + text[lo:hi], after, adjacent=field == "age"):  # 이름과 값 사이도 봄: "ECOG 미측정 1"
         return False
+    if field == "ecog" and _LEGEND.search(before) and _DEFINES.match(after):
+        return False
     if field == "ecog" and any(_points_back(text[a:b]) and not _other_subject(text[a:b], None) for a, b in _clause_spans(text) if a >= hi):
         return False
     if field == "age" and (_NOT_AGE.search(before[-16:]) or _STATED_ONLY.search(before + " " + after)):
         return False
     return not (_NOT_STATED_BEFORE.search(before) or _NOT_STATED_AFTER.match(after) or _COMPARE_INSIDE.search(text[lo:hi])
                 or _COMPARE_AFTER.match(after))
+
+
+def _of_someone_else(text: str, lo: int, hi: int) -> bool:
+    """값이 바로 앞이나 뒤의 다른 사람에게 붙어 있는가: "the neighbouring case (ECOG 0)"."""
+    return bool(_OF_OTHER.search(text[:lo]) or _NEXT_TO_OTHER.match(text, hi))
 
 
 def _past_mention(field: str, text: str, lo: int, hi: int) -> bool:
@@ -438,7 +457,7 @@ def ground(field: str, value, source_text: str | None, *, key: str | None = None
     pat = _value_pattern(field, v, unit)
     initial = normalize(field, evidence.split_source(source_text)[0])
     mentioned = _mentions(field, initial)
-    current = {x for x, lo, hi in mentioned if not _past_mention(field, initial, lo, hi)}
+    current = {x for x, lo, hi in mentioned if not _past_mention(field, initial, lo, hi) and not _of_someone_else(initial, lo, hi)}
     in_record = any(_about_patient(field, initial, m.start(), m.end()) and not (current and _past_mention(field, initial, m.start(), m.end()))
                     for m in pat.finditer(initial)) or (field == "age" and _from_birth_year(v, initial, reference_date))
     stated, hedged = False, False
@@ -505,6 +524,7 @@ _NOT_A_VALUE = re.compile(r"\d{4}[-./]\d{1,2}(?:[-./]\d{1,2})?|\d{1,2}월(?:\s*\
                           r"\d+(?:\.\d+)?\s*[-~–]\s*\d+(?:\.\d+)?|10\s*[\^*]\s*\d+|10e\d+", re.IGNORECASE)  # 범위, 단위의 10^9
 _LINK_BREAK = re.compile(r"[,;\n]")
 _NAME_TO_VALUE, _VALUE_TO_NAME = 25, 12  # 검사명과 수치 사이 글자 수
+_CONFIRMED_LINK, _CONFIRMED_REACH = re.compile(r"\b(?:confirmed|verified|resulted|reads?)\s*(?:at|as)?\s*$|(?:확인|검증)\s*(?:결과|값)?\s*$", re.IGNORECASE), 45  # "WBC after smear review confirmed 5.9"
 _UNIT_AFTER = re.compile(r"\s*([^\s,;()가-힣]*[/%][^\s,;()가-힣]*)")  # 조사는 단위가 아님: "12 g/dL입니다"
 
 
@@ -528,7 +548,9 @@ def _linked_numbers(sentence: str, key: str) -> list[tuple[int, int, str, str | 
     for i, (lo, hi, canon) in enumerate(names):
         limit = names[i + 1][0] if i + 1 < len(names) else len(text)
         after = next((n for n, x in enumerate(numbers) if hi <= x[0] < limit), None)
-        if after is not None and numbers[after][0] - hi <= _NAME_TO_VALUE and not _LINK_BREAK.search(text[hi:numbers[after][0]]):
+        reach = None if after is None else numbers[after][0] - hi
+        if after is not None and (reach <= _NAME_TO_VALUE or (reach <= _CONFIRMED_REACH and _CONFIRMED_LINK.search(text[hi:numbers[after][0]]))) \
+                and not _LINK_BREAK.search(text[hi:numbers[after][0]]):
             owner[after] = canon
         elif after is None:
             waiting.append(i)
@@ -546,15 +568,34 @@ def _linked_numbers(sentence: str, key: str) -> list[tuple[int, int, str, str | 
     return [(x[0], x[1], x[2], owner.get(n)) for n, x in enumerate(numbers)]
 
 
-def _lab_numbers(lab: str, body: str) -> list[tuple[int, int, str, str]]:
-    """본문에서 이 검사에 연결된 환자 수치 (시작, 끝, 수치, 역할). 측정값이 아닌 수치는 뺍니다."""
+def _value_specimen(body: str, lo: int, hi: int, key: str) -> str | None:
+    """본문 안 수치의 검체. 명시된 표시는 검사명·절·머리글에서, 문맥은 본문 전체에서 봅니다."""
+    named = specimen.in_name(key)
+    if named not in (None, specimen.BLOOD):
+        return named  # 표에 없는 검사명 "urine protein"은 이름이 곧 검체 ("white blood cell count"의 blood는 검체 표시가 아님)
+    start, end = next(((a, b) for a, b in _sentence_spans(body) if a <= lo < b), (0, len(body)))
+    names = [m for m in _lab_names(key).finditer(body, start, end) if _LAB_CANON.get(m.group().lower(), key) == key]
+    near = ([m for m in names if m.end() <= lo] or names)
+    if not near:
+        return specimen.of_value(body, lo, lo, lo, hi)
+    m = near[-1] if near[-1].end() <= lo else near[0]
+    return specimen.of_value(body, m.start(), m.end(), lo, hi)
+
+
+ANY_SPECIMEN = "*"  # 검체를 따지지 않고 측정값만 봄 (사실 저장: 소변 값도 환자의 측정값)
+
+
+def _lab_numbers(lab: str, body: str, wanted: str | None = None) -> list[tuple[int, int, str, str]]:
+    """본문에서 이 검사에 연결된 환자 수치 (시작, 끝, 수치, 역할). 측정값이 아닌 수치와 검체가 다른 수치는 뺍니다."""
     key = _lab_key(lab)
+    wanted = wanted or specimen.required(key)
     out = []
     for start, end in _sentence_spans(body):
         sentence = body[start:end]
         for lo, hi, number, owner in _linked_numbers(sentence, key):
             role = _role(sentence, lo, hi, key) if owner == key else None
-            if role and not _voided_elsewhere(body, start + lo, start + hi, key):
+            if role and not _voided_elsewhere(body, start + lo, start + hi, key) and (
+                    wanted == ANY_SPECIMEN or specimen.verdict(key, _value_specimen(body, start + lo, start + hi, key), wanted) != specimen.MISMATCH):
                 out.append((start + lo, start + hi, number, role))
     return out
 
@@ -599,15 +640,19 @@ def _quote_hits(quote: str | None, source_text: str) -> list:
 
 
 def ground_lab(lab: str, value, quote: str | None, source_text: str | None, *, key: str | None = None, qa=None,
-               unit: str | None = None, known: set[str] | None = None, stated_date: str | None = None) -> str | None:
-    """검사값의 원문 근거. 인용 안의 수치가 이 검사에 연결되고 프로필 값·단위·날짜와 같아야 함.
+               unit: str | None = None, known: set[str] | None = None, stated_date: str | None = None,
+               rule_text: str | None = None) -> str | None:
+    """검사값의 원문 근거. 인용 안의 수치가 이 검사에 연결되고 프로필 값·단위·날짜·검체와 같아야 함.
 
-    known: 프로필에 있는 이 검사의 값 전체. 기록의 다른 값이 빠져 있으면 어느 값이 현재인지 알 수 없으므로 충돌로 봅니다."""
+    known: 프로필에 있는 이 검사의 값 전체. 기록의 다른 값이 빠져 있으면 어느 값이 현재인지 알 수 없으므로 충돌로 봅니다.
+    rule_text: 기준 문장. 기준에 적힌 검체를 값의 검체와 비교합니다."""
     if source_text is None or value is None:
         return None
     usable = {id(s): s for s in _usable_answers(source_text, qa)}
-    in_record = _lab_numbers(lab, evidence.split_source(source_text)[0])
-    in_answers = [x for seg in usable.values() for x in _lab_numbers(lab, seg.body) if not _uncertain(seg.body, x[0], x[1])]
+    canon = _lab_key(lab)
+    wanted = specimen.required(canon, rule_text)
+    in_record = _lab_numbers(lab, evidence.split_source(source_text)[0], wanted)
+    in_answers = [x for seg in usable.values() for x in _lab_numbers(lab, seg.body, wanted) if not _uncertain(seg.body, x[0], x[1])]
     recorded, answered = _current_values(in_record), _current_values(in_answers)
     has_current = any(x[3] == "measured" for x in (*in_record, *in_answers))
     if len(answered) > 1 or (recorded and answered - recorded) or (known is not None and recorded - known) or _answers_void(lab, usable.values(), qa, key):
@@ -617,10 +662,12 @@ def ground_lab(lab: str, value, quote: str | None, source_text: str | None, *, k
         if h.seg.role != "record" and not (h.seg.role == "answer" and any(s.text == h.seg.text for s in usable.values())):
             continue
         body = h.seg.body
-        for lo, hi, number, role in _lab_numbers(lab, body):
+        for lo, hi, number, role in _lab_numbers(lab, body, wanted):
             if not (h.lo <= lo and hi <= h.hi) or float(number) != float(value) or not _same_unit(body, hi, unit) \
                     or not _same_date(body, lo, hi, stated_date):
                 continue
+            if specimen.verdict(canon, _value_specimen(body, lo, hi, canon), wanted) != specimen.MATCH:
+                continue  # 검체를 알 수 없는 값을 혈청이라고 추정하지 않음
             if role == "past":
                 continue  # 과거로 표시된 값은 현재 값의 근거가 아님 (현재 값이 없으면 보류)
             if h.seg.role == "record" and not any(float(x[2]) == float(value) for x in in_record):
@@ -631,8 +678,8 @@ def ground_lab(lab: str, value, quote: str | None, source_text: str | None, *, k
                 return None
     for q in _qa_in_source(qa, usable.values()):
         bare = _bare_lab(lab, q, key)
-        if bare is not None and float(bare) == float(value):
-            return None
+        if bare is not None and float(bare) == float(value) and specimen.verdict(canon, specimen.in_name(q.question or ""), wanted) == specimen.MATCH:
+            return None  # 단독 수치의 검체는 질문이 정함
     return HEDGED if hedged else UNLOCATED
 
 
@@ -677,7 +724,7 @@ def not_measured(field: str, value, quote: str | None, source_text: str | None, 
     if field.startswith("lab:"):
         key = _lab_key(field[4:])
         for h in _quote_hits(quote, source_text):
-            usable = {(lo, hi) for lo, hi, _, _ in _lab_numbers(key, h.seg.body)}
+            usable = {(lo, hi) for lo, hi, _, _ in _lab_numbers(key, h.seg.body, ANY_SPECIMEN)}
             here = [(lo, hi) for lo, hi, number, owner in _linked_in(h.seg.body, key) if owner == key and h.lo <= lo and hi <= h.hi and float(number) == float(value)]
             if here and not usable.intersection(here):
                 return True
@@ -689,6 +736,18 @@ def not_measured(field: str, value, quote: str | None, source_text: str | None, 
     bodies = [normalize(field, initial), *(normalize(field, s.body) for s in _usable_answers(source_text, None))]
     found = [(body, m) for body in bodies for m in pat.finditer(body)]
     return bool(found) and not any(_about_patient(field, body, m.start(), m.end()) for body, m in found)
+
+
+def lab_specimen(field: str, value, quote: str | None, source_text: str | None) -> str | None:
+    """사실 저장용: 인용 안 이 수치의 검체. 원문에서 수치를 찾지 못하면 None(확인 못 함), 찾았는데 검체를 모르면 specimen.UNCLEAR."""
+    if source_text is None or value is None or not field.startswith("lab:"):
+        return None
+    key = _lab_key(field[4:])
+    for h in _quote_hits(quote, source_text):
+        for lo, hi, number, owner in _linked_in(h.seg.body, key):
+            if owner == key and h.lo <= lo and hi <= h.hi and float(number) == float(value):
+                return _value_specimen(h.seg.body, lo, hi, key) or specimen.UNCLEAR
+    return None
 
 
 _STATUS_CATEGORIES = {"lab", "biomarker", "performance_status"}
@@ -705,6 +764,12 @@ def _unresolved(clause: str) -> bool:
     return False
 
 
+def _wrong_specimen(body: str, lo: int, hi: int, owner: str, rule) -> bool:
+    """LLM 인용의 수치가 기준이 요구하는 검체의 값으로 확인되지 않는가."""
+    named = specimen.in_name(rule.text or "")
+    return (owner in specimen.MULTI_SPECIMEN or named is not None) and specimen.verdict(owner, _value_specimen(body, lo, hi, owner), specimen.required(owner, rule.text)) != specimen.MATCH
+
+
 def _quote_not_measured(evidence_text: str, rule, source_text: str) -> bool:
     """LLM이 내세운 인용이 측정값이 아닌 수치나 아직 없는 검사만 말하는가. 측정값을 말하는 기준에만 적용합니다."""
     field = _norm(rule.field or "") if rule is not None else ""
@@ -718,7 +783,7 @@ def _quote_not_measured(evidence_text: str, rule, source_text: str) -> bool:
         for lo, hi, _, owner in _linked_in(body, "") if rule.category != "performance_status" and field != "ecog" else []:
             if owner and h.lo <= lo and hi <= h.hi:
                 seen = True
-                if _no_result(*_clause_around(body, lo, hi), owner) or _voided_elsewhere(body, lo, hi, owner):
+                if _no_result(*_clause_around(body, lo, hi), owner) or _voided_elsewhere(body, lo, hi, owner) or _wrong_specimen(body, lo, hi, owner, rule):
                     held = True  # 비교식·부정은 여기서 보지 않음: "Thrombocytopenia (plt <100) 없음"은 LLM이 판단한 근거
                 else:
                     measured = True
@@ -776,5 +841,5 @@ def structured_problem(a, rule, profile, source_text: str | None, *, key: str | 
             return UNLOCATED
         known = {_text(x.value) for x in profile.labs if x.value is not None and canonical_lab(x.name) == canonical_lab(m.group(1))}
         return ground_lab(m.group(1), float(m.group(2)), quote, source_text, unit=m.group(3).strip() or None, known=known,
-                          stated_date=m.group(4), **kw)
+                          stated_date=m.group(4), rule_text=rule.text, **kw)
     return None
