@@ -54,12 +54,17 @@ OBTAINABLE_GAPS = frozenset({"missing", "stale", "unverified"})
 
 def items_exhausted(t, exhausted_items: frozenset[str]) -> bool:
     """쌍 단위 소진 (Q-D2): 판정에 필요한 기준의 남은 gap이 모두 '얻을 수 있는 정보'이고, 그 항목이 전부 소진됐을 때만.
-    일부만 소진됐거나 임상의 판단·상충이 남아 있으면 소진이 아님 (INFO_MISSING 등 기존 상태 유지)."""
+    일부만 소진됐거나 임상의 판단·상충이 남아 있으면 소진이 아님 (INFO_MISSING 등 기존 상태 유지).
+    미검증 불충족 근거의 문서 확인(info_key "basis:...")도 항목입니다. gap이 아니어서 open_c에 없지만, 그 요청이 남아 있으면
+    쌍을 막지 않음 (막으면 full_dcvc가 후보에서 빼서 남은 문서 요청이 사라짐)."""
     if not exhausted_items:
         return False
     open_c = [c for c in t.criteria if c.requirement == "required" and (c.gap != "none" or c.conflict_on_decided)]
-    return bool(open_c) and all(c.gap in OBTAINABLE_GAPS and not c.conflict_on_decided
-                                and c.info_key in exhausted_items for c in open_c)
+    by_key = {c.key: c for c in t.criteria}
+    basis = {f"basis:{by_key[k].info_key}" for k in t.mismatch_basis if k in by_key
+             and by_key[k].basis_tier != "verified"} if t.mismatch == "provisional" else set()
+    return bool(open_c) and basis <= exhausted_items and all(c.gap in OBTAINABLE_GAPS and not c.conflict_on_decided
+                                                             and c.info_key in exhausted_items for c in open_c)
 
 
 @dataclass(frozen=True)

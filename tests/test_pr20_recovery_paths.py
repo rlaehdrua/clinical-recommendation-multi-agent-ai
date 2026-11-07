@@ -103,7 +103,7 @@ def test_residual_session_executes_the_document_the_policy_still_proposes(run):
     assert requests(r, "ecog") == [RECORD]
 
 
-# ------------------------------------------------------------ 남은 결함: 답한 문서가 대체로 남아 소진되지 않음
+# ------------------------------------------------------------ R1: 답한 문서가 대체로 남아 소진되지 않던 결함
 AM = AliasMap(salt="recovery-residual")
 PA = AM.alias("SYN-RESIDUAL")
 TACRO = offline_rule(rule_id="I9", text="No prior tacrolimus", category="medication", field=None, operator=None,
@@ -150,16 +150,14 @@ def test_control_no_answer_from_every_document_blocks_the_pair(stub_llm):
     assert co.pair(PA, "T1").status == C.PairStatus.BLOCKED_FAILURE
 
 
-@pytest.mark.xfail(strict=True, reason="apply_outcome이 이미 답한 문서를 대체로 셈 (_convert의 blocked와 다름)")
-def test_residual_tried_document_is_not_an_alternative_when_the_last_one_has_no_answer(stub_llm):
+def test_tried_document_is_not_an_alternative_when_the_last_one_has_no_answer(stub_llm):
     """환자 연락 불가 -> 복약 목록은 답했지만 gap이 남음 -> 진료 기록은 "모름": 정책 스스로 소진 보류를 내는 상태."""
     pol, co, sources = _drive(lambda s: {PATIENT: UNREACHABLE, MED: ANSWERED}.get(s, NO_ANSWER))
     assert sources == [PATIENT, MED, RECORD] and _defers(pol, co) & set(EXHAUSTED)  # 시나리오 전제
     assert co.pair(PA, "T1").status == C.PairStatus.BLOCKED_FAILURE
 
 
-@pytest.mark.xfail(strict=True, reason="실패 없이 끝난 문서 요청 뒤에는 소진 계산이 돌지 않음")
-def test_residual_last_document_answered_with_gap_left_is_exhausted(stub_llm):
+def test_last_document_answered_with_gap_left_is_exhausted(stub_llm):
     pol, co, sources = _drive(lambda s: UNREACHABLE if s == PATIENT else ANSWERED)
     assert sources == [PATIENT, MED, RECORD] and _defers(pol, co) & set(EXHAUSTED)  # 시나리오 전제
     assert co.pair(PA, "T1").status == C.PairStatus.BLOCKED_FAILURE
