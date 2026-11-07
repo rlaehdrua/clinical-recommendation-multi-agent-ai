@@ -335,6 +335,21 @@ def test_a_reevaluation_overlay_is_held_the_same_way(run):
     assert pair(s, {"T1:I3": met}).criteria[0].gap == "unverified"
 
 
+def test_a_contract_fact_is_never_a_record_without_the_authority(production_authority):
+    from ctrec.proposition_store import PropositionLedger
+    from ctrec.propositions import Proposition
+    store = FactStore()
+    prop = Proposition.parse("surgery/event/ever")
+    f = store.add(PID, "prop:" + prop.key, True, source_type="clinical_record", session_id="S",
+                  source_reference={"kind": "answer", "ref": "contract:QC-X@v1#000000000000;q:r1:C1", "quote": "예"}, observed_at="2026-10-01")
+    store.set_verification(f.fact_id, "document_verified", reason="r", by="b", document_reference="DOC")
+    led = PropositionLedger(store)
+    led.issued.add(f.fact_id)
+    [got] = led.facts(PID, "S")
+    assert got.source == "self_report" and got.verification_status == "unverified" and got.document_reference is None
+
+
+
 def test_decision_state_lists_forged_facts_as_unverified(run, production_authority):
     s = run([HB], prepare=forged_status)
     st = build_state(SessionView.from_session(s))

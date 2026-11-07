@@ -105,7 +105,8 @@ class PropositionLedger:
             out.append(PropFact(f.fact_id, Proposition.parse(f.field[len(PREFIX):]), f.value, f.observed_at,
                                 f.session_id, m.group(1), int(m.group(2)), m.group(3), int(m.group(4)), m.group(5),
                                 f.source_reference.quote or "",
-                                "clinical_record" if document_backed(f) else f.source_type,
+                                "clinical_record" if document_backed(f)
+                                else "self_report" if f.source_type == "clinical_record" else f.source_type,
                                 f.verification_status if document_backed(f) or f.verification_status != "document_verified"
                                 else "unverified", f.recorded_at,
                                 f.verification_history[-1].document_reference if document_backed(f) else None))

@@ -59,7 +59,7 @@ ANSWER_MARKER = "\n\n[추가 확인 정보"  # pipeline.Session.clarify가 답�
 # 검증 결과가 아니라 선언입니다. 밝히지 않으면 unknown: 문자열로 들어왔다는 이유만으로 진료 기록으로 보지 않습니다.
 InputSource = Literal["clinical_record", "self_report", "unknown"]
 INPUT_SOURCES: tuple[str, ...] = ("clinical_record", "self_report", "unknown")
-# 최초 입력에서 확인된 근거의 evidence_source
+# 최초 입력에서 확인된 근거의 evidence_source. record는 선언된 출처일 뿐 문서 확인이 아님: 확정은 evidence_basis 게이트가 정함
 INITIAL_EVIDENCE_SOURCE = {"clinical_record": "record", "self_report": "self_report", "unknown": "unknown"}
 
 
