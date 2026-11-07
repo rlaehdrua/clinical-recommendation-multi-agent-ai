@@ -202,8 +202,7 @@ def _e2_only(monkeypatch, text):
                text)
 
 
-@pytest.mark.xfail(strict=True, reason="M 소관: 원문 서술이 서로 상충해도 모델이 한쪽만 인용하면 확정됨 "
-                                       "(evidence_directness의 conflicting 검사가 서술 상충을 잡지 않음)")
+# M-1 서술 상충: M(fix/m-evidence-safety-final)에서 해결 -> strict xfail 제거
 def test_E_conflicting_narrative_stops_confirmation(monkeypatch):
     s = _e2_only(monkeypatch, f"합성 환자 62세 남성. {CONFLICT_NO}. 이전 병원 기록: {CONFLICT_YES}.")
     assert s.matches[TID].eligibility != "ELIGIBLE"
@@ -259,8 +258,7 @@ def test_H_record_value_clear_fail(monkeypatch, source, expect):
     assert s.matches[TID].eligibility == expect
 
 
-@pytest.mark.xfail(strict=True, reason="M 소관(시점): 기간 조건이 붙은 검사 기준은 규칙 엔진이 날짜 계산 없이 LLM으로 넘김 "
-                                       "(tools/rule_engine.evaluate lab: time_window_days -> None)")
+# M-2 검사 기간 조건: M(fix/m-evidence-safety-final)에서 해결 -> strict xfail 제거
 def test_date_window_lab_is_evaluated_deterministically():
     from ctrec.tools import rule_engine
     dp = trial_store.load(H.demo_trial(), store_dir=config.TRIAL_SETS["default"][1])
