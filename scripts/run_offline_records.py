@@ -3,7 +3,8 @@
 
     PYTHONPATH=src python scripts/run_offline_records.py --out <DIR> [--set masked] [--limit N] [--salt S] [--repeat]
 
---out 아래 <사례 순번>/decision_records.jsonl, decision_record_issues.jsonl, 그리고 summary.json을 씁니다.
+--out 아래 <사례 순번>/decision_records.jsonl, decision_record_issues.jsonl, summary.json, reversal_metrics.json을 씁니다.
+reversal_metrics.json은 사례 scanner로 검사한 export_metrics 결과입니다 (value_scan 참고. 비식별화를 뜻하지 않음).
 정답 대조(숨긴 사실 ID·원문, 원래 케이스 ID가 파일에 없는지)는 이 평가기 스크립트에서만 합니다.
 --repeat: 같은 salt로 한 번 더 실행해 fact_id 정규화 후 파일이 같은지 확인 (결정성).
 """
@@ -23,6 +24,7 @@ from decision_scenarios import load_trials  # noqa: E402
 from ctrec import config, offline_records as orc, question_eval as qe  # noqa: E402
 from ctrec.engine import audit  # noqa: E402
 from ctrec.engine import record_producer as rp  # noqa: E402
+from ctrec.engine import reversal_metrics as rm  # noqa: E402
 from ctrec.eval_hygiene import AliasMap, load_cases_hygienic  # noqa: E402
 
 SETS = {"masked": qe.DEFAULT_CASES,
@@ -83,9 +85,12 @@ def main(argv=None) -> int:
     summary["repeat_mismatch"] = repeat_diff
     summary["set"] = args.set
     (args.out / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=1), encoding="utf-8")
+    metrics = rm.export_metrics([r.run_dir for r in results], scanner)
+    (args.out / "reversal_metrics.json").write_text(json.dumps(metrics, ensure_ascii=False, indent=1), encoding="utf-8")
     print(json.dumps({k: summary[k] for k in ("set", "total", "issue_codes", "truth_leaks", "repeat_checked",
                                               "repeat_mismatch")}, ensure_ascii=False, indent=1))
-    ok = summary["total"]["complete_runs"] == len(results) and not leaks and not repeat_diff
+    ok = (summary["total"]["complete_runs"] == len(results) and not leaks and not repeat_diff
+          and metrics["value_scan"]["status"] == "no_findings")
     return 0 if ok else 1
 
 

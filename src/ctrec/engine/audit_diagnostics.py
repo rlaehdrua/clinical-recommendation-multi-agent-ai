@@ -72,7 +72,9 @@ def load_diagnostics(run_dir: Path, run_ids: set[str] | None = None, scanner=Non
     if p.is_symlink() or run_dir.resolve() not in p.resolve().parents:
         return DiagnosticsLoad("unreadable", problems=["issues_file_link"])
     try:
-        text = p.read_bytes().decode("utf-8")
+        text = audit.read_limited(p).decode("utf-8")
+    except audit.AuditError:
+        return DiagnosticsLoad("unreadable", problems=["issues_file_too_large"])
     except UnicodeDecodeError:
         return DiagnosticsLoad("unreadable", problems=["issues_file_not_utf8"])
     except OSError:
@@ -87,7 +89,7 @@ def load_diagnostics(run_dir: Path, run_ids: set[str] | None = None, scanner=Non
             continue
         try:
             obj = json.loads(line)
-        except json.JSONDecodeError:
+        except (ValueError, RecursionError):  # 깨진 줄, 초장 정수, 깊은 중첩: 그 줄에서 끝냄
             out.problems.append(f"line {n}: corrupt_json")
             continue
         if not isinstance(obj, dict):
@@ -110,6 +112,8 @@ def load_diagnostics(run_dir: Path, run_ids: set[str] | None = None, scanner=Non
             continue
         seen.add(issue.issue_id)
         out.issues.append(issue)
+    if len(out.problems) > audit.MAX_LINE_PROBLEMS:
+        return DiagnosticsLoad("unreadable", problems=["issues_file_too_damaged"])
     if not run_ids and len({i.run_id for i in out.issues}) > 1:
         out.problems.append("multiple_run_ids")
     if out.problems:

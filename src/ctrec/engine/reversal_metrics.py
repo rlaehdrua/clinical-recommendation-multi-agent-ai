@@ -52,6 +52,12 @@ WP7 감사 기록(DecisionRecord v2)에서 (run_id, 환자 별칭, 시험) 쌍�
 - 진단 파일은 줄 단위로 읽습니다(record_producer.load_issues는 쓰지 않음). load_issues는 손상 시 예외를 내는 쪽이 맞는
   호출자(IssueWriter 이어 쓰기, offline_records.verify_run)가 있어 그대로 둡니다.
 
+값 검사 (scanner, 기본 None = 기존 동작)
+- 화면·API로 나갈 지표는 export_metrics를 씁니다(scanner 필수). 걸린 기록이 있는 단계는 같은 단계의 다른 줄까지 계산에서
+  빠지고(이력 끊김으로 드러남), 걸린 진단 줄은 버립니다. 검사 실패는 통과가 아니라 읽기 실패로 보고합니다.
+- compute_for_runs·load_run_inputs의 scanner를 넘기지 않으면 값을 검사하지 않습니다(오프라인 분석용). write_metrics 파일은
+  value_scan.status로 어느 쪽인지 표시합니다.
+
 기록 원천 (load_run_inputs). 어떤 경우든 폴더 하나의 실패가 다른 폴더의 집계를 막지 않음
 - decision_records.jsonl 우선, 없으면 audit.load_run_v2의 기존 폴백으로 trace.jsonl의 v2 이벤트.
 - 둘 다 없거나, trace에 v2 이벤트가 없거나, 기록 파일이 비어 있으면 `no_v2_records`: **0건 실행으로 단정하지 않음**.
@@ -63,8 +69,11 @@ WP7 감사 기록(DecisionRecord v2)에서 (run_id, 환자 별칭, 시험) 쌍�
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
 import re
+import secrets
 from collections import defaultdict
 from dataclasses import dataclass, field
 from itertools import groupby
@@ -87,7 +96,27 @@ UNVERIFIED_REASONS = ("withheld_by_violation", "missing_record", "conflicting_re
 DIRECTIONS = ("eligible_to_ineligible", "ineligible_to_eligible")
 _STATUS_VALUES = frozenset(st.value for st in PairStatus)
 _DUPLICATE_LINE = re.compile(r"^line (\d+): duplicate_step:\d+$")
+_SENSITIVE_LINE = re.compile(r"^line (\d+): sensitive_record:[a-z_,]+$")
 _VALUE_BEARING_ISSUE = re.compile(r"^(line \d+: (?:unsupported_schema|invalid_record)):.*$")  # 파일 내용이 섞일 수 있음
+MAX_STEP = 10 ** 18 - 1  # 이보다 큰 step은 실행기가 만들 수 없는 값이므로 파일 내용으로 보고 숫자를 옮기지 않음
+OUT_OF_RANGE = "<out_of_range>"
+_LONG_NUMBER = re.compile(r"\d{19,}")
+_STEP = rf"(?:\d{{1,18}}|{OUT_OF_RANGE})"
+# write_metrics가 파일에 남기는 문제 코드 전체. 폴더 이름은 콜론을 포함해 무엇이든 될 수 있으므로 코드를 끝에서 정확히 맞춤
+_KNOWN_PROBLEM = re.compile(
+    r"^(?P<folder>.*):(?P<code>no_v2_records|records_unreadable|records_from_trace|multiple_run_ids"
+    r"|issues_file_link|issues_file_unreadable|issues_file_too_large|issues_file_too_damaged"
+    r"|issues_file_absent:direct_violations_and_withheld_not_computable"
+    r"|(?:conflicting_steps|step_out_of_range):\d{1,18}"
+    rf"|(?:unexplained_confirmed_downgrade|reversal_without_new_evidence):{_STEP}"
+    r"|trace line \d+: corrupt_json"
+    r"|issues line \d+: (?:corrupt_json|not_object|duplicate_issue|invalid_issue:[A-Za-z_<>,.0-9]*"
+    r"|sensitive_text:[a-z_,]+)"
+    rf"|line \d+: (?:corrupt_json|not_object|invalid_record|unsupported_schema|duplicate_step:{_STEP}"
+    r"|sensitive_record:[a-z_,]+))$", re.DOTALL)
+UNRECOGNIZED_PROBLEM = "unrecognized_problem"
+_UNREAD_CODES = (":records_unreadable", ":issues_file_unreadable", ":issues_file_too_large", ":issues_file_too_damaged",
+                 ":issues_file_link", ":" + UNRECOGNIZED_PROBLEM)
 
 
 def path_kind(via: Iterable[str]) -> str:
@@ -101,9 +130,9 @@ def path_kind(via: Iterable[str]) -> str:
 
 @dataclass(frozen=True)
 class ReversalEvent:
-    run_id: str
-    patient_alias: str
-    trial_id: str
+    run_id: str = field(repr=False)  # 식별자는 repr·로그로 나가지 않음
+    patient_alias: str = field(repr=False)
+    trial_id: str = field(repr=False)
     before: PairStatus  # 이전 확정
     after: PairStatus  # 새 확정
     anchor_step: int  # 이전 확정이 마지막으로 관찰된 단계
@@ -142,14 +171,28 @@ class ReversalSummary:
     conflicting_steps: int = 0
     reversals_without_new_evidence: int = 0  # 확인된 역전 중 새 확정 기록에 facts_added가 없던 것 (정보용)
     events: list[ReversalEvent] = field(default_factory=list)
+    values_scanned: bool = field(default=False, compare=False)  # scanner를 거쳐 계산했는가 (수치가 아니므로 비교·합산 제외)
 
-    def to_dict(self) -> dict:
-        d = {k: v for k, v in self.__dict__.items() if k != "events"}
-        d["events"] = [{"run_id": e.run_id, "patient_alias": e.patient_alias, "trial_id": e.trial_id,
+    def to_dict(self, *, identifiers: bool = False, pair_key: bytes | None = None) -> dict:
+        """기본 출력에는 원시 식별자가 없음: 사건은 pair_ref(같은 쌍이면 같은 값)로만 구분합니다.
+
+        identifiers=True는 분석자가 원본 실행 폴더를 함께 볼 때만 씁니다. pair_ref는 구분용이며 비식별화를 보장하지 않습니다.
+        pair_key가 없으면 공개 해시라 후보를 아는 사람이 대입으로 되찾을 수 있습니다. pair_key를 주면 그 키를 가진 쪽만 계산할 수
+        있고, 키가 다른 출력끼리는 같은 쌍을 연결할 수 없습니다."""
+        d = {k: v for k, v in self.__dict__.items() if k not in ("events", "values_scanned")}
+        d["events"] = [{**_event_identity(e, identifiers, pair_key),
                         "direction": e.direction, "anchor_step": e.anchor_step, "step": e.step, "via": list(e.via),
                         "path_kind": e.path_kind, "new_evidence": e.new_evidence, "verified": e.verified,
                         "unverified_reason": e.unverified_reason} for e in self.events]
         return d
+
+
+def _event_identity(e: ReversalEvent, identifiers: bool, pair_key: bytes | None = None) -> dict:
+    if identifiers:
+        return {"run_id": e.run_id, "patient_alias": e.patient_alias, "trial_id": e.trial_id}
+    pair = "\0".join((e.run_id, e.patient_alias, e.trial_id)).encode("utf-8")
+    digest = hmac.new(pair_key, pair, hashlib.sha256) if pair_key else hashlib.sha256(pair)
+    return {"pair_ref": digest.hexdigest()[:12]}
 
 
 def _dedup(records: Iterable[DecisionRecord], s: ReversalSummary,
@@ -305,7 +348,7 @@ def merge_summaries(parts: Iterable[ReversalSummary]) -> ReversalSummary:
     out = ReversalSummary()
     for p in parts:
         for k, v in p.__dict__.items():
-            if k == "metrics_version":
+            if k in ("metrics_version", "values_scanned"):
                 continue
             if k == "events":
                 out.events.extend(v)
@@ -331,7 +374,7 @@ def _raw_record_items(run_dir: Path) -> list[tuple[int, object]]:
             try:
                 if line.strip():
                     yield n, json.loads(line)
-            except json.JSONDecodeError:
+            except (ValueError, RecursionError):  # 깨진 줄, 초장 정수, 깊은 중첩: 그 줄만 건너뜀
                 pass
 
     records = run_dir / audit.RECORDS_FILE
@@ -342,12 +385,36 @@ def _raw_record_items(run_dir: Path) -> list[tuple[int, object]]:
             if isinstance(e, dict) and e.get("agent") == audit.TRACE_AGENT and e.get("event") == audit.TRACE_EVENT]
 
 
-def _duplicate_records(run_dir: Path, load_issues: Iterable[str]) -> list[DecisionRecord]:
-    """audit가 duplicate_step으로 뺀 줄을 다시 읽음. 동일·충돌 판단은 compute_reversal_metrics._dedup이 함."""
-    lines = {int(m.group(1)) for m in map(_DUPLICATE_LINE.match, load_issues) if m}
-    if not lines:
-        return []
-    return [DecisionRecord.model_validate(obj) for n, obj in _raw_record_items(run_dir) if n in lines]
+def _reread_lines(run_dir: Path, load_issues: Iterable[str], checked) -> tuple[list[DecisionRecord], set, list[str]]:
+    """audit가 duplicate_step으로 뺀 줄을 다시 읽음. 동일·충돌 판단은 compute_reversal_metrics._dedup이 함.
+
+    반환: (쓸 수 있는 중복 줄, 값 검사에 걸린 (run_id, step), 중복 줄에서 새로 걸린 문제). audit은 중복 줄을 검사하지 않으므로
+    여기서 검사합니다. 걸린 단계는 어느 줄이 맞는지 알 수 없으므로 같은 단계의 다른 줄까지 호출자가 뺍니다.
+    """
+    from . import audit
+    issues = list(load_issues)
+    lines = {int(m.group(1)) for m in map(_DUPLICATE_LINE.match, issues) if m}
+    sensitive = {int(m.group(1)) for m in map(_SENSITIVE_LINE.match, issues) if m}
+    if not lines | sensitive:
+        return [], set(), []
+    items = [(n, DecisionRecord.model_validate(o)) for n, o in _raw_record_items(run_dir) if n in lines | sensitive]
+    withheld = {(r.run_id, r.step) for n, r in items if n in sensitive}  # 검증된 값: 파일의 "3"과 3이 같은 단계
+    kept, problems = [], []
+    for n, rec in items:
+        if n not in lines:
+            continue
+        found = audit.record_findings(rec, checked) if checked else []
+        if found:
+            problems.append(f"line {n}: sensitive_record:{','.join(found)}")
+            withheld.add((rec.run_id, rec.step))
+        else:
+            kept.append(rec)
+    return kept, withheld, problems
+
+
+def _in_range(records: list[DecisionRecord]) -> tuple[list[DecisionRecord], list[str]]:
+    kept = [r for r in records if r.step <= MAX_STEP]
+    return kept, ([f"step_out_of_range:{len(records) - len(kept)}"] if len(kept) != len(records) else [])
 
 
 def _issue_field_names(e: ValidationError) -> str:
@@ -357,8 +424,9 @@ def _issue_field_names(e: ValidationError) -> str:
                             else "<unknown>" for err in e.errors()}))
 
 
-def _load_issues_partial(run_dir: Path) -> tuple[list, list[str]]:
+def _load_issues_partial(run_dir: Path, checked=None) -> tuple[list, list[str]]:
     """진단 파일을 줄 단위로 읽음: 유효한 줄은 살리고 손상된 줄은 번호·코드·필드 이름으로만 보고 (값·원문 없음)."""
+    from . import audit
     from . import record_producer as rp
     p = run_dir / rp.ISSUES_FILE
     if not p.exists() and not p.is_symlink():
@@ -366,7 +434,9 @@ def _load_issues_partial(run_dir: Path) -> tuple[list, list[str]]:
     if run_dir.is_symlink() or p.is_symlink() or run_dir.resolve() not in p.resolve().parents:
         return [], ["issues_file_link"]
     try:
-        data = p.read_bytes()
+        data = audit.read_limited(p)
+    except audit.AuditError:
+        return [], ["issues_file_too_large"]
     except OSError:
         return [], ["issues_file_unreadable"]
     issues, problems, seen = [], [], set()
@@ -386,31 +456,45 @@ def _load_issues_partial(run_dir: Path) -> tuple[list, list[str]]:
         except ValidationError as e:
             problems.append(f"issues line {n}: invalid_issue:{_issue_field_names(e)}")
             continue
+        found = checked.scan(issue.model_dump_json()) if checked else []
+        if found:
+            problems.append(f"issues line {n}: sensitive_text:{','.join(found)}")
+            continue
         if issue.issue_id in seen:
             problems.append(f"issues line {n}: duplicate_issue")
             continue
         seen.add(issue.issue_id)
         issues.append(issue)
+    if len(problems) > audit.MAX_LINE_PROBLEMS:
+        return [], ["issues_file_too_damaged"]
     return issues, problems
 
 
-def load_run_inputs(run_dir: Path) -> tuple[list[DecisionRecord], list, list[str]]:
+def load_run_inputs(run_dir: Path, scanner=None) -> tuple[list[DecisionRecord], list, list[str]]:
     """실행 폴더의 기록·진단을 읽음. 반환: (기록, 진단, 로드 문제). 폴더 단위 실패도 예외가 아니라 문제로 돌려줌.
 
     기록에는 duplicate_step으로 빠진 줄도 포함됩니다(모듈 설명의 '계산 함수와 파일 로더의 차이').
+    scanner를 주면 걸린 기록·진단을 뺍니다(모듈 설명의 '값 검사'). 검사가 실패한 파일은 읽지 못한 것으로 보고합니다.
     """
     from . import audit
     from . import record_producer as rp
     run_dir = Path(run_dir)
+    checked = _checked(scanner)
     try:
-        loaded = audit.load_run_v2(run_dir)
-        records = loaded.records + _duplicate_records(run_dir, loaded.issues)
-    except (audit.AuditError, OSError, UnicodeDecodeError):  # 메시지·값은 옮기지 않음
-        loaded, records = audit.LoadResult(issues=["records_unreadable"]), []
-    problems = [_VALUE_BEARING_ISSUE.sub(r"\1", x) for x in loaded.issues]
+        loaded = audit.load_run_v2(run_dir, scanner=checked)
+        extra, withheld, extra_problems = _reread_lines(run_dir, loaded.issues, checked)
+        records = [r for r in loaded.records + extra if (r.run_id, r.step) not in withheld]
+    except (ValueError, OSError):  # AuditError·ValidationError·UnicodeDecodeError 포함. 메시지·값은 옮기지 않음
+        loaded, records, extra_problems = audit.LoadResult(issues=["records_unreadable"]), [], []
+    records, range_problems = _in_range(records)
+    problems = [_LONG_NUMBER.sub(OUT_OF_RANGE, _VALUE_BEARING_ISSUE.sub(r"\1", x)) for x in loaded.issues]
+    problems += extra_problems + range_problems
     if not records and not problems:  # 빈 기록 파일: 로더는 문제 없이 0건을 돌려주고 trace로 폴백하지 않음
         problems.append("no_v2_records")
-    issues, issue_problems = _load_issues_partial(run_dir)
+    try:
+        issues, issue_problems = _load_issues_partial(run_dir, checked)
+    except audit.AuditError:
+        issues, issue_problems = [], ["issues_file_unreadable"]
     if records and not (run_dir / audit.RECORDS_FILE).exists():
         problems.append("records_from_trace")
         if not (run_dir / rp.ISSUES_FILE).exists():
@@ -418,27 +502,73 @@ def load_run_inputs(run_dir: Path) -> tuple[list[DecisionRecord], list, list[str
     return records, issues, problems + issue_problems
 
 
-def compute_for_runs(run_dirs: Iterable[Path]) -> tuple[ReversalSummary, list[str]]:
+def compute_for_runs(run_dirs: Iterable[Path], scanner=None) -> tuple[ReversalSummary, list[str]]:
     """실행 폴더마다 따로 계산해 합침 (run_id가 폴더 사이에서 유일하지 않으므로 폴더가 실행 범위).
 
     문제가 있는 폴더는 읽을 수 있는 만큼만 계산하고 문제를 `<폴더 이름>:<코드>`로 돌려줍니다. 수치만 보지 말고 함께 볼 것.
+    폴더 이름이 들어 있으므로 이 목록은 write_metrics로만 내보냅니다. scanner는 load_run_inputs와 같습니다.
     """
     parts, problems = [], []
+    checked = _checked(scanner)
     for d in run_dirs:
-        r, i, p = load_run_inputs(d)
+        r, i, p = load_run_inputs(d, checked)
         part = compute_reversal_metrics(r, i)
         parts.append(part)
         if part.conflicting_steps:
             p = p + [f"conflicting_steps:{part.conflicting_steps}"]
         problems += [f"{Path(d).name}:{x}" for x in p]
-    return merge_summaries(parts), problems
+    merged = merge_summaries(parts)
+    merged.values_scanned = checked is not None
+    return merged, problems
+
+
+def _checked(scanner):
+    from . import audit
+    return None if scanner is None else audit.CheckedScanner(scanner)
+
+
+def _value_scan(summary: ReversalSummary, problems: list[str]) -> dict:
+    """inspect_run_checked의 value_scan과 같은 뜻. no_findings는 scanner가 아는 값을 찾지 못했다는 뜻이지 안전하다는 뜻이 아님."""
+    from . import audit_inspection as ai
+    if not summary.values_scanned:
+        return {"status": "not_scanned", "limit": ai.SCAN_LIMIT}
+    records = sum(": sensitive_record:" in p for p in problems)
+    diagnostics = sum(": sensitive_text:" in p for p in problems)
+    unread = any(p.endswith(_UNREAD_CODES) for p in problems)
+    status = "incomplete" if unread else "withheld" if records or diagnostics else "no_findings"
+    return {"status": status, "limit": ai.SCAN_LIMIT, "withheld_records": records, "withheld_diagnostics": diagnostics}
+
+
+def _metrics_data(summary: ReversalSummary, problems: Iterable[str], pair_key: bytes | None = None) -> dict:
+    folders: dict[str, str] = {}  # 폴더 이름에 run_id·별칭이 들어갈 수 있어 순번으로 바꿈
+
+    def anonymous(problem: str) -> str:
+        m = _KNOWN_PROBLEM.match(str(problem))
+        if m is None:  # 형식을 모르면 어디까지가 값인지 알 수 없음: 있었다는 사실만 남김
+            return UNRECOGNIZED_PROBLEM
+        return f"{folders.setdefault(m['folder'], f'run-{len(folders) + 1}')}:{m['code']}"
+
+    cleaned = [anonymous(p) for p in problems]
+    return {**summary.to_dict(pair_key=pair_key), "load_problems": cleaned, "value_scan": _value_scan(summary, cleaned)}
 
 
 def write_metrics(summary: ReversalSummary, path: Path, problems: Iterable[str] = ()) -> None:
     """지표 JSON 저장. compute_for_runs의 문제는 load_problems로 함께 남겨 손상·누락이 파일에서 사라지지 않게 함."""
-    data = {**summary.to_dict(), "load_problems": list(problems)}
-    Path(path).write_text(json.dumps(data, ensure_ascii=False, indent=1, default=str), encoding="utf-8")
+    Path(path).write_text(json.dumps(_metrics_data(summary, problems), ensure_ascii=False, indent=1, default=str),
+                          encoding="utf-8")
 
 
-__all__ = ["ReversalEvent", "ReversalSummary", "compute_reversal_metrics", "compute_for_runs", "load_run_inputs",
-           "merge_summaries", "path_kind", "write_metrics", "METRICS_VERSION", "PATH_KINDS", "UNVERIFIED_REASONS"]
+def export_metrics(run_dirs: Iterable[Path], scanner) -> dict:
+    """밖으로 내보낼 지표 dict. scanner 없이는 AuditError (값을 만들지 않음).
+
+    원시 식별자·폴더 이름이 없고, pair_ref는 호출마다 새 키로 만들어 대입과 출력 간 연결을 막습니다. 키는 저장하지 않습니다.
+    이 값도 비식별 처리를 보장하지 않습니다: 사건 수·단계·경유 상태는 그대로이고 scanner가 모르는 값은 찾지 못합니다.
+    """
+    from . import audit
+    summary, problems = compute_for_runs(run_dirs, audit.CheckedScanner(scanner))
+    return _metrics_data(summary, problems, secrets.token_bytes(32))
+
+
+__all__ = ["ReversalEvent", "ReversalSummary", "compute_reversal_metrics", "compute_for_runs", "export_metrics", "load_run_inputs",
+           "merge_summaries", "path_kind", "write_metrics", "METRICS_VERSION", "PATH_KINDS", "UNVERIFIED_REASONS",
+           "UNRECOGNIZED_PROBLEM"]

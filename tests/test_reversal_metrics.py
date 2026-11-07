@@ -625,7 +625,7 @@ def test_record_load_problems_do_not_carry_file_values(tmp_path):
     (d).mkdir()
     (d / audit.RECORDS_FILE).write_text("\n".join(json.dumps(x, ensure_ascii=False) for x in (bad_extra, other_schema)) + "\n",
                                         encoding="utf-8")
-    assert SENSITIVE in str(audit.load_run_v2(d).issues)  # 기존 로더 메시지에는 남음: 여기서 제거해야 함
+    assert SENSITIVE not in str(audit.load_run_v2(d).issues)  # 로더 문제 목록에도 파일 값이 없음
     _, problems = rm.compute_for_runs([d])
     assert problems == ["run:line 1: invalid_record", "run:line 2: unsupported_schema"]
 
@@ -679,7 +679,7 @@ def test_write_metrics_keeps_load_problems_next_to_the_numbers(tmp_path):
     out = tmp_path / "metrics.json"
     rm.write_metrics(s, out, problems)
     saved = json.loads(out.read_text(encoding="utf-8"))
-    assert saved["load_problems"] == ["run:no_v2_records"] and saved["runs"] == 0
+    assert saved["load_problems"] == ["run-1:no_v2_records"] and saved["runs"] == 0  # 폴더 이름은 파일에 남지 않음
     assert "gaps_withheld_by_violation" in saved and "withheld_by_violation" in saved["unverified_by_reason"]
 
 
