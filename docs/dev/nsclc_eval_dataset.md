@@ -148,19 +148,44 @@ PR #26(R5)과 다른 점은 보고만 합니다(코드 미변경).
 
 ## 6. 재현 방법
 
+준비
+- 저장소 가상환경에서 실행합니다(`docs/team_local_setup.md`). 시스템 Python에는 pydantic 등이 없습니다.
+- 실제 LLM을 호출하지 않도록 `ANTHROPIC_API_KEY`를 비웁니다. 모든 단계가 오프라인입니다.
+- 소요 시간(참고, Windows 노트북): 검수표·생성·GT 1분 안쪽, runner 400분 설정 약 2분, 6000분 설정 약 10분.
+
 ```bash
-export PYTHONPATH=$PWD/src PYTHONIOENCODING=utf-8
-# 2단계 검수표 (선우 검수 큐는 원격에만 있음)
-git show origin/feat/p-common-engine:docs/dev/expert_rules_review_queue_2026_11_07.csv > /tmp/queue.csv
-python scripts/nsclc_review_table.py /tmp/queue.csv
+# Git Bash (PowerShell은 아래 줄을 $env:PYTHONPATH="$PWD/src" 등으로 바꿈)
+export PYTHONPATH=$PWD/src PYTHONIOENCODING=utf-8 ANTHROPIC_API_KEY=
+# 2단계 검수표. 선우 검수 큐는 원격에만 있음 -> git에 올라가지 않는 data/cache/에 저장
+#   (/tmp 경로는 Git Bash의 경로 변환으로만 동작하고 PowerShell에서는 실패하므로 쓰지 않음)
+mkdir -p data/cache
+git show origin/feat/p-common-engine:docs/dev/expert_rules_review_queue_2026_11_07.csv > data/cache/expert_rules_review_queue_2026_11_07.csv
+python scripts/nsclc_review_table.py data/cache/expert_rules_review_queue_2026_11_07.csv
 python scripts/nsclc_expression_review.py
 # 3·4단계 입력 -> 생성(validate + 2회 해시) -> 독립 GT
 python scripts/build_nsclc_eval.py all
-# runner 연결 확인 (시뮬레이터 코드 변경 없음)
-python scripts/check_nsclc_eval_runner.py --policies no_action,full_dcvc --budget 400 --horizon 10
-python scripts/check_nsclc_eval_runner.py --policies full_dcvc --budget 6000 --horizon 80
+# runner 연결 확인 (시뮬레이터 코드 변경 없음). --out으로 저장해 data/nsclc/eval/checks/의 값과 비교
+python scripts/check_nsclc_eval_runner.py --policies no_action,full_dcvc --budget 400 --horizon 10 --out r400.json
+python scripts/check_nsclc_eval_runner.py --policies full_dcvc --budget 6000 --horizon 80 --out r6000.json
 python -m pytest -q tests/test_nsclc_eval_gt.py
 ```
+
+실행 뒤 확인할 값 (`4f81460` + #43 `c3cc3d5`, 2026-11-08 새 worktree에서 이 절차로 재현 확인)
+
+| 항목 | 기대값 | 위치 |
+|---|---|---|
+| 생성 로그 | `config_hash=a549da3b1171fd52`, `validate=0 problems`, `run1=run2=1f29ca7af346ccbe` | `build_nsclc_eval.py all` 출력 |
+| 내용 해시 | `ec277a2796e37bfce63387bc93bd8f830d3675a53ff4832271fa67a130e3d469` | `manifest.json` `content_hash` |
+| 시뮬레이터 코호트 해시 | `4bd9143334bb0871` | `manifest.json` `sim.cohort_hash` |
+| 라벨 분포 | 확정 적격 0 / 판단 대기 적격 23 / 부적격 130 / 미평가 87 | `label_summary.json` |
+| runner 400분 | no_action 0·0·0·0, full_dcvc 0·48·0·0 | `r400.json` (판단 대기 도달·확정 부적격∧GT 부적격·GT 부적격 아님 확정 부적격·확정 적격) |
+| runner 6000분 | full_dcvc 20·124·0·0 | `r6000.json` |
+| 테스트 | 20 passed | pytest |
+
+실행 뒤 git에 보이는 변화 (정상)
+- `manifest.json`의 `generated_at`·`build_commit`만 바뀝니다.
+- Windows(`autocrlf=true`)에서는 `pair_gt.csv`·`pairs.csv`·`rule_gt.csv`가 수정됨으로 보입니다. 줄바꿈만 다르고, `git diff --ignore-cr-at-eol`로 보면 내용 차이가 없습니다.
+- 파일 해시는 줄바꿈 정규화 기준이라 영향이 없습니다.
 
 **동겸 runner 연결**
 - `python -m ctrec.sim` CLI는 시험을 `data/parsed`에서 읽으므로 이 평가셋을 바로 쓸 수 없습니다.
