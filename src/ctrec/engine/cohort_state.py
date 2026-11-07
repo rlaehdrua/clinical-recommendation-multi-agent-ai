@@ -105,10 +105,21 @@ class PatientSlice:
         return self._legacy.model_copy(deep=True)
 
 
+def _clinician_decided(c: LegacyCriterion, state: str) -> bool:
+    """이 기준의 MET/NOT_MET이 지금 임상의 권한이 인정한 판단과 같은가 (expert_boundary가 그 판단으로만 확정하므로)."""
+    from types import SimpleNamespace
+
+    from .. import clinician_authority
+    j = clinician_authority.current().judgment_for(c.trial_id, SimpleNamespace(rule_id=c.rule_id))
+    return j is not None and j.decision == state
+
+
 def _adjudication(c: LegacyCriterion, state: str) -> tuple[str, str]:
     engine = c.record.engine if c.record else "unknown"
     if state == "UNKNOWN" and c.gap == "physician_review":
         return "expert", "none"
+    if state != "UNKNOWN" and _clinician_decided(c, state):
+        return "expert", "clinician"
     if engine == "rule_engine":
         return "rule", "rule_engine" if state != "UNKNOWN" else "none"
     return "fact_llm", "llm" if state != "UNKNOWN" else "none"
