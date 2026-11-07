@@ -43,20 +43,20 @@
     },
     "ecog": {
      "dist": "normal",
-     "a": 0.9,
+     "a": 0.6,
      "b": 0.7,
      "lo": 0,
      "hi": 3,
      "decimals": 0,
-     "basis": "가정 (합성 평가셋 설계용, 임상 분포 아님). ECOG 2 이상 약 20%"
+     "basis": "가정 (합성 평가셋 설계용, 임상 분포 아님). ECOG 2 이상 약 10%"
     },
     "dx.histology": {
      "dist": "categorical",
      "probs": {
-      "adenocarcinoma": 0.55,
-      "nonsquamous_other": 0.1,
-      "squamous": 0.3,
-      "mixed_sclc": 0.05
+      "adenocarcinoma": 0.6,
+      "nonsquamous_other": 0.12,
+      "squamous": 0.25,
+      "mixed_sclc": 0.03
      },
      "basis": "가정 (합성 평가셋 설계용, 임상 분포 아님)"
     },
@@ -74,8 +74,8 @@
     "bm.driver_alteration": {
      "dist": "categorical",
      "probs": {
-      "none": 0.45,
-      "egfr_ex19del_L858R": 0.2,
+      "none": 0.35,
+      "egfr_ex19del_L858R": 0.3,
       "egfr_uncommon": 0.03,
       "egfr_ex20ins": 0.02,
       "alk": 0.05,
@@ -94,17 +94,17 @@
     "tx.prior_platinum": {
      "dist": "categorical",
      "probs": {
-      "yes": 0.7,
-      "no": 0.3
+      "yes": 0.8,
+      "no": 0.2
      },
      "basis": "가정 (합성 평가셋 설계용, 임상 분포 아님)"
     },
     "tx.prior_pd1_pdl1": {
      "dist": "categorical",
      "probs": {
-      "none": 0.35,
-      "durvalumab_consolidation": 0.1,
-      "anti_pd1_pdl1": 0.45,
+      "none": 0.25,
+      "durvalumab_consolidation": 0.15,
+      "anti_pd1_pdl1": 0.5,
       "ici_other": 0.1
      },
      "basis": "가정 (합성 평가셋 설계용, 임상 분포 아님)"
@@ -198,7 +198,7 @@
   {
    "scenario_id": "nsclc-eval-v1",
    "cluster": "nsclc_reduced",
-   "n_patients": 60,
+   "n_patients": 80,
    "replicates": 1,
    "dev_replicates": 1,
    "knobs": {
@@ -220,5 +220,13 @@
     }
    }
   }
- ]
+ ],
+ "design_targets": {
+  "note": "라벨 분포 목표 (설계값, 결과는 label_summary.json). GT는 이 목표에 맞춰 고치지 않음 - 사전 분포만 조정",
+  "pairs": "80명 x 3시험 = 240쌍, 시험당 약 40쌍",
+  "PENDING_EXPERT_ELIGIBLE": "10% 이상 (NCT06928389·NCT07680790에서만 가능 - 다른 4개 시험은 범위 안 미연결 기준이 남음)",
+  "INELIGIBLE": "30-60%",
+  "NOT_EVALUATED": "20-40%",
+  "CONFIRMED_ELIGIBLE": "0 (6개 시험 모두 범위 안 판단 기준이 있음 - 구조적으로 0)"
+ }
 }

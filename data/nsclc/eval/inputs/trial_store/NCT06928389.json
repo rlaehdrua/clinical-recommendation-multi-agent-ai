@@ -289,6 +289,7 @@
    "E6",
    "E7"
   ],
+  "kept_out_of_scope_for_or_path": [],
   "underspecified_set_for_expert": [
    "I5",
    "E8",

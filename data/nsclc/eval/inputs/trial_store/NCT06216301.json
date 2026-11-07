@@ -376,6 +376,7 @@
    "E15",
    "E17"
   ],
+  "kept_out_of_scope_for_or_path": [],
   "underspecified_set_for_expert": [
    "E5",
    "E6"

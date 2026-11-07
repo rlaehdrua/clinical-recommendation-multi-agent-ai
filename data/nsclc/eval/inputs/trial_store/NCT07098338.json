@@ -103,6 +103,132 @@
     "cohort": "Sub-study 2"
    },
    {
+    "rule_id": "I9",
+    "kind": "inclusion",
+    "text": "PD-L1 TC ≥ 50% (sub-study 1)",
+    "category": "biomarker",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Sub-study 1"
+   },
+   {
+    "rule_id": "I10",
+    "kind": "inclusion",
+    "text": "PD-L1 TC 1-49% (sub-study 2)",
+    "category": "biomarker",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Sub-study 2"
+   },
+   {
+    "rule_id": "I11",
+    "kind": "inclusion",
+    "text": "Absence of sensitizing EGFR mutations or ALK rearrangements",
+    "category": "biomarker",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Sub-study 1"
+   },
+   {
+    "rule_id": "I12",
+    "kind": "inclusion",
+    "text": "Absence of sensitizing EGFR mutations or ALK rearrangements",
+    "category": "biomarker",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Sub-study 2"
+   },
+   {
+    "rule_id": "I13",
+    "kind": "inclusion",
+    "text": "No known other Actionable Genomic Alterations (AGAs)",
+    "category": "biomarker",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Sub-study 1"
+   },
+   {
+    "rule_id": "I14",
+    "kind": "inclusion",
+    "text": "No known other Actionable Genomic Alterations (AGAs)",
+    "category": "biomarker",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Sub-study 2"
+   },
+   {
+    "rule_id": "I15",
+    "kind": "inclusion",
+    "text": "Histologically or cytologically documented advanced or metastatic non-squamous NSCLC",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Sub-study 3"
+   },
+   {
+    "rule_id": "I16",
+    "kind": "inclusion",
+    "text": "Documented positive AGA",
+    "category": "biomarker",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Sub-study 3"
+   },
+   {
+    "rule_id": "I17",
+    "kind": "inclusion",
+    "text": "Had progressed on prior targeted therapy",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Sub-study 3"
+   },
+   {
     "rule_id": "E1",
     "kind": "exclusion",
     "text": "As judged by the investigator, any severe or uncontrolled systemic diseases, in the investigator's opinion, makes it undesirable for the participant to participate in the study or that would jeopardise compliance with the protocol",
@@ -115,6 +241,48 @@
     "structured_evaluable": false,
     "underspecified": true,
     "cohort": null
+   },
+   {
+    "rule_id": "E4",
+    "kind": "exclusion",
+    "text": "Spinal cord compression or leptomeningeal carcinomatosis (sub-study 1 and sub-study 2)",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Sub-study 1"
+   },
+   {
+    "rule_id": "E5",
+    "kind": "exclusion",
+    "text": "Spinal cord compression or leptomeningeal carcinomatosis (sub-study 1 and sub-study 2)",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Sub-study 2"
+   },
+   {
+    "rule_id": "E6",
+    "kind": "exclusion",
+    "text": "Unstable spinal cord compression for sub-study 3",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Sub-study 3"
    },
    {
     "rule_id": "E9",
@@ -143,6 +311,34 @@
     "structured_evaluable": false,
     "underspecified": true,
     "cohort": null
+   },
+   {
+    "rule_id": "E11",
+    "kind": "exclusion",
+    "text": "Receipt of prior systemic chemotherapy/chemoradiation/immunotherapy for advanced NSCLC for sub-study 1 and sub-study 2",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Sub-study 1"
+   },
+   {
+    "rule_id": "E12",
+    "kind": "exclusion",
+    "text": "Receipt of prior systemic chemotherapy/chemoradiation/immunotherapy for advanced NSCLC for sub-study 1 and sub-study 2",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Sub-study 2"
    },
    {
     "rule_id": "E19",
@@ -198,10 +394,82 @@
    "underspecified_state": null,
    "added_by_validator": false
   },
+  "I9": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I10": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I11": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I12": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I13": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I14": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I15": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I16": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I17": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
   "E1": {
    "review": null,
    "required_evidence": "clinical_record",
    "underspecified_state": "vague_confirmed",
+   "added_by_validator": false
+  },
+  "E4": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E5": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E6": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
    "added_by_validator": false
   },
   "E9": {
@@ -211,6 +479,18 @@
    "added_by_validator": false
   },
   "E10": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E11": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E12": {
    "review": null,
    "required_evidence": "self_report_ok",
    "underspecified_state": null,
@@ -235,14 +515,6 @@
    "I6",
    "I7",
    "I8",
-   "E1",
-   "E9",
-   "E10",
-   "E19"
-  ],
-  "removed_out_of_scope": [
-   "I3",
-   "I4",
    "I9",
    "I10",
    "I11",
@@ -252,21 +524,45 @@
    "I15",
    "I16",
    "I17",
-   "E2",
-   "E3",
+   "E1",
    "E4",
    "E5",
    "E6",
-   "E7",
-   "E8",
+   "E9",
+   "E10",
    "E11",
    "E12",
+   "E19"
+  ],
+  "removed_out_of_scope": [
+   "I3",
+   "I4",
+   "E2",
+   "E3",
+   "E7",
+   "E8",
    "E13",
    "E14",
    "E15",
    "E16",
    "E17",
    "E18"
+  ],
+  "kept_out_of_scope_for_or_path": [
+   "E11",
+   "E12",
+   "E4",
+   "E5",
+   "E6",
+   "I10",
+   "I11",
+   "I12",
+   "I13",
+   "I14",
+   "I15",
+   "I16",
+   "I17",
+   "I9"
   ],
   "underspecified_set_for_expert": [
    "I5",

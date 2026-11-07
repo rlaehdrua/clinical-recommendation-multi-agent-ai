@@ -1,0 +1,62 @@
+{
+ "dataset": "nsclc_eval_v1",
+ "scope": "nsclc_reduced_v1",
+ "gt_kind": "independent_rule_gt_reduced_scope",
+ "gt_version": "nsclc_rule_gt/1",
+ "verification": {
+  "data": "서연(데이터) 검증 완료",
+  "clinical": "임상 검수 미완료"
+ },
+ "cohort_id": "nsclc-eval-v1-r00",
+ "scenario_id": "nsclc-eval-v1",
+ "seed": 266646441971616,
+ "base_seed": 20261107,
+ "config_hash": "a549da3b1171fd52",
+ "generator_version": "cohort-gen-2",
+ "reference_date": "2026-11-07",
+ "generated_at": "2026-11-07T14:52:11+00:00",
+ "build_commit": "f671b6c194379ad39ae163ff346d554d6eed16a9",
+ "build_command": "python scripts/build_nsclc_eval.py all",
+ "sim": {
+  "cohort_id": "nsclc-eval-v1-r00@a549da3b1171fd52+map6c43912c",
+  "cohort_hash": "dda2d3873ad43a05",
+  "store_hash": "7060c3c400439620",
+  "salt": "sim:nsclc-eval-v1-r00",
+  "pair_key": "sim_pair_key = <sim 별칭>|<시험> (RunResult.final 쌍 키와 같음)"
+ },
+ "inputs_sha256": {
+  "data/nsclc/review/criteria_verification.csv": "8cb48747829ab5881422b171de2adf35eebd06c902ad9c3144b27be73d935868",
+  "data/nsclc/review/overrides.json": "98bf80fddab6198294e665f86dbc9116992d6856c21fe55f7ae9f983edf457ce",
+  "data/nsclc/eval/inputs/generator_config.json": "9f0aa3d6dc662f7fd898467d4747c1028211bdfb7baf558423b358e672a5e8f2",
+  "data/nsclc/eval/inputs/slot_dictionary.json": "3f4c4f9f49efa9ca5b3fe514c7562f97a51434909ba2d8c29839ea3513fe91c8",
+  "data/nsclc/eval/inputs/source_catalog.json": "3fe69c511c0175d0d2b2177b3cabc25faf84de7a5e333ff66062d36f5e82cd37",
+  "data/nsclc/eval/inputs/source_map.json": "b0b6236541e0fc58ef5376193622efed97d2fdb2e2b43cb5637e96590517feb1",
+  "data/nsclc/eval/generated/cohort.json": "a036f7b530a85a72f717c673869bc14b7eb229a1d14d5d8abdecaa7b98bacc8d",
+  "data/nsclc/eval/inputs/trial_store/NCT06216301.json": "5032ea4555f7f78667b9af11da68f2a760c9012d2407890971e9dc7ce92b4fd8",
+  "data/nsclc/eval/inputs/trial_store/NCT06928389.json": "232ac8c64365019e79010c2bbee41d3b6c1823d56756fce20afe7b3a56b9f7f3",
+  "data/nsclc/eval/inputs/trial_store/NCT07027514.json": "228d628999e324bde3c192cb74cdd16fac98bee7230c34c7ce1279f42b018031",
+  "data/nsclc/eval/inputs/trial_store/NCT07098338.json": "fc6816450148547ac04311cd2a5373f481fe076832a380b3260d16c7cf65c100",
+  "data/nsclc/eval/inputs/trial_store/NCT07416058.json": "3c1de2fe8e4eb48dd5db462b3844cb9dad97ed4ce4245516f0b171cef885162e",
+  "data/nsclc/eval/inputs/trial_store/NCT07680790.json": "6ab2594ed4ca9f2ab9eb8c262d8879f997f37253ca356c089904133efe2f9144"
+ },
+ "content_sha256": {
+  "patients.json": "f5a76566a31cadbecea11039b4a708f7e9fbbbbcd7b9ac8364152ac7222362c6",
+  "pairs.csv": "5018c0d9f2c0a9099e4162779576bc1d1661a266dd23923a80e6329873d02d35",
+  "rule_gt.csv": "55ad7f9bb4bf5be9602e3dbe273d319758f4bbb9528527884cdc093fad2f9dd7",
+  "pair_gt.csv": "132ed3d1eadee11dd416dd0abb14e2569bf98ed312c1eba5efb88a8c2558c63a",
+  "label_summary.json": "4c07ed1545076b94ed6857badf0d72f82c392b269958798a93af73da8bf6d506"
+ },
+ "content_hash": "eb3107f67403a3e99771f9a92b3102c684d596ab0b0b96435e572ed3c696bcbf",
+ "label_summary": {
+  "CONFIRMED_ELIGIBLE": 0,
+  "PENDING_EXPERT_ELIGIBLE": 23,
+  "INELIGIBLE": 130,
+  "NOT_EVALUATED": 87
+ },
+ "claims": [
+  "합성 환자 + 실제 프로토콜 6개의 축소 범위 기준. 정책 간 상대 비교 전용",
+  "규칙 GT(독립): 검수표 + 환자 값으로만 계산. 임상 정답 아님, 임상 검수 미완료",
+  "범위 밖 기준은 평가하지 않음 -> 적격 라벨은 '축소 범위 안에서'의 뜻 (전체 프로토콜 적격 아님)",
+  "정확도·임상 성능 표현 금지"
+ ]
+}

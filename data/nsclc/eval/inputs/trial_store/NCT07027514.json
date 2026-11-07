@@ -158,6 +158,20 @@
     "cohort": null
    },
    {
+    "rule_id": "E1",
+    "kind": "exclusion",
+    "text": "Cohort A only: Participants with toxic effects to manage adverse events from previous treatment with immunotherapy",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Cohort A"
+   },
+   {
     "rule_id": "E2",
     "kind": "exclusion",
     "text": "Cohort B only: Prior therapy with an immune checkpoint inhibitor",
@@ -270,6 +284,34 @@
     "cohort": null
    },
    {
+    "rule_id": "E18",
+    "kind": "exclusion",
+    "text": "Cohort A only: History of allergy to protein-based therapies, history of any significant drug allergy, or known allergies, hypersensitivity, or intolerance to cetrelimab excipients",
+    "category": "other",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Cohort A"
+   },
+   {
+    "rule_id": "E19",
+    "kind": "exclusion",
+    "text": "Cohort B only: Hypersensitivity to any component of the anti-PD-1/PD-L1 antibody selected as standard of care",
+    "category": "other",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Cohort B"
+   },
+   {
     "rule_id": "E20",
     "kind": "exclusion",
     "text": "Have other systemic conditions or organ abnormalities that may interfere with the conduct of the study",
@@ -361,6 +403,12 @@
    "underspecified_state": null,
    "added_by_validator": false
   },
+  "E1": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
   "E2": {
    "review": null,
    "required_evidence": "self_report_ok",
@@ -409,6 +457,18 @@
    "underspecified_state": null,
    "added_by_validator": false
   },
+  "E18": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": "vague_suspected",
+   "added_by_validator": false
+  },
+  "E19": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
   "E20": {
    "review": null,
    "required_evidence": "clinical_record",
@@ -438,6 +498,7 @@
    "I13",
    "I14",
    "I15",
+   "E1",
    "E2",
    "E3",
    "E4",
@@ -446,6 +507,8 @@
    "E10",
    "E14",
    "E16",
+   "E18",
+   "E19",
    "E20",
    "E21"
   ],
@@ -455,7 +518,6 @@
    "I8",
    "I11",
    "I12",
-   "E1",
    "E5",
    "E6",
    "E8",
@@ -463,7 +525,10 @@
    "E12",
    "E13",
    "E15",
-   "E17",
+   "E17"
+  ],
+  "kept_out_of_scope_for_or_path": [
+   "E1",
    "E18",
    "E19"
   ],

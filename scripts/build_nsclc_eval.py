@@ -117,6 +117,9 @@ def binding_of(r: dict) -> Binding:
     use = r["gt_use"]
     if use == "excluded":
         return Binding(**base, status="excluded")
+    if use == "out_of_scope":  # OR 경로 보존용으로 남긴 코호트 전용 범위 밖 기준: 연결하지 않음 (미연결 -> 라벨 없음)
+        return Binding(**{**base, "note": f"{NOTE}; 범위 밖 코호트 전용 기준 - OR 경로 보존용으로 저장소에 남김"},
+                       status="needs_review")
     if use in ("unbound", "region_conditional"):  # 범위 안이지만 정답을 만들지 않음 -> 생성기 라벨 없음, GT NOT_EVALUATED
         return Binding(**{**base, "note": f"{NOTE}; gt_use={use}: {r['issue']}"}, status="needs_review")
     if use == "needs_expert":
@@ -139,7 +142,12 @@ def binding_of(r: dict) -> Binding:
 
 def cmd_inputs(_args=None) -> int:
     rows = _review_rows()
-    keep = {(r["trial_id"], r["criterion_id"]) for r in rows if r["in_scope"] == "yes" or r["scope"] == "excluded"}
+    # 남기는 기준: 범위 안 + excluded(엔진은 R7 현행대로 처리) + 범위 밖이라도 코호트 전용 기준.
+    # 코호트 전용 기준을 빼면 엔진(Matcher)이 그 코호트를 경로로 보지 않아, 다른 코호트만 불통과인 환자를
+    # 부적격 확정함 (원 프로토콜에서는 그 경로가 살아 있음). 남긴 범위 밖 기준은 연결하지 않아 미확인으로 남음
+    or_keep = {(r["trial_id"], r["criterion_id"]) for r in rows if r["scope"] == "out_of_scope" and r["cohort"]}
+    keep = {(r["trial_id"], r["criterion_id"]) for r in rows
+            if r["in_scope"] == "yes" or r["scope"] == "excluded"} | or_keep
     expert = {(r["trial_id"], r["criterion_id"]) for r in rows if r["gt_use"] == "needs_expert"}
     for t in sorted({r["trial_id"] for r in rows}):
         src = NSCLC / "parsed" / f"{t}.json"
@@ -160,6 +168,7 @@ def cmd_inputs(_args=None) -> int:
                "eval_derivation": {"scope": SCOPE_ID, "derived_from": f"data/nsclc/parsed/{t}.json",
                                    "derived_from_sha256": _sha(src), "review": "data/nsclc/review/criteria_verification.csv",
                                    "kept": [x["rule_id"] for x in rules], "removed_out_of_scope": removed,
+                                   "kept_out_of_scope_for_or_path": sorted(r_ for (t_, r_) in or_keep if t_ == t),
                                    "underspecified_set_for_expert": flagged,
                                    "note": "축소 범위 평가용 사본. 원본 파싱본은 바꾸지 않음. 범위 밖 기준을 뺐으므로 "
                                            "이 저장소로 낸 '적격'은 전체 프로토콜 적격이 아님"}}
@@ -220,8 +229,132 @@ def main() -> int:
     return {"inputs": cmd_inputs, "generate": cmd_generate, "gt": lambda: cmd_gt()}[a.cmd]()
 
 
-def cmd_gt(_args=None) -> int:  # 4단계에서 채움
-    raise SystemExit("gt 단계는 4단계에서 구현")
+SOURCE_MAP = INPUTS / "source_map.json"  # data/nsclc/cohort/source_map.json 사본 + sex (원본 누락)
+CLAIMS = ["합성 환자 + 실제 프로토콜 6개의 축소 범위 기준. 정책 간 상대 비교 전용",
+          "규칙 GT(독립): 검수표 + 환자 값으로만 계산. 임상 정답 아님, 임상 검수 미완료",
+          "범위 밖 기준은 평가하지 않음 -> 적격 라벨은 '축소 범위 안에서'의 뜻 (전체 프로토콜 적격 아님)",
+          "정확도·임상 성능 표현 금지"]
+CONTENT_FILES = ("patients.json", "pairs.csv", "rule_gt.csv", "pair_gt.csv", "label_summary.json")
+
+
+def _git_commit() -> str | None:
+    try:
+        out = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, timeout=5)
+        return out.stdout.strip() or None
+    except (OSError, subprocess.SubprocessError):
+        return None
+
+
+def sim_cohort(c: Cohort, sd: SlotDictionary):
+    """runner(#20)가 읽는 시뮬레이터 코호트. 시험은 평가용 축소 저장소에서 읽음 (CLI 기본값 data/parsed가 아님)."""
+    from ctrec.sim import from_generator as FG
+    trials = FG.load_trials(list(c.public.trials), STORE, NSCLC / "trials")
+    return FG.to_sim_cohort(c, sd, FG.load_source_map(SOURCE_MAP), trials)
+
+
+def hidden_case(slot: str, smap) -> str:
+    """숨긴 값을 어떻게 확보할 수 있는가 (응답 모델의 모름·무응답·연락 불가는 실행 때 정해짐)."""
+    from ctrec.sim.cohort import PATIENT_KNOWN_FIELDS
+    m = smap.slots[slot]
+    patient_knows = any(f in PATIENT_KNOWN_FIELDS for f in m.fields)
+    asks = "patient_interview" in (m.sources or [])
+    if slot.startswith("lab."):
+        return "lab_or_patient" if patient_knows and asks else "lab_report_only"
+    if patient_knows and asks:
+        return "patient_may_answer"  # 환자 답변 가능 (응답 모델 가정: 모름 0.2·연락 불가 0.05) + 문서
+    return "document_only"  # 환자가 모르는 항목 (병리·유전자·진단 등) -> 결과지·기록으로만
+
+
+def _write_csv(path: Path, rows: list[dict]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=list(rows[0]), lineterminator="\n")
+        w.writeheader()
+        w.writerows(rows)
+
+
+def cmd_gt(_args=None) -> int:
+    from ctrec.cohort import gt as GT  # 독립 GT (ctrec 다른 모듈을 import하지 않음)
+    from ctrec.sim import from_generator as FG
+    c = Cohort.model_validate(json.loads(GENERATED.read_text(encoding="utf-8")))
+    cfg, sd, cat, parsed = gen.load_inputs(CONFIG)
+    if c.config_hash != gen.config_hash(cfg, sd, cat):
+        raise SystemExit("generated/cohort.json이 현재 입력과 다름 - generate부터 다시 실행")
+    crit = GT.load_criteria(REVIEW, {t: list(p.cohorts) for t, p in parsed.items()})
+    sim = sim_cohort(c, sd)
+    alias = sim.aliases()
+    smap = FG.load_source_map(SOURCE_MAP)
+    patients, pairs, rule_rows, pair_rows = [], [], [], []
+    by_trial: dict[str, Counter] = {}
+    cases = Counter()
+    for p in c.public.patients:
+        hidden = c.oracle.hidden.get(p.patient_id, {})
+        values = {**p.known, **hidden}
+        hc = {s: hidden_case(s, smap) for s in sorted(hidden)}
+        cases.update(hc.values())
+        patients.append({"patient_id": p.patient_id, "sim_alias": alias[p.patient_id], "candidate_trials": p.candidate_trials,
+                         "public_known": p.known, "hidden_slots": sorted(hidden), "hidden_case": hc,
+                         "true_values": values})
+        for t in p.candidate_trials:
+            pk, sk = f"{p.patient_id}|{t}", f"{alias[p.patient_id]}|{t}"
+            res = GT.pair_gt(t, values, crit)
+            by_trial.setdefault(t, Counter())[res.label] += 1
+            unknown = sum(c.public.initial_holds[f"{pk}|{r.rule_id}"] == "unknown" for r in c.public.rules[t])
+            pairs.append({"patient_id": p.patient_id, "trial_id": t, "sim_pair_key": sk,
+                          "generator_label": c.oracle.pair_label[pk],
+                          "generator_reasons": "|".join(c.oracle.label_reasons.get(pk, [])),
+                          "generator_bound_result": c.oracle.bound_result[pk], "initial_unknown_rules": unknown})
+            for rr in res.rules:
+                cr = rr.criterion
+                rule_rows.append({"patient_id": p.patient_id, "trial_id": t, "sim_pair_key": sk,
+                                  "criterion_id": cr.criterion_id, "kind": cr.kind, "category": cr.category,
+                                  "cohort": cr.cohort or "", "gt_use": cr.gt_use, "status": rr.status, "basis": rr.basis,
+                                  "verification": cr.verification, "clinical_review": "미완료"})
+            pair_rows.append({"patient_id": p.patient_id, "trial_id": t, "sim_pair_key": sk, "gt_label": res.label,
+                              "runner_label": GT.RUNNER_LABEL[res.label], "path": res.path or "",
+                              "reasons": "|".join(res.reasons),
+                              **{f"n_{s.lower()}": res.count(s) for s in GT.RULE_STATUSES},
+                              "path_labels": json.dumps({str(k): v[0] for k, v in res.path_labels.items()},
+                                                        ensure_ascii=False),
+                              "excluded_criteria": "|".join(crit.excluded.get(t, [])),
+                              "out_of_scope_criteria": len(crit.out_of_scope.get(t, [])),
+                              "generator_label": c.oracle.pair_label[pk], "clinical_review": "미완료"})
+    _dump(EVAL / "patients.json", {"note": "합성 환자 (실제 환자 아님). true_values는 정답 값(oracle) - 정책에 주지 말 것",
+                                   "cohort_id": c.cohort_id, "patients": patients})
+    _write_csv(EVAL / "pairs.csv", pairs)
+    _write_csv(EVAL / "rule_gt.csv", rule_rows)
+    _write_csv(EVAL / "pair_gt.csv", pair_rows)
+    overall = Counter(r["gt_label"] for r in pair_rows)
+    summary = {"pairs": len(pair_rows), "gt_labels": {k: overall.get(k, 0) for k in GT.PAIR_LABELS},
+               "gt_labels_by_trial": {t: {k: v.get(k, 0) for k in GT.PAIR_LABELS} for t, v in sorted(by_trial.items())},
+               "rule_status": dict(sorted(Counter(r["status"] for r in rule_rows).items())),
+               "hidden_value_cases": dict(sorted(cases.items())),
+               "generator_labels": dict(sorted(Counter(r["generator_label"] for r in pairs).items())),
+               "eligible_family_present": overall.get(GT.CONFIRMED_ELIGIBLE, 0) + overall.get(GT.PENDING_EXPERT_ELIGIBLE, 0) > 0,
+               "ineligible_present": overall.get(GT.INELIGIBLE, 0) > 0,
+               "confirmed_eligible_note": "범위 안 판단 기준이 없는 경로에서만 나옴. 6개 시험 모두 판단 기준이 있어 0건이 정상"}
+    _dump(EVAL / "label_summary.json", summary)
+    content = {n: _sha(EVAL / n) for n in CONTENT_FILES}
+    inputs = {pth.relative_to(ROOT).as_posix(): _sha(pth)
+              for pth in [REVIEW, NSCLC / "review" / "overrides.json", CONFIG, INPUTS / "slot_dictionary.json",
+                          INPUTS / "source_catalog.json", SOURCE_MAP, GENERATED, *sorted(STORE.glob("*.json"))]}
+    _dump(EVAL / "manifest.json", {
+        "dataset": "nsclc_eval_v1", "scope": SCOPE_ID, "gt_kind": GT.GT_KIND, "gt_version": GT.GT_VERSION,
+        "verification": {"data": "서연(데이터) 검증 완료", "clinical": "임상 검수 미완료"},
+        "cohort_id": c.cohort_id, "scenario_id": c.scenario_id, "seed": c.seed, "base_seed": cfg.base_seed,
+        "config_hash": c.config_hash, "generator_version": gen.GENERATOR_VERSION, "reference_date": c.reference_date,
+        "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
+        "build_commit": _git_commit(), "build_command": "python scripts/build_nsclc_eval.py all",
+        "sim": {"cohort_id": sim.cohort_id, "cohort_hash": sim.digest(), "store_hash": sim.store_hash(),
+                "salt": sim.salt, "pair_key": "sim_pair_key = <sim 별칭>|<시험> (RunResult.final 쌍 키와 같음)"},
+        "inputs_sha256": inputs, "content_sha256": content,
+        "content_hash": hashlib.sha256(json.dumps(content, sort_keys=True).encode()).hexdigest(),
+        "label_summary": summary["gt_labels"], "claims": CLAIMS})
+    print("GT:", summary["gt_labels"])
+    for t, v in summary["gt_labels_by_trial"].items():
+        print(f"  {t}: {v}")
+    print("rule status:", summary["rule_status"], "hidden cases:", summary["hidden_value_cases"])
+    return 0
 
 
 if __name__ == "__main__":
