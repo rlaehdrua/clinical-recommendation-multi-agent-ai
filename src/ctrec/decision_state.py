@@ -23,6 +23,8 @@ DecisionState는 Session의 현재 상태를 읽기만 해서 만든 사본입�
 
 from __future__ import annotations
 
+import re
+
 import hashlib
 import json
 import time
@@ -347,9 +349,12 @@ def _basis_tier(refs: list[str], fv: FactEvidenceView) -> str:
     return min(found, key=_TIER_ORDER.__getitem__) if found else "unknown"
 
 
+_NOT_REF_FIELD = re.compile(r"[^A-Za-z0-9_:()./+\-]")
+
+
 def _document_refs(view: SessionView, refs: list[str]) -> list[EvidenceRef]:
     wanted = set(refs)
-    return [EvidenceRef(fact_id=f.fact_id, field=f.field,
+    return [EvidenceRef(fact_id=f.fact_id, field=_NOT_REF_FIELD.sub("_", f.field)[:200],  # 사실 항목에는 공백이 있음 (lab:white blood cell count)
                         source_type=f.source_type if f.source_type in ("clinical_record", "self_report") else "unknown",
                         verification_status="document_verified", document_reference=f.verification_history[-1].document_reference)
             for f in view.snapshot.facts if f.fact_id in wanted and document_backed(f)]
