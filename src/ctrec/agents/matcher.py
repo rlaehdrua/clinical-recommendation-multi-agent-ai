@@ -19,7 +19,7 @@ from __future__ import annotations
 import json
 import re
 
-from .. import answer_verification, config, evidence, evidence_directness, llm
+from .. import answer_verification, config, evidence, evidence_directness, expert_boundary, llm, value_grounding
 from ..schemas import (CriterionAssessment, LLMAssessment, MatcherOutput, ParsedTrial, PatientProfile, QAPair, Rule,
                        RuleMeta, TrialMatch)
 from ..tools import rule_engine
@@ -285,12 +285,7 @@ def _review_assessment(rule: Rule, reason: str) -> CriterionAssessment:
     )
 
 
-_FIELD_TEXT = {
-    "ecog": lambda v: rf"(?:ecog|performance\s*status|\bps\b|수행\s*상태|활동도)[^0-9\n]{{0,20}}(?<!\d){re.escape(v)}(?!\d)",
-    "age": lambda v: rf"(?<![\d.]){re.escape(v)}\s*(?:세|살|개월|주|일|years?|yrs?|months?|weeks?|days?|-year|yo\b|y/o)",
-    "sex": lambda v: {"female": r"female|\bwoman\b|\bgirl\b|여성|여자|여아",
-                      "male": r"(?<!fe)male\b|\bman\b|\bboy\b|남성|남자|남아"}.get(v, r"(?!)"),
-}
+_FIELD_TEXT = value_grounding.FIELD_TEXT
 _ENGINE_FIELD = [("ecog", re.compile(r"^ECOG (\S+)$")), ("sex", re.compile(r"^환자 성별 (\S+)$")),
                  ("age", re.compile(r"^환자 나이 (\S+)"))]
 
@@ -335,8 +330,12 @@ def _evidence_source(a: CriterionAssessment, source_text: str | None, input_sour
     return "unknown"
 
 
-def _apply_evidence_policy(a: CriterionAssessment, meta: RuleMeta, source_text: str | None,
-                           input_source: str = "unknown") -> CriterionAssessment:
+_GROUNDING_DIRECTNESS = {"unlocated": "unlocated", "hedged": "hedged", "conflict": "conflicting"}
+
+
+def _apply_evidence_policy(a: CriterionAssessment, meta: RuleMeta, source_text: str | None, input_source: str = "unknown",
+                           *, rule: Rule | None = None, profile: PatientProfile | None = None, key: str | None = None,
+                           qa: list[QAPair] | None = None, reference_date: str | None = None) -> CriterionAssessment:
     """근거 수준 (D2, 아키텍처 §19 User Answer ≠ Verified Clinical Truth).
 
     진료 기록이 필요한 기준을 환자 답변(자기 보고)만으로 판정했으면 판정을 확정하지 않고 UNVERIFIED(판정 불가)로 되돌립니다.
@@ -344,6 +343,16 @@ def _apply_evidence_policy(a: CriterionAssessment, meta: RuleMeta, source_text: 
     """
     a.required_evidence = meta.required_evidence
     a.evidence_source = _evidence_source(a, source_text, input_source)  # type: ignore[assignment]
+    problem = value_grounding.structured_problem(a, rule, profile, source_text, key=key, qa=qa,
+                                                 reference_date=reference_date)
+    if problem and a.required_evidence != "clinical_record":  # 프로필 값이 원문에 없음: 확정 적격·부적격 어느 쪽의 근거도 아님
+        return a.model_copy(update={
+            "holds": "unknown", "passes": None, "confidence": "low", "evidence_source": "none",
+            "evidence_directness": _GROUNDING_DIRECTNESS[problem], "missing_info": a.missing_info or a.criterion_text,
+            "validation_flags": [*a.validation_flags, f"structured_{problem}"],
+            "reasoning": f"[코드 검증: 구조화 값의 원문 근거를 확인하지 못함({problem}) - 판정 보류] {a.reasoning}"})
+    if problem and (problem != "hedged" or a.evidence_source == "record"):
+        a.evidence_source = "unknown"  # 진료 기록 필요 기준은 아래 기존 경로로 문서 확인을 요청 (답변 값으로 꾸미지 않음)
     if not (a.evidence_source in ("self_report", "unknown") and a.required_evidence == "clinical_record"):
         return a
     said = "해당 없음" if not a.applicable else {"yes": "해당", "no": "해당하지 않음"}.get(a.holds, a.holds)
@@ -526,12 +535,15 @@ def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
                 cohort=rule.cohort,
             )
 
-    all_assessments = [_apply_evidence_policy(results[r.rule_id], _meta(parsed, r), source_text, input_source)
+    all_assessments = [_apply_evidence_policy(results[r.rule_id], _meta(parsed, r), source_text, input_source, rule=r,
+                                              profile=profile, key=f"{parsed.trial_id}:{r.rule_id}", qa=qa, reference_date=ref)
                        for r in parsed.rules]
     # Q&A 정책 (qa_guard.policy): contract면 계약 없는 확인 답변에 기댄 확정을 UNVERIFIED로. 기본 legacy는 기존과 같음
     from .. import qa_guard
     if qa_guard.policy() == "contract":
         all_assessments = qa_guard.guard_assessments(all_assessments, source_text)
+    # 임상의 판단 기준은 LLM·판정기·문서 근거로 확정하지 않음 (Session·시뮬레이터 공통 경계)
+    all_assessments = expert_boundary.enforce_all(parsed, all_assessments)
     assessments, matched_cohort, cohort_results = _select_cohort(all_assessments, parsed.cohorts)
     other = [a for a in all_assessments if a not in assessments]
     eligibility = decide(assessments)

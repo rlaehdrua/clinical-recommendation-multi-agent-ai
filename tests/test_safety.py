@@ -60,7 +60,7 @@ def test_unsupported_not_applicable_makes_trial_uncertain(monkeypatch):
 # ---------------------------------------------------------------- 평가 실패 = NOT_EVALUATED
 
 def _session(trials):
-    return Session(case=PatientCase(patient_id="P", raw_text="x"), trials=trials,
+    return Session(case=PatientCase(patient_id="P", raw_text="62세 여성 ECOG 1"), trials=trials,
                    answerer=NoAnswerer(), tracer=Tracer(None, verbose=False), reference_date="2026-10-05")
 
 

@@ -50,7 +50,7 @@ def _state_docs(pid="SYN-PB"):
                 ("lab:hemoglobin", 11.0, {"unit": "g/dL", "observed_at": "2026-09-01"}),
                 ("lab:platelets", 150.0, {"unit": "x10^9/L", "observed_at": "2026-09-01"}), patient=pid)
     meta = {**d.record_meta("I4"), **d.record_meta("I6")}
-    v = d.view({"T1": d.trial("T1", [d.AGE, d.HB, PLT], meta=meta)}, s, source_text="합성 검사 수치",
+    v = d.view({"T1": d.trial("T1", [d.AGE, d.HB, PLT], meta=meta)}, s, source_text="합성 검사 수치 60세",
                input_source="unknown", patient=pid)
     return build_state(v)
 
