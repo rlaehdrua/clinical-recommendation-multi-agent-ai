@@ -36,6 +36,14 @@ EXPERT_RULES: dict[str, str] = {
 }
 
 
+# 위 목록의 출처와 검수 상태. 임상 검수 기록이 없으므로 전부 unreviewed이고, 이 값은 판정에 쓰지 않습니다.
+# "reviewed"는 사람이 남긴 검수 기록이 생긴 뒤에만 씁니다 (tests/test_expert_p0_integration.py가 후보표와 대조).
+CANDIDATE_TABLE = "data/nsclc/cohort/slot_candidates.csv"
+EXPERT_RULE_SOURCES: dict[str, dict[str, str]] = {
+    key: {"slot": slot, "source": CANDIDATE_TABLE, "review_status": "unreviewed"} for key, slot in EXPERT_RULES.items()
+}
+
+
 def clinician_reason(trial_id: str, rule: Rule) -> str | None:
     """이 기준이 임상의 판단을 요구하면 사유, 아니면 None."""
     if getattr(rule, "underspecified", False):
@@ -81,4 +89,4 @@ def violations(match: TrialMatch, parsed: ParsedTrial) -> list[str]:
             if a.rule_id in rules and a.passes is not None and clinician_reason(parsed.trial_id, rules[a.rule_id])]
 
 
-__all__ = ["EXPERT_RULES", "FLAG", "clinician_reason", "enforce", "enforce_all", "violations"]
+__all__ = ["CANDIDATE_TABLE", "EXPERT_RULES", "EXPERT_RULE_SOURCES", "FLAG", "clinician_reason", "enforce", "enforce_all", "violations"]
