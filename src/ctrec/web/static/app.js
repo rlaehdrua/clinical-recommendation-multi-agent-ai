@@ -139,6 +139,7 @@ async function init() {
   if (first) { $("#patient").value = first.patient_id; onPatient(); }
   setCustom(true); countTrials(); onTextInput();
   $("#resume-active").addEventListener("click", () => { $("#active-note").hidden = true; resume(state.activeId); });
+  if (window.fuInit && await window.fuInit()) return;  // 이 브라우저에 연구진 확인 요청 사례가 있으면 그 화면으로
   if (remembered()) resume(); else checkActive();
 }
 function tabKeys(e) {  // 탭 목록: 왼쪽·오른쪽 화살표로 이동 (WAI-ARIA 탭 패턴)
@@ -229,6 +230,7 @@ function post(url, body) {
 async function detailOf(r) { let d = null; try { d = (await r.json()).detail; } catch (e) { /* 본문 없음 */ } return typeof d === "string" ? d : `요청이 실패했습니다 (${r.status}).`; }
 async function start() {
   if (state.running) return;  // 중복 제출 방지
+  if (window.fuMode && window.fuMode()) return window.fuStart();  // 연구진 확인 요청 흐름 (followup.js, /api/followup)
   // 확인 단계 없이 바로 시작: 입력 오류는 버튼 아래에 보여 주고 입력 칸으로 포커스
   const [body, err] = collectRequest();
   $("#input-error").textContent = err || ""; $("#start-hint").textContent = "";
@@ -321,6 +323,7 @@ async function resume(given) {
 }
 function showInput(on) { $("#intro").hidden = !on; $("#input-panel").hidden = !on; }
 function newRun() {
+  if (window.fuForget) window.fuForget();
   if (state.es) { state.es.close(); state.es = null; }
   state.ended = true; state.running = false; remember(null); clearInterval(state.timer);
   resetView(); lockInput(false); showInput(true); $("#progress-panel").hidden = true; $("#elapsed").hidden = true; setRunState("대기 중", "");
@@ -329,6 +332,8 @@ function newRun() {
 // 화면: 입력·진행(run) → 결과 목록(result) → 상세(detail) / 의사용 요약(summary). 상세·요약은 결과 탭에 속함
 const PAGES = ["run", "result", "detail", "summary"];
 function showPage(name) {
+  state.page = name;  // 담당자 탭에서 돌아올 때 이 화면으로 (staff.js)
+  if (!$("#page-staff").hidden) return;  // 연구 담당자 탭이 열려 있으면 환자 화면을 드러내지 않음 (기억만)
   for (const p of PAGES) $("#page-" + p).hidden = p !== name;
   const tab = name === "run" ? "run" : "result";
   document.querySelectorAll("#pages button").forEach(b => { b.classList.toggle("on", b.dataset.page === tab);
@@ -1005,4 +1010,4 @@ function renderSummary() {
   showPage("summary"); $("#summary-h").focus();
 }
 
-init();
+document.addEventListener("DOMContentLoaded", init);  // 뒤에 읽는 followup.js의 훅(fuInit 등)이 준비된 뒤 시작
