@@ -31,10 +31,13 @@ class CategoricalJudge:
     judge_id = JUDGE_ID
 
     def __init__(self, bindings: list[Binding], slots: dict[str, SlotSpec], reference_date: str,
-                 field_slots: dict[str, str] | None = None, include_draft: bool = False):
-        """field_slots: 수치 사실 항목 -> 슬롯 (예: lab:hemoglobin -> lab.hemoglobin). 추가 조건·engine 연결의 수치 읽기용."""
+                 field_slots: dict[str, str] | None = None, include_draft: bool = False,
+                 expert_rules: frozenset[str] = frozenset()):
+        """field_slots: 수치 사실 항목 -> 슬롯 (예: lab:hemoglobin -> lab.hemoglobin). 추가 조건·engine 연결의 수치 읽기용.
+        expert_rules: 임상의 판단 기준("<시험>:<기준>") - 값이 있어도 판정하지 않음 (담당의 판단으로 넘김)."""
         allowed = set(USABLE) | ({"draft", "needs_review"} if include_draft else set())
-        self.bindings = {b.key: b for b in bindings if b.status in allowed and b.slot and b.truth}
+        self.bindings = {b.key: b for b in bindings if b.status in allowed and b.slot and b.truth
+                         and b.key not in expert_rules}
         self.slots = dict(slots)
         self.reference_date = reference_date
         self.field_slots = dict(field_slots or {})

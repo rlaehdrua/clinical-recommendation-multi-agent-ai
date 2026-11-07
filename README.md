@@ -599,6 +599,22 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 
 수정할 때마다 무엇을 왜 바꿨는지 여기에 기록합니다. 최신 항목이 위에 옵니다.
 
+### 2026-11-07 — WP6 6차: 주 지표에 "판단 기준 외 확인 완료"를 더함 - 판단 기준 대기 적격 GT (팀 결정 1)
+
+배경: NSCLC 6개 시험 모두에 기대 여명·연구자 판단 같은 임상의 판단 기준이 있어, 판단 기준이 있으면 라벨을 만들지 않는 규칙으로는 적격 GT가 0쌍이고 주 지표(정답 확정 적격)도 모든 정책에서 0입니다. 11-07 결정 1: 판단 기준을 뺀 나머지로 적격 GT를 만들고 "판단 기준 대기 적격"으로 확정 적격과 구분. 엔진은 판단 기준이 있는 쌍을 확정하지 않고 담당의 검토(EXPERT_REVIEW)로 보내므로, 시스템 쪽 성공은 "EXPERT_REVIEW 도달"로 셉니다.
+
+| # | 변경 | 파일 |
+|---|---|---|
+| 1 | 규칙 GT 라벨 `eligible_pending_expert`: 정답 사실을 모두 넣어도 판단 기준만 남는 쌍(규칙 GT 상태 EXPERT_REVIEW = 판단 기준 외 필수 기준 모두 통과). GT 비교에 `gt_eligible_pending_expert`, `expert_review_gt_*`, `confirmed_eligible_gt_pending_expert`. 일관성 불일치에 "판단 기준을 판단 없이 확정"과 "정답 부적격인데 판단만 남았다고 봄"을 더함 | `src/ctrec/sim/metrics.py` |
+| 2 | **주 지표 `correct_eligible_resolved` = `correct_confirmed_eligible`(확정 적격 + GT 적격) + `correct_expert_ready`(EXPERT_REVIEW + GT 판단 기준 대기 적격)**. 두 항목은 섞지 않도록 따로도 보고(비교표·환자별·부트스트랩 기본 지표). 비교표에 `expert_review`(최종 EXPERT_REVIEW 쌍 수) | `src/ctrec/sim/runner.py`, `src/ctrec/sim/stats.py`, `src/ctrec/sim/__main__.py` |
+| 3 | 생성기 코호트 변환: 판단 슬롯(`judge.*` + `dx.disease_setting`·`tx.recent_radiotherapy`·`cm.cardiac`·`other.tumor_tissue`, #22 `cohort.spec`과 같은 목록)을 쓰는 기준은 시뮬레이터에서 underspecified로 표시해 엔진이 EXPERT_REVIEW로 보내고, 판정기는 값이 있어도 판정하지 않음. 서연 #20 리뷰 2(파서 플래그 `underspecified=False`인 `judge.life_expectancy`가 BLOCKED로 감)의 시뮬레이터 쪽 처리. 엔진·웹의 판단 기준 정의는 그대로(팀 결정 대기). 결정 5(`cm.serious_organ_disease`·`cm.immune_onc`)는 임상 검수 대기라 목록에 넣지 않음 | `src/ctrec/sim/from_generator.py`, `src/ctrec/sim/judge.py` |
+| 4 | oracle_upper는 판단 기준 대기 적격 쌍도 우선 처리 대상으로 봄 | `src/ctrec/sim/oracle.py` |
+| 5 | 테스트 5건(1건은 #22 병합 전 건너뜀): 확정·판단 대기를 섞지 않음, 판단 기준을 더한 데모에서 GT·지표·환자별 합·비교표, 판단 대기 쌍을 확정하면 불일치, 판단 슬롯 목록이 #22와 같음, 판단 기준 표시·판정기 제외 | `tests/test_sim_expert_metric.py` (신규) |
+
+- 판단 기준(기대 여명)을 T-C에 더한 데모(400분, seed 1): GT 판단 기준 대기 적격 3쌍, legacy_greedy·full_dcvc 모두 확정 적격 3 + 판단 기준 외 확인 완료 2 = 주 지표 5, 불일치 0. 기본 데모(판단 기준 없음)의 결과는 바뀌지 않음.
+- 생성기 예시 코호트는 여전히 모든 정책 0: 미연결(검수 전) 기준이 남은 쌍은 라벨을 만들지 않기 때문(결정 3의 축소 범위가 나와야 함).
+- 전체 테스트(`.env` 없는 작업 트리): 2,475 passed, 6 skipped.
+
 ### 2026-11-07 — WP7 감사 기록의 저장·조회·지표·콘솔 경로 보안 (원문·ID 노출 차단, 읽기 상한)
 
 배경: DecisionRecord를 다시 읽거나 지표로 내보내는 경로에서 파일 안의 값이 문제 메시지·지표 출력으로 다시 나갈 수 있었고, 보호 함수 대부분은 테스트에서만 호출됐습니다. 이번 변경은 합성 값으로 재현한 노출을 막고, 실제로 기록을 만드는 오프라인 실행기에 검사를 연결합니다. 판정·쌍 상태·추천은 바꾸지 않습니다.
