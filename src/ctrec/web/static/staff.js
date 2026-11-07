@@ -9,7 +9,7 @@ const q$ = (s) => document.querySelector(s);
 const h = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
 const KEY = "ctrec-staff-key", SID = "ctrec-staff-id";
 const POLL_MS = 10000;
-const S = { key: "", sid: "coordinator", caseId: null, data: null, timer: null, busy: false, view: "q", labels: {}, questions: [] };
+const S = { key: "", sid: "coordinator", demo: false, caseId: null, data: null, timer: null, busy: false, view: "q", labels: {}, questions: [] };
 
 // 쌍 상태 7가지 (engine.contracts.PairStatus) - cohort.js와 같은 표기
 const PAIR = {
@@ -49,7 +49,9 @@ const when = (s) => { const d = new Date(s); return isNaN(d) ? h(s) : h(d.toLoca
 const who = (cid) => S.labels[cid] || shortId(cid);
 const min = (m) => `${Number(m || 0).toLocaleString("ko-KR", { maximumFractionDigits: 1 })}분`;
 
-function headers(extra) { return { "X-CTREC-Staff-Key": S.key, "X-CTREC-Staff-Id": S.sid, ...(extra || {}) }; }
+function headers(extra) {  // 발표용 데모 서버는 키 없이 받음 (서버가 판단, 화면은 키를 모름)
+  return { ...(S.demo ? {} : { "X-CTREC-Staff-Key": S.key }), "X-CTREC-Staff-Id": S.sid, ...(extra || {}) };
+}
 async function api(path, body) {
   const opt = body === undefined ? { headers: headers() }
     : { method: "POST", headers: headers({ "Content-Type": "application/json", "X-CTREC-Request": "1" }), body: JSON.stringify(body) };
@@ -76,8 +78,8 @@ function setRole(role, push) {
   if (staff) PATIENT_MAINS.forEach(s => { q$(s).hidden = true; });
   else if (typeof showPage === "function") showPage((typeof state === "object" && state.page) || "run");
   if (push) history.replaceState(null, "", staff ? "/staff" : "/");
-  if (staff && !S.key) q$("#st-key").focus();
-  if (staff && S.key) loadAll().catch(() => {});
+  if (staff && !S.key && !S.demo) q$("#st-key").focus();
+  if (staff && (S.key || S.demo)) loadAll().catch(() => {});
   window.scrollTo({ top: 0 });
 }
 
@@ -91,6 +93,20 @@ async function connect(key, sid) {
   try { sessionStorage.setItem(KEY, S.key); sessionStorage.setItem(SID, S.sid); } catch (e) { /* 저장소 없음 */ }
   q$("#st-work").hidden = false; q$("#st-logout").hidden = false; setConn("연결됨", "ok");
   q$("#st-login-hint").textContent = `기록용 이름 ${S.sid}로 연결했습니다. 이 탭을 닫으면 키가 지워집니다.`;
+  clearInterval(S.timer); S.timer = setInterval(poll, POLL_MS);
+  return true;
+}
+// 발표용 데모 서버(--demo-staff)면 키 입력 없이 바로 연결. 실제 서버는 mode "key" -> 지금처럼 키 입력
+async function trySession() {
+  let d = null;
+  try { const r = await fetch("/api/followup/staff/session"); if (r.ok) d = await r.json(); } catch (e) { d = null; }
+  if (!d || d.mode !== "demo") return false;
+  S.demo = true; S.sid = d.staff_id || "demo-staff";
+  q$("#st-login-form").hidden = true;
+  q$("#st-login-hint").textContent = "발표용 데모 서버입니다. 이 컴퓨터에서 연 화면만 담당자 키 없이 연결됩니다 (합성 데이터). 실제 서버에서는 담당자 키가 필요합니다.";
+  q$("#st-login-h").firstChild.textContent = "담당자 연결 · 발표용 데모 ";
+  try { await loadAll(); } catch (e) { setConn("연결 실패", "bad"); q$("#st-login-hint").textContent = e.message; return true; }
+  q$("#st-work").hidden = false; setConn("자동 연결됨", "ok");
   clearInterval(S.timer); S.timer = setInterval(poll, POLL_MS);
   return true;
 }
@@ -111,7 +127,7 @@ async function loadAll() {
   renderQueue(queue);
 }
 async function poll() {
-  if (!S.key || S.busy || document.visibilityState !== "visible" || q$("#page-staff").hidden) return;
+  if (!(S.key || S.demo) || S.busy || document.visibilityState !== "visible" || q$("#page-staff").hidden) return;
   try { await loadAll(); if (S.caseId) await refreshCase(); } catch (e) { /* 다음 주기에 다시 */ }
 }
 
@@ -332,7 +348,7 @@ function tab(which) {
   [["q", "#st-tab-q", "#st-questions"], ["c", "#st-tab-c", "#st-cases-view"], ["u", "#st-tab-u", "#st-queue-view"]].forEach(([k, t, p]) => {
     q$(t).setAttribute("aria-selected", String(k === which)); q$(p).hidden = k !== which; });
 }
-function init() {
+async function init() {
   document.querySelectorAll("#roles button").forEach(b => b.addEventListener("click", () => setRole(b.dataset.role, true)));
   q$("#st-login-form").addEventListener("submit", (e) => { e.preventDefault(); connect(q$("#st-key").value, q$("#st-id").value.trim()); });
   q$("#st-logout").addEventListener("click", logout);
@@ -352,6 +368,7 @@ function init() {
   try { key = sessionStorage.getItem(KEY) || ""; sid = sessionStorage.getItem(SID) || ""; } catch (e) { /* 저장소 없음 */ }
   if (sid) q$("#st-id").value = sid;
   if (location.pathname === "/staff" || location.hash === "#staff") setRole("staff", false);
+  if (await trySession()) return;
   if (key) connect(key, sid);
 }
 document.addEventListener("DOMContentLoaded", init);

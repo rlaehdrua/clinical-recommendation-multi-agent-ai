@@ -5,9 +5,10 @@
 - 시험: 합성 NSCLC 기준표 3개 (ctrec.sim.demo: T-A, T-B, T-C). 구조화 기준(나이·ECOG·검사 수치)과 LLM 기준(EGFR) 하나.
 - 저장: --store (기본 outputs/followup-demo). 서버를 끄고 다시 켜도 사례·요청·응답이 이어집니다.
 - 연구 담당자 키: CTREC_STAFF_KEY (없으면 실행할 때마다 새로 만들어 화면에 출력).
+  --demo-staff: 발표용. 이 서버(루프백 전용)에서는 담당자 탭이 키 없이 바로 열림 (followup_api.DEMO_STAFF).
 
 실행:
-    python scripts/followup_demo_server.py --port 8010
+    python scripts/followup_demo_server.py --port 8010 [--demo-staff]
     # 환자 화면: POST http://127.0.0.1:8010/api/followup/cases  (X-CTREC-Request: 1)
     # 담당자:    GET  http://127.0.0.1:8010/api/followup/staff/cases  (X-CTREC-Staff-Key: <키>)
 계약: docs/dev/followup_api_contract.md
@@ -46,6 +47,7 @@ def main() -> None:
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8010)
     ap.add_argument("--store", type=Path, default=config.OUTPUT_DIR / "followup-demo")
+    ap.add_argument("--demo-staff", action="store_true", help="발표용: 담당자 키 없이 담당자 탭을 엶 (루프백 접속만)")
     args = ap.parse_args()
     if args.host not in ("127.0.0.1", "::1", "localhost"):
         sys.exit("오프라인 데모 서버는 루프백 주소에서만 실행합니다.")
@@ -61,6 +63,9 @@ def main() -> None:
     pipeline.patient_profiler.profile_patient = latest_mention_profiler
     web.TEST_LLM_BACKEND = "fake"  # 대역만 설치된 프로세스: 실제 호출 허가 게이트 대신 (환경 변수로는 켤 수 없음)
     followup_api.configure(FollowupService(CaseStore(args.store), synthetic_catalog()))
+    if args.demo_staff:
+        followup_api.DEMO_STAFF = True
+        print("발표용 데모: 담당자 탭이 키 없이 열립니다 (이 컴퓨터에서만, 합성 데이터)", flush=True)
     print(f"followup demo (offline, synthetic): http://{args.host}:{args.port}  store={args.store}", flush=True)
     try:
         uvicorn.run(web.app, host=args.host, port=args.port, log_level="warning")

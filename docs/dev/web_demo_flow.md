@@ -20,7 +20,7 @@
 
 ## 2. 데모 시나리오 (필수 흐름 6단계)
 
-오프라인 데모 서버: `CTREC_STAFF_KEY=<키> python scripts/followup_demo_server.py --port 8011` (실제 LLM·실제 환자·실제 시험 없음, 합성 시험 T-A/B/C)
+오프라인 데모 서버: `CTREC_STAFF_KEY=<키> python scripts/followup_demo_server.py --port 8011 --demo-staff` (`--demo-staff`: 발표용, 이 컴퓨터에서 연 화면은 담당자 키 없이 담당자 탭이 열림) (실제 LLM·실제 환자·실제 시험 없음, 합성 시험 T-A/B/C)
 
 1. **환자 초기 입력·후보 확인** - `/`에서 정보 입력, 시험 선택 → 초기 판정과 추천 카드
 2. **담당자의 환자별 판정·부족 정보 확인** - `/staff`에서 담당자 키로 연결 → 사례 → 시험별 쌍 상태(7가지)·남은 확인·추천 표시

@@ -599,6 +599,20 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 
 수정할 때마다 무엇을 왜 바꿨는지 여기에 기록합니다. 최신 항목이 위에 옵니다.
 
+### 2026-11-07 — 발표용 데모 서버에서는 담당자 키 없이 담당자 탭을 엶 (#38)
+
+배경: 발표 화면에서 담당자 키를 매번 입력하는 과정을 없애고 싶음(동겸). 담당자 키는 모든 환자 사례·답변·Inspector를 읽고 요청을 만들 수 있는 담당자 API를 지키는 공유 비밀값이라, 실제 서버에서는 그대로 두고 **오프라인 데모 서버에서만** 예외를 둠.
+
+| # | 변경 | 파일 |
+|---|---|---|
+| 1 | `followup_api.DEMO_STAFF`(기본 False): 켜져 있고 **루프백 접속**이면 키 없이 담당자 권한(기록용 이름 `demo-staff`). 모듈 속성이라 환경 변수·설정으로는 켤 수 없음. `GET /api/followup/staff/session`: 화면이 연결 방식을 고름(`demo` / `key`), 비밀값은 돌려주지 않음 | `src/ctrec/web/followup_api.py` |
+| 2 | 데모 서버 `--demo-staff`: 위 예외를 켬 (데모 서버는 원래 루프백 전용·합성 데이터·실제 LLM 차단) | `scripts/followup_demo_server.py` |
+| 3 | 담당자 탭: 데모 서버면 연결 칸 없이 '발표용 데모 · 자동 연결됨'으로 바로 열림. 화면은 키를 모르고 보내지도 않음. 실제 서버는 지금처럼 키 입력 | `src/ctrec/web/static/staff.js` |
+| 4 | 테스트 3건(전체 5,042 passed, 5 skipped, 1 xfailed): 기본은 루프백이어도 키 필요, 데모 예외는 루프백만(외부 접속은 키 필요 - 루프백 검사를 빼면 실패 확인), 데모에서도 담당자는 환자 답변 불가, `DEMO_STAFF = True`는 데모 서버 스크립트에만 있음 | `tests/test_followup_web.py` |
+
+- 발표 실행: `CTREC_STAFF_KEY=<아무 값> python scripts/followup_demo_server.py --port 8011 --demo-staff` → http://127.0.0.1:8011/ 에서 환자 ↔ 연구 담당자 탭만 오가면 됨.
+- Chrome 확인: 담당자 탭·`/staff` 모두 키 입력 없이 '자동 연결됨', 콘솔 오류 0.
+
 ### 2026-11-07 — 환자·연구 담당자 화면을 한 페이지 탭으로, 질문별 코디네이터 작업 시간 보기 (#38)
 
 배경: 동겸 결정 - 두 화면을 한 페이지 탭으로 합치고, 연구 코디네이터 작업 시간을 줄이는 것(핵심 아이디어·차별점)이 웹에서 보이게. 코디네이터가 물을 것을 고를 때 질문마다 몇 명에게 적용되고 몇 명의 판정이 정해지는지 보이게.

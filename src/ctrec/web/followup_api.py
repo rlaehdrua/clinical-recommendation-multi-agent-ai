@@ -5,6 +5,8 @@
   (Path=/api/followup/cases/<case_id>). 서버는 SHA-256만 저장. 없는 사례·권한 없음은 같은 404.
 - 연구 담당자: X-CTREC-Staff-Key 헤더가 서버 설정 CTREC_STAFF_KEY와 같아야 함 (설정이 없으면 담당자 API 전체 503).
   X-CTREC-Staff-Id(영문·숫자 1~64자)는 기록용 이름. 계정 인증을 대신하지 않습니다.
+  발표용 데모 예외(DEMO_STAFF): 오프라인 데모 서버(scripts/followup_demo_server.py --demo-staff)만 켤 수 있고(환경 변수로는
+  켤 수 없음), 켜져 있어도 루프백 접속에만 키 없이 담당자 권한을 줌. 데모 서버 자체가 루프백 전용·합성 데이터만 씀.
 - 담당자는 환자 답변을 대신 입력할 수 없음: 응답 API는 환자 쿠키만 받고, 담당자 헤더가 붙은 응답 요청은 403.
 - 상태를 바꾸는 POST는 X-CTREC-Request: 1 + 같은 출처(Origin)만 (access.check_state_changing, CSRF).
 - 실제 LLM 호출은 /api/runs와 같은 허가(paid_gate)·기록·예산(web_metering, web/budget)을 거침.
@@ -41,6 +43,9 @@ MAX_TEXT_CHARS = 20000
 MAX_ANSWER_CHARS = 2000
 
 _SERVICE: FollowupService | None = None
+DEMO_STAFF = False  # 발표용 데모 서버만 True로 바꿈 (모듈 속성, 설정·환경 변수 아님)
+DEMO_STAFF_ID = "demo-staff"
+LOOPBACK = frozenset({"127.0.0.1", "::1"})
 
 
 def _app():
@@ -98,7 +103,15 @@ def _is_staff_request(request: Request) -> bool:
     return bool(request.headers.get(STAFF_HEADER))
 
 
+def demo_staff(request: Request) -> bool:
+    """발표용 데모 예외가 이 요청에 적용되는가 (데모 서버가 켰고, 루프백 접속)."""
+    return DEMO_STAFF and request.client is not None and request.client.host in LOOPBACK
+
+
 def require_staff(request: Request) -> str:
+    if demo_staff(request):
+        sid = request.headers.get(STAFF_ID_HEADER, DEMO_STAFF_ID)
+        return sid if STAFF_ID.match(sid) else DEMO_STAFF_ID
     key = _staff_key()
     if not key:
         raise HTTPException(503, {"code": "staff_access_not_configured",
@@ -265,6 +278,14 @@ class RequestCreate(BaseModel):
 
 class StatusChange(BaseModel):
     status: str = Field(pattern=r"^(unreachable|document_unavailable|cancelled)$")
+
+
+@router.get("/staff/session")
+def staff_session(request: Request) -> dict:
+    """화면이 연결 방식을 고름: 발표용 데모면 키 없이 바로, 아니면 담당자 키 입력. 비밀값은 돌려주지 않음."""
+    if demo_staff(request):
+        return {"mode": "demo", "staff_id": DEMO_STAFF_ID}
+    return {"mode": "key", "configured": bool(_staff_key())}
 
 
 @router.get("/staff/cases")

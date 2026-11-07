@@ -144,3 +144,47 @@ def test_insight_does_not_change_cases(env):
     before = staff.get("/api/followup/staff/cases", headers=F.STAFF).json()
     staff.get("/api/followup/staff/insight", headers=F.STAFF)
     assert staff.get("/api/followup/staff/cases", headers=F.STAFF).json() == before
+
+
+# ------------------------------------------------------------ 발표용 데모: 담당자 키 없이 (followup_api.DEMO_STAFF)
+def _loopback():
+    return h.browser(base_url="http://127.0.0.1", client=("127.0.0.1", 50100))
+
+
+def test_staff_key_is_required_unless_demo_server(env, monkeypatch):
+    F._create(h.browser())
+    assert followup_api.DEMO_STAFF is False  # 기본은 꺼짐
+    c = _loopback()
+    assert c.get("/api/followup/staff/session").json() == {"mode": "key", "configured": True}
+    assert c.get("/api/followup/staff/cases").status_code == 403  # 루프백이어도 키 필요
+    monkeypatch.setattr(followup_api, "DEMO_STAFF", True)
+    assert c.get("/api/followup/staff/session").json()["mode"] == "demo"
+    assert c.get("/api/followup/staff/cases").status_code == 200
+    assert c.get("/api/followup/staff/insight").status_code == 200
+    outside = F.staff_client()  # 루프백이 아닌 접속은 데모 서버여도 키 필요
+    assert outside.get("/api/followup/staff/session").json()["mode"] == "key"
+    assert outside.get("/api/followup/staff/cases").status_code == 403
+    assert outside.get("/api/followup/staff/cases", headers=F.STAFF).status_code == 200
+
+
+def test_demo_staff_still_cannot_answer_for_the_patient(env, monkeypatch):
+    patient = h.browser()
+    case = F._create(patient)
+    monkeypatch.setattr(followup_api, "DEMO_STAFF", True)
+    c = _loopback()
+    pid = next(p["proposal_id"] for p in c.get(f"/api/followup/staff/cases/{case['case_id']}").json()["proposals"]
+               if p["requestable"] and p["route"] == "ask_patient")
+    rid = c.post(f"/api/followup/staff/cases/{case['case_id']}/requests", json={"proposal_ids": [pid]}).json()["created"][0]
+    url = f"/api/followup/cases/{case['case_id']}/requests/{rid}/response"
+    assert c.post(url, json={"answer": "x"}, headers={"X-CTREC-Staff-Id": "demo-staff"}).status_code in (403, 404)
+    assert c.post(url, json={"answer": "x"}).status_code == 404  # 환자 쿠키 없음
+
+
+def test_only_the_demo_server_turns_demo_staff_on():
+    """DEMO_STAFF를 켜는 곳은 오프라인 데모 서버 스크립트뿐 (환경 변수·설정으로 켤 수 없음)."""
+    root = Path(__file__).resolve().parents[1]
+    hits = [p.relative_to(root).as_posix() for d in ("src", "scripts") for p in (root / d).rglob("*.py")
+            if re.search(r"DEMO_STAFF\s*=\s*True", p.read_text(encoding="utf-8"))]
+    assert hits == ["scripts/followup_demo_server.py"]
+    assert "DEMO_STAFF" not in (root / "src/ctrec/config.py").read_text(encoding="utf-8")
+    assert not re.search(r"getenv\([^)]*DEMO", (root / "src/ctrec/web/followup_api.py").read_text(encoding="utf-8"))
