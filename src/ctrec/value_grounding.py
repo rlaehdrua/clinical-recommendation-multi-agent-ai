@@ -170,8 +170,9 @@ _SUPERSEDED = re.compile(r"재검|재측정|재채혈|회신|완료|보고됨|(?
 _PANEL = re.compile(r"\b(?:cbc|labs?|blood\s*(?:work|tests?))\b|혈액\s*검사|피\s*검사", re.IGNORECASE)  # 수치가 속한 묶음 검사
 _PAREN = re.compile(r"\([^)]*\)")  # 괄호 안의 사유는 주어가 아님: "검사 미시행 (응급 수술로 생략)"
 _UNIT = r"(?:g/?dl|mg/?dl|[a-zµ]{0,3}/[a-zµ]{1,3}|%|세|살)?"
-_VALUE_SUBJECT_KO = re.compile(rf"\s*{_UNIT}\s*(?:은|는|이|가|을|를|라고|라는|란)(?![가-힣])", re.IGNORECASE)  # "이고", "입니다"는 서술어
-_VALUE_SUBJECT_EN = re.compile(rf"\s*{_UNIT}\s*(?:is|was|are|were|belongs?|comes?|came|refers?|appears?|seems?|looks?|represents?|reflects?)\b", re.IGNORECASE)
+_VALUE_DATE = r"(?:\s*(?:on|at|dated)\s+\S+|\s*\([^)]*\))?"  # "Hb 12 on 2026-09-01 belongs to ..."
+_VALUE_SUBJECT_KO = re.compile(rf"\s*{_UNIT}{_VALUE_DATE}\s*(?:은|는|이|가|을|를|라고|라는|란)(?![가-힣])", re.IGNORECASE)  # "이고", "입니다"는 서술어
+_VALUE_SUBJECT_EN = re.compile(rf"\s*{_UNIT}{_VALUE_DATE}\s*(?:is|was|are|were|belongs?|comes?|came|refers?|appears?|seems?|looks?|represents?|reflects?)\b", re.IGNORECASE)
 _VALUE_AFFIRMED = re.compile(r"유효|현재|정상|측정|확인|확정|결과|최종|나[왔온]|들었|들음|검증|본인|"
                              r"\b(?:normal|within|stable|verified|confirmed|valid|final|current|measured|drawn|resulted|reported|obtained|today|this|on|low|high)\b", re.IGNORECASE)
 _VALUE_SLOT = re.compile(rf"\s*{_UNIT}\s*(?:항목|칸|란|필드|자리|\b(?:field|entry|slot|box|placeholder|template|default)\b)", re.IGNORECASE)  # 결과가 아니라 칸을 말함
