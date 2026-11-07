@@ -270,7 +270,7 @@ def _frozen_rules() -> dict:
     return {r.rule_id: r for r in trial_store.load(trial).rules}  # Frozen Store는 읽기만
 
 
-SRC = "\n".join(_statement(r.kind, r.text) for r in _frozen_rules().values())
+SRC = "\n".join(_statement(r.kind, r.text) for r in _frozen_rules().values()) + " 10세 여성"
 
 
 def _mock_llm(monkeypatch):

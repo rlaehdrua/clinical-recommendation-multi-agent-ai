@@ -68,7 +68,7 @@ def test_unknown_age_unit_defers():
 
 # ---------------------------------------------------------------- 인용 근거 검증
 
-SOURCE = "62-year-old woman with NSCLC. Hepatitis B/C negative (2023). Currently taking metformin 500 mg."
+SOURCE = "62-year-old woman with NSCLC. Hepatitis B/C negative (2023). Currently taking metformin 500 mg. ECOG 1."
 
 
 def _trial(rule):

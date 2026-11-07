@@ -172,13 +172,13 @@ def test_ecog_found_nowhere_after_answers_is_unknown():
     assert m.eligibility == "UNCERTAIN" and m.match_status == "INSUFFICIENT_INFORMATION"
 
 
-def test_self_report_ok_rule_with_unknown_source_keeps_verdict():
-    """자기 보고로 충분한 기준(나이)은 출처가 unknown이어도 판정이 바뀌지 않음."""
+def test_self_report_ok_rule_needs_a_stated_value():
+    """자기 보고로 충분한 기준(나이)도 값이 원문·답변에 없으면 판정하지 않음 (팀 결정, 이전에는 판정 유지)."""
     src = "폐암 4기 환자." + _answers("흡연력?", "없어요")
     m = matcher.match_trial(_profile(age=62), _parsed([AGE_RULE]), TRIAL, source_text=src, input_source=RECORD)
     a = m.assessments[0]
-    assert a.method == "rule_engine" and a.evidence_source == "unknown"
-    assert a.passes is True and not a.needs_verification and m.eligibility == "ELIGIBLE"
+    assert a.method == "rule_engine" and a.passes is None and not a.needs_verification
+    assert m.eligibility == "UNCERTAIN"
 
 
 # ------------------------------------------------------------ 규칙 엔진: lab (프로필 인용 포함)
