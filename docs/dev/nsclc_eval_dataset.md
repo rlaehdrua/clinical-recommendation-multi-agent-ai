@@ -166,13 +166,14 @@ python -m pytest -q tests/test_nsclc_eval_gt.py
 - `python -m ctrec.sim` CLI는 시험을 `data/parsed`에서 읽으므로 이 평가셋을 바로 쓸 수 없습니다.
 - 라이브러리 호출로는 됩니다: `to_sim_cohort(cohort, sd, smap, trials=load_trials(ids, store_dir=data/nsclc/eval/inputs/trial_store, trials_dir=data/nsclc/trials))`.
 - `RunResult.final`의 쌍 키(`<별칭>|<시험>`)가 `pair_gt.csv`의 `sim_pair_key`와 같습니다(테스트).
-- 실행 사례 (seed 1, 시뮬레이터 `290420d` + #22, #37 미포함)
+- 실행 사례 (seed 1, 통합본 `4f81460` 위 - Q 통합 #41·#42로 #22·#37·#26·#39 등 포함)
 
   | 정책 | 예산·horizon | 최종 상태 | EXPERT_REVIEW ∧ GT 판단 대기 | 확정 부적격 ∧ GT 부적격 | GT가 부적격 아님 + 확정 부적격 | 확정 적격 |
   |---|---|---|---|---|---|---|
-  | no_action | 400분·10 | 정보 부족 155 / 검증 대기 85 | 0 | 0 | 0 | 0 |
-  | full_dcvc | 400분·10 | 정보 부족 147 / 검증 대기 93 | 0 | 0 | 0 | 0 |
-  | full_dcvc | 6000분·80 | 확정 부적격 122 / EXPERT_REVIEW 21 / 정보 부족 94 / 검증 대기 3 | 21 / 23 | 122 / 130 | 0 | 0 |
+  | no_action | 400분·10 | 정보 부족 166 / 검증 대기 74 | 0 | 0 | 0 | 0 |
+  | full_dcvc | 400분·10 | 확정 부적격 48 / 정보 부족 166 / 검증 대기 26 | 0 | 48 / 130 | 0 | 0 |
+  | full_dcvc | 6000분·80 | 확정 부적격 124 / EXPERT_REVIEW 20 / 정보 부족 92 / 검증 대기 4 | 20 / 23 | 124 / 130 | 0 | 0 |
+- 이전 기준(`290420d` + #22, #37 미포함) 실행: 400분 두 정책 모두 확정 0, 6000분 EXPERT_REVIEW ∧ GT 판단 대기 21 / 확정 부적격 ∧ GT 부적격 122
 
 ## 7. 결정 로그
 
@@ -200,7 +201,7 @@ python -m pytest -q tests/test_nsclc_eval_gt.py
 | D7 | 범위 밖 코호트 전용 기준을 빼면 엔진이 OR 경로를 잃음 | 평가 저장소에 남기고 연결하지 않음 | 빼면 NCT07027514 Cohort A가 사라져 거짓 부적격 6쌍(실측) → 남긴 뒤 0쌍 |
 | D8 | NSCLC 대응표에 `sex` 없음 | 평가용 사본에만 추가 | 원본 대응표(#20)는 담당 외 데이터라 바꾸지 않음 |
 | D9 | NSCLC-NOS·재발 병기 | 슬롯 값에서 뺌 | 비편평 해당 여부·병기 축이 불확실 (`expression_review.csv`) |
-| D10 | 결정 5가 현황판 테스트 고정 수치(72+9)를 바꿈 | 현황판 테스트를 고치지 않고 수정 제안 패치(`docs/proposals/decision5_board_test.patch`) | 담당 외 코드. 이 브랜치에서 그 테스트 1건 실패 |
+| D10 | 결정 5가 남의 테스트 4건을 깨뜨림 (현황판 고정 수치 72+9, #37 판단 슬롯 사본, 복구 스트레스 BLOCKED 수 19·21) | 고치지 않고 수정 제안 패치 3개 (`docs/proposals/decision5_board_test.patch`, `decision5_sim_expert_slots.patch`, `decision5_recovery_stress.patch`) | 담당 외 코드. 결정 5 슬롯을 비우면 4건 모두 통과 (원인 확인) |
 | D11 | 인구학 기준만 통과한 쌍 | NOT_EVALUATED (`no_substantive_pass`) | 이전 지시(인구학만은 확정 안 함). R5와 다름(§4) |
 
 ## 8. 주장 가능 / 주장 불가
