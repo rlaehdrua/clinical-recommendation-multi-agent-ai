@@ -379,3 +379,14 @@ def test_answer_moves_pair_status_priority_and_recommendation(env):
     assert all(set(p["target_trials"]) != {"T-C"} or p["action_type"] != "ASK_PATIENT" for p in case["proposals"])
     _no_confirmed_eligible(case)
     assert all(p["status"] != "CONFIRMED_INELIGIBLE" for p in case["pairs"].values())
+
+
+def test_inspector_shows_round_changes(env):
+    patient, staff = h.browser(), staff_client()
+    cid = _create(patient, text="Synthetic NSCLC patient, male, stage IV non-small cell lung cancer. ECOG 1.")["case_id"]
+    rid = _request(staff, cid, _proposal(_staff_case(staff, cid), "age")["proposal_id"])["created"][0]
+    _answer(patient, cid, rid, answer="I am 80 years old")
+    v = staff.get(f"/api/followup/staff/cases/{cid}/inspector", headers=STAFF).json()
+    assert v["timeline"] and [t["round"] for t in v["timeline"]] == [0, 1]
+    assert any(c["trial_id"] == "T-C" for c in v["changes"]["trial"])  # Inspector의 라운드별 판정 변화에 T-C
+    assert v["followup"]["evaluations"][-1]["transitions"][0]["trial_id"] == "T-C"

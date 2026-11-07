@@ -93,6 +93,14 @@ def _match_signature(m) -> tuple:
                          for a in m.assessments)))
 
 
+def _sink_tracer(sink: list[dict]) -> Tracer:
+    """Inspector의 라운드별 판정 변화(matcher done 기록)만 모으는 tracer. 화면·파일로 보내지 않음."""
+    def keep(rec: dict) -> None:
+        if rec.get("agent") == "matcher" and rec.get("event") == "done":
+            sink.append({k: v for k, v in rec.items() if k != "t"})
+    return Tracer(None, verbose=False, listener=keep)
+
+
 def _criteria_snapshot(session) -> dict[str, dict]:
     return {f"{tid}:{a.rule_id}": {"passes": a.passes, "holds": a.holds, "method": a.method,
                                     "needs_verification": a.needs_verification}
@@ -110,14 +118,15 @@ class FollowupService:
         self.policy_factory = policy_factory
 
     # ------------------------------------------------------------------ Session
-    def _new_session(self, case: PatientCase, trial_ids: list[str]):
+    def _new_session(self, case: PatientCase, trial_ids: list[str], sink: list[dict]):
         s = session_class()(case=case, trials={t: self.catalog.trials[t] for t in trial_ids},
-                            answerer=codec.NoAnswerer(), tracer=Tracer(None, verbose=False))
+                            answerer=codec.NoAnswerer(), tracer=_sink_tracer(sink))
         s.parsed.update({t: p for t, p in self.catalog.parsed.items() if t in s.trials})
         return s
 
-    def _restore(self, data: dict):
-        return codec.restore_session(data["session"], self.catalog.trials, self.catalog.parsed)
+    def _restore(self, data: dict, sink: list[dict] | None = None):
+        return codec.restore_session(data["session"], self.catalog.trials, self.catalog.parsed,
+                                     tracer=_sink_tracer(sink if sink is not None else []))
 
     def _cohort(self, session, alias: str, ops: OpsState):
         view = SessionView.from_session(session)
@@ -309,7 +318,8 @@ class FollowupService:
         case_id = new_case_id()
         case = PatientCase(patient_id="FU-" + secrets.token_hex(6).upper(), raw_text=text, input_source=input_source,
                            candidate_trials=ids)
-        session = self._new_session(case, ids)
+        sink: list[dict] = []
+        session = self._new_session(case, ids, sink)
         with self.llm_scope(f"followup-{case_id[3:15]}-r1"):
             session.profile_patient()
             session.match(ids)
@@ -317,7 +327,7 @@ class FollowupService:
         data = {"format": FORMAT, "case_id": case_id, "created_at": _now(), "revision": 0,
                 "patient_token_digest": patient_token_digest, "alias": "PA-" + secrets.token_hex(8),
                 "catalog": self.catalog.name, "synthetic": synthetic, "trial_ids": ids,
-                "requests": [], "responses": [], "evaluations": [], "events": [], "seen_responses": {}}
+                "requests": [], "responses": [], "evaluations": [], "events": [], "trace": sink}
         self._record(data, session, OpsState(), {"type": "intake", "by": "patient"}, prev_pairs=None,
                      prev_criteria=None)
         self._event(data, "case_created", "patient", trials=len(ids))
@@ -422,7 +432,8 @@ class FollowupService:
             outcome = "unknown" if status == "no_response" else "answered"
             if outcome == "unknown":
                 text = DECLINED  # '잘 모르겠어요' 등도 무응답 규칙 하나로 (engine.answers)
-            session = self._restore(data)
+            sink: list[dict] = []
+            session = self._restore(data, sink)
             ops = codec.load_ops(data["ops"])
             prev_pairs, prev_criteria = data["current"]["pairs"], _criteria_snapshot(session)
             action = Action.model_validate(req["action"])
@@ -440,7 +451,8 @@ class FollowupService:
             ops = co.ops[data["alias"]]
             facts_before = {f.fact_id for f in session.fact_store.facts(session.case.patient_id)}
             with self.llm_scope(f"followup-{case_id[3:15]}-r{base + 1}"):
-                session, reeval = self._reevaluate(session, req["target_criteria"], data["alias"], ops)
+                session, reeval = self._reevaluate(session, req["target_criteria"], data["alias"], ops, sink)
+            data.setdefault("trace", []).extend(reeval.pop("trace"))  # 채택한 결과(증분 또는 전체)의 판정 기록
             added = [f.fact_id for f in session.fact_store.facts(session.case.patient_id) if f.fact_id not in facts_before]
             rid = "FS-" + secrets.token_hex(8)
             self._set_status(req, outcome, "patient", "patient_answered" if outcome == "answered" else "patient_unknown")
@@ -505,7 +517,7 @@ class FollowupService:
         data["current"]["proposals"], data["current"]["held"] = self._proposals(data, session, co)
 
     # ------------------------------------------------------------------ 증분·전체 재평가
-    def _reevaluate(self, session, targets: list[str], alias: str, ops: OpsState):
+    def _reevaluate(self, session, targets: list[str], alias: str, ops: OpsState, sink: list[dict]):
         pid = session.case.patient_id
         prev = {t: m.model_copy(deep=True) for t, m in session.matches.items()}
         before = take_snapshot(session.fact_store, pid)
@@ -528,11 +540,15 @@ class FollowupService:
         affected = sorted(t for t in affected if parsed_map.get(t) is not None)
         reused = sorted(t for t in prev if t not in affected)
         pre_match = codec.dump_session(session)
+        sink.clear()
         if affected:
             session.match(affected)
+        kept = list(sink)
         equivalence: dict = {"status": "not_checked"}
         if self.full_check:
-            full = codec.restore_session(pre_match, self.catalog.trials, self.catalog.parsed)
+            full_sink: list[dict] = []
+            full = codec.restore_session(pre_match, self.catalog.trials, self.catalog.parsed,
+                                         tracer=_sink_tracer(full_sink))
             full.match(list(prev))
             diffs = sorted(t for t in prev if _match_signature(session.matches[t]) != _match_signature(full.matches[t]))
             inc_pairs = self._pairs(self._cohort(session, alias, ops)[1])
@@ -540,12 +556,13 @@ class FollowupService:
             pair_diffs = sorted(t for t in prev if inc_pairs.get(t, {}).get("status") != full_pairs.get(t, {}).get("status"))
             if diffs or pair_diffs:
                 equivalence = {"status": "mismatch_full_adopted", "trials": diffs, "pairs": pair_diffs}
-                session = full  # 증분 결과를 조용히 쓰지 않음: 전체 재평가 결과로
+                session, kept = full, full_sink  # 증분 결과를 조용히 쓰지 않음: 전체 재평가 결과로
             else:
                 equivalence = {"status": "match", "compared_trials": len(prev)}
+        session.tracer = _sink_tracer([])  # 이후 기록(finalize 등)은 판정 기록에 넣지 않음
         session.finalize()
         return session, {"reevaluated": affected, "reused": reused, "impact": impact.summary(),
-                         "equivalence": equivalence}
+                         "equivalence": equivalence, "trace": kept}
 
     # ------------------------------------------------------------------ 연구 담당자 상태 변경
     def set_status(self, case_id: str, request_id: str, status: str, *, staff_id: str) -> dict:
@@ -613,6 +630,7 @@ class FollowupService:
         session = self._restore(data)
         rec = inspector.record_from_session(session, meta={"llm_backend": "recorded", "synthetic": bool(data["synthetic"])})
         rec.result = data["current"]["view"]["result"]  # 화면과 같은 보류 적용 결과
+        rec.trace = list(data.get("trace", []))  # 평가마다의 matcher done 기록 -> 라운드별 판정 변화
         view = inspector.build_view(rec)
         view["followup"] = {"evaluations": data["evaluations"], "requests": data["requests"],
                             "responses": [{k: v for k, v in x.items() if k != "answer_digest"} for x in data["responses"]]}
