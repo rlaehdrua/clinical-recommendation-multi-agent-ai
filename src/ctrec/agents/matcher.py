@@ -19,7 +19,7 @@ from __future__ import annotations
 import json
 import re
 
-from .. import answer_verification, config, evidence, evidence_directness, llm, value_grounding
+from .. import answer_verification, config, evidence, evidence_directness, expert_boundary, llm, value_grounding
 from ..schemas import (CriterionAssessment, LLMAssessment, MatcherOutput, ParsedTrial, PatientProfile, QAPair, Rule,
                        RuleMeta, TrialMatch)
 from ..tools import rule_engine
@@ -542,6 +542,8 @@ def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
     from .. import qa_guard
     if qa_guard.policy() == "contract":
         all_assessments = qa_guard.guard_assessments(all_assessments, source_text)
+    # 임상의 판단 기준은 LLM·판정기·문서 근거로 확정하지 않음 (Session·시뮬레이터 공통 경계)
+    all_assessments = expert_boundary.enforce_all(parsed, all_assessments)
     assessments, matched_cohort, cohort_results = _select_cohort(all_assessments, parsed.cohorts)
     other = [a for a in all_assessments if a not in assessments]
     eligibility = decide(assessments)
