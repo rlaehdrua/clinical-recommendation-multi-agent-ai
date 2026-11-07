@@ -16,4 +16,6 @@ no_action      CE=0 CI=0 actions=0  termination=no_selectable_action audit=compl
 patient_order  CE=0 CI=1 actions=12 termination=budget_exhausted audit=complete
 random         CE=0 CI=1 actions=9  termination=budget_exhausted audit=complete
 
-# 전체 pytest: 5353 passed, 9 skipped, 7 xfailed in 365.99s (exit 0)
+# 전체 pytest (감사 브랜치 2c9c4cd, specimen+de-5): 5353 passed, 9 skipped, 7 xfailed in 365.99s (exit 0)
+# 전체 pytest (PR 브랜치 a8ae900, de-5): 5038 passed, 10 skipped, 7 xfailed in 313.43s (exit 0)
+# 전체 pytest (a8ae900 + O e5b2d31): 5051 passed, 9 skipped, 8 xfailed in 317.25s (exit 0)
