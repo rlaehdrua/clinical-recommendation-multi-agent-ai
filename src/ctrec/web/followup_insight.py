@@ -17,7 +17,9 @@ from ..decision_state import SessionView, build_state
 from ..engine.cohort_state import OBTAINABLE_GAPS, CohortState
 from ..engine.cost import EffortLedger
 from ..followup import codec
-from ..followup.service import DEFAULT_BUDGET, FollowupService
+from ..engine.contracts import Action
+from ..followup.models import OPEN_STATUSES
+from ..followup.service import FOLLOWUP_BUDGET, FollowupService
 
 UNDECIDED = frozenset({"INFO_MISSING", "VERIFICATION_PENDING", "BLOCKED_FAILURE"})
 
@@ -74,7 +76,7 @@ def _impact(states: dict, alias: str, route: str, key: str) -> dict:
 
 def _curve(items: list[dict], states: dict, catalog, pre_charged: list) -> list[dict]:
     """순서대로 확인할 때의 누적 (분, 판정이 정해질 수 있는 쌍 수). 비용은 그 순서의 원장 추가 비용."""
-    ledger = EffortLedger(DEFAULT_BUDGET, catalog)
+    ledger = EffortLedger(FOLLOWUP_BUDGET, catalog)  # 대기열·제안과 같은 예산 (임상 검토 포함)
     for a in pre_charged:
         ledger.charge(a)
     asked: dict[str, tuple[set, set]] = {}
@@ -98,15 +100,16 @@ def insight(svc: FollowupService) -> dict:
     for cid in svc.store.case_ids():
         data = svc.store.load(cid)
         session = svc._restore(data)  # staff_queue와 같은 복원 (판정을 다시 만들지 않음)
-        view = SessionView.from_session(session)
-        view.matched_versions = {t: view.snapshot.version for t in session.matches}
-        ds = build_state(view)
+        with svc._scope(data, session):  # staff_queue와 같이 사례마다 그 사례의 문서·임상의 권한으로
+            view = svc._view(session)
+            view.matched_versions = {t: view.snapshot.version for t in session.matches}
+            ds = build_state(view)
         alias = data["alias"]
         states[alias] = {"ds": ds, "trials": ds.trials,
                          "status": {t: p["status"] for t, p in data["current"]["pairs"].items()}}
         ops[alias] = codec.load_ops(data["ops"])
         case_of[alias] = data
-        requested += svc._open_actions(data)
+        requested += data["requests"]  # staff_queue와 같은 요청 기록 (공통 엔진 루프가 청구·반복 억제)
     if not states:
         return {"questions": [], "summary": {"cases": 0}}
     co = CohortState.from_decision_states({a: s["ds"] for a, s in states.items()}, ops=ops)
@@ -127,9 +130,11 @@ def insight(svc: FollowupService) -> dict:
                       "requestable": bool(prop and prop.get("requestable")),
                       "preview": prop.get("patient_question_preview") if prop else None,
                       "request_id": req["request_id"] if req else None, "request_status": req["status"] if req else None})
-    c_curve = _curve(items, states, pol.catalog, requested)
+    in_flight = [Action.model_validate(r["action"]) for r in requested
+                 if r["status"] in OPEN_STATUSES and r.get("action")]
+    c_curve = _curve(items, states, pol.catalog, in_flight)
     p_items = sorted(items, key=lambda x: (created.index(x["alias"]), x["rank"]))
-    p_curve = _curve(p_items, states, pol.catalog, requested)
+    p_curve = _curve(p_items, states, pol.catalog, in_flight)
     for x, pt, prev in zip(items, c_curve, [{"minutes": 0.0, "decided_pairs": 0}] + c_curve[:-1]):
         x["minutes"] = round(pt["minutes"] - prev["minutes"], 1)
         x["newly_decided"] = pt["decided_pairs"] - prev["decided_pairs"]  # 추천 순서대로 할 때 이 확인에서 정해지는 쌍

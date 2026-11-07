@@ -31,13 +31,17 @@ const REQ = {
   pending: ["accent", "환자 답변 대기"], answered: ["ok", "답변 반영"], unknown: ["warn", "환자 '모름'"], unreachable: ["warn", "연락 안 됨"],
   requires_document: ["warn", "서류 확인 필요"], requires_clinician: ["violet", "의료진 판단 필요"], document_unavailable: ["muted", "서류 확인 불가"],
   superseded: ["muted", "대체됨"], cancelled: ["muted", "취소"],
+  // #39 완료 상태: 문서 검증자·임상의 역할만 만들 수 있음 (담당자 화면에는 입력 수단 없음). 판정 인정 여부는 서버 권한이 정함
+  document_verified: ["ok", "서류 검증됨 (검증자)"], clinician_decided: ["ok", "의료진 판단됨"],
 };
 // 담당자가 바꿀 수 있는 상태 (followup.models.STAFF_TRANSITIONS와 같음). 완료(답변·서류 확인·판단)는 없음
 const MOVES = { ask_patient: { pending: ["unreachable", "cancelled"] }, document_review: { requires_document: ["document_unavailable", "cancelled"] },
   conflict_resolution: { requires_document: ["document_unavailable", "cancelled"] }, clinician_review: { requires_clinician: ["cancelled"] } };
 const MOVE_KO = { unreachable: "연락 안 됨으로 기록", document_unavailable: "서류 확인 불가로 기록", cancelled: "요청 취소" };
-const NOT_SUPPORTED = { requires_document: "서류 확인 완료를 입력하는 기능이 아직 없습니다 (백엔드 계약 없음). 이 요청은 완료로 표시할 수 없습니다.",
-  requires_clinician: "의료진 판단 결과를 입력하는 기능이 아직 없습니다 (백엔드 계약 없음). 이 요청은 완료로 표시할 수 없습니다." };
+// #39 계약: 완료는 문서 검증자(/api/followup/verifier)·임상의(/api/followup/clinician) 역할만, 합성 시험 전용 권한일 때만 가능.
+// 운영 모드(실제 의료기관 인증 없음)에서는 그 API가 503 -> 요청은 열린 채 남고 판정은 보류
+const NOT_SUPPORTED = { requires_document: "서류 확인 완료는 문서 검증자 권한으로만 입력됩니다 (연구 담당자는 완료로 바꿀 수 없음). 운영 모드에서는 검증 권한이 없어 보류로 남습니다.",
+  requires_clinician: "의료진 판단은 임상의 권한으로만 입력됩니다 (연구 담당자는 완료로 바꿀 수 없음). 운영 모드에서는 판단 권한이 없어 보류로 남습니다." };
 // 항목 이름 (info_key -> 사람이 읽는 이름). 모르면 키 그대로
 const ITEM = { age: "나이", sex: "성별", ecog: "전신 상태 (ECOG)", "basis:age": "나이 근거 기록" };
 const itemName = (k) => ITEM[k] || (String(k).startsWith("lab:") ? `검사 수치 · ${String(k).slice(4)}`

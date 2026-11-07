@@ -31,6 +31,8 @@ STAFF_KEY = "synthetic-staff-key-for-tests"
 STAFF = {"X-CTREC-Staff-Key": STAFF_KEY, "X-CTREC-Staff-Id": "coord-1"}
 TEXT = "Synthetic NSCLC patient. 64-year-old male with stage IV non-small cell lung cancer. ECOG 1."
 TRIALS = ["T-A", "T-B", "T-C"]
+TEXT_NO_AGE = "Synthetic NSCLC patient, male, stage IV non-small cell lung cancer. ECOG 1."
+RECORD_KEYS = ("lab:platelets", "lab:hemoglobin", "biomarker:EGFR")
 CONFIRMED_ELIGIBLE = "CONFIRMED_ELIGIBLE"
 
 
@@ -106,96 +108,86 @@ def _no_confirmed_eligible(case):
 # 전체 흐름
 # ---------------------------------------------------------------------------
 
+def _record_routed_to_documents(case):
+    """근거 경로 (P full_dcvc 0.2): 진료 기록 필요 기준(검사·바이오마커)은 환자 질문이 아니라 문서 확인 요청으로 제안됨."""
+    keys = {(p["action_type"], p["info_key"]) for p in case["proposals"]}
+    for k in RECORD_KEYS:
+        assert ("ASK_PATIENT", k) not in keys, k
+        doc = _proposal(case, k, "REQUEST_DOCUMENT")
+        assert doc["route"] == "document_review" and doc["reason_code"] == "record_evidence_required", doc
+        assert doc["patient_question_preview"] is None
+
+
 def test_full_patient_staff_patient_reevaluation_flow(env):
     patient, staff = h.browser(), staff_client()
 
-    # 1-3. 환자 입력 -> 시험별 평가 -> 부족 정보와 확인 경로
-    created = _create(patient)
+    # 1-3. 환자 입력 -> 시험별 평가 -> 부족 정보와 확인 경로 (나이는 처음 입력에 없음)
+    created = _create(patient, text=TEXT_NO_AGE)
     cid = created["case_id"]
     assert set(created["pairs"]) == set(TRIALS)
     assert {p["status"] for p in created["pairs"].values()} == {"INFO_MISSING"}
     assert created["view"]["result"]["recommendation"]["ranked"]  # 웹 실행 결과와 같은 형태의 추천
     case = _staff_case(staff, cid)
     _no_confirmed_eligible(case)
-    keys = {(p["action_type"], p["info_key"]) for p in case["proposals"]}
-    assert {("ASK_PATIENT", "lab:platelets"), ("ASK_PATIENT", "lab:hemoglobin"),
-            ("ASK_PATIENT", "biomarker:EGFR")} <= keys
+    # 자기 보고 허용 기준(나이)은 환자 질문, 진료 기록 필요 기준은 문서 확인 (환자 답으로 확정할 수 없음)
+    age = _proposal(case, "age")
+    assert age["route"] == "ask_patient" and age["patient_question_preview"] and age["requestable"]
+    _record_routed_to_documents(case)
     assert [p["rank"] for p in case["proposals"]] == list(range(1, len(case["proposals"]) + 1))  # C 순서
-    plt, hb, egfr = (_proposal(case, k) for k in ("lab:platelets", "lab:hemoglobin", "biomarker:EGFR"))
-    assert plt["patient_question_preview"] and plt["requestable"]
+    hb_doc = _proposal(case, "lab:hemoglobin", "REQUEST_DOCUMENT")
 
-    # 4. 연구 담당자가 검토하고 환자에게 요청 (중복 요청은 새로 만들지 않음)
-    out = _request(staff, cid, plt["proposal_id"], hb["proposal_id"], egfr["proposal_id"])
-    assert len(out["created"]) == 3 and out["existing"] == []
-    again = _request(staff, cid, plt["proposal_id"])
+    # 4. 연구 담당자가 검토하고 요청 (환자 질문 1 + 문서 확인 1). 같은 제안을 다시 골라도 새로 만들지 않음
+    out = _request(staff, cid, age["proposal_id"], hb_doc["proposal_id"])
+    assert len(out["created"]) == 2 and out["existing"] == []
+    again = _request(staff, cid, age["proposal_id"])
     assert again["created"] == [] and again["existing"] == [out["created"][0]]
-    by_key = {r["info_key"]: r["request_id"] for r in again["case"]["requests"]}
+    by_key = {r["info_key"]: r for r in again["case"]["requests"]}
+    assert (by_key["age"]["kind"], by_key["age"]["status"]) == ("ask_patient", "pending")
+    assert (by_key["lab:hemoglobin"]["kind"], by_key["lab:hemoglobin"]["status"]) == ("document_review",
+                                                                                      "requires_document")
 
-    # 5. 요청이 보존되고 환자가 확인 (서버를 다시 띄워도)
+    # 5. 요청이 보존되고 환자가 확인 (서버를 다시 띄워도). 문서 확인 요청은 환자 화면에 나오지 않음
     restart(env)
     reqs = patient.get(f"/api/followup/cases/{cid}/requests").json()
-    assert reqs["pending"] == 3
-    assert {r["request_id"] for r in reqs["requests"]} == set(out["created"])
+    assert reqs["pending"] == 1 and [r["request_id"] for r in reqs["requests"]] == [by_key["age"]["request_id"]]
     assert all(r["question"]["question"] and "target_criteria" not in r for r in reqs["requests"])
 
     # 6-7. 환자 답변 -> 사실·출처 기록 -> 9. 영향받은 기준 재평가 -> 10-11. 쌍 상태·제안·추천 갱신
+    rid = by_key["age"]["request_id"]
     rev0 = _staff_case(staff, cid)["revision"]
-    a = _answer(patient, cid, by_key["lab:platelets"], answer="Platelets 180 x10^9/L", client_response_id="c-1")
+    a = _answer(patient, cid, rid, answer="I am 64 years old", client_response_id="c-1")
     assert a["duplicate"] is False and a["status"] == "answered" and a["outcome"] == "answered"
     case = _staff_case(staff, cid)
     ev = case["evaluations"][-1]
-    assert ev["trigger"] == {"type": "response", "request_id": by_key["lab:platelets"], "outcome": "answered"}
+    assert ev["trigger"] == {"type": "response", "request_id": rid, "outcome": "answered"}
     assert ev["equivalence"]["status"] == "match"  # 증분 재평가 == 전체 재평가
-    assert "T-A" in ev["reevaluated_trials"]  # 혈소판 기준이 있는 시험
-    assert set(ev["reevaluated_trials"]) | set(ev["reused_trials"]) == set(TRIALS)  # LLM 경로 기준은 모든 항목에 의존
-    change = next(c for c in ev["criteria_changes"] if c["criterion"] == "T-A:I3")
-    assert change["before"]["passes"] is None and change["after"]["needs_verification"] is True  # 자기 보고: 확인 대기
+    assert set(ev["reevaluated_trials"]) | set(ev["reused_trials"]) == set(TRIALS)
+    change = next(c for c in ev["criteria_changes"] if c["criterion"] == "T-C:I2")
+    assert change["before"]["passes"] is None and change["after"]["passes"] is True  # 자기 보고 허용 기준
     resp = case["responses"][-1]
     assert resp["fact_ids_added"] and resp["revision_after"] == rev0 + 1
     insp = staff.get(f"/api/followup/staff/cases/{cid}/inspector", headers=STAFF)
     assert insp.status_code == 200
     s = fsvc.codec.restore_session(CaseStore(env).load(cid)["session"], catalog().trials, catalog().parsed)
-    plt_fact = [f for f in s.fact_store.facts(s.case.patient_id)
-                if f.fact_id in resp["fact_ids_added"] and f.field == "lab:platelets"]
-    assert plt_fact and plt_fact[0].source_type == "self_report"  # 출처: 확인 답변
-    assert plt_fact[0].verification_status == "unknown"  # 자기 보고는 검증으로 올라가지 않음
+    added = [f for f in s.fact_store.facts(s.case.patient_id) if f.fact_id in resp["fact_ids_added"]]
+    assert any(f.field == "age" for f in added)
+    assert any(f.source_type == "self_report" for f in added)  # 출처: 확인 답변
+    # 답으로 생긴 사실은 진료 기록으로 올라가지 않음 (대역 추출기는 나이 인용을 주지 않아 age는 unknown, P 전후 같음)
+    assert all(f.source_type in ("self_report", "unknown") for f in added)
     assert insp.json()["followup"]["evaluations"][-1]["revision"] == ev["revision"]  # Inspector에 변경 기록
     assert case["view"]["result"]["recommendation"] != created["view"]["result"]["recommendation"]
+    assert all(p["info_key"] != "age" for p in case["proposals"])  # 답을 받은 항목은 제안에서 빠짐
+    # 문서 확인 권한이 없음: 검사 기준은 문서 요청이 열린 채 보류, 확정 적격 없음
+    hb = next(r for r in case["requests"] if r["request_id"] == by_key["lab:hemoglobin"]["request_id"])
+    assert hb["status"] == "requires_document"
+    assert {p["status"] for p in case["pairs"].values()} <= {"INFO_MISSING", "VERIFICATION_PENDING"}
     _no_confirmed_eligible(case)
 
     # 동일 응답 중복 처리 방지 (같은 답 재전송 = 중복, 다른 답 = 거절)
-    dup = _answer(patient, cid, by_key["lab:platelets"], answer="Platelets  180 x10^9/L")
+    dup = _answer(patient, cid, rid, answer="I am  64 years old")
     assert dup["duplicate"] is True and dup["revision"] == case["revision"]
-    _answer(patient, cid, by_key["lab:platelets"], expect=409, answer="Platelets 90 x10^9/L")
+    _answer(patient, cid, rid, expect=409, answer="I am 70 years old")
     assert _staff_case(staff, cid)["revision"] == case["revision"]
-
-    # '모르겠다' -> 같은 질문 반복 대신 대체 경로 (문서 검토), 환자 화면에는 나오지 않음
-    u = _answer(patient, cid, by_key["lab:hemoglobin"], unknown=True)
-    assert u["status"] == "unknown"
-    case = _staff_case(staff, cid)
-    follow = [r for r in case["requests"] if r["follows"] == by_key["lab:hemoglobin"]]
-    assert len(follow) == 1 and follow[0]["kind"] == "document_review" and follow[0]["status"] == "requires_document"
-    assert follow[0]["created_by"] == "system"
-    assert all(not (p["action_type"] == "ASK_PATIENT" and p["info_key"] == "lab:hemoglobin") for p in case["proposals"])
-    assert follow[0]["request_id"] not in {r["request_id"] for r in
-                                           patient.get(f"/api/followup/cases/{cid}/requests").json()["requests"]}
-    _request(staff, cid, hb["proposal_id"], expect=409)  # 같은 환자 질문을 다시 만들 수 없음
-
-    # 8. 기존 사실과 충돌 -> 보류 + 해결 경로 (어느 값도 채택하지 않음)
-    c = _answer(patient, cid, by_key["biomarker:EGFR"],
-                answer="EGFR exon 19 deletion.\nMy ECOG performance status is 3 now.")
-    assert c["conflict"] is True
-    case = _staff_case(staff, cid)
-    conflict = [r for r in case["requests"] if r["kind"] == "conflict_resolution"]
-    assert len(conflict) == 1 and conflict[0]["status"] == "requires_document"
-    assert conflict[0]["conflict"]["field"] == "ecog" and len(conflict[0]["conflict"]["fact_ids"]) == 2
-    for tid in ("T-A", "T-C"):  # ECOG 기준이 상충 -> 확인 대기가 남은 작업에 들어감 (쌍 상태는 우선순위 하나만 보임)
-        assert "conflict" in case["pairs"][tid]["gaps"], case["pairs"][tid]
-        assert "conflict" in case["pairs"][tid]["pending_kinds"], case["pairs"][tid]
-        assert case["pairs"][tid]["status"] in ("INFO_MISSING", "VERIFICATION_PENDING")
-    assert case["evaluations"][-1]["equivalence"]["status"] == "match"
-    assert any(p["action_type"] == "VERIFY_RECORD" and p["safety_required"] for p in case["proposals"])
-    _no_confirmed_eligible(case)
     # 임상의 판단 완료·문서 확인 완료는 시스템이 만들지 않음
     assert not {r["status"] for r in case["requests"]} & {"clinician_confirmed", "document_verified", "completed"}
 
@@ -212,10 +204,32 @@ def test_full_patient_staff_patient_reevaluation_flow(env):
     s.match(list(s.matches))
     assert {t: fsvc._match_signature(m) for t, m in s.matches.items()} == stored
 
-    # Cohort C 대기열 (모든 사례, 정책 엔진 순서)
+    # Cohort C 대기열 (모든 사례, 정책 엔진 순서) = 이 사례의 제안 순서
     q = staff.get("/api/followup/staff/queue", headers=STAFF).json()
     assert q["cases"] == 1 and [i["rank"] for i in q["items"]] == list(range(1, len(q["items"]) + 1))
     assert all(i["case_id"] == cid for i in q["items"])
+    assert [i["proposal_id"] for i in q["items"]] == [p["proposal_id"] for p in after["proposals"]]
+
+
+def test_unknown_routes_to_alternative_without_repeat(env):
+    """'모르겠다' -> 같은 질문 반복 대신 대체 경로 (문서·임상 검토), 판정은 그대로, 환자 화면에는 나오지 않음."""
+    patient, staff = h.browser(), staff_client()
+    cid = _create(patient, text=TEXT_NO_AGE)["case_id"]
+    age = _proposal(_staff_case(staff, cid), "age")
+    rid = _request(staff, cid, age["proposal_id"])["created"][0]
+    before = _staff_case(staff, cid)["pairs"]
+    u = _answer(patient, cid, rid, unknown=True)
+    assert u["status"] == "unknown"
+    case = _staff_case(staff, cid)
+    follow = [r for r in case["requests"] if r["follows"] == rid]
+    assert len(follow) == 1 and follow[0]["kind"] in ("document_review", "clinician_review")
+    assert follow[0]["created_by"] == "system" and follow[0]["status"] in ("requires_document", "requires_clinician")
+    assert {t: p["status"] for t, p in case["pairs"].items()} == {t: p["status"] for t, p in before.items()}
+    assert all(not (p["action_type"] == "ASK_PATIENT" and p["info_key"] == "age") for p in case["proposals"])
+    assert patient.get(f"/api/followup/cases/{cid}/requests").json()["pending"] == 0
+    assert _request(staff, cid, age["proposal_id"], expect=409)["detail"]["code"] in ("already_unknown",
+                                                                                      "proposal_not_current")
+    _no_confirmed_eligible(case)
 
 
 # ---------------------------------------------------------------------------
@@ -224,9 +238,9 @@ def test_full_patient_staff_patient_reevaluation_flow(env):
 
 def test_roles_and_bad_requests(env, monkeypatch):
     patient, other, staff = h.browser(), h.browser(client=("198.51.100.21", 50002)), staff_client()
-    cid = _create(patient)["case_id"]
+    cid = _create(patient, text=TEXT_NO_AGE)["case_id"]
     case = _staff_case(staff, cid)
-    rid = _request(staff, cid, _proposal(case, "lab:platelets")["proposal_id"])["created"][0]
+    rid = _request(staff, cid, _proposal(case, "age")["proposal_id"])["created"][0]
 
     # 담당자 키 없음·틀림 -> 403, 서버 설정 없음 -> 503
     assert staff.get(f"/api/followup/staff/cases/{cid}").status_code == 403
@@ -235,7 +249,7 @@ def test_roles_and_bad_requests(env, monkeypatch):
     # 환자 쿠키 없음·다른 환자 -> 404 (존재 여부를 드러내지 않음)
     assert other.get(f"/api/followup/cases/{cid}").status_code == 404
     assert other.get(f"/api/followup/cases/{cid}/requests").status_code == 404
-    _answer(other, cid, rid, expect=404, answer="Platelets 180 x10^9/L")
+    _answer(other, cid, rid, expect=404, answer="I am 64 years old")
     assert patient.get("/api/followup/cases/FC-" + "0" * 32).status_code == 404
     assert patient.get("/api/followup/cases/../../etc").status_code == 404
     # 연구 담당자의 대리 기입 금지 (환자 쿠키가 있어도 담당자 헤더가 붙으면 거절)
@@ -251,7 +265,8 @@ def test_roles_and_bad_requests(env, monkeypatch):
     assert _request(staff, cid, "PA-0000000000000000:nope", expect=409)["detail"]["code"] == "proposal_not_current"
     # 개정 번호가 다르면 거절 (이전 화면 기준 요청)
     r = staff.post(f"/api/followup/staff/cases/{cid}/requests", headers=STAFF,
-                   json={"proposal_ids": [_proposal(case, "lab:hemoglobin")["proposal_id"]], "expected_revision": 1})
+                   json={"proposal_ids": [_proposal(case, "lab:hemoglobin", "REQUEST_DOCUMENT")["proposal_id"]],
+                         "expected_revision": 1})
     assert r.status_code == 409 and r.json()["detail"]["code"] == "stale_revision"
     # 담당자가 할 수 없는 상태 변경
     r = staff.post(f"/api/followup/staff/cases/{cid}/requests/{rid}/status", headers=STAFF,
@@ -266,28 +281,32 @@ def test_roles_and_bad_requests(env, monkeypatch):
 
 
 def test_unreachable_routes_to_documents_then_clinician(env):
+    """연락 불가 -> 환자 질문 대신 대체 경로. 문서 없음 -> 다음 문서 정보원 -> 모두 소진하면 임상 검토 (완료 상태 없음).
+
+    P 근거 경로 뒤: 진료 기록 필요 기준(혈소판)은 처음부터 문서 확인 요청이고, 환자 질문은 자기 보고 허용 기준(나이)만."""
     patient, staff = h.browser(), staff_client()
-    cid = _create(patient)["case_id"]
+    cid = _create(patient, text=TEXT_NO_AGE)["case_id"]
     case = _staff_case(staff, cid)
-    out = _request(staff, cid, _proposal(case, "lab:platelets")["proposal_id"],
-                   _proposal(case, "lab:absolute neutrophil count")["proposal_id"])
-    r = staff.post(f"/api/followup/staff/cases/{cid}/requests/{out['created'][0]}/status", headers=STAFF,
+    out = _request(staff, cid, _proposal(case, "age")["proposal_id"],
+                   _proposal(case, "lab:platelets", "REQUEST_DOCUMENT")["proposal_id"])
+    ask, doc = out["created"]
+    r = staff.post(f"/api/followup/staff/cases/{cid}/requests/{ask}/status", headers=STAFF,
                    json={"status": "unreachable"})
     assert r.status_code == 200, r.text
     case = r.json()["case"]
-    asked = {x["request_id"]: x for x in case["requests"] if x["kind"] == "ask_patient"}
-    assert {asked[i]["status"] for i in out["created"]} == {"unreachable"}  # 연락 불가는 같은 환자의 대기 질문 전체
-    docs = [x for x in case["requests"] if x["follows"] in out["created"]]
-    assert docs and all(x["kind"] == "document_review" and x["status"] == "requires_document" for x in docs)
+    by_id = {x["request_id"]: x for x in case["requests"]}
+    assert by_id[ask]["status"] == "unreachable"
+    assert by_id[doc]["status"] == "requires_document"  # 연락 불가는 환자 질문만 (문서 요청은 그대로)
+    alt = [x for x in case["requests"] if x["follows"] == ask]
+    assert len(alt) == 1 and alt[0]["kind"] in ("document_review", "clinician_review") and alt[0]["created_by"] == "system"
     assert patient.get(f"/api/followup/cases/{cid}/requests").json()["pending"] == 0
-    _answer(patient, cid, out["created"][0], expect=409, answer="Platelets 180 x10^9/L")
+    _answer(patient, cid, ask, expect=409, answer="I am 64 years old")
     # 문서도 없음 -> 다음 문서 정보원 또는 임상 검토 요청 (완료 상태는 만들지 않음)
-    doc = docs[0]
-    r = staff.post(f"/api/followup/staff/cases/{cid}/requests/{doc['request_id']}/status", headers=STAFF,
+    r = staff.post(f"/api/followup/staff/cases/{cid}/requests/{doc}/status", headers=STAFF,
                    json={"status": "document_unavailable"})
     assert r.status_code == 200, r.text
     case = r.json()["case"]
-    nxt = [x for x in case["requests"] if x["follows"] == doc["request_id"]]
+    nxt = [x for x in case["requests"] if x["follows"] == doc]
     assert len(nxt) == 1 and nxt[0]["status"] in ("requires_document", "requires_clinician")
     chain = nxt[0]
     for _ in range(5):  # 남은 문서 정보원을 모두 소진하면 임상 검토로
@@ -297,25 +316,35 @@ def test_unreachable_routes_to_documents_then_clinician(env):
                        json={"status": "document_unavailable"}).json()
         chain = next(x for x in r["case"]["requests"] if x["follows"] == chain["request_id"])
     assert chain["kind"] == "clinician_review" and chain["status"] == "requires_clinician"
-    assert case["pairs"]["T-A"]["status"] != CONFIRMED_ELIGIBLE
-
+    case = _staff_case(staff, cid)
+    assert all(not (p["action_type"] == "ASK_PATIENT" and p["info_key"] == "lab:platelets") for p in case["proposals"])
+    _no_confirmed_eligible(case)
 
 def test_incremental_mismatch_falls_back_to_full(env, monkeypatch):
-    """영향 분석이 시험을 놓쳐도 전체 재평가 대조가 잡아 전체 결과를 씀."""
+    """영향 분석이 시험을 놓쳐도 전체 재평가 대조가 잡아 전체 결과를 씀.
+
+    나이 질문은 나이 기준이 있는 T-A·T-B·T-C를 겨냥함. 나이 기준이 없는 합성 시험 T-D(혈소판, 진료 기록 필요)를 더해,
+    답에 함께 온 혈소판 값이 요청 대상 밖의 T-D를 바꾸게 함 (검사 기준은 이제 환자 질문 대상이 아니므로 나이 답을 씀)."""
+    td = demo._trial("T-D", [demo._rule("I1", "Platelets >= 100 x10^9/L", "lab", "lab:platelets", ">=", "100",
+                                         "x10^9/L")], {"I1": demo.RECORD})
+    st = demo.trials() + [td]
+    cat = TrialCatalog(name="sim-demo-nsclc+T-D", trials={t.parsed.trial_id: t.trial for t in st},
+                       parsed={t.parsed.trial_id: t.parsed for t in st})
+    followup_api.configure(FollowupService(CaseStore(env), cat))
     patient, staff = h.browser(), staff_client()
-    cid = _create(patient)["case_id"]
-    case = _staff_case(staff, cid)
-    rid = _request(staff, cid, _proposal(case, "lab:hemoglobin")["proposal_id"])["created"][0]  # T-B, T-C 대상
+    cid = _create(patient, text=TEXT_NO_AGE, trials=TRIALS + ["T-D"])["case_id"]
+    age = _proposal(_staff_case(staff, cid), "age")
+    assert "T-D" not in age["target_trials"]
+    rid = _request(staff, cid, age["proposal_id"])["created"][0]
     real = fsvc.resolve
 
     def blind(*a, **k):  # 의존 항목을 모두 놓치는 잘못된 영향 분석 (요청 대상 시험만 다시 평가하게 됨)
         return real(*a, **k).model_copy(update={"evaluator": "rule_engine", "wildcard": False, "fields": []})
     monkeypatch.setattr(fsvc, "resolve", blind)
-    _answer(patient, cid, rid, answer="Hemoglobin 12 g/dL\nPlatelets 50 x10^9/L")  # T-A(혈소판)는 대상 밖
+    _answer(patient, cid, rid, answer="I am 64 years old\nPlatelets 50 x10^9/L")  # T-D(혈소판)는 대상 밖
     ev = _staff_case(staff, cid)["evaluations"][-1]
-    assert ev["equivalence"]["status"] == "mismatch_full_adopted" and "T-A" in ev["equivalence"]["trials"]
-    assert any(c["criterion"] == "T-A:I3" for c in ev["criteria_changes"])  # 전체 결과가 반영됨
-
+    assert ev["equivalence"]["status"] == "mismatch_full_adopted" and "T-D" in ev["equivalence"]["trials"]
+    assert any(c["criterion"] == "T-D:I1" for c in ev["criteria_changes"])  # 전체 결과가 반영됨
 
 def test_store_rejects_stale_write_and_keeps_previous(env):
     patient = h.browser()
@@ -342,13 +371,14 @@ def test_contract_session_mode_keeps_flow_and_boundary(env, monkeypatch):
     """CTREC_SESSION=contract(ContractSession): 답변 뒤 프로필을 다시 추출하지 않는 Session에서도 흐름·저장·대조가 유지됨."""
     monkeypatch.setenv("CTREC_SESSION", "contract")
     patient, staff = h.browser(), staff_client()
-    cid = _create(patient)["case_id"]
+    cid = _create(patient, text=TEXT_NO_AGE)["case_id"]
     assert CaseStore(env).load(cid)["session"]["session_class"] == "ContractSession"
     case = _staff_case(staff, cid)
-    rid = _request(staff, cid, _proposal(case, "lab:platelets")["proposal_id"])["created"][0]
+    _record_routed_to_documents(case)  # ContractSession에서도 같은 근거 경로
+    rid = _request(staff, cid, _proposal(case, "age")["proposal_id"])["created"][0]
     restart(env)
     monkeypatch.delenv("CTREC_SESSION")  # 나중에 설정이 바뀌어도 만든 때의 Session 종류로 복원
-    assert _answer(patient, cid, rid, answer="Platelets 180 x10^9/L")["status"] == "answered"
+    assert _answer(patient, cid, rid, answer="I am 64 years old")["status"] == "answered"
     assert CaseStore(env).load(cid)["session"]["session_class"] == "ContractSession"
     case = _staff_case(staff, cid)
     assert case["evaluations"][-1]["equivalence"]["status"] == "match"
@@ -394,9 +424,9 @@ def test_inspector_shows_round_changes(env):
 
 def test_conflict_links_safety_check_and_routes_to_clinician(env):
     patient, staff = h.browser(), staff_client()
-    cid = _create(patient)["case_id"]
-    rid = _request(staff, cid, _proposal(_staff_case(staff, cid), "biomarker:EGFR")["proposal_id"])["created"][0]
-    assert _answer(patient, cid, rid, answer="EGFR exon 19 deletion.\nMy ECOG performance status is 3 now.")["conflict"]
+    cid = _create(patient, text=TEXT_NO_AGE)["case_id"]
+    rid = _request(staff, cid, _proposal(_staff_case(staff, cid), "age")["proposal_id"])["created"][0]
+    assert _answer(patient, cid, rid, answer="I am 64 years old.\nMy ECOG performance status is 3 now.")["conflict"]
     case = _staff_case(staff, cid)
     conflict = next(r for r in case["requests"] if r["kind"] == "conflict_resolution")
     verify = next(p for p in case["proposals"] if p["action_type"] == "VERIFY_RECORD")
@@ -411,6 +441,10 @@ def test_conflict_links_safety_check_and_routes_to_clinician(env):
     assert [(x["kind"], x["status"], x["reason_code"]) for x in nxt] == [("clinician_review", "requires_clinician",
                                                                          "conflict_unresolved")]
     assert sum(x["kind"] == "conflict_resolution" for x in case["requests"]) == 1  # 같은 충돌 확인이 다시 생기지 않음
-    assert _request(staff, cid, verify["proposal_id"], expect=409)["detail"]["code"] == "already_unavailable"
+    # 다시 고를 수 없음: 공통 루프(EngineLoop)의 반복 억제가 같은 사실 상태·같은 정보원의 확인을 계획에서 뺌
+    # (P 전에는 계획에 남아 already_unavailable로 거절). 어느 쪽이든 새 요청은 만들지 않음
+    assert _request(staff, cid, verify["proposal_id"], expect=409)["detail"]["code"] in ("proposal_not_current",
+                                                                                         "already_unavailable")
+    assert all(p["proposal_id"] != verify["proposal_id"] for p in case["proposals"])
     assert all("conflict" in case["pairs"][t]["gaps"] for t in ("T-A", "T-C"))  # 보류 유지
     _no_confirmed_eligible(case)

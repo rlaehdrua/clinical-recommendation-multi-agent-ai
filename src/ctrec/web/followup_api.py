@@ -366,7 +366,7 @@ def staff_cases(request: Request) -> dict:
     svc = service()
     out = []
     for cid in svc.store.case_ids():
-        d = svc.store.load(cid)
+        d = svc.refresh_pairs(svc.store.load(cid))  # 사례 화면과 같은 쌍 상태 (권한이 바뀌면 저장값이 아니라 지금 권한 기준)
         out.append({"case_id": cid, "created_at": d["created_at"], "revision": d["revision"],
                     "synthetic": d["synthetic"], "pair_counts": _pair_counts(d["current"]["pairs"]),
                     "open_requests": sum(1 for r in d["requests"] if r["status"] in ("pending", "requires_document",

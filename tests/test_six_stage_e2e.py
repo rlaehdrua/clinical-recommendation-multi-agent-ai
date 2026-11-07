@@ -172,10 +172,7 @@ def test_CD_unknown_or_no_response_preserves_state(monkeypatch, answers):
     assert s.matches[TID].eligibility == "UNCERTAIN"
 
 
-@pytest.mark.xfail(strict=True, reason="기본 Session 경로(/api/runs·CLI), O 소관: 실패한 질문 반복 - unresolved 대상 "
-                                       "질문이 다음 라운드에 다시 나감 (Session.clarify / question_generator.screen이 acquisition "
-                                       "상태를 보지 않음). Follow-up API 경로는 해결됨: test_six_stage_followup.py. "
-                                       "제안: docs/proposals/n_o1_no_repeat_failed_question.patch")
+# O-1: question_generator.screen이 확보 계획(acquisition_plan)에 남은 열린 항목만 대상으로 둠 (기본 Session·ContractSession)
 @pytest.mark.parametrize("cls,answers", [(Session, {1: {"Q1": "모름"}}), (ContractSession, {1: {"Q1": "둘 다 해당 없음"}})],
                          ids=["session_unknown", "contract_answered"])
 def test_CD_failed_question_is_not_repeated(monkeypatch, cls, answers):
@@ -205,8 +202,7 @@ def _e2_only(monkeypatch, text):
                text)
 
 
-@pytest.mark.xfail(strict=True, reason="M 소관: 원문 서술이 서로 상충해도 모델이 한쪽만 인용하면 확정됨 "
-                                       "(evidence_directness의 conflicting 검사가 서술 상충을 잡지 않음)")
+# M-1 서술 상충: M(fix/m-evidence-safety-final)에서 해결 -> strict xfail 제거
 def test_E_conflicting_narrative_stops_confirmation(monkeypatch):
     s = _e2_only(monkeypatch, f"합성 환자 62세 남성. {CONFLICT_NO}. 이전 병원 기록: {CONFLICT_YES}.")
     assert s.matches[TID].eligibility != "ELIGIBLE"
@@ -262,8 +258,7 @@ def test_H_record_value_clear_fail(monkeypatch, source, expect):
     assert s.matches[TID].eligibility == expect
 
 
-@pytest.mark.xfail(strict=True, reason="M 소관(시점): 기간 조건이 붙은 검사 기준은 규칙 엔진이 날짜 계산 없이 LLM으로 넘김 "
-                                       "(tools/rule_engine.evaluate lab: time_window_days -> None)")
+# M-2 검사 기간 조건: M(fix/m-evidence-safety-final)에서 해결 -> strict xfail 제거
 def test_date_window_lab_is_evaluated_deterministically():
     from ctrec.tools import rule_engine
     dp = trial_store.load(H.demo_trial(), store_dir=config.TRIAL_SETS["default"][1])

@@ -121,9 +121,20 @@ def _kind(c, conflicting: dict[str, str]) -> str:
     return next((conflicting[f] for f in c.fields if f in conflicting), ENGINE_PENDING)
 
 
-def _judged_by_llm(m) -> tuple[str, ...]:
-    """원문에 구체 기준이 없는데 통과로 판정된 항목. 엔진 gap에 잡히지 않으므로 판정 기록을 직접 읽음."""
-    return tuple(a.rule_id for a in m.assessments if a.underspecified and a.passes is True)
+def _judged_by_llm(m, parsed=None) -> tuple[str, ...]:
+    """원문에 구체 기준이 없는데 통과로 판정된 항목. 엔진 gap에 잡히지 않으므로 판정 기록을 직접 읽음.
+
+    예외는 하나: 지금의 임상의 권한이 인정하는 임상의 판단(method="clinician", expert_boundary.recognized). 엔진 쌍 상태도
+    같은 인정 여부로 확정되므로, 이 판단을 'LLM 판정'으로 보류하면 쌍은 확정 적격인데 추천은 '의료진 검토 필요'로 남음.
+    권한이 없거나(운영 기본 NoClinicianAuthority) 바뀌었거나 판단이 사실 변경으로 무효이면 인정되지 않으므로 그대로 보류."""
+    rules = {r.rule_id: r for r in parsed.rules} if parsed is not None else {}
+
+    def clinician_recognized(a) -> bool:
+        if a.method != "clinician" or a.rule_id not in rules:
+            return False
+        from . import expert_boundary
+        return expert_boundary.recognized(m.trial_id, rules[a.rule_id], a)
+    return tuple(a.rule_id for a in m.assessments if a.underspecified and a.passes is True and not clinician_recognized(a))
 
 
 def _hold(tid: str, side: str, status: PairStatus, t, conflicting: dict[str, str], judged: tuple[str, ...] = ()) -> Hold:
@@ -166,7 +177,7 @@ def evaluate(session) -> tuple[dict[str, Hold], dict[str, dict]]:
         if pair is None:
             continue
         hold = None
-        judged = _judged_by_llm(m) if m.match_status == "CRITERIA_MATCH" else ()
+        judged = _judged_by_llm(m, session.parsed.get(tid)) if m.match_status == "CRITERIA_MATCH" else ()
         if t is not None and m.match_status == "CRITERIA_MATCH" and (pair.status != PairStatus.CONFIRMED_ELIGIBLE or judged):
             hold = _hold(tid, "match", pair.status, t, state.conflicting_fields, judged)
         elif t is not None and m.match_status == "POTENTIAL_MATCH" and any(_conflicted(c) for c in decisive_criteria(t)):
