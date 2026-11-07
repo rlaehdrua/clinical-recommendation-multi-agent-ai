@@ -506,7 +506,7 @@
  "eval_derivation": {
   "scope": "nsclc_reduced_v1",
   "derived_from": "data/nsclc/parsed/NCT07098338.json",
-  "derived_from_sha256": "075753c5dd0401a8191ee8383156df2cdae185e7d06ba0a023ef6c41a06bfc2a",
+  "derived_from_sha256": "3d23d29fabd73c643290fd640d9dbc5079e5e0b3e8a1fd241dcad3e37f2020c7",
   "review": "data/nsclc/review/criteria_verification.csv",
   "kept": [
    "I1",

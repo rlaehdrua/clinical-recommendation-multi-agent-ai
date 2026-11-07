@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import ast
 import csv
-import hashlib
 import json
 import subprocess
 import sys
@@ -204,7 +203,7 @@ def test_pair_gt_file_matches_gt_module_and_excludes_excluded_criteria():
 def test_manifest_content_hashes_match_files():
     m = json.loads((B.EVAL / "manifest.json").read_text(encoding="utf-8"))
     for name, h in m["content_sha256"].items():
-        assert hashlib.sha256((B.EVAL / name).read_bytes()).hexdigest() == h, name
+        assert B._sha(B.EVAL / name) == h, name
     assert m["config_hash"] == _cohort().config_hash
     assert m["verification"] == {"data": "서연(데이터) 검증 완료", "clinical": "임상 검수 미완료"}
     assert m["gt_kind"] == GT.GT_KIND
@@ -250,7 +249,7 @@ def test_eval_store_keeps_or_paths_and_preserves_source():
         rec = json.loads(f.read_text(encoding="utf-8"))
         d = rec["eval_derivation"]
         src = ROOT / d["derived_from"]
-        assert hashlib.sha256(src.read_bytes()).hexdigest() == d["derived_from_sha256"]
+        assert B._sha(src) == d["derived_from_sha256"]
         orig = json.loads(src.read_text(encoding="utf-8"))["parsed"]
         kept = {r["rule_id"] for r in rec["parsed"]["rules"]}
         for c in orig["cohorts"]:

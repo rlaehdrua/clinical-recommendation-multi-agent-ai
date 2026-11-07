@@ -98,7 +98,11 @@ SLOTS: dict[str, SlotSpec] = {s.slot_id: s for s in [
 
 
 def _sha(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    """줄바꿈을 LF로 맞춘 내용 해시 (autocrlf 체크아웃에서도 같은 값)."""
+    return hashlib.sha256(path.read_bytes().replace(CRLF, LF)).hexdigest()
+
+
+CRLF, LF = bytes([13, 10]), bytes([10])
 
 
 def _dump(path: Path, obj) -> None:

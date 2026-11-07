@@ -342,7 +342,7 @@
  "eval_derivation": {
   "scope": "nsclc_reduced_v1",
   "derived_from": "data/nsclc/parsed/NCT06216301.json",
-  "derived_from_sha256": "bf2879ce91f0ba625a10cf0bebf907da0783b003821c9259e340fd7aab97e170",
+  "derived_from_sha256": "733a10be23ad4e4366257fec09008716b30b29468ceaafe2cd3c98254f477272",
   "review": "data/nsclc/review/criteria_verification.csv",
   "kept": [
    "I1",
