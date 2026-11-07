@@ -1,0 +1,476 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT07027514",
+ "trial_hash": "c58a6dd0ade78b16",
+ "model": "claude-sonnet-5",
+ "compiled_at": "2026-11-03T12:45:32+00:00",
+ "parsed": {
+  "trial_id": "NCT07027514",
+  "title": "A Study of Tolododekin Alfa (ANK-101) in Combination With an Anti-PD-1/PD-L1 Antibody in Participants With Advanced Non-Small Cell Lung Cancer",
+  "target_population": "Adults with confirmed locally advanced or metastatic non-small cell lung cancer (NSCLC); Cohort A: progressed on prior anti-PD-1/PD-L1 antibody plus platinum-based chemotherapy; Cohort B: treatment-naïve for locally advanced/metastatic NSCLC",
+  "intervention_summary": "Tolododekin alfa (ANK-101) administered in combination with an anti-PD-1/PD-L1 antibody (Cetrelimab or standard of care agent)",
+  "key_conditions": [
+   "Non-Small Cell Lung Cancer"
+  ],
+  "cohorts": [
+   "Cohort A",
+   "Cohort B"
+  ],
+  "rules": [
+   {
+    "rule_id": "I1",
+    "kind": "inclusion",
+    "text": "minimum_age=18 Years",
+    "category": "demographic",
+    "field": "age",
+    "operator": ">=",
+    "value": "18",
+    "unit": "years",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I2",
+    "kind": "inclusion",
+    "text": "sex=ALL",
+    "category": "demographic",
+    "field": "sex",
+    "operator": "==",
+    "value": "all",
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I4",
+    "kind": "inclusion",
+    "text": "Thyroid-stimulating hormone (TSH) within normal limits",
+    "category": "lab",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I6",
+    "kind": "inclusion",
+    "text": "Eastern Cooperative Oncology Group performance status (ECOG PS) 0 to 1",
+    "category": "performance_status",
+    "field": "ecog",
+    "operator": "<=",
+    "value": "1",
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I7",
+    "kind": "inclusion",
+    "text": "Have a life expectancy > 12 weeks",
+    "category": "other",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   },
+   {
+    "rule_id": "I9",
+    "kind": "inclusion",
+    "text": "Heterosexually active women of childbearing potential (WOCBP) must agree to use highly effective methods of contraception",
+    "category": "reproductive",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I10",
+    "kind": "inclusion",
+    "text": "Male participants who are not sterile must commit to the use of a reliable method of birth control or abstinence",
+    "category": "reproductive",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I13",
+    "kind": "inclusion",
+    "text": "Willingness to provide fresh tumor biopsy specimens",
+    "category": "procedure",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I14",
+    "kind": "inclusion",
+    "text": "Capable of understanding and complying with protocol requirements",
+    "category": "consent_or_logistics",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I15",
+    "kind": "inclusion",
+    "text": "Provides written informed consent for the study",
+    "category": "consent_or_logistics",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E2",
+    "kind": "exclusion",
+    "text": "Cohort B only: Prior therapy with an immune checkpoint inhibitor",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Cohort B"
+   },
+   {
+    "rule_id": "E3",
+    "kind": "exclusion",
+    "text": "Have known EGFR or ALK mutations",
+    "category": "biomarker",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E4",
+    "kind": "exclusion",
+    "text": "Have had prior treatment with recombinant interleukin-12 (IL-12)",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E7",
+    "kind": "exclusion",
+    "text": "Have received live vaccines prior to C1D1",
+    "category": "medication",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E9",
+    "kind": "exclusion",
+    "text": "Female participant who is pregnant or breastfeeding",
+    "category": "reproductive",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E10",
+    "kind": "exclusion",
+    "text": "Have a history of allogeneic tissue/solid organ transplant",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E14",
+    "kind": "exclusion",
+    "text": "Have congestive heart failure, active coronary artery disease, unevaluated new onset angina, unstable angina, or clinically significant cardiac arrhythmias",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   },
+   {
+    "rule_id": "E16",
+    "kind": "exclusion",
+    "text": "Participants on coumadin (warfarin), due to potential for increased bleeding risk associated with surgery",
+    "category": "medication",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E20",
+    "kind": "exclusion",
+    "text": "Have other systemic conditions or organ abnormalities that may interfere with the conduct of the study",
+    "category": "other",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   },
+   {
+    "rule_id": "E21",
+    "kind": "exclusion",
+    "text": "Have any acute or chronic psychiatric problems or substance abuse disorder that make the participant unsuitable for participation",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   }
+  ],
+  "parsing_notes": "TSH 정상 범위 기준(I4)은 구체적 수치가 원문에 없어 lab 필드만 지정하고 값은 비움. ECOG 범위 0-1은 '<=1'로 단순화. 코호트별 제외 기준(E1,E2,E18,E19)은 cohort 필드로 구분. E18/E19는 원문에서 'OR'로 연결된 서로 다른 코호트 조건이라 별도 규칙으로 분리. E20(기타 전신 상태/장기 이상)과 E21(정신과적/약물남용 문제로 '참여 부적합')은 구체적 기준값이나 목록이 없어 연구자 판단에 의존하므로 underspecified=true로 표시. 나머지 제외 기준은 구체적 질환명·약물명·시점이 명시되어 있어 underspecified=false로 처리."
+ },
+ "rule_meta": {
+  "I1": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I2": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I4": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I6": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I7": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I9": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I10": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I13": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I14": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_suspected",
+   "added_by_validator": false
+  },
+  "I15": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E2": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E3": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E4": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E7": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E9": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E10": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E14": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E16": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E20": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_confirmed",
+   "added_by_validator": false
+  },
+  "E21": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_confirmed",
+   "added_by_validator": false
+  }
+ },
+ "eval_derivation": {
+  "scope": "nsclc_reduced_v1",
+  "derived_from": "data/nsclc/parsed/NCT07027514.json",
+  "derived_from_sha256": "7c9d1c52dfbf3938a4223ecd90bde68738febd5d3b1003f5061e45fb6fffd26b",
+  "review": "data/nsclc/review/criteria_verification.csv",
+  "kept": [
+   "I1",
+   "I2",
+   "I4",
+   "I6",
+   "I7",
+   "I9",
+   "I10",
+   "I13",
+   "I14",
+   "I15",
+   "E2",
+   "E3",
+   "E4",
+   "E7",
+   "E9",
+   "E10",
+   "E14",
+   "E16",
+   "E20",
+   "E21"
+  ],
+  "removed_out_of_scope": [
+   "I3",
+   "I5",
+   "I8",
+   "I11",
+   "I12",
+   "E1",
+   "E5",
+   "E6",
+   "E8",
+   "E11",
+   "E12",
+   "E13",
+   "E15",
+   "E17",
+   "E18",
+   "E19"
+  ],
+  "underspecified_set_for_expert": [
+   "I7",
+   "E14"
+  ],
+  "note": "축소 범위 평가용 사본. 원본 파싱본은 바꾸지 않음. 범위 밖 기준을 뺐으므로 이 저장소로 낸 '적격'은 전체 프로토콜 적격이 아님"
+ }
+}

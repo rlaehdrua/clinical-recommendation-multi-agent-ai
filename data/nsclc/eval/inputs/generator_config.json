@@ -1,0 +1,224 @@
+{
+ "version": 1,
+ "reference_date": "2026-11-07",
+ "base_seed": 20261107,
+ "slot_dictionary": "data/nsclc/eval/inputs/slot_dictionary.json",
+ "source_catalog": "data/nsclc/eval/inputs/source_catalog.json",
+ "parsed_store": "data/nsclc/eval/inputs/trial_store",
+ "budgets_min": [
+  20,
+  45,
+  90,
+  400
+ ],
+ "max_resample": 20,
+ "clusters": {
+  "nsclc_reduced": {
+   "trials": [
+    "NCT06216301",
+    "NCT06928389",
+    "NCT07027514",
+    "NCT07098338",
+    "NCT07416058",
+    "NCT07680790"
+   ],
+   "priors": {
+    "age": {
+     "dist": "normal",
+     "a": 64,
+     "b": 10,
+     "lo": 19,
+     "hi": 88,
+     "decimals": 0,
+     "basis": "가정 (합성 평가셋 설계용, 임상 분포 아님). 하한 19: 18-21세(NCT06216301 지역 조건)가 드물게 나오도록",
+     "unit": "years"
+    },
+    "sex": {
+     "dist": "categorical",
+     "probs": {
+      "male": 0.6,
+      "female": 0.4
+     },
+     "basis": "가정 (합성 평가셋 설계용, 임상 분포 아님)"
+    },
+    "ecog": {
+     "dist": "normal",
+     "a": 0.9,
+     "b": 0.7,
+     "lo": 0,
+     "hi": 3,
+     "decimals": 0,
+     "basis": "가정 (합성 평가셋 설계용, 임상 분포 아님). ECOG 2 이상 약 20%"
+    },
+    "dx.histology": {
+     "dist": "categorical",
+     "probs": {
+      "adenocarcinoma": 0.55,
+      "nonsquamous_other": 0.1,
+      "squamous": 0.3,
+      "mixed_sclc": 0.05
+     },
+     "basis": "가정 (합성 평가셋 설계용, 임상 분포 아님)"
+    },
+    "dx.stage": {
+     "dist": "categorical",
+     "probs": {
+      "IIIA": 0.1,
+      "IIIB": 0.1,
+      "IIIC": 0.05,
+      "IVA": 0.35,
+      "IVB": 0.4
+     },
+     "basis": "가정 (합성 평가셋 설계용, 임상 분포 아님)"
+    },
+    "bm.driver_alteration": {
+     "dist": "categorical",
+     "probs": {
+      "none": 0.45,
+      "egfr_ex19del_L858R": 0.2,
+      "egfr_uncommon": 0.03,
+      "egfr_ex20ins": 0.02,
+      "alk": 0.05,
+      "ros1": 0.02,
+      "ret": 0.02,
+      "kras_g12c": 0.08,
+      "braf_v600": 0.02,
+      "her2_ex20ins": 0.02,
+      "met_ex14": 0.03,
+      "ntrk": 0.01,
+      "nrg1": 0.01,
+      "not_tested": 0.04
+     },
+     "basis": "가정 (합성 평가셋 설계용, 임상 분포 아님)"
+    },
+    "tx.prior_platinum": {
+     "dist": "categorical",
+     "probs": {
+      "yes": 0.7,
+      "no": 0.3
+     },
+     "basis": "가정 (합성 평가셋 설계용, 임상 분포 아님)"
+    },
+    "tx.prior_pd1_pdl1": {
+     "dist": "categorical",
+     "probs": {
+      "none": 0.35,
+      "durvalumab_consolidation": 0.1,
+      "anti_pd1_pdl1": 0.45,
+      "ici_other": 0.1
+     },
+     "basis": "가정 (합성 평가셋 설계용, 임상 분포 아님)"
+    },
+    "tx.prior_docetaxel": {
+     "dist": "categorical",
+     "probs": {
+      "yes": 0.1,
+      "no": 0.9
+     },
+     "basis": "가정 (합성 평가셋 설계용, 임상 분포 아님)"
+    },
+    "tx.prior_il12": {
+     "dist": "categorical",
+     "probs": {
+      "yes": 0.02,
+      "no": 0.98
+     },
+     "basis": "가정 (합성 평가셋 설계용, 임상 분포 아님)"
+    },
+    "tx.other_investigational_4w": {
+     "dist": "categorical",
+     "probs": {
+      "yes": 0.05,
+      "no": 0.95
+     },
+     "basis": "가정 (합성 평가셋 설계용, 임상 분포 아님)"
+    },
+    "tx.days_since_last_anticancer": {
+     "dist": "categorical",
+     "probs": {
+      "lt_14d": 0.2,
+      "ge_14d": 0.8
+     },
+     "basis": "가정 (합성 평가셋 설계용, 임상 분포 아님)"
+    },
+    "proc.days_since_major_surgery": {
+     "dist": "categorical",
+     "probs": {
+      "lt_21d": 0.04,
+      "21_27d": 0.04,
+      "ge_28d_or_none": 0.92
+     },
+     "basis": "가정 (합성 평가셋 설계용, 임상 분포 아님)"
+    },
+    "repro.pregnant_or_breastfeeding": {
+     "dist": "categorical",
+     "probs": {
+      "yes": 0.03,
+      "no": 0.97
+     },
+     "basis": "가정 (합성 평가셋 설계용, 임상 분포 아님)"
+    },
+    "lab.tsh_normal": {
+     "dist": "categorical",
+     "probs": {
+      "yes": 0.85,
+      "no": 0.15
+     },
+     "basis": "가정 (합성 평가셋 설계용, 임상 분포 아님)"
+    },
+    "med.live_vaccine_30d": {
+     "dist": "categorical",
+     "probs": {
+      "yes": 0.03,
+      "no": 0.97
+     },
+     "basis": "가정 (합성 평가셋 설계용, 임상 분포 아님)"
+    },
+    "med.anticoagulant": {
+     "dist": "categorical",
+     "probs": {
+      "none": 0.85,
+      "warfarin": 0.05,
+      "other_therapeutic": 0.1
+     },
+     "basis": "가정 (합성 평가셋 설계용, 임상 분포 아님)"
+    },
+    "cm.organ_transplant": {
+     "dist": "categorical",
+     "probs": {
+      "yes": 0.01,
+      "no": 0.99
+     },
+     "basis": "가정 (합성 평가셋 설계용, 임상 분포 아님)"
+    }
+   }
+  }
+ },
+ "scenarios": [
+  {
+   "scenario_id": "nsclc-eval-v1",
+   "cluster": "nsclc_reduced",
+   "n_patients": 60,
+   "replicates": 1,
+   "dev_replicates": 1,
+   "knobs": {
+    "trials_per_patient": 3,
+    "cost_heterogeneity": 1.0,
+    "grouping": "source",
+    "enrollment_remaining": null,
+    "missing_rate": {
+     "default": 0.4,
+     "diagnosis": 0.5,
+     "biomarker": 0.6,
+     "lab": 0.7,
+     "treatment_history": 0.4,
+     "performance_status": 0.4,
+     "medication": 0.3,
+     "procedure": 0.3,
+     "reproductive": 0.3,
+     "comorbidity": 0.3
+    }
+   }
+  }
+ ]
+}

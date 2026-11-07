@@ -494,7 +494,7 @@ import csv  # noqa: E402
 from collections import Counter  # noqa: E402
 
 from ctrec import config as app_config  # noqa: E402
-from ctrec.cohort.spec import EXPERT_SLOT_PREFIX, EXPERT_SLOTS, is_expert_slot  # noqa: E402
+from ctrec.cohort.spec import EXPERT_SLOT_PREFIX, EXPERT_SLOTS, EXPERT_SLOTS_CSV, is_expert_slot  # noqa: E402
 from ctrec.web import cohort_board  # noqa: E402
 
 JUDGE = "judge.investigator_unsuitable"
@@ -530,7 +530,8 @@ def test_expert_slot_definition_is_single_and_matches_board_and_csv():
     path = app_config.DATA_DIR / "nsclc" / "cohort" / "slot_candidates.csv"
     with open(path, encoding="utf-8-sig", newline="") as f:
         csv_expert = {r["slot_id"] for r in csv.DictReader(f) if r["adjudication_candidate"] == "expert"}
-    assert EXPERT_SLOTS == csv_expert  # 후보표가 바뀌면 상수도 같이 바꿔야 함
+    assert EXPERT_SLOTS_CSV == csv_expert  # 후보표가 바뀌면 상수도 같이 바꿔야 함
+    assert EXPERT_SLOTS == csv_expert | {"cm.serious_organ_disease", "cm.immune_onc"}  # 팀 결정 5 (11-07)
     assert is_expert_slot("judge.anything") and is_expert_slot("cm.cardiac") and not is_expert_slot("lab.hemoglobin")
 
 

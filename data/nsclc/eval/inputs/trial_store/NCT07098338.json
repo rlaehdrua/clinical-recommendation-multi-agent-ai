@@ -1,0 +1,278 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT07098338",
+ "trial_hash": "ee6ff7b7f1406cc8",
+ "model": "claude-sonnet-5",
+ "compiled_at": "2026-11-03T12:41:51+00:00",
+ "parsed": {
+  "trial_id": "NCT07098338",
+  "title": "A Study of Novel Combinations in Non-Small Cell Lung Cancer (NSCLC)",
+  "target_population": "18세 이상, 국소진행성 또는 전이성 비소세포폐암(NSCLC) 환자로, PD-L1 발현율 및 actionable genomic alteration(AGA) 상태에 따라 3개 하위 연구(Sub-study) 중 하나에 등록되는 집단",
+  "intervention_summary": "Sub-study 1/2: Rilvegostomig ± Ramucirumab (1L, non-AGA NSCLC, PD-L1에 따라 구분); Sub-study 3: Dato-DXd + Ramucirumab ± Rilvegostomig (2/3L, AGA+ non-squamous NSCLC)",
+  "key_conditions": [
+   "Non-Small Cell Lung Cancer"
+  ],
+  "cohorts": [
+   "Sub-study 1",
+   "Sub-study 2",
+   "Sub-study 3"
+  ],
+  "rules": [
+   {
+    "rule_id": "I1",
+    "kind": "inclusion",
+    "text": "Participant must be ≥ 18 years of age at the time of signing the ICF",
+    "category": "demographic",
+    "field": "age",
+    "operator": ">=",
+    "value": "18",
+    "unit": "years",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I2",
+    "kind": "inclusion",
+    "text": "WHO/ECOG performance status of 0 or 1",
+    "category": "performance_status",
+    "field": "ecog",
+    "operator": "<=",
+    "value": "1",
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I5",
+    "kind": "inclusion",
+    "text": "Life expectancy ≥ 12 weeks",
+    "category": "other",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": "weeks",
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   },
+   {
+    "rule_id": "I6",
+    "kind": "inclusion",
+    "text": "Provision of acceptable tumour tissue",
+    "category": "procedure",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   },
+   {
+    "rule_id": "I7",
+    "kind": "inclusion",
+    "text": "Histologically or cytologically documented advanced or metastatic NSCLC (Sub-Study 1 and Sub-Study 2)",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Sub-study 1"
+   },
+   {
+    "rule_id": "I8",
+    "kind": "inclusion",
+    "text": "Histologically or cytologically documented advanced or metastatic NSCLC (Sub-Study 1 and Sub-Study 2)",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": "Sub-study 2"
+   },
+   {
+    "rule_id": "E1",
+    "kind": "exclusion",
+    "text": "As judged by the investigator, any severe or uncontrolled systemic diseases, in the investigator's opinion, makes it undesirable for the participant to participate in the study or that would jeopardise compliance with the protocol",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   },
+   {
+    "rule_id": "E9",
+    "kind": "exclusion",
+    "text": "Active infection, including TB and infections with HIV, HBV (verified by known positive HBsAg result), HCV",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E10",
+    "kind": "exclusion",
+    "text": "Uncontrolled or significant cardiac disease",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   },
+   {
+    "rule_id": "E19",
+    "kind": "exclusion",
+    "text": "Receipt of live, attenuated vaccine within 30 days prior to the first dose of study intervention",
+    "category": "medication",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 30,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   }
+  ],
+  "parsing_notes": "이 시험은 Sub-study 1, 2, 3 세 개의 하위 연구(코호트)로 구성되어 각기 다른 적격 기준을 가짐. 공통 선정/제외 기준은 cohort=null로 두었고, 'for sub-study 1 and sub-study 2'처럼 두 코호트에 공통 적용되는 기준은 각 코호트별로 별도 규칙(I7/I8, I11/I12, I13/I14, E4/E5, E11/E12)으로 복제함. Sub-study 3의 'Documented positive AGA and had progressed on prior targeted therapy'는 두 개의 원자 규칙(I16, I17)으로 분리함. 'History of uncontrolled hypertension, and active bleeding diseases, and high risks of bleeding and disorders of coagulation'는 네 개의 개별 제외 규칙(E14~E17)으로 분리함. PD-L1, ECOG 외 구체적 수치 기준(혈액/장기 기능 등)은 원문에 수치가 제시되지 않아 structured_evaluable=false이며, 'Adequate bone marrow and organ function'은 구체적 기준값이 없어 underspecified=true로 표시함. 'severe or uncontrolled systemic diseases, in the investigator's opinion'은 연구자 판단에만 의존하고 구체적 기준이 없어 underspecified=true로 표시함.\n[코드 정규화] I2: ecog in 0,1 -> ecog <= 1"
+ },
+ "rule_meta": {
+  "I1": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I2": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I5": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I6": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_suspected",
+   "added_by_validator": false
+  },
+  "I7": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I8": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E1": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_confirmed",
+   "added_by_validator": false
+  },
+  "E9": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E10": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E19": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  }
+ },
+ "eval_derivation": {
+  "scope": "nsclc_reduced_v1",
+  "derived_from": "data/nsclc/parsed/NCT07098338.json",
+  "derived_from_sha256": "075753c5dd0401a8191ee8383156df2cdae185e7d06ba0a023ef6c41a06bfc2a",
+  "review": "data/nsclc/review/criteria_verification.csv",
+  "kept": [
+   "I1",
+   "I2",
+   "I5",
+   "I6",
+   "I7",
+   "I8",
+   "E1",
+   "E9",
+   "E10",
+   "E19"
+  ],
+  "removed_out_of_scope": [
+   "I3",
+   "I4",
+   "I9",
+   "I10",
+   "I11",
+   "I12",
+   "I13",
+   "I14",
+   "I15",
+   "I16",
+   "I17",
+   "E2",
+   "E3",
+   "E4",
+   "E5",
+   "E6",
+   "E7",
+   "E8",
+   "E11",
+   "E12",
+   "E13",
+   "E14",
+   "E15",
+   "E16",
+   "E17",
+   "E18"
+  ],
+  "underspecified_set_for_expert": [
+   "I5",
+   "I6",
+   "E10"
+  ],
+  "note": "축소 범위 평가용 사본. 원본 파싱본은 바꾸지 않음. 범위 밖 기준을 뺐으므로 이 저장소로 낸 '적격'은 전체 프로토콜 적격이 아님"
+ }
+}

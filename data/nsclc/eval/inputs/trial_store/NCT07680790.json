@@ -1,0 +1,207 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT07680790",
+ "trial_hash": "3a1b6422ad2f8945",
+ "model": "claude-sonnet-5",
+ "compiled_at": "2026-11-03T12:59:02+00:00",
+ "parsed": {
+  "trial_id": "NCT07680790",
+  "title": "Study of Izalontamab Brengitecan (BMS-986507) in Combination With Osimertinib Versus Osimertinib Monotherapy or Osimertinib in Combination With Platinum-based Chemotherapy for EGFRmt Non-small Cell Lung Cancer (IZABRIGHT-Lung02)",
+  "target_population": "EGFR 변이 양성, 이전 치료를 받지 않은 국소 진행성 또는 전이성 비편평 NSCLC 성인 환자",
+  "intervention_summary": "Iza-bren(izalontamab brengitecan) + 오시머티닙 병용 vs 오시머티닙 단독 vs 오시머티닙 + 백금기반 화학요법(페메트렉시드/카보플라틴 또는 시스플라틴) 비교",
+  "key_conditions": [
+   "Non-Small Cell Lung Cancer"
+  ],
+  "cohorts": [],
+  "rules": [
+   {
+    "rule_id": "I1",
+    "kind": "inclusion",
+    "text": "Participants must have histologically or cytologically confirmed non-squamous NSCLC",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I2",
+    "kind": "inclusion",
+    "text": "newly diagnosed locally advanced (Stage IIIB/IIIC), metastatic (Stage IVA/IVB), or recurrent disease not amenable to curative surgery or definitive radiotherapy and requiring systemic treatment",
+    "category": "disease_stage",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   },
+   {
+    "rule_id": "I3",
+    "kind": "inclusion",
+    "text": "Participants must have documented EGFR-TKI-sensitizing mutation (exon 19 deletion or exon 21 L858R substitution)",
+    "category": "biomarker",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I5",
+    "kind": "inclusion",
+    "text": "Participants must have ECOG Performance Status 0-1",
+    "category": "performance_status",
+    "field": "ecog",
+    "operator": "<=",
+    "value": "1",
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I6",
+    "kind": "inclusion",
+    "text": "Minimum age 18 years (structured eligibility)",
+    "category": "demographic",
+    "field": "age",
+    "operator": ">=",
+    "value": "18",
+    "unit": "years",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I7",
+    "kind": "inclusion",
+    "text": "Sex: All (structured eligibility)",
+    "category": "demographic",
+    "field": "sex",
+    "operator": "==",
+    "value": "all",
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E3",
+    "kind": "exclusion",
+    "text": "Participants must not have clinically significant cardiac disease",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   },
+   {
+    "rule_id": "E4",
+    "kind": "exclusion",
+    "text": "Other protocol-defined inclusion/exclusion criteria apply.",
+    "category": "other",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   }
+  ],
+  "parsing_notes": "I2는 병기/상태에 대한 복수 OR 조건을 하나의 규칙으로 유지함. I5의 ECOG 0-1은 하한이 항상 0 이상이므로 '<=1'로 단순화함. E3(임상적으로 유의한 심장 질환)은 구체적 기준값이 없어 underspecified=true로 표시. E4는 비공개 프로토콜 기준 참조로 underspecified=true. 코호트 구분 없음(단일군 임상시험 설계이나 치료군은 무작위 배정 arm으로 기준 동일함)."
+ },
+ "rule_meta": {
+  "I1": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I2": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I3": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I5": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I6": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I7": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E3": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_confirmed",
+   "added_by_validator": false
+  },
+  "E4": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_confirmed",
+   "added_by_validator": false
+  }
+ },
+ "eval_derivation": {
+  "scope": "nsclc_reduced_v1",
+  "derived_from": "data/nsclc/parsed/NCT07680790.json",
+  "derived_from_sha256": "37204d012fb27b96f31c3be1f79af054dc39944668b12a43bb77c0d9cd737be9",
+  "review": "data/nsclc/review/criteria_verification.csv",
+  "kept": [
+   "I1",
+   "I2",
+   "I3",
+   "I5",
+   "I6",
+   "I7",
+   "E3",
+   "E4"
+  ],
+  "removed_out_of_scope": [
+   "I4",
+   "E1",
+   "E2"
+  ],
+  "underspecified_set_for_expert": [
+   "I2"
+  ],
+  "note": "축소 범위 평가용 사본. 원본 파싱본은 바꾸지 않음. 범위 밖 기준을 뺐으므로 이 저장소로 낸 '적격'은 전체 프로토콜 적격이 아님"
+ }
+}

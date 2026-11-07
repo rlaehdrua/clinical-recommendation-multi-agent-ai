@@ -301,7 +301,8 @@ def main() -> int:
             expert = rvw["scope"] == "expert" or bool(rvw["slot"] and is_expert_slot(rvw["slot"]))
             q = queue.get(f"{t}:{r['rule_id']}")
             rows.append({
-                "trial_id": t, "criterion_id": r["rule_id"], "kind": r["kind"], "cohort": r["cohort"] or "",
+                "trial_id": t, "criterion_id": r["rule_id"], "kind": r["kind"], "category": r["category"],
+                "cohort": r["cohort"] or "",
                 "original_text": rvw["quote"], "parsed_text": r["text"], "parsed_value": parsed_value(r),
                 "parser_underspecified": str(r["underspecified"]).lower(),
                 "required_evidence": (meta.get(r["rule_id"]) or {}).get("required_evidence", ""),
