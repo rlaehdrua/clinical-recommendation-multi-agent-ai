@@ -60,15 +60,9 @@ def test_same_input_gives_the_same_bytes(res):
 
 def test_check_ignores_crlf_from_git_but_not_content(tmp_path):
     f = tmp_path / "a.csv"
-    f.write_bytes(b"a,b
-1,2
-")
-    assert bsd.same_file(f, "a,b
-1,2
-")
-    assert not bsd.same_file(f, "a,b
-1,3
-")
+    f.write_bytes(b"a,b\r\n1,2\r\n")
+    assert bsd.same_file(f, "a,b\n1,2\n")
+    assert not bsd.same_file(f, "a,b\n1,3\n")
     assert not bsd.same_file(tmp_path / "missing.csv", "")
 
 

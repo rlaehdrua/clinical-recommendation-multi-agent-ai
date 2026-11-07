@@ -303,9 +303,7 @@ def render(res: dict) -> dict[str, str]:
 
 def same_file(path: Path, text: str) -> bool:
     """저장된 파일과 같은가. git 줄바꿈 변환(autocrlf)으로 생긴 CRLF는 차이로 보지 않음."""
-    return path.exists() and path.read_bytes().replace(b"
-", b"
-") == text.encode("utf-8")
+    return path.exists() and path.read_bytes().replace(b"\r\n", b"\n") == text.encode("utf-8")
 
 
 def main(argv=None) -> int:
