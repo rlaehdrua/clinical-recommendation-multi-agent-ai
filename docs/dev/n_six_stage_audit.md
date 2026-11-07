@@ -1,8 +1,8 @@
 # N 감사: 최초 6단계 파이프라인 완성도 (2026-11-07)
 
-- 브랜치: `audit/six-stage-pipeline` (로컬, 푸시 안 함). 기준 = `origin/fix/specimen-value-binding`(d775bb6) + `origin/pr/de-5-r5-integration`(efe3354) 병합 4ebd569.
+- 브랜치: `feat/n-six-stage-audit` (PR용, base `origin/pr/de-5-r5-integration` efe3354 - O와 같은 base). 감사는 `audit/six-stage-pipeline`(로컬, specimen d775bb6 + de-5 병합 4ebd569 위)에서 했고, N 고유 커밋만 cherry-pick했습니다. specimen 없이도 E2E 결과가 같음(23 passed, 6 xfailed).
   tree 29a7ae3b가 P의 기준(a42d50d)과 같음. `origin/integration/dcvc`(64a5011)는 D+E 안전 스택이 없어 O·P와 충돌하므로 기준으로 쓰지 않음.
-- N 커밋: `befb436` (기능), `2c9c4cd` (E2E 회귀), 문서 커밋은 아래 SHA 목록 참고.
+- N 커밋 (PR 브랜치): `eda9e30` 기능, `a6a309c` E2E 회귀, `ec8e384` 문서, `a8ae900` 경로 구분·Follow-up 테스트, 최종 문서 커밋은 9절.
 - 실행 방식: 실제 Orchestrator 루프·Session/ContractSession·trial_store·rule_engine·Matcher 코드 검증·acquisition·recommender·
   FactStore·Inspector·FastAPI 앱을 그대로 쓰고 LLM만 시나리오 대역(`tests/six_stage_harness.py`). **실제 Claude 호출 0건**
   (API 크레딧 차단 상태, 별도 승인 없음). 따라서 "실제 LLM 판단 품질"은 어느 항목에서도 PASS로 보지 않음.
@@ -126,8 +126,8 @@
 
 | SHA | 내용 |
 |---|---|
-| `befb436` | `config.TRIAL_SETS`/`CTREC_TRIAL_SET`, `cli --trial-set`·`--inspector`, `inspector.compare_views`/`compare_runs`, `render_inspector.py diff` |
-| `2c9c4cd` | `tests/six_stage_harness.py`, `tests/test_six_stage_e2e.py` (흐름 A-J, 웹, CLI) |
+| `eda9e30` (원래 befb436) | `config.TRIAL_SETS`/`CTREC_TRIAL_SET`, `cli --trial-set`·`--inspector`, `inspector.compare_views`/`compare_runs`, `render_inspector.py diff` |
+| `a6a309c` (원래 2c9c4cd) | `tests/six_stage_harness.py`, `tests/test_six_stage_e2e.py` (흐름 A-J, 웹, CLI) |
 
 수정 중 직접 낸 회귀 하나를 Inspector 기존 테스트로 잡았음: 새 상수가 Inspector의 `_CRITERION_KEYS` 허용 목록을 가려 기준 행이 비었음 → `_COMPARE_CRITERION_KEYS`로 분리(커밋 전 수정).
 
@@ -193,9 +193,12 @@
 ## 7. 전체 pytest
 
 - 기준(병합 tree 29a7ae3b, 수정 전): 5330 passed, 9 skipped, 1 xfailed (357s)
-- N tip 2c9c4cd (tree 기준, 문서 커밋은 테스트 변화 없음): **5353 passed, 9 skipped, 7 xfailed** (368s, exit 0). 늘어난 23 passed와 xfail 6개가 새 E2E
+- 감사 브랜치 tip 2c9c4cd (specimen+de-5 기준, 문서 커밋은 테스트 변화 없음): **5353 passed, 9 skipped, 7 xfailed** (368s, exit 0). 늘어난 23 passed와 xfail 6개가 새 E2E
 - 새 E2E 단독: 23 passed, 6 xfailed (로그 docs/dev/n_six_stage_e2e_log.txt)
 - O-1 제안 패치 확인: 임시 worktree에서 적용 시 반복 xfail 2개 XPASS, 질문 관련 테스트(test_p14_q1_question_screen·test_question_fidelity·test_choice_questions) 92개 통과
+
+- PR 브랜치 `feat/n-six-stage-audit` a8ae900 (de-5 기준, N 단독): **5038 passed, 10 skipped, 7 xfailed** (315s, exit 0). de-5 기준 5015 + 새 E2E 23. skip 1개 = Follow-up 모듈 없음
+- N(a8ae900) + O(`origin/feat/o-interactive-followup` e5b2d31) 임시 병합: **5051 passed, 9 skipped, 8 xfailed** (317s, exit 0). 충돌 없음
 
 ## 8. 다음 통합 최소 변경 목록
 
@@ -204,3 +207,27 @@
 3. P 병합 시: P-1 정보원 대응 확인, 엔진 모드를 기본으로 할지 결정 (기본이 되면 ④ DCV 행동 선택·info_gain 항목이 PASS 후보)
 4. M: M-1·M-2 (`evidence_directness`, `tools/rule_engine.evaluate` + `matcher.match_trial` 한 줄)
 5. 배포 설정: NSCLC를 쓰는 데모·평가 환경에 `CTREC_TRIAL_SET=nsclc` (기본값은 바꾸지 않음)
+
+## 9. 최종 인계: O Follow-up API 반영 (2026-11-07 저녁)
+
+O 최종본 `origin/feat/o-interactive-followup` e5b2d31(base efe3354)을 N과 임시 병합해 다시 확인했습니다. P(`feat/p-common-engine`)는 커밋 전 작업 트리뿐이고 원격이 없어 대조하지 못했습니다. M은 별도 브랜치·worktree를 찾지 못했습니다(specimen d775bb6까지가 최신).
+
+수정 파일 충돌: 없음. N = `config.py`, `cli.py`, `inspector.py`, `scripts/render_inspector.py`, 새 테스트·문서. O = `followup/`, `web/followup_api.py`, `web/app.py`, 데모 스크립트. P 작업 트리 = `engine/dcvc.py`, `engine/loop.py`, `sim/runner.py`, `sim/suite.py`, `sim/nsclc_pilot.py`, `web/engine_runner.py`.
+
+O는 새 경로(Follow-up API)를 만들었고 기본 경로(`/api/runs`, CLI의 `Session.clarify`)는 바꾸지 않았습니다. 그래서 두 경로를 따로 판정합니다.
+
+| 항목 | 기본 Session 경로 (`/api/runs`·CLI) | Follow-up API 경로 (O) |
+|---|---|---|
+| 연구 담당자 요청 | FAIL (없음) | PASS (`create_requests`, O 테스트) |
+| 실패한 질문 반복 방지 (O-1) | FAIL - `test_CD_failed_question_is_not_repeated` xfail 유지 | PASS - `test_followup_unknown_is_not_reasked_and_routes_to_alternative` |
+| "모름" 뒤 대체 경로 (O-2) | FAIL - `test_C_unknown_offers_alternative_source` xfail 유지 | PASS (대체 요청 생성). 단 정보원이 `medication_list` → P-1 xfail `test_followup_alternative_source_fits_the_item` |
+| 답변 → 영향 기준 재평가 | PASS (`test_B_...`) | PASS (`test_followup_answer_reevaluates_affected_criterion`) |
+| 새 세션·서버 재시작 뒤 이어 하기 (O-3) | FAIL - `test_J_new_session_can_resume_saved_facts` xfail 유지 | PASS - `test_followup_case_resumes_in_a_new_service` |
+
+`tests/test_six_stage_followup.py`는 `ctrec.followup`이 없으면 모듈 단위로 skip하므로 N 단독에서는 실행되지 않고, O와 병합하면 자동으로 실행됩니다.
+
+### O-1 패치 재검증 (N + O 결합본)
+- 패치 없이: 기본 경로 반복 xfail 2개 그대로 → O 병합으로 해결되지 않음
+- 패치 적용: 2개 XPASS, O 테스트(`test_followup_flow.py`)·질문 관련·`test_engine_runner.py`·`test_web_integration.py` 포함 143 passed
+- 결론: 기본 경로를 계속 운영하면 패치가 필요. 모든 추가 질문을 Follow-up API로만 받기로 정하면 기본 경로의 확인 질문 라운드를 끄는 쪽이 맞고, 그때는 패치 대신 xfail 테스트를 그 결정에 맞게 바꿈. 패치는 PR에 넣지 않았음(제안 파일만): `question_generator.py`는 N 소관 파일이 아니고, 결정이 남아 있음
+- 해결되지 않은 xfail은 하나도 지우지 않았음
