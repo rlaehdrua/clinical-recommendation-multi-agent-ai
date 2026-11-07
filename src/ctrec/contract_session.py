@@ -28,7 +28,7 @@ from .ir_review import Registry
 from .pipeline import Session, trace_match
 from .proposition_store import PropositionLedger
 from .propositions import Proposition
-from .qa_guard import downgrade, qa_dependent, recompose
+from .qa_guard import downgrade, evaluation_failed, qa_dependent, recompose
 from .question_contract import ContractRegistry, map_answer, render
 from .schemas import ClarifyingQuestion, CriterionAssessment, QAPair, TrialMatch
 from .tools.rule_engine import passes as rule_passes
@@ -106,7 +106,7 @@ class ContractSession(Session):
 
     def _contract_and_guard(self, m: TrialMatch) -> TrialMatch:
         parsed = self.parsed.get(m.trial_id)
-        if m.eligibility == "NOT_EVALUATED" or parsed is None:
+        if evaluation_failed(m) or parsed is None:
             return m
         current = {a.rule_id: a for a in m.assessments + m.other_cohort_assessments}
         replaced = {rid: downgrade(a) for rid, a in current.items()

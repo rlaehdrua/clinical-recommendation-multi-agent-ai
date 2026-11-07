@@ -91,8 +91,11 @@ def display_missing_info(a: dict) -> dict:
     return {**a, "missing_info": f"이 기준을 확인할 정보 (원문): {str(a.get('criterion_text') or '')[:300]}"}
 
 
-# 오류가 아니라 시험에 평가할 기준이 없어서 판정하지 못한 경우 (matcher.CRITERIA_PARSE_EMPTY·NO_SOURCE_CRITERIA)
-NO_CRITERIA_CODES = {"criteria_parse_empty": "기준 해석 결과가 비어", "no_source_criteria": "시험에 평가할 기준이 없어"}
+# 오류가 아니라 판단할 기준이 없어서 판정하지 못한 경우
+# (matcher.CRITERIA_PARSE_EMPTY·NO_SOURCE_CRITERIA·NO_REQUIRED_CRITERIA·NO_APPLICABLE_CRITERIA)
+NO_CRITERIA_CODES = {"criteria_parse_empty": "기준 해석 결과가 비어", "no_source_criteria": "시험에 평가할 기준이 없어",
+                     "no_required_criteria": "판단할 기준이 절차 기준뿐이라",
+                     "no_applicable_criteria": "이 환자에게 적용되는 기준이 없어"}
 
 
 def _not_evaluated_cause(kind: str) -> str:
