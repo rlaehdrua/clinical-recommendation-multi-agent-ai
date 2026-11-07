@@ -172,10 +172,7 @@ def test_CD_unknown_or_no_response_preserves_state(monkeypatch, answers):
     assert s.matches[TID].eligibility == "UNCERTAIN"
 
 
-@pytest.mark.xfail(strict=True, reason="기본 Session 경로(/api/runs·CLI), O 소관: 실패한 질문 반복 - unresolved 대상 "
-                                       "질문이 다음 라운드에 다시 나감 (Session.clarify / question_generator.screen이 acquisition "
-                                       "상태를 보지 않음). Follow-up API 경로는 해결됨: test_six_stage_followup.py. "
-                                       "제안: docs/proposals/n_o1_no_repeat_failed_question.patch")
+# O-1: question_generator.screen이 확보 계획(acquisition_plan)에 남은 열린 항목만 대상으로 둠 (기본 Session·ContractSession)
 @pytest.mark.parametrize("cls,answers", [(Session, {1: {"Q1": "모름"}}), (ContractSession, {1: {"Q1": "둘 다 해당 없음"}})],
                          ids=["session_unknown", "contract_answered"])
 def test_CD_failed_question_is_not_repeated(monkeypatch, cls, answers):
