@@ -239,6 +239,7 @@ class RuleRef(BaseModel):
     extra_slots: list[str] = Field(default_factory=list)  # also 조건의 슬롯
     time_window_days: int | None = None
     required_evidence: RequiredEvidence
+    cohort: str | None = None  # OR 경로(코호트) 전용 기준이면 그 이름. None = 모든 경로 공통
 
     def slots(self) -> list[str]:
         return [self.slot, *self.extra_slots]
@@ -264,6 +265,8 @@ class PublicPart(BaseModel):
     rules: dict[str, list[RuleRef]]  # 시험 -> 연결된 기준 (임상의 판단 기준 포함, 그 기준은 initial_holds가 항상 unknown)
     unbound_rules: dict[str, list[str]]  # 시험 -> 검수 전이라 정답에서 빠진 기준 (충족으로 간주하지 않음 -> 쌍 라벨 없음)
     expert_rules: dict[str, list[str]] = Field(default_factory=dict)  # 시험 -> 임상의 판단 기준 (값·정답 없음)
+    # 시험 -> OR 경로(코호트). 기준이 모두 미연결인 경로도 포함. 빈 목록 = 코호트 구분 없음 (경로 하나)
+    paths: dict[str, list[str]] = Field(default_factory=dict)
     enrollment_remaining: dict[str, int | None]
     sources: dict[str, EffectiveSource]
     budgets_min: list[int]

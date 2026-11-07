@@ -677,3 +677,60 @@ def test_validation_recomputes_or_paths_independently():
     forged = c.model_copy(deep=True)
     forged.oracle.pair_label[pk] = "INELIGIBLE"  # 한 경로만 불통과인데 부적격 확정 -> 검증기가 잡아야 함
     assert any("쌍 라벨 불일치" in i for i in validate(forged, sd, PARSED_OR))
+
+
+def _or_config():
+    cfg = _config(n_patients=60, knobs={"trials_per_patient": 1, "cost_heterogeneity": 1.0, "grouping": "source",
+                                        "missing_rate": {"default": 0.5}})
+    cfg.clusters["c"].trials = ["T3"]
+    return cfg
+
+
+def test_or_paths_and_rule_cohorts_are_exported_and_validated():
+    """#23: 현황판이 OR 경로를 알 수 있게 public에 경로와 기준별 코호트를 내보내고, 검증기가 파싱본과 대조."""
+    sd = _or_dictionary()
+    c = gen.generate_all(_or_config(), sd, CATALOG, PARSED_OR)[0]
+    assert c.public.paths == {"T3": ["A", "B"]}
+    assert {r.rule_id: r.cohort for r in c.public.rules["T3"]} == {"I1": None, "I2": "A", "I3": "B"}
+    forged = c.model_copy(deep=True)
+    forged.public.paths["T3"] = ["A"]
+    assert any("public.paths" in i for i in validate(forged, sd, PARSED_OR))
+    forged = c.model_copy(deep=True)
+    forged.public.rules["T3"][1].cohort = None  # 코호트 전용 기준을 공통으로 위조
+    assert any("cohort" in i for i in validate(forged, sd, PARSED_OR))
+
+
+def test_trial_without_cohorts_exports_empty_paths():
+    c = _cohorts()[0]
+    assert all(v == [] for v in c.public.paths.values())
+    assert all(r.cohort is None for rs in c.public.rules.values() for r in rs)
+
+
+def test_cohort_without_path_fields_still_loads():
+    d = gen.generate_all(_or_config(), _or_dictionary(), CATALOG, PARSED_OR)[0].model_dump(mode="json")
+    del d["public"]["paths"]
+    for r in d["public"]["rules"]["T3"]:
+        del r["cohort"]
+    old = Cohort.model_validate(d)
+    assert old.public.paths == {} and all(r.cohort is None for r in old.public.rules["T3"])
+
+
+def test_generated_or_trial_reaches_board_without_one_path_ineligible_confirmation():
+    """패치(docs/proposals/issue23_generator_or_paths.patch)의 현황판 연동 검사. 공개 값만으로 한 경로만 불통과인 쌍은
+    부적격 확정하지 않고, 현황판의 부적격 확정은 언제나 생성기 정답 라벨도 부적격 (라벨과 독립으로 값에서 다시 계산)."""
+    from ctrec.web import cohort_board as cb
+    seen = set()
+    for c in gen.generate_all(_or_config(), _or_dictionary(), CATALOG, PARSED_OR):
+        d = c.model_dump(mode="json")
+        b = cohort_board.board(d)
+        for p in c.public.patients:
+            pk = f"{p.patient_id}|T3"
+            s, k = b["pairs"][pk], p.known
+            a = k["age"] < 18 or ("lab.hemoglobin" in k and k["lab.hemoglobin"] < 11)
+            bb = k["age"] < 18 or ("lab.platelets" in k and k["lab.platelets"] < 150)
+            assert (s["status"] == "CONFIRMED_INELIGIBLE") == (a and bb), (pk, k)
+            assert s["status"] != "CONFIRMED_ELIGIBLE"  # 미연결 기준 E1이 남음
+            if s["status"] == "CONFIRMED_INELIGIBLE":
+                assert c.oracle.pair_label[pk] == "INELIGIBLE"
+            seen.add(s["status"])
+    assert seen >= {"CONFIRMED_INELIGIBLE", "NOT_EVALUATED"}

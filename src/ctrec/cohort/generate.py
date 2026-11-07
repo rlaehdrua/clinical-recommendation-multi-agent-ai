@@ -193,8 +193,10 @@ def generate_cohort(cfg: GeneratorConfig, sd: SlotDictionary, cat: SourceCatalog
     public = PublicPart(
         trials=trials,
         rules={t: [RuleRef(rule_id=b.rule_id, kind=b.kind, slot=b.slot, extra_slots=[c.slot for c in b.also],
-                           time_window_days=b.time_window_days, required_evidence=b.required_evidence)
+                           time_window_days=b.time_window_days, required_evidence=b.required_evidence,
+                           cohort=rules[b.key].cohort if b.key in rules else None)
                    for b in bound[t]] for t in trials},
+        paths={t: [p for p in paths[t] if p] for t in trials},  # 현황판이 라벨과 같은 경로 규칙을 쓰도록 내보냄
         unbound_rules=unbound,
         expert_rules=expert,
         enrollment_remaining={t: knobs.enrollment_remaining for t in trials},

@@ -30,6 +30,12 @@ def validate(c: Cohort, sd: SlotDictionary, parsed: dict[str, ParsedTrial]) -> l
     expert = {t: [b.rule_id for b in sd.usable(t) if b.needs_expert()] for t in pub.trials}
     if pub.expert_rules != expert:
         issues.append("public.expert_rules가 임상의 판단 기준 목록과 다름")
+    for t in pub.trials:  # OR 경로: 파싱본에서 기준이 붙은 코호트 (연결 여부와 무관), 중복 없이
+        pt = parsed.get(t)
+        want_paths = {r.cohort for r in pt.rules if r.cohort} if pt else set()
+        got = pub.paths.get(t, [])
+        if set(got) != want_paths or len(got) != len(set(got)):
+            issues.append(f"{t}: public.paths {got} != 파싱본 코호트 {sorted(want_paths)}")
     for p in pub.patients:
         hidden = c.oracle.hidden.get(p.patient_id, {})
         if set(hidden) != set(p.unknown_slots):
@@ -53,6 +59,8 @@ def validate(c: Cohort, sd: SlotDictionary, parsed: dict[str, ParsedTrial]) -> l
                 if b is None:
                     issues.append(f"{key}: 슬롯 사전에 연결이 없음")
                     continue
+                if ref.cohort != cohort_of.get(ref.rule_id):
+                    issues.append(f"{key}: 공개 기준의 cohort {ref.cohort!r} != 파싱본 {cohort_of.get(ref.rule_id)!r}")
                 if b.needs_expert():
                     if c.oracle.truth.get(key) != "unknown" or pub.initial_holds.get(key) != "unknown":
                         issues.append(f"{key}: 임상의 판단 기준에 정답·초기 상태가 있음")
