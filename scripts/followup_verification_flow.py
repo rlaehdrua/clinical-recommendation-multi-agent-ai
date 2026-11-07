@@ -25,7 +25,8 @@ from pathlib import Path
 import httpx
 
 ROOT = Path(__file__).resolve().parents[1]
-TEXT = "Synthetic NSCLC patient. 64-year-old male with stage IV non-small cell lung cancer. ECOG 1."
+# 환자는 처음 입력에서 혈소판 값을 말함(자기 보고). P 근거 경로 뒤 검사·ECOG(진료 기록 필요)는 환자 질문이 아니라 문서 확인
+TEXT = "Synthetic NSCLC patient. 64-year-old male with stage IV non-small cell lung cancer. ECOG 1.\nPlatelets 180 x10^9/L"
 REPORT = b"SYNTHETIC LAB REPORT (not a real patient)\nPlatelets 180 x10^9/L\nANC 2.1 x10^9/L\nECOG 1\n"
 CE = "CONFIRMED_ELIGIBLE"
 
@@ -127,15 +128,9 @@ def main() -> None:
     s = call("staff", "GET", f"/api/followup/staff/cases/{cid}", expect=200)
     check(s["pairs"]["T-D"]["status"] == "EXPERT_REVIEW", "T-D starts in EXPERT_REVIEW")
     clin_req = next(r for r in s["requests"] if r["kind"] == "clinician_review")
-    ask = [p["proposal_id"] for p in s["proposals"] if p["action_type"] == "ASK_PATIENT"
-           and p["info_key"] in ("lab:platelets", "lab:absolute neutrophil count")]
-    made = call("staff", "POST", f"/api/followup/staff/cases/{cid}/requests", {"proposal_ids": ask}, 200)
-    reqs = {r["request_id"]: r for r in made["case"]["requests"]}
-    for rid in made["created"]:
-        text = "Platelets 180 x10^9/L" if reqs[rid]["info_key"] == "lab:platelets" else "ANC 2.1 x10^9/L"
-        call("patient", "POST", f"/api/followup/cases/{cid}/requests/{rid}/response", {"answer": text}, 200)
-    s = call("staff", "GET", f"/api/followup/staff/cases/{cid}", expect=200)
-    check(s["pairs"]["T-A"]["status"] == "VERIFICATION_PENDING", "self-reported labs leave T-A VERIFICATION_PENDING")
+    check(not [p for p in s["proposals"] if p["action_type"] == "ASK_PATIENT" and p["info_key"].startswith("lab:")],
+          "record-only lab items are not patient questions (P evidence routing)")
+    check(s["pairs"]["T-A"]["status"] == "INFO_MISSING", "self-reported platelets and missing ANC leave T-A INFO_MISSING")
 
     restart()  # 2. 서버 강제 종료 후 재시작
     docs = [p["proposal_id"] for p in call("staff", "GET", f"/api/followup/staff/cases/{cid}", expect=200)["proposals"]
@@ -162,13 +157,19 @@ def main() -> None:
     r = call("verifier", "POST", f"/api/followup/clinician/cases/{cid}/requests/{clin_req['request_id']}/judgment",
              {"decisions": [{"criterion": "T-D:I2", "decision": "MET", "rationale_code": "x"}]})
     check(r["detail"]["code"] == "clinician_forbidden", "verifier cannot record a clinician judgment")
-    r = call("verifier", "POST", f"/api/followup/cases/{cid}/requests/{next(iter(reqs))}/response", {"answer": "x"})
+    r = call("verifier", "POST", f"/api/followup/cases/{cid}/requests/{doc_reqs['lab:platelets']}/response", {"answer": "x"})
     check(r["detail"]["code"] == "staff_cannot_answer", "verifier cannot answer for the patient")
 
     # 4. 문서 확인 3건 -> 재평가
     out = call("verifier", "POST", path, body, 200)
     check(out["pairs"]["T-A"]["status"] != CE, "one verified lab is not enough")
-    for key in ("lab:absolute neutrophil count", "ecog"):
+    # ANC: 환자가 말한 적 없는 값 -> 문서에서 기록 (record). ECOG: 처음 입력의 값을 문서로 확인 (confirm)
+    out = call("verifier", "POST", f"/api/followup/verifier/cases/{cid}/requests/{doc_reqs['lab:absolute neutrophil count']}"
+               "/verification", {"document_id": doc["document_id"], "document_sha256": doc["sha256"],
+                                 "items": [{"field": "lab:absolute neutrophil count", "value": 2.1, "unit": "x10^9/L",
+                                            "observed_at": "2026-10-01"}]}, 200)
+    check(out["pairs"]["T-A"]["status"] != CE, "two verified labs are not enough (ECOG unverified)")
+    for key in ("ecog",):
         req = next(r for r in call("verifier", "GET", f"/api/followup/verifier/cases/{cid}", expect=200)["requests"]
                    if r["request_id"] == doc_reqs[key])
         fact = next(f for f in req["facts"] if f["field"] == key and not f["document_verified"])
