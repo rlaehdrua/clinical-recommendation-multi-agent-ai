@@ -73,6 +73,12 @@ FALLBACK_TYPES = ("REQUEST_DOCUMENT", "VERIFY_RECORD", "CLINICIAN_REVIEW")
 FOLLOWUP_BUDGET = DEFAULT_BUDGET.model_copy(update={"clinician_minutes": DEFAULT_BUDGET.coordinator_minutes})
 
 
+# Inspector 보기의 구분: 현재 판정(지금 권한 기준으로 다시 계산) vs 과거 평가 기록(그 평가 당시 권한의 판정, 고쳐 쓰지 않음)
+INSPECTOR_CURRENT_KEYS = ("overview", "trials", "recommendation", "decision", "screening", "gaps", "verification")
+INSPECTOR_HISTORY_KEYS = ("steps", "history", "timeline", "changes", "fact_changes", "unlinked_question_rounds", "followup")
+INSPECTOR_HISTORY_NOTICE = "평가 당시 기록 — 현재 판정과 다를 수 있음"
+
+
 class FollowupError(Exception):
     """웹 계층이 HTTP 상태로 옮기는 흐름 오류. code는 화면이 분기할 고정 값."""
 
@@ -312,8 +318,12 @@ class FollowupService:
         data["evaluations"].append(rec.model_dump(mode="json"))
         data["session"] = codec.dump_session(session)
         data["ops"] = codec.dump_ops(ops)
+        # 결과 화면도 쌍 상태와 같은 지금 권한 기준 (권한 철회 뒤 상태 변경만 있는 재기록에서 철회 전 해제·판단이 남지 않게).
+        # 저장 Session은 위에서 이미 dump함 (판정 기록은 그대로). 권한이 그대로면 None -> 기존 화면 경로
+        regated = (self._regated_view_if_changed(session)
+                   if (data.get("verifications") or data.get("judgments")) else None)
         data["current"] = {"revision": rev, "pairs": pairs, "proposals": proposals, "held": held,
-                           "view": self._result_view(session)}
+                           "view": regated or self._result_view(session)}
         # 판정 변경 감사: 쌍 상태 전이와 바뀐 기준 (값·원문은 넣지 않음)
         self._event(data, "evaluation_recorded", "system", revision=rev, trigger=trigger.get("type"),
                     transitions=transitions, criteria_changed=sorted(c["criterion"] for c in changes),
@@ -1131,15 +1141,25 @@ class FollowupService:
             return data
         session = self._restore(data)
         with self._scope(data, session):
-            _, co = self._cohort(session, data["alias"], codec.load_ops(data["ops"]))
-            live = self._pairs(co)
-            if live != data["current"]["pairs"]:
-                # 쌍 상태만 바꾸고 저장된 추천 화면을 그대로 두면 '쌍은 확인 대기인데 추천은 공개 기준 충족'이 됨 (단일 판정
-                # 상태 계약 위반, 환자 화면에도 보임). 같은 권한으로 판정 사본을 다시 막고 추천 화면을 다시 만듦 (LLM 없음)
-                view = self._regated_view(session)
-                data = {**data, "current": {**data["current"], "pairs": live, "view": view,
-                                            "stored_pairs": data["current"]["pairs"], "authority_changed": True}}
-        return data
+            live = self._live_current(data, session)
+        return data if live is None else {**data, "current": live}
+
+    def _live_current(self, data: dict, session) -> dict | None:
+        """지금 권한 기준의 current (쌍 상태·추천 화면·제안). 저장값과 쌍 상태가 같으면 None. 반드시 _scope 안에서 부름.
+
+        쌍 상태만 바꾸고 저장된 추천 화면을 그대로 두면 '쌍은 확인 대기인데 추천은 공개 기준 충족'이 되고 (단일 판정 상태 계약
+        위반, 환자 화면에도 보임), 저장된 제안을 그대로 두면 사례 화면의 다음 행동이 Cohort C 대기열(staff_queue는 지금 권한으로
+        계획)과 달라짐. 같은 권한으로 판정 사본을 다시 막고 추천 화면을 다시 만들며 (LLM 없음), 제안도 같은 cohort 상태에서
+        다시 계획함 (create_requests가 검사하는 '지금 상태의 제안'과 같은 계획). 저장하지 않음: 저장된 current는 그 평가 때의 기록.
+        끝나면 session.matches는 지금 권한으로 다시 막힌 판정 (Inspector가 그대로 씀)."""
+        _, co = self._cohort(session, data["alias"], codec.load_ops(data["ops"]))
+        live = self._pairs(co)
+        if live == data["current"]["pairs"]:
+            return None
+        proposals, held = self._proposals(data, session, co)
+        view = self._regated_view(session)
+        return {**data["current"], "pairs": live, "view": view, "proposals": proposals, "held": held,
+                "stored_pairs": data["current"]["pairs"], "authority_changed": True}
 
     def _regated_view(self, session) -> dict:
         """지금 권한으로 저장된 판정의 해제·판단을 다시 확인한 결과 화면. 반드시 그 사례의 _scope 안에서 부름.
@@ -1150,9 +1170,37 @@ class FollowupService:
         추천은 finalize와 같은 결정적 경로(conservative_view 보류 -> recommender._validate -> 보류 표시)로 다시 만들고, 저장된
         추천의 근거 문장만 재사용함 (LLM을 다시 부르지 않음). 판정 상태·순서·그룹은 모두 다시 계산됨."""
         from .. import conservative_view as boundary
-        from .. import evidence_basis
         from ..agents import recommender
         from ..schemas import RecommendationDraft
+        pid = session.case.patient_id
+        self._regate_matches(session)
+        if session.recommendation is not None:
+            old = session.recommendation.model_copy(deep=True)
+            holds = boundary.evaluate(session)[0]
+            matches = boundary.held_matches(session, holds)
+            draft = RecommendationDraft(patient_id=pid, ranked=old.ranked, excluded=old.excluded,
+                                        overall_comment=old.overall_comment or "")
+            evaluated = {t: session.trials[t] for t in session.matches}
+            session.recommendation = boundary.held_recommendation(
+                recommender._validate(draft, pid, matches, evaluated, session.profile, session.qa_log), session, holds)
+        return self._result_view(session)
+
+    def _regated_view_if_changed(self, session) -> dict | None:
+        """_record용: 지금 권한으로 다시 막을 판정이 있으면 다시 막은 결과 화면, 없으면 None (기존 _result_view 경로 그대로).
+        저장할 Session을 dump한 뒤에 부름 (저장 판정은 바꾸지 않음). 끝나면 session.matches·recommendation을 원래대로 돌려
+        _record 뒤의 같은 요청 처리(대체 경로 등)가 기존과 같은 Session을 봄."""
+        original, rec = dict(session.matches), session.recommendation
+        try:
+            if not self._regate_matches(session):
+                return None
+            session.matches = dict(original)
+            return self._regated_view(session)
+        finally:
+            session.matches, session.recommendation = original, rec
+
+    def _regate_matches(self, session) -> bool:
+        """session.matches를 지금 권한으로 다시 막은 판정 사본으로 바꿈 (_regated_view의 판정 부분). 바뀐 것이 있으면 True."""
+        from .. import evidence_basis
         pid = session.case.patient_id
         regated = {}
         for tid, m in self._view(session).matches.items():
@@ -1168,17 +1216,9 @@ class FollowupService:
                      for a in allx]
             regated[tid] = (evidence_basis.reaggregate(m, p, after, "권한이 바뀌어 문서 확인 해제를 다시 보류")
                             if any(x is not y for x, y in zip(after, allx)) else m)
+        changed = any(regated[t] != session.matches.get(t) for t in regated)
         session.matches = regated
-        if session.recommendation is not None:
-            old = session.recommendation.model_copy(deep=True)
-            holds = boundary.evaluate(session)[0]
-            matches = boundary.held_matches(session, holds)
-            draft = RecommendationDraft(patient_id=pid, ranked=old.ranked, excluded=old.excluded,
-                                        overall_comment=old.overall_comment or "")
-            evaluated = {t: session.trials[t] for t in session.matches}
-            session.recommendation = boundary.held_recommendation(
-                recommender._validate(draft, pid, matches, evaluated, session.profile, session.qa_log), session, holds)
-        return self._result_view(session)
+        return changed
 
     def staff_verification(self, case_id: str) -> dict:
         data = self._load(case_id)
@@ -1212,16 +1252,27 @@ class FollowupService:
         data = self._load(case_id)
         session = self._restore(data)
         with self._scope(data, session):
-            session.matches = self._view(session).matches  # 보기용 복원본: 인정되지 않은 임상의 판정은 판단 대기로
+            # 사례 화면(refresh_pairs)과 같은 지금 권한 상태: 권한이 바뀌었으면 다시 막힌 판정·추천, 아니면 저장된 결과
+            records = bool(data.get("verifications") or data.get("judgments"))
+            live = self._live_current(data, session) if records else None
+            if live is None and records:
+                self._regate_matches(session)  # 쌍 상태가 같아도 판정 사본은 지금 권한으로 (refresh와 같은 다시 막기)
+            elif live is None:
+                session.matches = self._view(session).matches  # 보기용 복원본: 인정되지 않은 임상의 판정은 판단 대기로
+            current = live or data["current"]
             rec = inspector.record_from_session(session, meta={"llm_backend": "recorded",
                                                                "synthetic": bool(data["synthetic"])})
-            rec.result = data["current"]["view"]["result"]  # 화면과 같은 보류 적용 결과
+            rec.result = current["view"]["result"]  # 화면과 같은 보류 적용 결과
             rec.trace = list(data.get("trace", []))  # 평가마다의 matcher done 기록 -> 라운드별 판정 변화
             view = inspector.build_view(rec)
             view["followup"] = {"evaluations": data["evaluations"], "requests": data["requests"],
                                 "responses": [{k: v for k, v in x.items() if k != "answer_digest"}
                                               for x in data["responses"]]}
             view["verification"] = self.verification_summary(data, session)
+            # 과거 이력(steps 등)은 그대로 두고, 어느 부분이 현재 판정이고 어느 부분이 평가 당시 기록인지만 표시
+            view["authority_changed"] = live is not None
+            view["record_scope"] = {"current": list(INSPECTOR_CURRENT_KEYS), "history": list(INSPECTOR_HISTORY_KEYS),
+                                    "history_notice": INSPECTOR_HISTORY_NOTICE}
         return view
 
     def staff_queue(self) -> dict:

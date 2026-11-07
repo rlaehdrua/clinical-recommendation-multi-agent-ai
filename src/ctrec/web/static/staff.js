@@ -218,7 +218,9 @@ async function openCase(id, focus) {
 }
 async function refreshCase() {
   let d; try { d = await api(`/cases/${encodeURIComponent(S.caseId)}`); } catch (e) { return; }
-  if (!S.data || d.revision !== S.data.revision || JSON.stringify(d.requests) !== JSON.stringify(S.data.requests)) { S.data = d; renderCase(true); }
+  // 개정 번호가 같아도 서버의 지금 권한 기준 쌍 상태·제안·추천 화면이 바뀔 수 있음 (권한 철회 뒤 재시작): 그것도 비교
+  const same = k => JSON.stringify(d[k]) === JSON.stringify(S.data[k]);
+  if (!S.data || d.revision !== S.data.revision || !["requests", "pairs", "proposals", "view", "authority_changed"].every(same)) { S.data = d; renderCase(true); }
 }
 function pairRows(d) {
   const rec = ((d.view || {}).result || {}).recommendation || {};
@@ -314,12 +316,24 @@ async function move(rid, status) {
 async function inspector() {
   const box = q$("#st-insp-body"); box.innerHTML = '<p class="hint">불러오는 중…</p>';
   let v; try { v = await api(`/cases/${encodeURIComponent(S.caseId)}/inspector`); } catch (e) { box.innerHTML = `<div class="note bad">${h(e.message)}</div>`; return; }
-  const o = v.overview || {};
-  box.innerHTML = `<table class="list mt8"><tbody>
+  const o = v.overview || {}, scope = v.record_scope || { current: [], history: [] };
+  const part = keys => Object.fromEntries(Object.entries(v).filter(([k]) => keys.includes(k)));
+  const rest = Object.fromEntries(Object.entries(v).filter(([k]) => !scope.history.includes(k)));
+  // 과거 평가 기록: 저장된 라운드별 기록을 고쳐 쓰지 않고 그대로 보이되, 현재 판정과 나누고 안내를 붙임
+  const past = (v.steps || []).filter(s => s.trial_id && s.eligibility);
+  box.innerHTML = `<section class="insp-current" data-scope="current"><h4>현재 판정 <span class="hint">(지금 권한·근거 기준)</span></h4>
+    ${v.authority_changed ? '<div class="note warn">권한이 바뀌어 저장된 확정을 지금 권한 기준으로 다시 보류했습니다.</div>' : ""}
+    <table class="list mt8"><tbody>
       <tr><th>라운드</th><td>${h(o.n_rounds)}</td></tr><tr><th>질문</th><td>${h(o.n_questions)}</td></tr>
       <tr><th>판정 변화</th><td>${h(JSON.stringify(o.n_changes || {}))}</td></tr>
       <tr><th>최종 판정</th><td>${(o.final || []).map(f => `<span class="mono">${h(f.trial_id)}</span> ${badge(MATCH, f.match_status)}`).join("<br>")}</td></tr></tbody></table>
-    <details><summary class="hint">원본 JSON</summary><pre class="raw">${h(JSON.stringify(v, null, 1).slice(0, 200000))}</pre></details>`;
+    <details><summary class="hint">현재 판정 원본 JSON</summary><pre class="raw">${h(JSON.stringify(rest, null, 1).slice(0, 200000))}</pre></details></section>
+    <section class="insp-history mt8" data-scope="history"><h4>과거 평가 기록</h4>
+    <div class="note" role="note">${h(scope.history_notice || "평가 당시 기록 — 현재 판정과 다를 수 있음")}</div>
+    ${past.length ? `<table class="list mt8"><thead><tr><th>라운드</th><th>단계</th><th>시험</th><th>평가 당시 판정</th></tr></thead><tbody>
+      ${past.map(s => `<tr><td>${h(s.round ?? "-")}</td><td>${h(s.agent || "")} ${h(s.event || "")}</td><td class="mono">${h(s.trial_id)}</td><td>${h(s.eligibility)}</td></tr>`).join("")}</tbody></table>`
+      : '<p class="hint">시험별 평가 기록 없음</p>'}
+    <details><summary class="hint">과거 평가 기록 원본 JSON</summary><pre class="raw">${h(JSON.stringify(part(scope.history), null, 1).slice(0, 200000))}</pre></details></section>`;
 }
 
 // ------------------------------------------------------------ 확인 대기열 (Cohort C)

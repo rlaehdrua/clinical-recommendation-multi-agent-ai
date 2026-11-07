@@ -98,7 +98,7 @@ def _minutes_to(curve: list[dict], n: int) -> float | None:
 def insight(svc: FollowupService) -> dict:
     states, ops, case_of, requested = {}, {}, {}, []
     for cid in svc.store.case_ids():
-        data = svc.store.load(cid)
+        data = svc.refresh_pairs(svc.store.load(cid))  # 사례 화면과 같은 지금 권한의 쌍 상태·제안 (저장값이 아니라)
         session = svc._restore(data)  # staff_queue와 같은 복원 (판정을 다시 만들지 않음)
         with svc._scope(data, session):  # staff_queue와 같이 사례마다 그 사례의 문서·임상의 권한으로
             view = svc._view(session)

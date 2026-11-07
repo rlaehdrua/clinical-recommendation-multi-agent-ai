@@ -263,6 +263,12 @@ def staff_case_view(data: dict) -> dict:
             "judgments": data.get("judgments", [])}
 
 
+def _live_staff_view(data: dict) -> dict:
+    """POST 응답의 사례 화면 = GET 사례 화면 (refresh_pairs). 저장된 current는 그 평가 때의 권한 기준이라, 권한이 바뀐 뒤
+    재평가 없이 저장만 하는 변경(요청 생성·문서 등록 등)의 응답에 철회 전 확정이 남지 않게 함. 판정은 다시 하지 않음."""
+    return staff_case_view(service().refresh_pairs(data))
+
+
 # ---------------------------------------------------------------------------
 # 환자 API
 # ---------------------------------------------------------------------------
@@ -333,10 +339,11 @@ def respond(case_id: str, request_id: str, body: ResponseBody, request: Request)
         out = service().respond(case_id, request_id, answer=body.answer, unknown=body.unknown,
                                 client_response_id=body.client_response_id,
                                 validate=lambda spec, a: _app().answer_problem(spec, a))
+        case = patient_case_view(service().refresh_pairs(out["case"]))
     r = out["response"]
     return {"duplicate": out["duplicate"], "request_id": request_id, "status": out["request"]["status"],
             "outcome": r["outcome"], "revision": out["case"]["revision"],
-            "conflict": bool(r.get("conflicts")), "case": patient_case_view(out["case"])}
+            "conflict": bool(r.get("conflicts")), "case": case}
 
 
 # ---------------------------------------------------------------------------
@@ -395,7 +402,8 @@ def staff_create_requests(case_id: str, body: RequestCreate, request: Request) -
     with _flow():
         out = service().create_requests(case_id, body.proposal_ids, staff_id=sid,
                                         expected_revision=body.expected_revision)
-    return {"created": out["created"], "existing": out["existing"], "case": staff_case_view(out["case"])}
+        case = _live_staff_view(out["case"])
+    return {"created": out["created"], "existing": out["existing"], "case": case}
 
 
 @router.post("/staff/cases/{case_id}/requests/{request_id}/status")
@@ -404,8 +412,8 @@ def staff_set_status(case_id: str, request_id: str, body: StatusChange, request:
     sid = require_staff(request)
     with _flow():  # 상태 변경은 다시 매칭하지 않음 (새 정보 없음): 운영 상태·쌍 상태·제안만 다시 계산
         out = service().set_status(case_id, request_id, body.status, staff_id=sid)
-    return {"request": out["request"], "routed": [r["request_id"] for r in out["routed"]],
-            "case": staff_case_view(out["case"])}
+        case = _live_staff_view(out["case"])
+    return {"request": out["request"], "routed": [r["request_id"] for r in out["routed"]], "case": case}
 
 
 @router.get("/staff/insight")
@@ -473,7 +481,8 @@ def staff_register_document(case_id: str, body: DocumentCreate, request: Request
     with _flow():
         out = service().register_document(case_id, content=content, media_type=body.media_type, kind=body.kind,
                                           staff_id=sid, expected_revision=body.expected_revision)
-    return {"document": out["document"], "case": staff_case_view(out["case"])}
+        case = _live_staff_view(out["case"])
+    return {"document": out["document"], "case": case}
 
 
 @router.get("/staff/cases/{case_id}/verification")
