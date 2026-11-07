@@ -84,6 +84,7 @@ class PatientFact(BaseModel):
     field: str
     value: Scalar
     unit: str | None = None
+    specimen: str | None = None  # 검사 사실의 검체 (specimen.py). "unclear"는 원문을 봤지만 모름, None은 확인한 적 없음
     source_type: SourceType = "unknown"
     source_reference: SourceReference = Field(default_factory=SourceReference)
     verification_status: VerificationStatus = "unknown"
@@ -174,7 +175,7 @@ class FactStore:
         self._facts: dict[str, list[PatientFact]] = {}
 
     # ------------------------------------------------------------ 추가·조회
-    def add(self, patient_id: str, field: str, value, *, unit: str | None = None, source_type: str = "unknown",
+    def add(self, patient_id: str, field: str, value, *, unit: str | None = None, specimen: str | None = None, source_type: str = "unknown",
             source_reference: SourceReference | dict | None = None, observed_at: str | None = None,
             observed_at_text: str | None = None, session_id: str | None = None) -> PatientFact:
         """새 사실 추가. 검증 상태는 항상 unknown으로 시작 (검증은 set_verification으로 사유와 함께)."""
@@ -190,7 +191,7 @@ class FactStore:
         same = self.facts(patient_id, field)
         fact = PatientFact(
             fact_id=f"F-{uuid.uuid4().hex[:12]}", patient_id=patient_id, session_id=session_id, field=field,
-            value=value, unit=(unit or None), source_type=source_type, source_reference=ref,
+            value=value, unit=(unit or None), specimen=specimen, source_type=source_type, source_reference=ref,
             observed_at=observed_at, observed_at_text=(observed_at_text or None), recorded_at=_now(),
             version=len(same) + 1,
             previous_fact_id=same[-1].fact_id if same else None,

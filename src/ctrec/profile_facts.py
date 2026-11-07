@@ -11,6 +11,9 @@
 - 누락은 사실로 만들지 않습니다: None, 빈 문자열, sex="unknown", 값이 없는 검사. missing_or_ambiguous는 '없음'의
   기록이라 사실로 옮기지 않습니다.
 - 원문의 수치가 환자의 측정값이 아니면(미측정, 결과 대기, 무효, 타인, 기관 기준) 사실로 만들지 않습니다(value_grounding.not_measured).
+- 검체: 검사 사실의 검체는 LLM이 아니라 원문으로 정합니다(value_grounding.lab_specimen). 혈액 항목으로 온 값의 원문이 소변·뇌척수액이면
+  그 값은 환자의 실제 측정값이므로 버리지 않고 "lab:urine creatinine"처럼 별도 항목으로 저장합니다. 같은 항목이 아니므로 혈청 값과 충돌하지 않습니다.
+  검체를 알 수 없으면 specimen="unclear"로 저장하고 사실 기반 비교에서 쓰지 않습니다(fact_view).
 - 나이: 원문 표기(age_value, age_unit)가 있으면 그 값과 단위, 없으면 age(년).
 
 출처·검증 상태
@@ -44,7 +47,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Sequence
 
-from . import evidence, value_grounding
+from . import evidence, specimen, value_grounding
 from .fact_store import (_PATIENT_ID, FactStore, FactStoreError, PatientFact, SourceReference, _check_value,
                          _norm_field)
 from .schemas import Fact, LabValue, PatientProfile, QAPair
@@ -131,7 +134,7 @@ def evidence_key(f: PatientFact) -> tuple:
     value = _ws(f.value).casefold() if isinstance(f.value, str) else (type(f.value).__name__ == "bool", float(f.value))
     ref = f.source_reference
     return (f.session_id, f.field, value, _norm_unit(f.unit) if f.unit else None, f.observed_at, f.observed_at_text,
-            f.source_type, ref.kind, ref.ref, _ws(ref.quote) if ref.quote else None)
+            f.source_type, ref.kind, ref.ref, _ws(ref.quote) if ref.quote else None, f.specimen)
 
 
 _REF_AT = 8  # evidence_key 안에서 source_reference.ref의 위치
@@ -202,6 +205,9 @@ def ingest_profile(store: FactStore, profile: PatientProfile, *, raw_text: str |
         if value_grounding.not_measured(name, value, quote, raw_text, unit=unit):
             result.withheld.append((name, "not_measured"))  # 원문의 수치가 예정·무효·타인·기관 기준이면 환자 사실이 아님
             continue
+        lab_specimen = value_grounding.lab_specimen(name, value, quote, raw_text)
+        if name.startswith("lab:") and specimen.verdict(name[4:], lab_specimen, specimen.required(name[4:])) == specimen.MISMATCH:
+            name = _norm_field(f"lab:{specimen.LABEL[lab_specimen]} {name[4:]}")  # 다른 검사: 같은 항목의 값으로 비교하지 않음
         source_type, ref = _locate(quote, raw_text, input_source)
         ref, withhold = _link_answer(quote, ref, qa_pairs, session_id)
         if withhold:
@@ -209,14 +215,14 @@ def ingest_profile(store: FactStore, profile: PatientProfile, *, raw_text: str |
             continue
         observed_at, observed_text = _dates(date)
         probe = PatientFact(fact_id="probe", patient_id=pid, session_id=session_id, field=name, value=value,
-                            unit=unit or None, source_type=source_type, source_reference=ref, observed_at=observed_at,
+                            unit=unit or None, specimen=lab_specimen, source_type=source_type, source_reference=ref, observed_at=observed_at,
                             observed_at_text=observed_text, recorded_at="", version=0)
         keys = _dedup_keys(evidence_key(probe), quote, ref, qa_pairs, session_id)
         existing = next((f for f in store.facts(pid, name) if evidence_key(f) in keys), None)
         if existing is not None:
             result.duplicates.append(existing.fact_id)
             continue
-        fact = store.add(pid, name, value, unit=unit, source_type=source_type, source_reference=ref,
+        fact = store.add(pid, name, value, unit=unit, specimen=lab_specimen, source_type=source_type, source_reference=ref,
                          observed_at=observed_at, observed_at_text=observed_text, session_id=session_id)
         result.added.append(fact.fact_id)
     return result

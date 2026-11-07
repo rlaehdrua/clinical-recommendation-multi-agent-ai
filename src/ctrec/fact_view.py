@@ -5,6 +5,7 @@
 1) FactEvidenceView: 환자의 사실을 항목별로 묶은 근거 보기. 사실의 출처·인용·검증 상태·관찰 시점·충돌 관계를 그대로 담음.
    항목 상태
    - agreed         : 단일 값 항목의 사실이 모두 같은 값 (출처·시점이 다른 같은 값의 근거는 모두 보존)
+   검사 사실의 검체가 다르거나 알 수 없으면(specimen.py) to_profile()은 그 값을 쓰지 않음. 구조화 입력의 specimen=None은 확인하지 않은 값으로 그대로 씀
    - contradictory / time_dependent / incomparable : 단일 값 항목의 값이 맞지 않음 -> 값을 고르지 않음
    - multi          : 여러 값 항목(진단·바이오마커 등). 같은 값끼리만 묶고, 값이 다른 쌍(not_compared)의 수를 기록
    to_profile()은 기존 PatientProfile 형태로 바꿔 Matcher·규칙 엔진에 그대로 넣을 수 있게 하되,
@@ -34,6 +35,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+from . import specimen
 from .agents import matcher
 from .fact_store import FactStore, MULTI_VALUED_FIELDS, PatientFact, document_backed
 from .schemas import CriterionAssessment, Fact, LabValue, PatientProfile, Rule, RuleMeta
@@ -63,6 +65,7 @@ class FactRef(BaseModel):
     field_name: str
     value: bool | int | float | str
     unit: str | None
+    specimen: str | None = None
     source_type: str
     verification_status: str
     tier: EvidenceTier
@@ -79,7 +82,7 @@ class FieldEvidence(BaseModel):
 
 
 def _ref(f: PatientFact) -> FactRef:
-    return FactRef(fact_id=f.fact_id, field_name=f.field, value=f.value, unit=f.unit, source_type=f.source_type,
+    return FactRef(fact_id=f.fact_id, field_name=f.field, value=f.value, unit=f.unit, specimen=f.specimen, source_type=f.source_type,
                    verification_status=f.verification_status, tier=tier(f), observed_at=f.observed_at,
                    observed_at_text=f.observed_at_text, quote=f.source_reference.quote)
 
@@ -136,7 +139,8 @@ class FactEvidenceView:
                                                              source_quote=r.quote or ""))
             elif name.startswith("lab:"):
                 r = self._agreed(name)
-                if r is not None and isinstance(r.value, (int, float)) and not isinstance(r.value, bool):
+                if r is not None and (r.specimen is None or specimen.verdict(name[4:], r.specimen, specimen.required(name[4:])) == specimen.MATCH) \
+                        and isinstance(r.value, (int, float)) and not isinstance(r.value, bool):  # 사실의 검체가 다르거나 모르면 이 항목의 값으로 쓰지 않음
                     labs.append(LabValue(name=name[4:], value=float(r.value), unit=r.unit, date=r.observed_at,
                                          source_quote=r.quote or ""))
         pd, ds = self._agreed("primary_diagnosis"), self._agreed("disease_stage")
