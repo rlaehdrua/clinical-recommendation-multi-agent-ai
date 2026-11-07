@@ -21,6 +21,7 @@ from ..engine.fairness import gini
 ELIGIBLE, INELIGIBLE, UNLABELED = "eligible", "ineligible", "unlabeled"
 PENDING_EXPERT = "eligible_pending_expert"
 GT_KIND = "rule_gt_circular"
+LABELS = frozenset({ELIGIBLE, INELIGIBLE, PENDING_EXPERT, UNLABELED})
 
 
 def r6(x: float) -> float:
@@ -43,8 +44,8 @@ def status_counts(co: CohortState) -> dict[str, int]:
     return {s.value: c.get(s.value, 0) for s in PairStatus}
 
 
-def gt_comparison(final: CohortState, labels: dict[str, str]) -> dict:
-    """labels: "<별칭>:<시험>" -> eligible / ineligible / unlabeled."""
+def gt_comparison(final: CohortState, labels: dict[str, str], kind: str = GT_KIND) -> dict:
+    """labels: 쌍 키 -> LABELS 값. kind: 라벨 출처 (기본 순환 규칙 GT, runner.run(labels=)면 그쪽 이름)."""
     labeled = {k: v for k, v in labels.items() if v != UNLABELED}
     out = Counter()
     for p in final.pairs():
@@ -66,7 +67,7 @@ def gt_comparison(final: CohortState, labels: dict[str, str]) -> dict:
             "confirmed_ineligible_gt_eligible", "unconfirmed_gt_eligible", "unconfirmed_gt_ineligible",
             "confirmed_eligible_gt_pending_expert", "expert_review_gt_eligible_pending_expert",
             "expert_review_gt_ineligible", "expert_review_gt_eligible", "unconfirmed_gt_eligible_pending_expert")
-    return {"kind": GT_KIND, "labeled_pairs": len(labeled), "unlabeled_pairs": len(labels) - len(labeled),
+    return {"kind": kind, "labeled_pairs": len(labeled), "unlabeled_pairs": len(labels) - len(labeled),
             "gt_eligible": sum(v == ELIGIBLE for v in labeled.values()),
             "gt_ineligible": sum(v == INELIGIBLE for v in labeled.values()),
             "gt_eligible_pending_expert": sum(v == PENDING_EXPERT for v in labeled.values()),
@@ -80,7 +81,7 @@ def gt_comparison(final: CohortState, labels: dict[str, str]) -> dict:
 def summarize(*, initial: CohortState, final: CohortState, labels: dict[str, str], steps: list[dict],
               per_patient_minutes: dict[str, float], total_cost, elapsed_minutes: float, rounds: int,
               progress: list[int], termination: str, repeat_suppressed: int, safety_unfunded: int,
-              audit: dict) -> dict:
+              audit: dict, gt_kind: str = GT_KIND) -> dict:
     """steps: 실행기 단계 요약 [{action_type, execution, note, patient_alias, error_code}]."""
     n = len(final.pairs())
     fin = status_counts(final)
@@ -95,7 +96,7 @@ def summarize(*, initial: CohortState, final: CohortState, labels: dict[str, str
         "system_confirmed_eligible": fin[PairStatus.CONFIRMED_ELIGIBLE.value],
         "system_confirmed_ineligible": fin[PairStatus.CONFIRMED_INELIGIBLE.value],
         "system_confirmed_share": r6(confirmed / n) if n else 0.0,
-        "rule_gt": gt_comparison(final, labels),
+        "rule_gt": gt_comparison(final, labels, gt_kind),
         "actions_executed": dict(sorted(Counter(s["action_type"] for s in executed).items())),
         "executions": dict(sorted(Counter(s["execution"] for s in steps).items())),
         "not_executed_reasons": dict(sorted(Counter(s["note"] or "none" for s in steps
