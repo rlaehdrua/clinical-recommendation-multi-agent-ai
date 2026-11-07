@@ -1,0 +1,1126 @@
+{
+ "negative": [
+  {
+   "text": "Pt accompanied by wife. Her Hb was 9.1 g/dL at her own oncology visit last week and she asked us to compare. Patient's CBC drawn today, results pending.",
+   "field": "hemoglobin",
+   "value": 9.1,
+   "unit": "g/dL",
+   "category": "other_person"
+  },
+  {
+   "text": "Living-donor workup: donor (brother) creatinine 0.8 mg/dL, eGFR >90. Recipient labs to follow next week.",
+   "field": "creatinine",
+   "value": 0.8,
+   "unit": "mg/dL",
+   "category": "other_person"
+  },
+  {
+   "text": "Roommate in 7B had platelets 45 x10^3/uL this AM; value was initially charted on this patient in error and the entry has been struck.",
+   "field": "platelets",
+   "value": 45,
+   "unit": "x10^3/uL",
+   "category": "other_person"
+  },
+  {
+   "text": "Family hx: mother with alcoholic cirrhosis, last bilirubin 3.4 mg/dL per daughter. Pt himself has no known liver disease.",
+   "field": "total bilirubin",
+   "value": 3.4,
+   "unit": "mg/dL",
+   "category": "other_person"
+  },
+  {
+   "text": "보호자(배우자) 본인 건강검진 결과지 지참: 공복혈당 142 mg/dL. 환자 본인 혈당은 금일 미측정.",
+   "field": "glucose",
+   "value": 142,
+   "unit": "mg/dL",
+   "category": "other_person"
+  },
+  {
+   "text": "옆 침대 환자 ANC 480/uL로 역격리 시행됨. 본 환자와 무관한 내용으로 간호기록에 잘못 기재되어 정정함.",
+   "field": "absolute neutrophil count",
+   "value": 480,
+   "unit": "/uL",
+   "category": "other_person"
+  },
+  {
+   "text": "Seen with her sister today. She is 71 and on hemodialysis, and helps with transportation.",
+   "field": "age",
+   "value": 71,
+   "unit": null,
+   "category": "other_person"
+  },
+  {
+   "text": "형 간이식 공여자 평가: AST 28 U/L, ALT 22 U/L (공여자 결과). 수혜자 검사는 아직 시행 전.",
+   "field": "ast",
+   "value": 28,
+   "unit": "U/L",
+   "category": "other_person"
+  },
+  {
+   "text": "Daughter mentions her own INR runs about 2.5 on warfarin. Patient is not anticoagulated; no coag panel today.",
+   "field": "inr",
+   "value": 2.5,
+   "unit": null,
+   "category": "other_person"
+  },
+  {
+   "text": "환자 남편이 ECOG 2로 같은 임상시험 스크리닝 중. 환자 본인 수행도 평가는 다음 방문 시 예정.",
+   "field": "ecog",
+   "value": 2,
+   "unit": null,
+   "category": "other_person"
+  },
+  {
+   "text": "Back in 2019 her hemoglobin was 7.8 g/dL during the GI bleed admission. No CBC on file since then.",
+   "field": "hemoglobin",
+   "value": 7.8,
+   "unit": "g/dL",
+   "category": "past_only"
+  },
+  {
+   "text": "Historic: Cr 2.1 mg/dL (2018, contrast AKI). No recent renal panel available.",
+   "field": "creatinine",
+   "value": 2.1,
+   "unit": "mg/dL",
+   "category": "past_only"
+  },
+  {
+   "text": "2021년 3월 타원 검사상 혈소판 98 K/uL 기록 있음. 이후 추적 검사 없음.",
+   "field": "platelets",
+   "value": 98,
+   "unit": "K/uL",
+   "category": "past_only"
+  },
+  {
+   "text": "Two years ago, during FOLFOX, ANC nadir was 0.3 x10^9/L. He has not had counts drawn here since.",
+   "field": "absolute neutrophil count",
+   "value": 0.3,
+   "unit": "x10^9/L",
+   "category": "past_only"
+  },
+  {
+   "text": "Albumin 2.6 g/dL in March 2021 when she was malnourished after surgery; it has not been rechecked.",
+   "field": "albumin",
+   "value": 2.6,
+   "unit": "g/dL",
+   "category": "past_only"
+  },
+  {
+   "text": "2년 전 직장 건강검진 공복혈당 118 mg/dL. 이번 입원 중 혈당 측정 기록 없음.",
+   "field": "glucose",
+   "value": 118,
+   "unit": "mg/dL",
+   "category": "past_only"
+  },
+  {
+   "text": "PMH: acute hepatitis A in 2017 with ALT 640 U/L, fully resolved. No LFTs this year.",
+   "field": "alt",
+   "value": 640,
+   "unit": "U/L",
+   "category": "past_only"
+  },
+  {
+   "text": "과거력: 2020년 총빌리루빈 2.8 mg/dL (담도 폐쇄), 스텐트 삽입 후 호전. 최근 수치 미확인.",
+   "field": "total bilirubin",
+   "value": 2.8,
+   "unit": "mg/dL",
+   "category": "past_only"
+  },
+  {
+   "text": "Prior ECOG 1 documented at a 2022 oncology visit in Ohio; not reassessed since relocation.",
+   "field": "ecog",
+   "value": 1,
+   "unit": null,
+   "category": "past_only"
+  },
+  {
+   "text": "Old chart: WBC 14.2 x10^3/uL on 2015 admission for pneumonia. No current CBC.",
+   "field": "white blood cell count",
+   "value": 14.2,
+   "unit": "x10^3/uL",
+   "category": "past_only"
+  },
+  {
+   "text": "Labs (carried forward from 10/02/2025 note): Hgb 10.4 g/dL, Plt 210 K/uL, Cr 0.9 mg/dL.",
+   "field": "hemoglobin",
+   "value": 10.4,
+   "unit": "g/dL",
+   "category": "copied_forward"
+  },
+  {
+   "text": "Renal: Cr 1.1 mg/dL*. Continue to monitor.\n*copied from prior note, not re-drawn.",
+   "field": "creatinine",
+   "value": 1.1,
+   "unit": "mg/dL",
+   "category": "copied_forward"
+  },
+  {
+   "text": "이전 경과기록 복사: AST 34 U/L / ALT 41 U/L. 금일 채혈 없음.",
+   "field": "ast",
+   "value": 34,
+   "unit": "U/L",
+   "category": "copied_forward"
+  },
+  {
+   "text": "Per outside records from 2022: total bilirubin 0.7 mg/dL, albumin 4.0 g/dL.",
+   "field": "albumin",
+   "value": 4.0,
+   "unit": "g/dL",
+   "category": "copied_forward"
+  },
+  {
+   "text": "Age: 54 (auto-populated from 2019 intake template; DOB not re-verified).",
+   "field": "age",
+   "value": 54,
+   "unit": null,
+   "category": "copied_forward"
+  },
+  {
+   "text": "※ 아래 검사결과는 2025년 외래기록에서 그대로 옮겨옴: 혈색소 12.1 g/dL, 혈소판 233 x10^3/uL",
+   "field": "platelets",
+   "value": 233,
+   "unit": "x10^3/uL",
+   "category": "copied_forward"
+  },
+  {
+   "text": "Interval history unchanged. ECOG 0 (copied forward from intake, not re-assessed today).",
+   "field": "ecog",
+   "value": 0,
+   "unit": null,
+   "category": "copied_forward"
+  },
+  {
+   "text": "INR 1.0 - pulled from last admission's discharge summary (01/2024); no coag today.",
+   "field": "inr",
+   "value": 1.0,
+   "unit": null,
+   "category": "copied_forward"
+  },
+  {
+   "text": "전원 의뢰서 기재 내용 인용: 백혈구 6.8 x10^3/uL, 호중구 4100/uL (의뢰서 작성일 2023.08).",
+   "field": "absolute neutrophil count",
+   "value": 4100,
+   "unit": "/uL",
+   "category": "copied_forward"
+  },
+  {
+   "text": "Glucose 96 mg/dL [CF] - value carried forward from previous encounter by the note template.",
+   "field": "glucose",
+   "value": 96,
+   "unit": "mg/dL",
+   "category": "copied_forward"
+  },
+  {
+   "text": "LP done this morning, WBC 240/uL with lymphocytic predominance, protein 88 mg/dL.",
+   "field": "white blood cell count",
+   "value": 240,
+   "unit": "/uL",
+   "category": "wrong_specimen"
+  },
+  {
+   "text": "Tap showed glucose 34 mg/dL and LDH 900 U/L; fluid sent for cytology.",
+   "field": "glucose",
+   "value": 34,
+   "unit": "mg/dL",
+   "category": "wrong_specimen"
+  },
+  {
+   "text": "Urine creatinine 112 mg/dL for UPCR calculation.",
+   "field": "creatinine",
+   "value": 112,
+   "unit": "mg/dL",
+   "category": "wrong_specimen"
+  },
+  {
+   "text": "흉수 천자: 알부민 2.1 g/dL, LDH 450 U/L. 혈청 알부민은 내일 채혈 예정.",
+   "field": "albumin",
+   "value": 2.1,
+   "unit": "g/dL",
+   "category": "wrong_specimen"
+  },
+  {
+   "text": "복수 검사 결과 백혈구 520/uL, 호중구 310/uL - SBP 기준 미달.",
+   "field": "absolute neutrophil count",
+   "value": 310,
+   "unit": "/uL",
+   "category": "wrong_specimen"
+  },
+  {
+   "text": "Peritoneal fluid total bilirubin 4.2 mg/dL; bile leak suspected after cholecystectomy.",
+   "field": "total bilirubin",
+   "value": 4.2,
+   "unit": "mg/dL",
+   "category": "wrong_specimen"
+  },
+  {
+   "text": "Pleural fluid Hct 12%, hemoglobin 3.9 g/dL; hemothorax being considered.",
+   "field": "hemoglobin",
+   "value": 3.9,
+   "unit": "g/dL",
+   "category": "wrong_specimen"
+  },
+  {
+   "text": "뇌척수액 검사: 포도당 41 mg/dL, 단백 102 mg/dL.",
+   "field": "glucose",
+   "value": 41,
+   "unit": "mg/dL",
+   "category": "wrong_specimen"
+  },
+  {
+   "text": "JP drain output increasing; drain fluid creatinine 6.3 mg/dL suggests urine leak.",
+   "field": "creatinine",
+   "value": 6.3,
+   "unit": "mg/dL",
+   "category": "wrong_specimen"
+  },
+  {
+   "text": "소변 검사 요당 250 mg/dL (2+), 혈당은 미측정.",
+   "field": "glucose",
+   "value": 250,
+   "unit": "mg/dL",
+   "category": "wrong_specimen"
+  },
+  {
+   "text": "K and LDH unreliable - sample hemolyzed. AST 88 U/L reported but flagged for hemolysis, redraw requested.",
+   "field": "ast",
+   "value": 88,
+   "unit": "U/L",
+   "category": "invalid"
+  },
+  {
+   "text": "Plt 62 x10^3/uL - specimen clotted, platelet clumps on smear; recollect in citrate tube.",
+   "field": "platelets",
+   "value": 62,
+   "unit": "x10^3/uL",
+   "category": "invalid"
+  },
+  {
+   "text": "검체 용혈로 재채혈 요청됨. 보고된 총빌리루빈 1.9 mg/dL은 신뢰 불가.",
+   "field": "total bilirubin",
+   "value": 1.9,
+   "unit": "mg/dL",
+   "category": "invalid"
+  },
+  {
+   "text": "CBC QNS - analyzer produced a partial Hgb 11.3 g/dL before aborting; result not released.",
+   "field": "hemoglobin",
+   "value": 11.3,
+   "unit": "g/dL",
+   "category": "invalid"
+  },
+  {
+   "text": "Verbal result from lab: Cr 2.4 mg/dL? Unable to verify in system, awaiting final report.",
+   "field": "creatinine",
+   "value": 2.4,
+   "unit": "mg/dL",
+   "category": "invalid"
+  },
+  {
+   "text": "INR 3.8 보고되었으나 검사실 오류(검체 라벨 불일치)로 결과 취소됨.",
+   "field": "inr",
+   "value": 3.8,
+   "unit": null,
+   "category": "invalid"
+  },
+  {
+   "text": "WBC 1.2 x10^3/uL flagged by analyzer (suspected fibrin interference); result suppressed pending manual diff.",
+   "field": "white blood cell count",
+   "value": 1.2,
+   "unit": "x10^3/uL",
+   "category": "invalid"
+  },
+  {
+   "text": "혈당 410 mg/dL - 수액 라인에서 채혈되어 오염 의심, 재검 대기중.",
+   "field": "glucose",
+   "value": 410,
+   "unit": "mg/dL",
+   "category": "invalid"
+  },
+  {
+   "text": "Albumin 1.8 g/dL - lab called to report an error; result retracted, corrected report pending.",
+   "field": "albumin",
+   "value": 1.8,
+   "unit": "g/dL",
+   "category": "invalid"
+  },
+  {
+   "text": "ALT 156 U/L (고지혈 검체 간섭 의심, 판정 보류 및 재검 예정).",
+   "field": "alt",
+   "value": 156,
+   "unit": "U/L",
+   "category": "invalid"
+  },
+  {
+   "text": "If Hb < 8 transfuse 1 unit PRBC.",
+   "field": "hemoglobin",
+   "value": 8,
+   "unit": null,
+   "category": "not_done_or_planned"
+  },
+  {
+   "text": "Plan: repeat CBC tomorrow; target platelets > 50 x10^3/uL before tunneled line placement.",
+   "field": "platelets",
+   "value": 50,
+   "unit": "x10^3/uL",
+   "category": "not_done_or_planned"
+  },
+  {
+   "text": "다음 주 화요일 혈액검사 예정 (크레아티닌 1.5 mg/dL 이하 확인 필요).",
+   "field": "creatinine",
+   "value": 1.5,
+   "unit": "mg/dL",
+   "category": "not_done_or_planned"
+  },
+  {
+   "text": "Reference range ALT 7-56 U/L. Hepatic panel ordered for tomorrow.",
+   "field": "alt",
+   "value": 56,
+   "unit": "U/L",
+   "category": "not_done_or_planned"
+  },
+  {
+   "text": "Goal INR 2.0-3.0 on warfarin; first INR check scheduled for Monday.",
+   "field": "inr",
+   "value": 2.0,
+   "unit": null,
+   "category": "not_done_or_planned"
+  },
+  {
+   "text": "목표 공복혈당 130 mg/dL 미만으로 인슐린 용량 조절 예정.",
+   "field": "glucose",
+   "value": 130,
+   "unit": "mg/dL",
+   "category": "not_done_or_planned"
+  },
+  {
+   "text": "Eligibility requires ANC >= 1500/uL; screening labs ordered, not yet drawn.",
+   "field": "absolute neutrophil count",
+   "value": 1500,
+   "unit": "/uL",
+   "category": "not_done_or_planned"
+  },
+  {
+   "text": "Albumin (ref 3.5-5.2 g/dL) - ordered, specimen not yet received by lab.",
+   "field": "albumin",
+   "value": 3.5,
+   "unit": "g/dL",
+   "category": "not_done_or_planned"
+  },
+  {
+   "text": "총빌리루빈 1.5배 ULN 이하일 것 (본원 상한 1.2 mg/dL). 검사 오더만 입력됨.",
+   "field": "total bilirubin",
+   "value": 1.2,
+   "unit": "mg/dL",
+   "category": "not_done_or_planned"
+  },
+  {
+   "text": "Hold chemo if WBC below 3.0 x10^3/uL - CBC to be drawn pre-infusion.",
+   "field": "white blood cell count",
+   "value": 3.0,
+   "unit": "x10^3/uL",
+   "category": "not_done_or_planned"
+  },
+  {
+   "text": "Pt thinks her hemoglobin was 'around 10' at the other hospital, not sure when.",
+   "field": "hemoglobin",
+   "value": 10,
+   "unit": null,
+   "category": "hearsay_or_uncertain"
+  },
+  {
+   "text": "He is not sure, maybe his creatinine was 1.3 or so per his nephrologist.",
+   "field": "creatinine",
+   "value": 1.3,
+   "unit": null,
+   "category": "hearsay_or_uncertain"
+  },
+  {
+   "text": "환자 말로는 다른 병원에서 혈소판 120이라고 들었다고 함, 결과지 없음.",
+   "field": "platelets",
+   "value": 120,
+   "unit": null,
+   "category": "hearsay_or_uncertain"
+  },
+  {
+   "text": "Someone at the pharmacy told him his sugar was 180.",
+   "field": "glucose",
+   "value": 180,
+   "unit": null,
+   "category": "hearsay_or_uncertain"
+  },
+  {
+   "text": "보호자 진술: 최근 간수치(ALT)가 '80 정도'였다고 함, 확인 불가.",
+   "field": "alt",
+   "value": 80,
+   "unit": null,
+   "category": "hearsay_or_uncertain"
+  },
+  {
+   "text": "Self-reported age 67 or 68; no ID available and DOB unknown.",
+   "field": "age",
+   "value": 67,
+   "unit": null,
+   "category": "hearsay_or_uncertain"
+  },
+  {
+   "text": "Patient says 'my bilirubin is always about 2' (Gilbert's?), no records available.",
+   "field": "total bilirubin",
+   "value": 2,
+   "unit": null,
+   "category": "hearsay_or_uncertain"
+  },
+  {
+   "text": "본인 기억으로 INR 1.2쯤 나왔던 것 같다고 함.",
+   "field": "inr",
+   "value": 1.2,
+   "unit": null,
+   "category": "hearsay_or_uncertain"
+  },
+  {
+   "text": "Wife believes his albumin was maybe 3.1 last time but isn't certain which test that was.",
+   "field": "albumin",
+   "value": 3.1,
+   "unit": null,
+   "category": "hearsay_or_uncertain"
+  },
+  {
+   "text": "환자 스스로 '거의 정상, 수행도 1 정도'라고 표현함. 의료진 평가는 아직 없음.",
+   "field": "ecog",
+   "value": 1,
+   "unit": null,
+   "category": "hearsay_or_uncertain"
+  },
+  {
+   "text": "HbA1c 7.9% today; continue metformin.",
+   "field": "glucose",
+   "value": 7.9,
+   "unit": "%",
+   "category": "different_test"
+  },
+  {
+   "text": "Urine protein 30 mg/dL on dipstick; serum albumin pending.",
+   "field": "albumin",
+   "value": 30,
+   "unit": "mg/dL",
+   "category": "different_test"
+  },
+  {
+   "text": "Direct bilirubin 0.9 mg/dL (total bilirubin pending).",
+   "field": "total bilirubin",
+   "value": 0.9,
+   "unit": "mg/dL",
+   "category": "different_test"
+  },
+  {
+   "text": "망상적혈구 2.4%, 혈색소 결과 대기중.",
+   "field": "hemoglobin",
+   "value": 2.4,
+   "unit": "%",
+   "category": "different_test"
+  },
+  {
+   "text": "WBC differential: lymphocytes 1.1 x10^3/uL; total WBC not yet resulted.",
+   "field": "white blood cell count",
+   "value": 1.1,
+   "unit": "x10^3/uL",
+   "category": "different_test"
+  },
+  {
+   "text": "ANC not reported (manual diff pending); WBC 5.6 x10^3/uL.",
+   "field": "absolute neutrophil count",
+   "value": 5.6,
+   "unit": "x10^3/uL",
+   "category": "different_test"
+  },
+  {
+   "text": "미세알부민뇨 45 mg/g Cr 확인.",
+   "field": "albumin",
+   "value": 45,
+   "unit": "mg/g Cr",
+   "category": "different_test"
+  },
+  {
+   "text": "Cystatin C 1.4 mg/L; creatinine not drawn.",
+   "field": "creatinine",
+   "value": 1.4,
+   "unit": "mg/L",
+   "category": "different_test"
+  },
+  {
+   "text": "GGT 120 U/L, ALP 210 U/L 상승; ALT/AST는 이번 패널에서 빠짐.",
+   "field": "alt",
+   "value": 120,
+   "unit": "U/L",
+   "category": "different_test"
+  },
+  {
+   "text": "PT 14.2초 (INR 미산출).",
+   "field": "inr",
+   "value": 14.2,
+   "unit": "초",
+   "category": "different_test"
+  }
+ ],
+ "positive": [
+  {
+   "text": "CBC this AM: Hgb 11.8 g/dL, WBC 6.2, Plt 245.",
+   "field": "hemoglobin",
+   "value": 11.8,
+   "unit": "g/dL",
+   "category": "plain_current"
+  },
+  {
+   "text": "Today's BMP shows creatinine 0.92 mg/dL, stable from baseline.",
+   "field": "creatinine",
+   "value": 0.92,
+   "unit": "mg/dL",
+   "category": "plain_current"
+  },
+  {
+   "text": "금일 혈액검사 혈소판 168 x10^3/uL로 시술 가능.",
+   "field": "platelets",
+   "value": 168,
+   "unit": "x10^3/uL",
+   "category": "plain_current"
+  },
+  {
+   "text": "ANC today 2.1 x10^9/L - OK to proceed with cycle 3.",
+   "field": "absolute neutrophil count",
+   "value": 2.1,
+   "unit": "x10^9/L",
+   "category": "plain_current"
+  },
+  {
+   "text": "ECOG 1 today; ambulatory, still working part-time.",
+   "field": "ecog",
+   "value": 1,
+   "unit": null,
+   "category": "plain_current"
+  },
+  {
+   "text": "62-year-old man with stage IIIB NSCLC presents for trial screening.",
+   "field": "age",
+   "value": 62,
+   "unit": null,
+   "category": "plain_current"
+  },
+  {
+   "text": "오늘 아침 채혈 결과 ALT 32 U/L, AST 29 U/L로 정상 범위.",
+   "field": "alt",
+   "value": 32,
+   "unit": "U/L",
+   "category": "plain_current"
+  },
+  {
+   "text": "Albumin 3.8 g/dL on this morning's CMP.",
+   "field": "albumin",
+   "value": 3.8,
+   "unit": "g/dL",
+   "category": "plain_current"
+  },
+  {
+   "text": "INR 1.1 this morning prior to CT-guided biopsy.",
+   "field": "inr",
+   "value": 1.1,
+   "unit": null,
+   "category": "plain_current"
+  },
+  {
+   "text": "금일 공복혈당 104 mg/dL.",
+   "field": "glucose",
+   "value": 104,
+   "unit": "mg/dL",
+   "category": "plain_current"
+  },
+  {
+   "text": "Serum creatinine 1.04 mg/dL today.",
+   "field": "creatinine",
+   "value": 1.04,
+   "unit": "mg/dL",
+   "category": "blood_explicit"
+  },
+  {
+   "text": "Plasma glucose (venous, fasting) 98 mg/dL this morning.",
+   "field": "glucose",
+   "value": 98,
+   "unit": "mg/dL",
+   "category": "blood_explicit"
+  },
+  {
+   "text": "정맥혈 검사: 혈색소 13.2 g/dL (금일).",
+   "field": "hemoglobin",
+   "value": 13.2,
+   "unit": "g/dL",
+   "category": "blood_explicit"
+  },
+  {
+   "text": "Serum albumin 3.4 g/dL, drawn at 07:00 today.",
+   "field": "albumin",
+   "value": 3.4,
+   "unit": "g/dL",
+   "category": "blood_explicit"
+  },
+  {
+   "text": "혈청 총빌리루빈 0.6 mg/dL, 오늘 오전 채혈.",
+   "field": "total bilirubin",
+   "value": 0.6,
+   "unit": "mg/dL",
+   "category": "blood_explicit"
+  },
+  {
+   "text": "Venous blood CBC today: WBC 7.4 x10^3/uL.",
+   "field": "white blood cell count",
+   "value": 7.4,
+   "unit": "x10^3/uL",
+   "category": "blood_explicit"
+  },
+  {
+   "text": "Serum ALT 24 U/L on today's hepatic function panel.",
+   "field": "alt",
+   "value": 24,
+   "unit": "U/L",
+   "category": "blood_explicit"
+  },
+  {
+   "text": "혈장 INR 0.98 (금일 응고검사).",
+   "field": "inr",
+   "value": 0.98,
+   "unit": null,
+   "category": "blood_explicit"
+  },
+  {
+   "text": "Peripheral blood: ANC 3200/uL today.",
+   "field": "absolute neutrophil count",
+   "value": 3200,
+   "unit": "/uL",
+   "category": "blood_explicit"
+  },
+  {
+   "text": "혈청 AST 41 U/L, 오늘 시행.",
+   "field": "ast",
+   "value": 41,
+   "unit": "U/L",
+   "category": "blood_explicit"
+  },
+  {
+   "text": "Wife's Hb was 8.9 g/dL at her own visit. Patient's own Hgb today 12.4 g/dL.",
+   "field": "hemoglobin",
+   "value": 12.4,
+   "unit": "g/dL",
+   "category": "with_other_person_distractor"
+  },
+  {
+   "text": "Donor creatinine 0.7 mg/dL. Recipient (our patient) creatinine today 1.2 mg/dL.",
+   "field": "creatinine",
+   "value": 1.2,
+   "unit": "mg/dL",
+   "category": "with_other_person_distractor"
+  },
+  {
+   "text": "배우자 혈당 210 mg/dL (본인 검진). 환자 본인 금일 공복혈당 92 mg/dL.",
+   "field": "glucose",
+   "value": 92,
+   "unit": "mg/dL",
+   "category": "with_other_person_distractor"
+  },
+  {
+   "text": "His brother, age 58, is also being screened. The patient is a 64-year-old retired teacher.",
+   "field": "age",
+   "value": 64,
+   "unit": null,
+   "category": "with_other_person_distractor"
+  },
+  {
+   "text": "Bed 2 had platelets 30 overnight (different patient). Our patient: Plt 188 K/uL today.",
+   "field": "platelets",
+   "value": 188,
+   "unit": "K/uL",
+   "category": "with_other_person_distractor"
+  },
+  {
+   "text": "어머니는 간경변으로 빌리루빈 4.1 mg/dL. 환자 본인 금일 총빌리루빈 0.8 mg/dL.",
+   "field": "total bilirubin",
+   "value": 0.8,
+   "unit": "mg/dL",
+   "category": "with_other_person_distractor"
+  },
+  {
+   "text": "Patient's ECOG 0 today. Her husband, who is also seen in this clinic, is ECOG 2.",
+   "field": "ecog",
+   "value": 0,
+   "unit": null,
+   "category": "with_other_person_distractor"
+  },
+  {
+   "text": "형(공여자) ALT 19 U/L. 환자(수혜자) 본인 오늘 ALT 45 U/L.",
+   "field": "alt",
+   "value": 45,
+   "unit": "U/L",
+   "category": "with_other_person_distractor"
+  },
+  {
+   "text": "Daughter's INR 2.8 (on warfarin) mentioned. Pt's own INR this morning 1.0; not anticoagulated.",
+   "field": "inr",
+   "value": 1.0,
+   "unit": null,
+   "category": "with_other_person_distractor"
+  },
+  {
+   "text": "Son's WBC 15 discussed (unrelated). Patient WBC 5.9 x10^3/uL on today's CBC.",
+   "field": "white blood cell count",
+   "value": 5.9,
+   "unit": "x10^3/uL",
+   "category": "with_other_person_distractor"
+  },
+  {
+   "text": "Hgb 7.2 g/dL in 2019 during GI bleed; today Hgb 12.9 g/dL.",
+   "field": "hemoglobin",
+   "value": 12.9,
+   "unit": "g/dL",
+   "category": "with_past_distractor"
+  },
+  {
+   "text": "Cr peaked at 2.6 mg/dL in 2021 (AKI); current Cr 1.0 mg/dL this morning.",
+   "field": "creatinine",
+   "value": 1.0,
+   "unit": "mg/dL",
+   "category": "with_past_distractor"
+  },
+  {
+   "text": "2020년 혈소판 70 x10^3/uL 기록 있으나 금일 혈소판 210 x10^3/uL.",
+   "field": "platelets",
+   "value": 210,
+   "unit": "x10^3/uL",
+   "category": "with_past_distractor"
+  },
+  {
+   "text": "ECOG was 2 last year during treatment; now ECOG 1 at today's visit.",
+   "field": "ecog",
+   "value": 1,
+   "unit": null,
+   "category": "with_past_distractor"
+  },
+  {
+   "text": "2년 전 알부민 2.4 g/dL. 오늘 혈청 알부민 3.9 g/dL로 회복.",
+   "field": "albumin",
+   "value": 3.9,
+   "unit": "g/dL",
+   "category": "with_past_distractor"
+  },
+  {
+   "text": "Historic ALT 300 U/L (2018 hepatitis). Today ALT 28 U/L.",
+   "field": "alt",
+   "value": 28,
+   "unit": "U/L",
+   "category": "with_past_distractor"
+  },
+  {
+   "text": "Prior ANC nadir 0.4 (cycle 1, 2025). ANC today 1.9 x10^9/L.",
+   "field": "absolute neutrophil count",
+   "value": 1.9,
+   "unit": "x10^9/L",
+   "category": "with_past_distractor"
+  },
+  {
+   "text": "과거(2019) 공복혈당 160 mg/dL. 금일 공복혈당 110 mg/dL.",
+   "field": "glucose",
+   "value": 110,
+   "unit": "mg/dL",
+   "category": "with_past_distractor"
+  },
+  {
+   "text": "Bilirubin 3.0 mg/dL before biliary stent in 2023; total bilirubin today 0.9 mg/dL.",
+   "field": "total bilirubin",
+   "value": 0.9,
+   "unit": "mg/dL",
+   "category": "with_past_distractor"
+  },
+  {
+   "text": "INR 2.4 on warfarin in 2022 (since stopped). INR today 1.05.",
+   "field": "inr",
+   "value": 1.05,
+   "unit": null,
+   "category": "with_past_distractor"
+  },
+  {
+   "text": "Urine creatinine 140 mg/dL; serum creatinine today 0.88 mg/dL.",
+   "field": "creatinine",
+   "value": 0.88,
+   "unit": "mg/dL",
+   "category": "with_urine_distractor"
+  },
+  {
+   "text": "UA glucose 100 mg/dL (trace); serum glucose 132 mg/dL today.",
+   "field": "glucose",
+   "value": 132,
+   "unit": "mg/dL",
+   "category": "with_urine_distractor"
+  },
+  {
+   "text": "소변 알부민 25 mg/L, 혈청 알부민 금일 4.1 g/dL.",
+   "field": "albumin",
+   "value": 4.1,
+   "unit": "g/dL",
+   "category": "with_urine_distractor"
+  },
+  {
+   "text": "CSF WBC 3/uL; blood WBC today 8.1 x10^3/uL.",
+   "field": "white blood cell count",
+   "value": 8.1,
+   "unit": "x10^3/uL",
+   "category": "with_urine_distractor"
+  },
+  {
+   "text": "Pleural fluid albumin 1.9 g/dL; serum albumin 3.6 g/dL drawn simultaneously today.",
+   "field": "albumin",
+   "value": 3.6,
+   "unit": "g/dL",
+   "category": "with_urine_distractor"
+  },
+  {
+   "text": "복수 백혈구 180/uL; 말초혈액 백혈구 금일 6.5 x10^3/uL.",
+   "field": "white blood cell count",
+   "value": 6.5,
+   "unit": "x10^3/uL",
+   "category": "with_urine_distractor"
+  },
+  {
+   "text": "Urine dipstick blood 1+, urine Hgb 0.3 mg/dL; CBC Hgb 10.9 g/dL this morning.",
+   "field": "hemoglobin",
+   "value": 10.9,
+   "unit": "g/dL",
+   "category": "with_urine_distractor"
+  },
+  {
+   "text": "CSF glucose 58 mg/dL with simultaneous serum glucose 101 mg/dL (today's LP).",
+   "field": "glucose",
+   "value": 101,
+   "unit": "mg/dL",
+   "category": "with_urine_distractor"
+  },
+  {
+   "text": "소변 빌리루빈 1+; 혈청 총빌리루빈 오늘 1.1 mg/dL.",
+   "field": "total bilirubin",
+   "value": 1.1,
+   "unit": "mg/dL",
+   "category": "with_urine_distractor"
+  },
+  {
+   "text": "Ascitic fluid total bilirubin 0.5 mg/dL; serum total bilirubin 1.3 mg/dL today.",
+   "field": "total bilirubin",
+   "value": 1.3,
+   "unit": "mg/dL",
+   "category": "with_urine_distractor"
+  },
+  {
+   "text": "Today's labs: WBC 5.1 K/uL | Hgb 11.2 g/dL | Plt 199 K/uL | ANC 3.0 K/uL",
+   "field": "platelets",
+   "value": 199,
+   "unit": "K/uL",
+   "category": "table_or_list"
+  },
+  {
+   "text": "CMP (today)\nNa 138  K 4.1  Cr 0.79 mg/dL  BUN 14  Glu 99 mg/dL",
+   "field": "creatinine",
+   "value": 0.79,
+   "unit": "mg/dL",
+   "category": "table_or_list"
+  },
+  {
+   "text": "[금일 검사]\n- 혈색소: 10.7 g/dL\n- 혈소판: 156 x10^3/uL\n- 호중구: 2400/uL",
+   "field": "hemoglobin",
+   "value": 10.7,
+   "unit": "g/dL",
+   "category": "table_or_list"
+  },
+  {
+   "text": "LFTs today - AST 22 / ALT 19 / T.bili 0.5 / Alb 4.2 (U/L, U/L, mg/dL, g/dL)",
+   "field": "alt",
+   "value": 19,
+   "unit": "U/L",
+   "category": "table_or_list"
+  },
+  {
+   "text": "Coags today: PT 12.1 s, INR 1.02, aPTT 29 s",
+   "field": "inr",
+   "value": 1.02,
+   "unit": null,
+   "category": "table_or_list"
+  },
+  {
+   "text": "검사항목 | 결과 | 단위\nAST | 37 | U/L\nALT | 44 | U/L\n(금일 채혈)",
+   "field": "ast",
+   "value": 37,
+   "unit": "U/L",
+   "category": "table_or_list"
+  },
+  {
+   "text": "Today: CBC w/ diff - WBC 4.3 x10^3/uL, Neut 58%, ANC 2.49 x10^3/uL, Hgb 12.0 g/dL",
+   "field": "absolute neutrophil count",
+   "value": 2.49,
+   "unit": "x10^3/uL",
+   "category": "table_or_list"
+  },
+  {
+   "text": "Screening panel (drawn today): albumin 3.7 g/dL; total bilirubin 0.4 mg/dL; creatinine 0.95 mg/dL",
+   "field": "total bilirubin",
+   "value": 0.4,
+   "unit": "mg/dL",
+   "category": "table_or_list"
+  },
+  {
+   "text": "오늘 혈액검사: WBC 9.2 / Hb 13.5 / PLT 302 (단위 x10^3/uL, g/dL, x10^3/uL)",
+   "field": "white blood cell count",
+   "value": 9.2,
+   "unit": "x10^3/uL",
+   "category": "table_or_list"
+  },
+  {
+   "text": "Screening summary today: ECOG 0 | Age 47 | Hgb 14.1 g/dL",
+   "field": "age",
+   "value": 47,
+   "unit": null,
+   "category": "table_or_list"
+  },
+  {
+   "text": "금일 외래 채혈: 혈색소 11.5 g/dL, 특이소견 없음.",
+   "field": "hemoglobin",
+   "value": 11.5,
+   "unit": "g/dL",
+   "category": "korean_note"
+  },
+  {
+   "text": "오늘 시행한 혈액검사에서 크레아티닌 0.81 mg/dL로 신기능 정상.",
+   "field": "creatinine",
+   "value": 0.81,
+   "unit": "mg/dL",
+   "category": "korean_note"
+  },
+  {
+   "text": "전신수행도 ECOG 1, 일상생활 가능하나 무리한 활동 시 피로 호소 (금일 평가).",
+   "field": "ecog",
+   "value": 1,
+   "unit": null,
+   "category": "korean_note"
+  },
+  {
+   "text": "만 58세 여자 환자로 비소세포폐암 4기 진단 하 내원함.",
+   "field": "age",
+   "value": 58,
+   "unit": null,
+   "category": "korean_note"
+  },
+  {
+   "text": "아침 채혈 혈소판 142 x10^3/uL, 출혈 경향 없음.",
+   "field": "platelets",
+   "value": 142,
+   "unit": "x10^3/uL",
+   "category": "korean_note"
+  },
+  {
+   "text": "오늘 절대호중구수 1800/uL로 항암 진행 가능.",
+   "field": "absolute neutrophil count",
+   "value": 1800,
+   "unit": "/uL",
+   "category": "korean_note"
+  },
+  {
+   "text": "금일 간기능 검사: ALT 27 IU/L, AST 25 IU/L.",
+   "field": "alt",
+   "value": 27,
+   "unit": "IU/L",
+   "category": "korean_note"
+  },
+  {
+   "text": "오늘 응고검사 INR 1.08, 조직검사 시행 가능함.",
+   "field": "inr",
+   "value": 1.08,
+   "unit": null,
+   "category": "korean_note"
+  },
+  {
+   "text": "금일 혈청 알부민 3.5 g/dL로 영양상태 보통.",
+   "field": "albumin",
+   "value": 3.5,
+   "unit": "g/dL",
+   "category": "korean_note"
+  },
+  {
+   "text": "오늘 아침 백혈구 7.9 x10^3/uL, 발열 없음.",
+   "field": "white blood cell count",
+   "value": 7.9,
+   "unit": "x10^3/uL",
+   "category": "korean_note"
+  },
+  {
+   "text": "Labs 2026-11-05: Hgb 12.2 g/dL.",
+   "field": "hemoglobin",
+   "value": 12.2,
+   "unit": "g/dL",
+   "category": "dated_recent"
+  },
+  {
+   "text": "On 10/28/2026, serum creatinine 1.15 mg/dL.",
+   "field": "creatinine",
+   "value": 1.15,
+   "unit": "mg/dL",
+   "category": "dated_recent"
+  },
+  {
+   "text": "2026년 11월 3일 혈소판 175 x10^3/uL.",
+   "field": "platelets",
+   "value": 175,
+   "unit": "x10^3/uL",
+   "category": "dated_recent"
+  },
+  {
+   "text": "CBC (Nov 6, 2026): ANC 2.7 x10^9/L.",
+   "field": "absolute neutrophil count",
+   "value": 2.7,
+   "unit": "x10^9/L",
+   "category": "dated_recent"
+  },
+  {
+   "text": "11/02/2026 CMP - albumin 4.3 g/dL.",
+   "field": "albumin",
+   "value": 4.3,
+   "unit": "g/dL",
+   "category": "dated_recent"
+  },
+  {
+   "text": "2026.10.30 간기능: 총빌리루빈 0.7 mg/dL.",
+   "field": "total bilirubin",
+   "value": 0.7,
+   "unit": "mg/dL",
+   "category": "dated_recent"
+  },
+  {
+   "text": "Collected 2026-10-25 08:10 - glucose 112 mg/dL (fasting).",
+   "field": "glucose",
+   "value": 112,
+   "unit": "mg/dL",
+   "category": "dated_recent"
+  },
+  {
+   "text": "ECOG 0 assessed 2026-11-04 at screening visit.",
+   "field": "ecog",
+   "value": 0,
+   "unit": null,
+   "category": "dated_recent"
+  },
+  {
+   "text": "2026-11-01 응고검사 INR 0.95.",
+   "field": "inr",
+   "value": 0.95,
+   "unit": null,
+   "category": "dated_recent"
+  },
+  {
+   "text": "AST 30 U/L, drawn 10/19/2026.",
+   "field": "ast",
+   "value": 30,
+   "unit": "U/L",
+   "category": "dated_recent"
+  }
+ ]
+}
