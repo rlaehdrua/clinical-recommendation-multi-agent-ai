@@ -206,7 +206,7 @@ class FollowupService:
         ds, co = self._cohort(session, alias, ops)
         pairs = self._pairs(co)
         self._supersede(data, ds, pairs, session)
-        self._open_conflicts(data, session)
+        self._open_conflicts(data, session, co)
         proposals, held = self._proposals(data, session, co)
         cur_criteria = _criteria_snapshot(session)
         transitions = [{"trial_id": t, "before": (prev_pairs or {}).get(t, {}).get("status"), "after": p["status"]}
@@ -256,8 +256,10 @@ class FollowupService:
                                                   for k in r["target_criteria"]):
                 self._set_status(r, "superseded", "system", "targets_resolved")
 
-    def _open_conflicts(self, data: dict, session) -> list[dict]:
-        """사실 저장소의 새 불일치마다 충돌 확인 요청 (값은 넣지 않음, 같은 사실 쌍은 한 번만)."""
+    def _open_conflicts(self, data: dict, session, co: CohortState) -> list[dict]:
+        """사실 저장소의 새 불일치마다 충돌 확인 요청 (값은 넣지 않음, 같은 사실 쌍은 한 번만).
+
+        정책 엔진이 같은 항목의 안전 확인(VERIFY_RECORD)을 냈으면 그 제안에 연결 (담당자가 같은 확인을 또 만들지 않게)."""
         known = {(r["conflict"]["field"], tuple(sorted(r["conflict"]["fact_ids"])))
                  for r in data["requests"] if r["kind"] == "conflict_resolution" and r.get("conflict")}
         made = []
@@ -267,8 +269,12 @@ class FollowupService:
                 continue
             known.add(key)
             targets = sorted({f"{x.trial_id}:{x.rule_id}" for x in self._field_criteria(session, c["field"])})
+            linked = {r["proposal_id"] for r in data["requests"] if r.get("proposal_id")}
+            verify = next((a for a in self._plan(co, self._open_actions(data)).selected
+                           if a.action_type == "VERIFY_RECORD" and a.info_key == c["field"] and a.action_id not in linked),
+                          None)
             r = self._new_request(data, kind="conflict_resolution", status="requires_document", by="system",
-                                  reason_code="fact_conflict", action=None, targets=targets, info_key=c["field"],
+                                  reason_code="fact_conflict", action=verify, targets=targets, info_key=c["field"],
                                   source_id="medical_record",
                                   conflict={"field": c["field"], "relation": c["relation"], "fact_ids": list(key[1])})
             made.append(r)
@@ -366,6 +372,8 @@ class FollowupService:
                 if live:
                     existing.append(live[0])
                     continue
+                if any(r["status"] == "document_unavailable" for r in same):
+                    raise FollowupError(409, "already_unavailable", "기록을 구할 수 없다고 표시한 확인입니다. 대체 경로를 쓰세요.")
                 if kind == "ask_patient":
                     if any(r["status"] == "answered" for r in same):
                         raise FollowupError(409, "already_answered", "이미 답을 받은 질문입니다.")
@@ -512,6 +520,15 @@ class FollowupService:
         self._refresh_current(data, session, ops)
         return [r]
 
+    def _conflict_to_clinician(self, data: dict, failed: dict, session, ops: OpsState) -> list[dict]:
+        """충돌을 확인할 기록이 없음: 같은 확인을 다시 만들지 않고 임상 검토로 (어느 값도 채택하지 않음)."""
+        r = self._new_request(data, kind="clinician_review", status="requires_clinician", by="system",
+                              reason_code="conflict_unresolved", action=None, targets=list(failed["target_criteria"]),
+                              info_key=failed.get("info_key"), source_id="clinician_review",
+                              follows=failed["request_id"])
+        self._refresh_current(data, session, ops)
+        return [r]
+
     def _refresh_current(self, data: dict, session, ops: OpsState) -> None:
         _, co = self._cohort(session, data["alias"], ops)
         data["current"]["proposals"], data["current"]["held"] = self._proposals(data, session, co)
@@ -588,7 +605,7 @@ class FollowupService:
                 _, co = self._cohort(session, data["alias"], ops)
                 pol = self.policy_factory()
                 for r in group:
-                    if r.get("action"):
+                    if r.get("action") and r["kind"] != "conflict_resolution":  # 충돌 확인은 정보원 실패가 아님
                         a = Action.model_validate(r["action"])
                         co, _ = pol.apply_outcome(co, a, ActionOutcome(action_id=a.action_id, status="failed",
                                                                        error_code=UNREACHABLE))
@@ -600,7 +617,9 @@ class FollowupService:
                 self._set_status(req, status, by, "staff_marked")
             rec = self._record(data, session, ops, {"type": "staff_status", "request_id": request_id, "status": status},
                                prev_pairs=prev_pairs, prev_criteria=_criteria_snapshot(session))
-            routed = [x for r in failed for x in self._route_after_failure(data, r, session, ops)]
+            routed = [x for r in failed for x in (self._conflict_to_clinician(data, r, session, ops)
+                                                  if r["kind"] == "conflict_resolution"
+                                                  else self._route_after_failure(data, r, session, ops))]
             self._event(data, "request_status", by, request_id=request_id, status=status,
                         routed=[r["request_id"] for r in routed])
             self.store.save(data, expected_revision=base)

@@ -390,3 +390,27 @@ def test_inspector_shows_round_changes(env):
     assert v["timeline"] and [t["round"] for t in v["timeline"]] == [0, 1]
     assert any(c["trial_id"] == "T-C" for c in v["changes"]["trial"])  # Inspector의 라운드별 판정 변화에 T-C
     assert v["followup"]["evaluations"][-1]["transitions"][0]["trial_id"] == "T-C"
+
+
+def test_conflict_links_safety_check_and_routes_to_clinician(env):
+    patient, staff = h.browser(), staff_client()
+    cid = _create(patient)["case_id"]
+    rid = _request(staff, cid, _proposal(_staff_case(staff, cid), "biomarker:EGFR")["proposal_id"])["created"][0]
+    assert _answer(patient, cid, rid, answer="EGFR exon 19 deletion.\nMy ECOG performance status is 3 now.")["conflict"]
+    case = _staff_case(staff, cid)
+    conflict = next(r for r in case["requests"] if r["kind"] == "conflict_resolution")
+    verify = next(p for p in case["proposals"] if p["action_type"] == "VERIFY_RECORD")
+    assert conflict["proposal_id"] == verify["proposal_id"] and verify["request_id"] == conflict["request_id"]
+    again = _request(staff, cid, verify["proposal_id"])  # 같은 안전 확인을 또 만들지 않음
+    assert again["created"] == [] and again["existing"] == [conflict["request_id"]]
+    r = staff.post(f"/api/followup/staff/cases/{cid}/requests/{conflict['request_id']}/status", headers=STAFF,
+                   json={"status": "document_unavailable"})
+    assert r.status_code == 200, r.text
+    case = r.json()["case"]
+    nxt = [x for x in case["requests"] if x["follows"] == conflict["request_id"]]
+    assert [(x["kind"], x["status"], x["reason_code"]) for x in nxt] == [("clinician_review", "requires_clinician",
+                                                                         "conflict_unresolved")]
+    assert sum(x["kind"] == "conflict_resolution" for x in case["requests"]) == 1  # 같은 충돌 확인이 다시 생기지 않음
+    assert _request(staff, cid, verify["proposal_id"], expect=409)["detail"]["code"] == "already_unavailable"
+    assert all("conflict" in case["pairs"][t]["gaps"] for t in ("T-A", "T-C"))  # 보류 유지
+    _no_confirmed_eligible(case)

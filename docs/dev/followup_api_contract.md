@@ -47,6 +47,10 @@
 - `unreachable`은 환자 연락 불가입니다. 정보원 전체의 실패이므로 같은 환자의 다른 `pending` 질문도 함께 `unreachable`이 되고,
   각 질문마다 대체 경로가 생깁니다.
 - `document_unavailable`은 그 문서 정보원의 실패입니다. 다음 문서 정보원이 있으면 그 요청이, 없으면 임상 검토 요청이 생깁니다.
+  충돌 확인(`conflict_resolution`)을 `document_unavailable`로 표시하면 같은 확인을 다시 만들지 않고 임상 검토
+  (`reason_code: conflict_unresolved`)로 넘깁니다. 충돌은 그대로 보류됩니다.
+- 시스템이 만든 충돌 확인 요청은 정책 엔진의 같은 항목 안전 확인 제안(`VERIFY_RECORD`)에 연결됩니다. 그래서 담당자가 그 제안을
+  골라도 새 요청이 생기지 않고 `existing`으로 돌아옵니다.
 - 평가가 끝날 때마다 대상 기준이 더 이상 열려 있지 않은 요청은 `superseded`로 닫힙니다. 지난 질문은 환자에게 답할 수 있는 상태로 보이지 않습니다.
 
 ### 쌍 상태 (`pairs[*].status`, 엔진 계약 0.2 PairStatus)
@@ -100,7 +104,7 @@
 | 403 | `staff_forbidden` / `staff_cannot_answer` | 담당자 키가 틀림 / 담당자가 응답 API를 부름 |
 | 404 | `case_not_found`, `request_not_found`, `trial_not_found` | 없는 ID, 다른 환자의 사례 |
 | 409 | `request_closed` | 이미 처리된 질문에 다른 답 (같은 답이나 같은 `client_response_id`면 200 `duplicate: true`) |
-| 409 | `proposal_not_current`, `stale_revision`, `already_answered`, `already_unknown`, `transition_not_allowed` | 화면이 오래된 상태이거나 허용되지 않는 동작 |
+| 409 | `proposal_not_current`, `stale_revision`, `already_answered`, `already_unknown`, `already_unavailable`, `transition_not_allowed` | 화면이 오래된 상태이거나 허용되지 않는 동작 |
 | 422 | `not_renderable` | 환자 질문으로 바꿀 수 없는 제안 |
 | 503 | `analysis_disabled`, `staff_access_not_configured`, 예산 코드(`budget_exceeded` 등) | 실제 분석이 꺼져 있음, 담당자 설정 없음, 비용 한도 |
 | 500 | `evaluation_failed` | 평가 중 오류. 오류 종류만 알리고, 변경은 저장하지 않음 (다시 보내도 안전) |
