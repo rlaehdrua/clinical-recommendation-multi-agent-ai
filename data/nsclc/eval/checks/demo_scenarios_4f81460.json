@@ -1,0 +1,489 @@
+{
+ "run": {
+  "policy": "full_dcvc",
+  "budget_minutes": 6000,
+  "horizon": 80,
+  "seed": 1,
+  "cohort": "nsclc-eval-v1-r00@a549da3b1171fd52+map6c43912c"
+ },
+ "scenarios": {
+  "A_pending_expert": {
+   "sim_pair_key": "PA-7ecce9efb7a1a8fa|NCT07680790",
+   "patient_id": "P052",
+   "trial_id": "NCT07680790",
+   "gt_label": "PENDING_EXPERT_ELIGIBLE",
+   "gt_reasons": "needs_expert",
+   "final_status": "EXPERT_REVIEW",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT06928389",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 69.0,
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1",
+    "tx.prior_platinum": "no"
+   },
+   "hidden": {
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "dx.histology": "adenocarcinoma",
+    "ecog": 1.0
+   },
+   "other_pairs_final": {
+    "NCT06216301": "INFO_MISSING",
+    "NCT06928389": "CONFIRMED_INELIGIBLE",
+    "NCT07680790": "EXPERT_REVIEW"
+   },
+   "actions": [
+    {
+     "step": 25,
+     "action": "REQUEST_DOCUMENT",
+     "source": "medical_record",
+     "info_key": "ecog",
+     "targets": [
+      "NCT06216301:I7",
+      "NCT06928389:I4",
+      "NCT07680790:I5"
+     ],
+     "outcome": "succeeded",
+     "error": null,
+     "pairs": [
+      "NCT06216301:INFO_MISSING->INFO_MISSING",
+      "NCT06928389:VERIFICATION_PENDING->VERIFICATION_PENDING",
+      "NCT07680790:INFO_MISSING->INFO_MISSING"
+     ]
+    },
+    {
+     "step": 431,
+     "action": "REQUEST_DOCUMENT",
+     "source": "pathology_report",
+     "info_key": "biomarker:EGFR",
+     "targets": [
+      "NCT07680790:I3"
+     ],
+     "outcome": "succeeded",
+     "error": null,
+     "pairs": [
+      "NCT06216301:INFO_MISSING->INFO_MISSING",
+      "NCT06928389:VERIFICATION_PENDING->VERIFICATION_PENDING",
+      "NCT07680790:INFO_MISSING->INFO_MISSING"
+     ]
+    },
+    {
+     "step": 438,
+     "action": "REQUEST_DOCUMENT",
+     "source": "medical_record",
+     "info_key": "criterion:NCT07680790:I1",
+     "targets": [
+      "NCT07680790:I1"
+     ],
+     "outcome": "failed",
+     "error": "unreachable",
+     "pairs": [
+      "NCT07680790:EXPERT_REVIEW->EXPERT_REVIEW"
+     ]
+    }
+   ]
+  },
+  "B_ineligible": {
+   "sim_pair_key": "PA-14c86cb165b752ee|NCT06928389",
+   "patient_id": "P045",
+   "trial_id": "NCT06928389",
+   "gt_label": "INELIGIBLE",
+   "gt_reasons": "fail:I4",
+   "final_status": "CONFIRMED_INELIGIBLE",
+   "candidate_trials": [
+    "NCT06928389",
+    "NCT07416058",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 57.0,
+    "ecog": 2.0,
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "male",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_platinum": "yes"
+   },
+   "hidden": {
+    "bm.driver_alteration": "not_tested",
+    "dx.histology": "squamous",
+    "dx.stage": "IVB",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1"
+   },
+   "other_pairs_final": {
+    "NCT06928389": "CONFIRMED_INELIGIBLE",
+    "NCT07416058": "CONFIRMED_INELIGIBLE",
+    "NCT07680790": "CONFIRMED_INELIGIBLE"
+   },
+   "actions": [
+    {
+     "step": 1446,
+     "action": "REQUEST_DOCUMENT",
+     "source": "medical_record",
+     "info_key": "criterion:NCT06928389:E1",
+     "targets": [
+      "NCT06928389:E1"
+     ],
+     "outcome": "failed",
+     "error": "unreachable",
+     "pairs": [
+      "NCT06928389:VERIFICATION_PENDING->VERIFICATION_PENDING"
+     ]
+    },
+    {
+     "step": 1447,
+     "action": "ASK_PATIENT",
+     "source": "patient_interview",
+     "info_key": "criterion:NCT06928389:I9",
+     "targets": [
+      "NCT06928389:I9"
+     ],
+     "outcome": "succeeded",
+     "error": null,
+     "pairs": [
+      "NCT06928389:VERIFICATION_PENDING->VERIFICATION_PENDING",
+      "NCT07416058:CONFIRMED_INELIGIBLE->CONFIRMED_INELIGIBLE",
+      "NCT07680790:CONFIRMED_INELIGIBLE->CONFIRMED_INELIGIBLE"
+     ]
+    },
+    {
+     "step": 1713,
+     "action": "REQUEST_DOCUMENT",
+     "source": "medical_record",
+     "info_key": "basis:ecog",
+     "targets": [
+      "NCT06928389:I4",
+      "NCT07416058:I9",
+      "NCT07680790:I5"
+     ],
+     "outcome": "succeeded",
+     "error": null,
+     "pairs": [
+      "NCT06928389:VERIFICATION_PENDING->CONFIRMED_INELIGIBLE",
+      "NCT07416058:CONFIRMED_INELIGIBLE->CONFIRMED_INELIGIBLE",
+      "NCT07680790:CONFIRMED_INELIGIBLE->CONFIRMED_INELIGIBLE"
+     ]
+    },
+    {
+     "step": 1809,
+     "action": "RETRIEVE",
+     "source": "trial_registry",
+     "info_key": "retrieve",
+     "targets": [],
+     "outcome": "succeeded",
+     "error": null,
+     "pairs": [
+      "NCT06928389:CONFIRMED_INELIGIBLE->CONFIRMED_INELIGIBLE",
+      "NCT07416058:CONFIRMED_INELIGIBLE->CONFIRMED_INELIGIBLE",
+      "NCT07680790:CONFIRMED_INELIGIBLE->CONFIRMED_INELIGIBLE"
+     ]
+    }
+   ]
+  },
+  "C_unknown_then_document": {
+   "sim_pair_key": "PA-fefb0563eeb35b8f|NCT06216301",
+   "patient_id": "P061",
+   "trial_id": "NCT06216301",
+   "gt_label": "NOT_EVALUATED",
+   "gt_reasons": "not_evaluated_rule",
+   "final_status": "INFO_MISSING",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT06928389",
+    "NCT07416058"
+   ],
+   "public_known": {
+    "age": 59.0,
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_pd1_pdl1": "ici_other",
+    "tx.prior_platinum": "yes"
+   },
+   "hidden": {
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "dx.histology": "adenocarcinoma",
+    "dx.stage": "IIIC",
+    "ecog": 0.0,
+    "tx.other_investigational_4w": "no"
+   },
+   "other_pairs_final": {
+    "NCT06216301": "INFO_MISSING",
+    "NCT06928389": "CONFIRMED_INELIGIBLE",
+    "NCT07416058": "INFO_MISSING"
+   },
+   "actions": [
+    {
+     "step": 32,
+     "action": "REQUEST_DOCUMENT",
+     "source": "medical_record",
+     "info_key": "ecog",
+     "targets": [
+      "NCT06216301:I7",
+      "NCT06928389:I4",
+      "NCT07416058:I9"
+     ],
+     "outcome": "succeeded",
+     "error": null,
+     "pairs": [
+      "NCT06216301:INFO_MISSING->INFO_MISSING",
+      "NCT06928389:VERIFICATION_PENDING->VERIFICATION_PENDING",
+      "NCT07416058:INFO_MISSING->INFO_MISSING"
+     ]
+    },
+    {
+     "step": 43,
+     "action": "ASK_PATIENT",
+     "source": "patient_interview",
+     "info_key": "biomarker:PD-L1",
+     "targets": [
+      "NCT06216301:E12",
+      "NCT07416058:I8"
+     ],
+     "outcome": "no_response",
+     "error": "no_answer",
+     "pairs": [
+      "NCT06216301:INFO_MISSING->INFO_MISSING",
+      "NCT07416058:INFO_MISSING->INFO_MISSING"
+     ]
+    },
+    {
+     "step": 914,
+     "action": "REQUEST_DOCUMENT",
+     "source": "medical_record",
+     "info_key": "criterion:NCT06216301:E1",
+     "targets": [
+      "NCT06216301:E1"
+     ],
+     "outcome": "succeeded",
+     "error": null,
+     "pairs": [
+      "NCT06216301:INFO_MISSING->INFO_MISSING",
+      "NCT06928389:VERIFICATION_PENDING->VERIFICATION_PENDING",
+      "NCT07416058:INFO_MISSING->INFO_MISSING"
+     ]
+    },
+    {
+     "step": 915,
+     "action": "ASK_PATIENT",
+     "source": "patient_interview",
+     "info_key": "criterion:NCT06216301:E11",
+     "targets": [
+      "NCT06216301:E11"
+     ],
+     "outcome": "succeeded",
+     "error": null,
+     "pairs": [
+      "NCT06216301:INFO_MISSING->INFO_MISSING",
+      "NCT06928389:VERIFICATION_PENDING->VERIFICATION_PENDING",
+      "NCT07416058:INFO_MISSING->INFO_MISSING"
+     ]
+    },
+    {
+     "step": 916,
+     "action": "ASK_PATIENT",
+     "source": "patient_interview",
+     "info_key": "criterion:NCT06216301:E13",
+     "targets": [
+      "NCT06216301:E13"
+     ],
+     "outcome": "succeeded",
+     "error": null,
+     "pairs": [
+      "NCT06216301:INFO_MISSING->INFO_MISSING",
+      "NCT06928389:VERIFICATION_PENDING->VERIFICATION_PENDING",
+      "NCT07416058:INFO_MISSING->INFO_MISSING"
+     ]
+    },
+    {
+     "step": 917,
+     "action": "ASK_PATIENT",
+     "source": "patient_interview",
+     "info_key": "criterion:NCT06216301:E16",
+     "targets": [
+      "NCT06216301:E16"
+     ],
+     "outcome": "no_response",
+     "error": "no_answer",
+     "pairs": [
+      "NCT06216301:INFO_MISSING->INFO_MISSING"
+     ]
+    },
+    {
+     "step": 918,
+     "action": "ASK_PATIENT",
+     "source": "patient_interview",
+     "info_key": "criterion:NCT06216301:I10",
+     "targets": [
+      "NCT06216301:I10"
+     ],
+     "outcome": "no_response",
+     "error": "no_answer",
+     "pairs": [
+      "NCT06216301:INFO_MISSING->INFO_MISSING"
+     ]
+    },
+    {
+     "step": 919,
+     "action": "REQUEST_DOCUMENT",
+     "source": "lab_report",
+     "info_key": "criterion:NCT06216301:I8",
+     "targets": [
+      "NCT06216301:I8"
+     ],
+     "outcome": "no_response",
+     "error": "no_answer",
+     "pairs": [
+      "NCT06216301:INFO_MISSING->INFO_MISSING"
+     ]
+    },
+    {
+     "step": 1822,
+     "action": "REQUEST_DOCUMENT",
+     "source": "pathology_report",
+     "info_key": "biomarker:PD-L1",
+     "targets": [
+      "NCT06216301:E12",
+      "NCT07416058:I8"
+     ],
+     "outcome": "succeeded",
+     "error": null,
+     "pairs": [
+      "NCT06216301:INFO_MISSING->INFO_MISSING",
+      "NCT07416058:INFO_MISSING->INFO_MISSING"
+     ]
+    },
+    {
+     "step": 2112,
+     "action": "REQUEST_DOCUMENT",
+     "source": "medication_list",
+     "info_key": "criterion:NCT06216301:E16",
+     "targets": [
+      "NCT06216301:E16"
+     ],
+     "outcome": "failed",
+     "error": "unreachable",
+     "pairs": [
+      "NCT06216301:INFO_MISSING->INFO_MISSING"
+     ]
+    },
+    {
+     "step": 2113,
+     "action": "REQUEST_DOCUMENT",
+     "source": "medication_list",
+     "info_key": "criterion:NCT06216301:I10",
+     "targets": [
+      "NCT06216301:I10"
+     ],
+     "outcome": "succeeded",
+     "error": null,
+     "pairs": [
+      "NCT06216301:INFO_MISSING->INFO_MISSING",
+      "NCT06928389:CONFIRMED_INELIGIBLE->CONFIRMED_INELIGIBLE",
+      "NCT07416058:INFO_MISSING->INFO_MISSING"
+     ]
+    },
+    {
+     "step": 2114,
+     "action": "REQUEST_DOCUMENT",
+     "source": "medical_record",
+     "info_key": "criterion:NCT06216301:I8",
+     "targets": [
+      "NCT06216301:I8"
+     ],
+     "outcome": "succeeded",
+     "error": null,
+     "pairs": [
+      "NCT06216301:INFO_MISSING->INFO_MISSING"
+     ]
+    },
+    {
+     "step": 2313,
+     "action": "REQUEST_DOCUMENT",
+     "source": "medical_record",
+     "info_key": "biomarker:PD-L1",
+     "targets": [
+      "NCT06216301:E12",
+      "NCT07416058:I8"
+     ],
+     "outcome": "failed",
+     "error": "unreachable",
+     "pairs": [
+      "NCT06216301:INFO_MISSING->INFO_MISSING",
+      "NCT07416058:INFO_MISSING->INFO_MISSING"
+     ]
+    },
+    {
+     "step": 2401,
+     "action": "REQUEST_DOCUMENT",
+     "source": "medical_record",
+     "info_key": "criterion:NCT06216301:E16",
+     "targets": [
+      "NCT06216301:E16"
+     ],
+     "outcome": "succeeded",
+     "error": null,
+     "pairs": [
+      "NCT06216301:INFO_MISSING->INFO_MISSING",
+      "NCT06928389:CONFIRMED_INELIGIBLE->CONFIRMED_INELIGIBLE",
+      "NCT07416058:INFO_MISSING->INFO_MISSING"
+     ]
+    },
+    {
+     "step": 2402,
+     "action": "REQUEST_DOCUMENT",
+     "source": "medical_record",
+     "info_key": "criterion:NCT06216301:I10",
+     "targets": [
+      "NCT06216301:I10"
+     ],
+     "outcome": "succeeded",
+     "error": null,
+     "pairs": [
+      "NCT06216301:INFO_MISSING->INFO_MISSING",
+      "NCT06928389:CONFIRMED_INELIGIBLE->CONFIRMED_INELIGIBLE",
+      "NCT07416058:INFO_MISSING->INFO_MISSING"
+     ]
+    },
+    {
+     "step": 2403,
+     "action": "ASK_PATIENT",
+     "source": "patient_interview",
+     "info_key": "criterion:NCT06216301:I8",
+     "targets": [
+      "NCT06216301:I8"
+     ],
+     "outcome": "no_response",
+     "error": "no_answer",
+     "pairs": [
+      "NCT06216301:INFO_MISSING->INFO_MISSING"
+     ]
+    }
+   ]
+  }
+ },
+ "C_candidates": [
+  "PA-0dd0dfa09527da66|NCT07416058",
+  "PA-45728dbba580283f|NCT06216301",
+  "PA-5b410d13fb6eb7bc|NCT07027514",
+  "PA-fefb0563eeb35b8f|NCT06216301"
+ ],
+ "D_region": {
+  "patient": "DEMO-REGION (평가셋 밖 데모 환자: 20세 여성, 국가 미상)",
+  "engine_status": "CONFIRMED_INELIGIBLE",
+  "I1": "NOT_MET",
+  "mismatch_basis": [
+   "NCT06216301:I1"
+  ],
+  "gt_expected": "NOT_EVALUATED (I1 지역 조건부, 국가 미상)"
+ }
+}
