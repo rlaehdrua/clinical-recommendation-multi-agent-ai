@@ -1023,8 +1023,11 @@ class FollowupService:
                      for r in data["requests"] if r["kind"] == "clinician_review"]
             facts = [self._fact_view(f, document_backed(f)) for f in session.fact_store.facts(session.case.patient_id)]
             judgments = [{**j, "recognition": self._judgment_status(auth, j)} for j in data.get("judgments", [])]
+            # 쌍 상태는 담당자·환자 화면(refresh_pairs)과 같은 지금 권한 기준 (권한 철회 뒤 저장된 확정을 보이지 않음).
+            # 위 항목·사실을 다 만든 뒤 부름 (_live_current가 session.matches를 다시 막힌 사본으로 바꿈)
+            live = self._live_current(data, session) if (data.get("verifications") or data.get("judgments")) else None
         return {"case_id": case_id, "revision": data["revision"], "synthetic": data["synthetic"],
-                "pairs": data["current"]["pairs"], "requests": items, "facts": facts, "judgments": judgments}
+                "pairs": (live or data["current"])["pairs"], "requests": items, "facts": facts, "judgments": judgments}
 
     @staticmethod
     def _judgment_status(auth, j: dict) -> str:

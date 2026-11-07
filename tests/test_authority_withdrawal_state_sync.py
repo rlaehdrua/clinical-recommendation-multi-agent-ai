@@ -237,3 +237,21 @@ def test_staff_inspector_screen_separates_history():
     assert 'data-scope="current"' in body and 'data-scope="history"' in body
     assert "과거 평가 기록" in body and "scope.history_notice" in body and NOTICE in body
     assert body.index('data-scope="current"') < body.index('data-scope="history"')
+
+
+# ---------------------------------------------------------------------------
+# 6. 임상의 화면도 같은 지금 권한 상태 (야간 감사 V2-6/V2-9: clinician_view가 저장된 쌍 상태를 그대로 돌려줬음)
+# ---------------------------------------------------------------------------
+
+def test_clinician_view_pairs_match_staff_after_withdrawal(env):
+    """다른 서명 비밀로 재시작 (검증 모드 해제는 임상의 API가 503이라 해당 없음): 임상의 화면의 쌍 상태 = 담당자 화면."""
+    patient, staff, verifier, clinician = clients()
+    cid, _ = Q.completed_case(patient, staff, verifier, clinician)
+    before = clinician.get(f"/api/followup/clinician/cases/{cid}", headers=D.CLINICIAN).json()
+    assert CE in {p["status"] for p in before["pairs"].values()}  # 대조: 철회 전에는 확정
+    withdraw(env, "other_secret")
+    staff_pairs = {t: p["status"] for t, p in D.staff_case(staff, cid)["pairs"].items()}
+    cv = clinician.get(f"/api/followup/clinician/cases/{cid}", headers=D.CLINICIAN).json()
+    clin_pairs = {t: p["status"] for t, p in cv["pairs"].items()}
+    assert CE not in clin_pairs.values(), clin_pairs
+    assert clin_pairs == staff_pairs
