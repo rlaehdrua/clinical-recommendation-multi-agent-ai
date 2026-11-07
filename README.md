@@ -362,10 +362,11 @@ python eval/evaluate.py --labels data/labels/masked_labels.csv --outputs outputs
 | `--answers interactive` | 터미널에서 사람이 직접 답변 (시연용) | |
 | `--answers simulated` | 가상 환자의 `hidden_details`를 아는 LLM이 답변 (개발·평가용) | |
 | `--answers none` | 답변 없이 질문만 기록 | ✅ |
-| `--max-rounds N` | 확인 질문 최대 라운드 | 2 |
+| `--max-rounds N` | 확인 질문 최대 라운드 (환경 변수 `CTREC_MAX_CLARIFY_ROUNDS`로 기본값 변경) | 2 |
 | `--candidates screen` | 불러온 시험 전체를 풀로 보고 후보 추림 에이전트가 고름 | ✅ |
 | `--candidates given` | 환자 파일의 `candidate_trials` 또는 `--topic-map`에 정한 후보만 평가 (이전 방식, 라벨이 있는 쌍만 평가할 때) | |
-| `--max-candidates N` | 후보 추림 후 자세히 평가할 최대 시험 수. 시험 풀이 이보다 작으면 추림 없이 전부 평가. **5는 실험 전 임시값**입니다. D3 결정에 따라 `scripts/screen_budget.py`(recall@k)로 정합니다 | 5 (임시) |
+| `--max-candidates N` | 후보 추림 후 자세히 평가할 최대 시험 수. 시험 풀이 이보다 작으면 추림 없이 전부 평가. **5는 실험 전 임시값**입니다. D3 결정에 따라 `scripts/screen_budget.py`(recall@k)로 정합니다. 기본값은 환경 변수 `CTREC_SCREEN_MAX`로 바꿉니다 | 5 (임시) |
+| `CTREC_MAX_STEPS` (환경변수) | agent 모드 오케스트레이터 도구 호출 루프의 최대 반복 횟수 | 15 |
 | `CTREC_MAX_QUESTIONS` (환경변수) | 라운드당 최대 질문 수 (`batch`·`adaptive` 정책의 한도). **5는 실험 전 임시값**입니다 | 5 (임시) |
 | `CTREC_QUESTION_POLICY` (환경변수) | 한 라운드에 묶을 질문 수 정책 (D4). `single` 항상 1개 / `batch` 한도까지 / `adaptive` 서로 독립적이고 판정을 바꿀 질문만 함께. 기본 `adaptive`는 권장안이며 `scripts/question_policy_sweep.py` 결과로 확정합니다 | adaptive (임시) |
 | `compile_trials.py --unfreeze` | 잠긴 기준표(`data/parsed/FROZEN.json`)의 시험도 다시 컴파일해 덮어씀. 팀 검토 후에만 쓰고, 끝나면 `scripts/freeze_parsed.py`로 다시 잠급니다 | off |
@@ -574,7 +575,7 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 - **캐싱**
   - 에이전트별 시스템 프롬프트에 프롬프트 캐싱을 적용합니다.
   - 시험 기준은 `scripts/compile_trials.py`로 미리 파싱·검증해 `data/parsed/`(git 포함)에 고정합니다. 2026-10-12에 26개 시험 전부를 공식 기준표로 잠갔습니다(`FROZEN.json`, 파일이 바뀌면 테스트 실패). 환자를 평가할 때는 파싱하지 않습니다. 시험 기준 원문이 바뀌면 그 시험은 `COMPILATION_PENDING`이 되므로 다시 컴파일합니다. `data/cache/parsed/`는 컴파일·즉석 파싱용 내부 캐시입니다.
-- **안전 분류기 대응**: 의료 텍스트가 드물게 모델의 안전 분류기에 의해 거절될 수 있습니다. 이 경우를 대비해 Claude API의 서버측 refusal fallback(`fallbacks: "default"`)을 기본으로 켜 두었습니다. Bedrock이나 Vertex 등 다른 플랫폼에서는 `.env`에 `CTREC_FALLBACKS=0`을 설정하세요.
+- **안전 분류기 대응**: 의료 텍스트가 드물게 모델의 안전 분류기에 의해 거절될 수 있습니다. 이 경우를 대비해 Claude API의 서버측 refusal fallback(`fallbacks: "default"`)을 기본으로 켜 두었습니다. Bedrock이나 Vertex 등 다른 플랫폼에서는 `.env`에 `CTREC_FALLBACKS=0`을 설정하세요. 코드 기본값은 켜짐(`CTREC_FALLBACKS` 미설정 = 1)이지만, `.env.example`과 `render.yaml`은 `CTREC_FALLBACKS=0`(꺼짐)으로 두므로 `.env.example`을 복사해 쓰면 꺼진 상태입니다. 웹 실제 분석과 파일럿 실행 전 점검은 0을 요구합니다.
 - **비용 규모**: 환자 1명 × 시험 N개 기준으로 대략 다음 횟수만큼 Claude를 호출합니다.
   - 후보 추림: 1회 (약 $0.03. 시험 풀 설명은 시스템 프롬프트에 넣어 환자가 바뀌어도 캐시로 재사용). 자세한 판정은 고른 시험 N개(최대 5개)에만 합니다
   - 기준 파싱: 0회 (사전 컴파일한 고정 저장소 사용. 컴파일은 시험당 파싱 3회 + 검증 1회를 한 번만)
