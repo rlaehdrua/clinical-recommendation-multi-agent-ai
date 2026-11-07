@@ -525,7 +525,7 @@ def index() -> FileResponse:
 STATIC_FILES = {"app.js": "text/javascript", "app.css": "text/css", "marked.min.js": "text/javascript",
                 "purify.min.js": "text/javascript", "logo.svg": "image/svg+xml",
                 "cohort.js": "text/javascript", "cohort.css": "text/css", "followup.js": "text/javascript",
-                "staff.js": "text/javascript", "staff.css": "text/css"}
+                "staff.js": "text/javascript", "staff.css": "text/css"}  # staff.*: 같은 페이지의 연구 담당자 탭
 
 
 @app.get("/static/{name}")
@@ -625,8 +625,8 @@ def _latest_cohort_set() -> tuple[Path, dict] | None:
 
 @app.get("/staff")
 def staff_page() -> FileResponse:
-    """연구 담당자 화면 (추가 정보 확인 흐름). 데이터는 /api/followup/staff/* - 담당자 키가 있어야 읽힘."""
-    return FileResponse(STATIC / "staff.html", headers={"Cache-Control": "no-cache"})
+    """연구 담당자 탭으로 여는 같은 화면 (index.html, staff.js가 경로를 보고 탭을 고름). 데이터는 담당자 키가 있어야 읽힘."""
+    return FileResponse(STATIC / "index.html", headers={"Cache-Control": "no-cache"})
 
 
 @app.get("/cohort")

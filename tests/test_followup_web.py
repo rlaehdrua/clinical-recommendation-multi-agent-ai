@@ -34,9 +34,11 @@ def test_catalog_trials_lists_the_flow_catalog(env):
 
 def test_staff_page_and_scripts_are_served_under_csp():
     c = h.browser()
-    r = c.get("/staff")
+    r = c.get("/staff")  # 같은 페이지 (index.html), staff.js가 경로를 보고 연구 담당자 탭을 엶
     assert r.status_code == 200 and "default-src 'none'" in r.headers["content-security-policy"]
-    assert '/static/staff.js' in r.text and "<script>" not in r.text and "style=" not in r.text
+    assert r.text == c.get("/").text
+    assert '/static/staff.js' in r.text and "<script>" not in r.text and 'id="page-staff"' in r.text
+    assert 'data-role="patient"' in r.text and 'data-role="staff"' in r.text
     for name in ("staff.js", "staff.css", "followup.js"):
         assert c.get(f"/static/{name}").status_code == 200, name
     index = c.get("/").text
@@ -98,3 +100,47 @@ def test_staff_queue_can_send_and_marks_unconfirmed_states():
     assert "data-qsend" in src and "queueSend" in src
     for status in ("VERIFICATION_PENDING", "EXPERT_REVIEW"):
         assert re.search(status + r': "미확정', src), status
+
+
+def test_staff_script_makes_no_globals():
+    """app.js와 같은 페이지에서 돌므로 전역 이름 충돌이 없게 즉시 실행 함수로 감쌈."""
+    src = _js("staff.js")
+    code = "\n".join(line for line in src.splitlines() if not line.startswith("//"))
+    assert code.lstrip().startswith("(() => {") and code.rstrip().endswith("})();")
+
+
+def _two_cases():
+    patient = h.browser()
+    F._create(patient)
+    other = h.browser(client=("198.51.100.31", 50002))
+    F._create(other, text="Synthetic NSCLC patient, female, 52 years old. ECOG 0.")
+    return patient
+
+
+def test_insight_counts_patients_pairs_and_minutes(env):
+    _two_cases()
+    staff = F.staff_client()
+    assert staff.get("/api/followup/staff/insight").status_code in (403, 503)  # 담당자 키 없으면 거절
+    d = staff.get("/api/followup/staff/insight", headers=F.STAFF).json()
+    s = d["summary"]
+    assert s["cases"] == 2 and s["items"] >= len(d["questions"]) > 0
+    queue = staff.get("/api/followup/staff/queue", headers=F.STAFF).json()["items"]
+    for g in d["questions"]:
+        ids = {p["case_id"] for p in g["patients"]}
+        assert g["n_patients"] == len(g["patients"]) == len(ids)
+        assert g["n_decided_pairs"] <= g["n_related_pairs"] and g["n_next_pairs"] <= g["n_related_pairs"]
+        assert g["minutes"] == round(sum(p["minutes"] for p in g["patients"]), 1) >= 0
+        for p in g["patients"]:  # 대기열(Cohort C)과 같은 순위·같은 행동
+            assert any(q["proposal_id"] == p["proposal_id"] and q["rank"] == p["rank"] for q in queue)
+    curve = s["c_curve"]
+    assert [p["minutes"] for p in curve] == sorted(p["minutes"] for p in curve)  # 누적 분은 줄지 않음
+    assert curve[-1]["minutes"] == s["minutes_all"]
+    assert sorted(x["decided_pairs"] for x in s["patient_order_curve"])[-1] == curve[-1]["decided_pairs"]  # 같은 확인, 다른 순서
+
+
+def test_insight_does_not_change_cases(env):
+    _two_cases()
+    staff = F.staff_client()
+    before = staff.get("/api/followup/staff/cases", headers=F.STAFF).json()
+    staff.get("/api/followup/staff/insight", headers=F.STAFF)
+    assert staff.get("/api/followup/staff/cases", headers=F.STAFF).json() == before

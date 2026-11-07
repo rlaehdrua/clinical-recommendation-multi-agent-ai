@@ -50,9 +50,9 @@ header.top .bar { display: flex; align-items: center; justify-content: space-bet
 .brand .tag { min-width: 0; font-size: 13px; font-weight: 600; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 380px) { .brand .tag { display: none; } }
 header.top .meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
-#pages { margin-left: auto; display: flex; gap: 2px; background: var(--line); padding: 3px; border-radius: 10px; }
-#pages button { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 8px; cursor: pointer; min-height: 30px; }
-#pages button.on { background: var(--panel); color: var(--text); font-weight: 700; }
+#roles, #pages { margin-left: auto; display: flex; gap: 2px; background: var(--line); padding: 3px; border-radius: 10px; }
+#roles button, #pages button { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 8px; cursor: pointer; min-height: 30px; }
+#roles button.on, #pages button.on { background: var(--panel); color: var(--text); font-weight: 700; }
 #pages button:disabled { cursor: not-allowed; opacity: .5; }
 .disclaimer { margin: 0 20px; font-size: 13px; line-height: 1.5; color: var(--muted); }
 .disclaimer > summary { min-height: 32px; font-weight: 600; color: var(--body); }

@@ -1,8 +1,8 @@
 /* 연구 담당자 화면 (staff.html). 기본 모양은 app.css·cohort.css */
-.staff-grid { display: grid; grid-template-columns: minmax(260px, 340px) 1fr; gap: 16px; align-items: start; }
+.staff-grid { display: grid; grid-template-columns: minmax(240px, 300px) 1fr; gap: 16px; align-items: start; }
 @media (max-width: 860px) { .staff-grid { grid-template-columns: 1fr; } }
 .panel .body { padding: 8px 20px 18px; }
-#login-form input { font: inherit; font-size: 15px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--text); }
+
 .case-item { display: block; width: 100%; text-align: left; font: inherit; background: var(--panel-2); color: var(--text); border: 0; border-radius: 12px; padding: 10px 12px; cursor: pointer; margin-bottom: 8px; }
 .case-item:hover, .case-item.on { background: var(--accent-soft); }
 .case-item .cid { font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -14,3 +14,15 @@ table.list td, table.list th { padding: 8px 8px; text-align: left; vertical-alig
 .req ol { margin: 6px 0 0; padding-left: 18px; font-size: 13px; color: var(--muted); }
 .mono { font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
 pre.raw { max-height: 360px; overflow: auto; background: var(--panel-2); border-radius: 10px; padding: 10px; font-size: 12px; white-space: pre-wrap; word-break: break-all; }
+.role-hidden { display: none !important; }
+#page-staff .panel > h2 .badge { margin-left: auto; }
+/* 질문별 카드: 코디네이터가 물을 것을 고르는 화면 */
+.qcard { background: var(--panel-2); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.qhead { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
+.qname { margin: 0; font-size: 16px; font-weight: 700; color: var(--text); }
+.qstats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+.qstats > div { background: var(--panel); border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; }
+.qstats b { font-size: 18px; font-variant-numeric: tabular-nums; color: var(--text); }
+.qstats span { font-size: 12px; color: var(--muted); }
+.qstats .good b { color: var(--ok); }
+#st-login-form input, #st-qsort { font: inherit; font-size: 15px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--text); }

@@ -315,6 +315,15 @@ def staff_set_status(case_id: str, request_id: str, body: StatusChange, request:
             "case": staff_case_view(out["case"])}
 
 
+@router.get("/staff/insight")
+def staff_insight(request: Request) -> dict:
+    """질문별 코디네이터 작업 시간 보기 (web/followup_insight). 판정은 바꾸지 않음."""
+    require_staff(request)
+    from .followup_insight import insight
+    with _flow():
+        return insight(service())
+
+
 @router.get("/staff/cases/{case_id}/inspector")
 def staff_inspector(case_id: str, request: Request) -> dict:
     require_staff(request)

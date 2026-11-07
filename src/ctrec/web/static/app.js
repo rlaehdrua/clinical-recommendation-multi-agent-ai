@@ -332,6 +332,8 @@ function newRun() {
 // 화면: 입력·진행(run) → 결과 목록(result) → 상세(detail) / 의사용 요약(summary). 상세·요약은 결과 탭에 속함
 const PAGES = ["run", "result", "detail", "summary"];
 function showPage(name) {
+  state.page = name;  // 담당자 탭에서 돌아올 때 이 화면으로 (staff.js)
+  if (!$("#page-staff").hidden) return;  // 연구 담당자 탭이 열려 있으면 환자 화면을 드러내지 않음 (기억만)
   for (const p of PAGES) $("#page-" + p).hidden = p !== name;
   const tab = name === "run" ? "run" : "result";
   document.querySelectorAll("#pages button").forEach(b => { b.classList.toggle("on", b.dataset.page === tab);
