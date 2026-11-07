@@ -192,6 +192,12 @@ class Orchestrator:
             for block in response.content:
                 if block.type != "tool_use":
                     continue
+                if self.done:
+                    # 마무리 뒤 같은 턴의 호출은 실행하지 않음: 판정만 바뀌고 추천은 옛 판정으로 남음 (감사 F-01)
+                    results.append({"type": "tool_result", "tool_use_id": block.id, "is_error": True,
+                                    "content": "Error: finalize_recommendation 이후의 도구 호출은 실행하지 않습니다."})
+                    s.tracer.log("orchestrator", "tool_rejected", tool=block.name, message="after_finalize")
+                    continue
                 s.tracer.log("orchestrator", "tool_call", tool=block.name, input=block.input, message=block.name)
                 handler = getattr(self, f"_{block.name}", None)
                 try:

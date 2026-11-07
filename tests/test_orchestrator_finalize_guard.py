@@ -69,3 +69,53 @@ def test_early_finalize_keeps_unevaluated_candidates_as_not_evaluated():
     reason = s.recommendation.no_recommendation_reason or ""
     assert "모두 선정/제외 기준에 맞지 않았습니다" not in reason or "판정하지 못했으므로(부적격 아님)" in reason
     assert "T-B" in reason and "T-C" in reason
+
+
+# ------------------------------------------------------------------ F-01
+class AgeAnswerer:
+    def answer(self, questions, patient_id):
+        return {q.question_id: "15-year-old" for q in questions}
+
+
+def test_tool_calls_after_finalize_in_the_same_turn_are_not_executed(monkeypatch):
+    from ctrec.agents import question_generator
+
+    seen: dict = {}
+    real_finalize = pipeline.Session.finalize
+
+    def spy(self):
+        real_finalize(self)
+        seen["at_finalize"] = {t: m.eligibility for t, m in self.matches.items()}
+
+    monkeypatch.setattr(pipeline.Session, "finalize", spy)
+    with question_generator.use_generator(qe.baseline_generator):
+        s, _ = run([turn("profile_patient"), turn(("evaluate_trials", {"trial_ids": []})),
+                    turn("finalize_recommendation", "ask_clarifying_questions",
+                         ("evaluate_trials", {"trial_ids": []}))],
+                   text="Synthetic NSCLC patient, male, stage IV non-small cell lung cancer. ECOG 1.",
+                   answerer=AgeAnswerer())
+    assert s.qa_log == [] and s.rounds == 0, "마무리 뒤 호출은 실행되지 않아야 함"
+    # 추천이 계산된 판정과 최종 판정이 같음 (추천만 옛 판정으로 남지 않음)
+    assert {t: m.eligibility for t, m in s.matches.items()} == seen["at_finalize"]
+
+
+def test_post_finalize_calls_get_error_tool_results():
+    events: list[dict] = []
+    with qe.OfflineEnvironment(3):
+        s = make_session()
+        s.tracer = Tracer(None, verbose=False, listener=events.append)
+        fake = Scripted([turn("profile_patient"), turn(("evaluate_trials", {"trial_ids": []})),
+                         turn("finalize_recommendation", "ask_clarifying_questions")])
+        convo: list = []
+
+        def create(**k):
+            convo[:] = [k["messages"]]  # 루프가 계속 덧붙이는 대화 목록 자체를 잡아 둠
+            return fake(**k)
+
+        llm.create = create
+        Orchestrator(s).run()
+    final = [m for m in convo[0] if m["role"] == "user" and isinstance(m["content"], list)][-1]["content"]
+    assert len(final) == 2 and final[0].get("is_error") is not True  # 마무리 결과는 정상
+    assert final[1]["is_error"] is True and "finalize_recommendation" in final[1]["content"]
+    assert [e["tool"] for e in events if e["event"] == "tool_rejected"] == ["ask_clarifying_questions"]
+    assert not [e for e in events if e["event"] == "tool_call" and e["tool"] == "ask_clarifying_questions"]
