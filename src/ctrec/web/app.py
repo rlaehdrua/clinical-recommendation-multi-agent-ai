@@ -47,6 +47,7 @@ from ..trace import Tracer
 from .. import conservative_view
 from . import engine_runner
 from . import access, budget, cohort_board, display, paid_gate, retention
+from . import followup_api
 
 STATIC = Path(__file__).parent / "static"
 log = logging.getLogger("ctrec.web")
@@ -810,6 +811,10 @@ async def stream_events(run_id: str, request: Request) -> StreamingResponse:
 
     return StreamingResponse(gen(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+# 추가 정보 확인 흐름 (환자 -> 연구 담당자 -> 환자 -> 재평가). 계약: docs/dev/followup_api_contract.md
+app.include_router(followup_api.router)
 
 
 def main() -> None:
