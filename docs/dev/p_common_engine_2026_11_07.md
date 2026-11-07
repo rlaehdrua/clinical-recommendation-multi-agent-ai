@@ -166,3 +166,9 @@ GT = 생성기 쌍 라벨 (합성, Matcher·근거 게이트·정책과 별개 �
 7. NCT06216301 국가 조건 나이 기준 결함 (파서).
 8. 공정성: 실험 예산에 환자별 최소 배정(`per_patient_floor_minutes`)이 없어 fairness_floor ablation은 효과가 없습니다.
 9. 응답 모델 확률·정보원 비용·환자가 아는 항목은 모두 가정값입니다.
+
+## 9. PR 준비 뒤 추가 (같은 날)
+
+검증 증거·Base 판단·Q 병합 검사는 `docs/dev/p_results/verification_and_pr_2026_11_07.md`에 있습니다.
+- Q `integration/q-final-2`와 병합하면 충돌은 없습니다. 다만 O의 `test_followup_flow.py` 6건이 근거 경로 때문에 실패합니다 (계약 충돌, 팀 결정).
+- 미해결로 기록: NSCLC 국가 조건 나이 기준 오류(§8-7), 번들링 성능 역전(800분에서 no_bundles 11.17 > dcvc 8.17).
