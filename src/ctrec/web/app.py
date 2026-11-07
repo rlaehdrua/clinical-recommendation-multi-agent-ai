@@ -453,7 +453,6 @@ def _execute_run(run: Run, req: RunRequest, case: PatientCase, trials: dict[str,
             raise budget.BudgetStop(run.budget.stopped)
         if out_dir is not None:
             session.save(out_dir)
-            conservative_view.save(session, out_dir)
         shown = conservative_view.build(session, display.redact_errors(session.result()), session.report)
         with run.lock:  # 취소 요청과 경합: 아직 running일 때만 결과를 보내고, 같은 잠금 안에서 completed로 확정
             if run.state == "running":

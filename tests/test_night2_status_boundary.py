@@ -1,9 +1,8 @@
 """엔진 쌍 상태와 사용자 출력의 경계 테스트 (C2 전 경로). 합성 데이터, 스텁, LLM·네트워크 없음.
 
 표현 계층(conservative_view)을 검사합니다. 여기서 통과한다고 판정이 바뀐 것이 아닙니다.
-eligibility·기준 판정·Fact Store·Session 값이 그대로인지도 함께 검사합니다.
+eligibility·기준 판정·Fact Store·Session.matches가 그대로인지도 함께 검사합니다.
 
-xfail(strict=True)은 보호 파일 승인이 필요한 경로입니다 (docs/dev/night2_r5_status_boundary.md).
 임상 정답은 넣지 않습니다. 층 사이 일치, 사실 관계별 구분, 확정 대조군만 봅니다.
 """
 
@@ -24,7 +23,7 @@ from night_consistency_support import AGE, ALIAS, CONSENT, Answerer, Env, cohort
 from ctrec import cli, config, conservative_view as cv, llm, pipeline, question_eval as qe  # noqa: E402
 from ctrec.agents import question_generator  # noqa: E402
 from ctrec.orchestrator import Orchestrator  # noqa: E402
-from ctrec.schemas import Fact, LabValue  # noqa: E402
+from ctrec.schemas import Fact, LabValue, RankedTrial, RecommendationDraft  # noqa: E402
 from ctrec.web import app as web  # noqa: E402
 
 BASE = "Synthetic 62-year-old male. "
@@ -54,11 +53,12 @@ class Run:
     """실제 Session.run_fixed 한 번. with 안에서 사실·판정을 읽음."""
 
     def __init__(self, tmp_path, trials, raw, *, source="clinical_record", verdicts=None, answer="모름", report=False,
-                 rounds=2, cohorts=None):
+                 rounds=2, cohorts=None, status=None, body=REPORT_BODY, rationale=None):
         self.args = (tmp_path, verdicts)
         self.kw = dict(raw=BASE + raw, answerer=Answerer(lambda q: answer), rounds=rounds, input_source=source,
-                       cohorts=cohorts)
-        self.trials, self.report, self.prompts = trials, report, []
+                       cohorts=cohorts, status=status)
+        self.trials, self.report, self.prompts, self.rec_prompts = trials, report, [], []
+        self.body, self.rationale = body, rationale
 
     def __enter__(self):
         self.env = Env(*self.args)
@@ -68,7 +68,20 @@ class Run:
         if self.report:
             e.oe._set(config, "WRITE_REPORT", True)
             tid = next(iter(self.trials))
-            e.oe._set(llm, "plain", lambda **k: self.prompts.append(k["user"]) or REPORT_BODY.format(t=tid))
+            e.oe._set(llm, "plain", lambda **k: self.prompts.append(k["user"]) or self.body.format(t=tid))
+        stub = llm.structured
+
+        def structured(cls, **k):
+            out = stub(cls, **k)
+            if cls is RecommendationDraft:  # 추천 LLM 입력을 남기고, 지정되면 LLM이 쓴 문장을 흉내 냄
+                self.rec_prompts.append(k["user"])
+                if self.rationale:
+                    out.ranked = [RankedTrial(rank=1, trial_id=t, eligibility="UNCERTAIN", rationale=self.rationale,
+                                              key_matches=[self.rationale], key_concerns=[], next_steps=[])
+                                  for t in self.trials]
+                    out.overall_comment = self.rationale
+            return out
+        e.oe._set(llm, "structured", structured)
         self.s = session(self.trials, **self.kw)
         self.s.run_fixed()
         return self
@@ -213,10 +226,11 @@ def test_info_missing_matches_a_non_final_label(tmp_path):
     assert v.holds == {}
 
 
-def test_no_required_criteria_is_recorded_but_left_to_the_open_policy(tmp_path):
-    """필수 기준 0개: 엔진 NOT_EVALUATED, 외부 CRITERIA_MATCH. 정책 미결이므로 낮추지 않고 불일치로만 기록."""
-    _, v = view(tmp_path, {"T": [CONSENT]}, "")
-    assert v.holds == {} and v.result["matches"]["T"]["match_status"] == "CRITERIA_MATCH"
+def test_no_required_criteria_is_held_while_the_policy_stays_open(tmp_path):
+    """필수 기준 0개: 엔진 NOT_EVALUATED인데 외부 CRITERIA_MATCH였음. 판정은 ELIGIBLE 그대로, 표시만 낮추고 R5 정책은 정하지 않음."""
+    s, v = view(tmp_path, {"T": [CONSENT]}, "")
+    assert s.matches["T"].eligibility == "ELIGIBLE" and v.result["matches"]["T"]["match_status"] == "NEEDS_REVIEW"
+    assert v.holds["T"].kinds == ("no_required_criteria",)
     assert (v.engine["T"]["engine_status"], v.engine["T"]["unresolved"]) == ("NOT_EVALUATED",
                                                                              "no_required_criteria_policy_open")
 
@@ -278,31 +292,31 @@ def test_report_copy_fixes_code_lines_and_lines_naming_the_trial(tmp_path):
         v = cv.build(r.s)
     assert v.report.startswith("> **확인 필요:**")
     assert "- **T** (기록 확인 시 충족 가능)" in v.report and "## 추천 그룹: 기록 확인 시 충족 가능" in v.report
+    assert "## 정책 엔진 미확정 항목" in v.report and "문서 확인 필요 사항 (UNVERIFIED)" not in v.report
     assert "| 1 | T | 기록 확인 시 충족 가능 |" in v.report and "T는 기록 확인 시 충족 가능으로" in v.report
     assert "추천 그룹: 공개 기준 충족" not in v.report
 
 
-def test_known_limit_report_sentence_without_a_trial_id_stays_below_the_notice(tmp_path):
-    """시험을 가리키지 않는 LLM 문장은 사후에 고치지 못함. 맨 위 안내가 우선한다고 밝히는 것까지가 이 계층의 한계."""
+def test_report_sentence_without_a_trial_id_is_lowered_when_nothing_is_confirmed(tmp_path):
     with Run(tmp_path, {"T": [HB, AGE]}, RISE, report=True) as r:
         v = cv.build(r.s)
-    assert "이번 평가에서 공개 기준 충족 시험을 찾았습니다." in v.report
-    assert v.report.index("이 표시가 우선") < v.report.index("이번 평가에서")
+        raw = r.s.report
+    assert "이번 평가에서 공개 기준 충족 시험을 찾았습니다." in raw
+    assert "이번 평가에서" not in v.report and len(v.claims) == 1 and "자동 점검" in v.report
 
 
-def test_saved_outputs_keep_raw_record_and_add_the_boundary(tmp_path):
+def test_saved_outputs_use_the_same_standard_and_keep_the_originals(tmp_path):
     out = tmp_path / "out"
     with Run(tmp_path / "w", {"T": [HB, AGE]}, RISE, report=True) as r:
         r.s.save(out)
-        raw = json.loads((out / "result.json").read_text(encoding="utf-8"))
-        raw_report = (out / "report.md").read_text(encoding="utf-8")
-        cv.save(r.s, out)
+        raw_report, raw_status = r.s.report, r.s.matches["T"].match_status
     saved = json.loads((out / "result.json").read_text(encoding="utf-8"))
     side = json.loads((out / "conservative_view.json").read_text(encoding="utf-8"))
-    assert {k: v for k, v in saved.items() if k != "engine_boundary"} == raw  # 평가·감사 입력은 그대로
-    assert saved["engine_boundary"]["T"]["shown"] == "POTENTIAL_MATCH"
-    assert side["recommendation"]["ranked"][0]["match_status"] == "POTENTIAL_MATCH"
-    assert side["matches"]["T"] == {"eligibility": "ELIGIBLE", "match_status": "POTENTIAL_MATCH"}
+    assert saved["matches"]["T"]["eligibility"] == "ELIGIBLE"  # 평가 입력(판정)은 그대로
+    assert saved["matches"]["T"]["match_status"] == "POTENTIAL_MATCH"
+    assert saved["recommendation"]["ranked"][0]["match_status"] == "POTENTIAL_MATCH"
+    assert (saved["engine_boundary"]["T"]["external"], saved["engine_boundary"]["T"]["shown"]) == (raw_status, "POTENTIAL_MATCH")
+    assert side["holds"][0]["kinds"] == ["time_dependent"]
     assert (out / "report.raw.md").read_text(encoding="utf-8") == raw_report
     assert (out / "report.md").read_text(encoding="utf-8").startswith("> **확인 필요:**")
 
@@ -311,8 +325,7 @@ def test_saved_outputs_without_a_hold_keep_the_report_file(tmp_path):
     out = tmp_path / "out"
     with Run(tmp_path / "w", {"T": [AGE]}, "", report=True) as r:
         r.s.save(out)
-        cv.save(r.s, out)
-    assert not (out / "report.raw.md").exists()
+    assert not (out / "report.raw.md").exists() and not (out / "conservative_view.json").exists()
 
 
 def test_cli_prints_the_held_recommendation(tmp_path):
@@ -409,17 +422,14 @@ def test_redacted_console_prints_the_held_copy_without_patient_text(monkeypatch,
     assert "engine_boundary" in json.loads((tmp_path / "out" / "CLI-T2" / "result.json").read_text(encoding="utf-8"))
 
 
-# ------------------------------------------------------------ 보호 파일 승인이 필요한 경로
-PATCH = "pipeline.py 승인 패치 필요 (docs/dev/night2_patches/pipeline_finalize.patch)"
-
-
-@pytest.mark.xfail(strict=True, reason=f"Session 추천이 엔진 상태를 읽지 않음. {PATCH}")
+# ------------------------------------------------------------ Session 자체가 같은 기준을 따름
 def test_session_recommendation_itself_is_held(tmp_path):
     with Run(tmp_path, {"T": [HB, AGE]}, RISE) as r:
-        assert r.s.recommendation.ranked[0].match_status != "CRITERIA_MATCH"
+        assert r.s.recommendation.ranked[0].match_status == "POTENTIAL_MATCH"
+        assert r.s.matches["T"].match_status == "CRITERIA_MATCH"  # 판정 쪽 값은 그대로
 
 
-@pytest.mark.xfail(strict=True, reason=f"보고서 LLM 입력이 원래 상태를 받음. {PATCH}")
 def test_report_llm_is_not_told_the_held_trial_is_a_match(tmp_path):
     with Run(tmp_path, {"T": [HB, AGE]}, RISE, report=True) as r:
-        assert r.s.recommendation is not None and "CRITERIA_MATCH" not in r.prompts[0]
+        assert r.s.recommendation is not None
+        assert "CRITERIA_MATCH" not in r.prompts[0] and "ELIGIBLE" not in r.prompts[0]

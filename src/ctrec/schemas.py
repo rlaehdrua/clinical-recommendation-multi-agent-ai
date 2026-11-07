@@ -297,6 +297,13 @@ class ExcludedTrial(BaseModel):
     reason: str
 
 
+class HeldOutTrial(BaseModel):
+    """불충족 근거가 다툼 중이라 제외로 확정하지 않은 시험. 코드가 채우고 추천에도 넣지 않음."""
+    trial_id: str
+    match_status: MatchStatus
+    reasons: list[str]
+
+
 class RecommendationDraft(BaseModel):
     """추천 에이전트(LLM)의 출력 스키마."""
     patient_id: str
@@ -318,3 +325,4 @@ class Recommendation(RecommendationDraft):
     """
     recommended: list[RankedTrial] = []
     no_recommendation_reason: str | None = None
+    held_out: list[HeldOutTrial] = []

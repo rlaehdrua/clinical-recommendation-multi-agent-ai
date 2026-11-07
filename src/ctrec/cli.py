@@ -212,7 +212,6 @@ def _run_case(case: PatientCase, trials: dict[str, dict], args, answerer) -> Ses
         else:
             session.run_fixed()
     session.save(out_dir)
-    conservative_view.save(session, out_dir)
     _write_run_meta(out_dir, session, args, fact_dir, run_id)
     u = session.usage
     tracer.log("pipeline", "saved", message=(
