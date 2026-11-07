@@ -11,6 +11,8 @@ evaluate 하나가 기준이고 모든 출력이 이를 따릅니다.
 표현을 낮추는 경우 (HOLD 대상)
 - side="match"   : 외부 CRITERIA_MATCH인데 엔진이 CONFIRMED_ELIGIBLE이 아님. 필수 기준 0개인 쌍도 포함 (엔진 NOT_EVALUATED).
                    또는 엔진은 확정했어도 원문에 구체 기준이 없는 항목이 통과로 판정됨 (임상의 판단 대기, 판정은 그대로).
+- side="potential": 외부 POTENTIAL_MATCH인데 상충이 남음. 문서 게이트가 통과를 보류하면 상충 쌍의 판정은 ELIGIBLE이 아니라 UNCERTAIN이 되므로,
+                   match 조건만 보면 상충 사유가 사라지고 값이 어긋난 쌍이 '기록 확인 시 충족 가능'으로 보임.
 - side="mismatch": 외부 CRITERIA_MISMATCH인데 불충족 근거가 모두 상충이라 열린 경로가 있음(TrialState.mismatch == "none").
   표시만 낮추고 추천 목록에는 넣지 않습니다. 제외 근거가 다툼 중일 뿐 충족이 확인된 것은 아니기 때문입니다.
 
@@ -63,6 +65,7 @@ NOTE_BY_KIND = {
 _SEVERE_FIRST = ("contradictory", "incomparable", "differing_biomarker", CLINICAL, NO_REQUIRED, ENGINE_PENDING,
                  TIME_DEPENDENT)
 _CONFIRMED = {"match": ("CRITERIA_MATCH", label("CRITERIA_MATCH")),
+              "potential": ("POTENTIAL_MATCH", label("POTENTIAL_MATCH")),
               "mismatch": ("CRITERIA_MISMATCH", label("CRITERIA_MISMATCH"))}
 _TEXT_FIELDS = ("rationale", "key_matches", "key_concerns", "next_steps")
 HELD_EXCLUSION = "engine_hold"  # 화면의 제외 종류: 확정 제외가 아니라 근거 확인 대기
@@ -85,7 +88,7 @@ _CLAIM_REMOVED = "확정처럼 읽히는 문장을 표시하지 않습니다."
 @dataclass(frozen=True)
 class Hold:
     trial_id: str
-    side: Literal["match", "mismatch"]
+    side: Literal["match", "potential", "mismatch"]
     pair_status: str
     kinds: tuple[str, ...]
     rule_ids: tuple[str, ...]
@@ -106,8 +109,12 @@ class View:
     claims: list[dict] = field(default_factory=list)  # 보고서에서 낮춘 LLM 확정 표현 (줄 번호·표현·시험, 문장 원문 없음)
 
 
+def _conflicted(c) -> bool:
+    return c.gap == "conflict" or c.conflict_on_decided
+
+
 def _kind(c, conflicting: dict[str, str]) -> str:
-    if not (c.gap == "conflict" or c.conflict_on_decided):
+    if not _conflicted(c):
         return ENGINE_PENDING
     if c.category == "biomarker":
         return "differing_biomarker"
@@ -124,12 +131,12 @@ def _hold(tid: str, side: str, status: PairStatus, t, conflicting: dict[str, str
     found = {_kind(c, conflicting) for c in open_c}
     if judged:
         found.add(CLINICAL)
-    if side == "match" and required_count(t) == 0:
+    if side != "mismatch" and required_count(t) == 0:
         found.add(NO_REQUIRED)
     found = found or {ENGINE_PENDING}
     kinds = tuple(k for k in _SEVERE_FIRST if k in found)
     # 불충족 쪽은 최신 값이 탈락일 수 있으므로 '충족 가능'으로 말하지 않음
-    shown = DISPLAY_BY_KIND[kinds[0]] if side == "match" else "NEEDS_REVIEW"
+    shown = DISPLAY_BY_KIND[kinds[0]] if side != "mismatch" else "NEEDS_REVIEW"
     rule_ids = tuple(sorted({c.rule_id for c in open_c} | set(judged)))
     return Hold(tid, side, status.value, kinds, rule_ids, shown)  # type: ignore[arg-type]
 
@@ -162,6 +169,8 @@ def evaluate(session) -> tuple[dict[str, Hold], dict[str, dict]]:
         judged = _judged_by_llm(m) if m.match_status == "CRITERIA_MATCH" else ()
         if t is not None and m.match_status == "CRITERIA_MATCH" and (pair.status != PairStatus.CONFIRMED_ELIGIBLE or judged):
             hold = _hold(tid, "match", pair.status, t, state.conflicting_fields, judged)
+        elif t is not None and m.match_status == "POTENTIAL_MATCH" and any(_conflicted(c) for c in decisive_criteria(t)):
+            hold = _hold(tid, "potential", pair.status, t, state.conflicting_fields)
         elif t is not None and m.match_status == "CRITERIA_MISMATCH" and t.mismatch == "none":
             hold = _hold(tid, "mismatch", pair.status, t, state.conflicting_fields)
         if hold:

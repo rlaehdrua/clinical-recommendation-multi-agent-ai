@@ -18,12 +18,13 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent))
 
+from document_support import attest_declared  # noqa: E402
 from night_consistency_support import AGE, ALIAS, CONSENT, Answerer, Env, cohort_of, lab, rule, session  # noqa: E402
 
 from ctrec import cli, config, conservative_view as cv, llm, pipeline, question_eval as qe  # noqa: E402
 from ctrec.agents import question_generator  # noqa: E402
 from ctrec.orchestrator import Orchestrator  # noqa: E402
-from ctrec.schemas import Fact, LabValue, RankedTrial, RecommendationDraft  # noqa: E402
+from ctrec.schemas import Fact, LabValue, RankedTrial, RecommendationDraft, RuleMeta  # noqa: E402
 from ctrec.web import app as web  # noqa: E402
 
 BASE = "Synthetic 62-year-old male. "
@@ -53,12 +54,15 @@ class Run:
     """실제 Session.run_fixed 한 번. with 안에서 사실·판정을 읽음."""
 
     def __init__(self, tmp_path, trials, raw, *, source="clinical_record", verdicts=None, answer="모름", report=False,
-                 rounds=2, cohorts=None, status=None, body=REPORT_BODY, rationale=None):
+                 rounds=2, cohorts=None, status=None, body=REPORT_BODY, rationale=None, documented=True, gate=True):
         self.args = (tmp_path, verdicts)
         self.kw = dict(raw=BASE + raw, answerer=Answerer(lambda q: answer), rounds=rounds, input_source=source,
                        cohorts=cohorts, status=status)
+        if not gate:  # 표현 계층만 보는 경로: 규칙 메타가 self_report_ok면 문서 게이트가 적용되지 않아 판정 ELIGIBLE이 남음
+            self.kw["meta"] = {t: {r.rule_id: RuleMeta(required_evidence="self_report_ok") for r in rules}
+                               for t, rules in trials.items()}
         self.trials, self.report, self.prompts, self.rec_prompts = trials, report, [], []
-        self.body, self.rationale = body, rationale
+        self.body, self.rationale, self.documented = body, rationale, documented
 
     def __enter__(self):
         self.env = Env(*self.args)
@@ -83,6 +87,14 @@ class Run:
             return out
         e.oe._set(llm, "structured", structured)
         self.s = session(self.trials, **self.kw)
+        if self.documented:  # 문서 게이트 뒤 "확정" 대조군은 합성 서버 증명을 지남. 선언만으로는 확정되지 않음 (test_abc_safety_e2e)
+            real = self.s.profile_patient
+
+            def profile_then_attest():
+                out = real()
+                attest_declared(self.s.fact_store, self.s.case.patient_id)
+                return out
+            self.s.profile_patient = profile_then_attest
         self.s.run_fixed()
         return self
 
@@ -102,7 +114,7 @@ def view(tmp_path, trials, raw, **kw):
     (RISE, "POTENTIAL_MATCH", ("time_dependent",)),
 ])
 def test_repeated_lab_values_keep_date_difference_apart(tmp_path, raw, shown, kinds):
-    s, v = view(tmp_path, {"T": [HB, AGE]}, raw)
+    s, v = view(tmp_path, {"T": [HB, AGE]}, raw, gate=False)
     assert s.matches["T"].eligibility == "ELIGIBLE"
     assert v.result["matches"]["T"]["match_status"] == shown
     assert (v.holds["T"].kinds if v.holds else ()) == kinds
@@ -153,7 +165,8 @@ def test_stored_source_conflict_after_the_last_match_is_held(tmp_path):
 
 def test_self_report_source_is_already_not_confirmed(tmp_path):
     _, v = view(tmp_path, {"T": [HB, AGE]}, RISE, source="self_report")
-    assert v.holds == {} and v.result["matches"]["T"]["match_status"] == "POTENTIAL_MATCH"
+    assert v.result["matches"]["T"]["match_status"] == "POTENTIAL_MATCH"
+    assert v.holds["T"].kinds == ("time_dependent",)  # 표시는 그대로이고, 값이 어긋난다는 사유가 함께 나감
 
 
 # ------------------------------------------------------------ 불충족 쪽
@@ -183,7 +196,7 @@ def test_clean_failure_next_to_a_conflict_keeps_the_mismatch_label(tmp_path):
     """상충 없는 불충족 기준이 있으면 다른 기준의 상충이 불충족을 풀지 않음."""
     fail = lab("LOW", "platelets", "100", unit="10^3/uL").model_copy(update={"field": "age", "operator": ">=", "value": "99",
                                                                              "unit": "years"})
-    _, v = view(tmp_path, {"T": [HB, fail]}, RISE)
+    _, v = view(tmp_path, {"T": [HB, fail]}, RISE, documented=False)
     assert v.holds == {} and v.result["matches"]["T"]["match_status"] == "CRITERIA_MISMATCH"
     assert v.engine["T"]["unresolved"] == "exclusion_not_document_verified"
 
@@ -201,11 +214,7 @@ def test_confirmed_eligible_control_is_untouched_on_every_field(tmp_path):
 
 def test_confirmed_ineligible_control_keeps_the_mismatch_label(tmp_path):
     with Run(tmp_path, {"T": [HB, AGE]}, "Hb 8 g/dL on 2026-09-01.") as r:
-        s = r.s
-        fact = s.fact_store.facts(s.case.patient_id, "lab:hemoglobin")[0]
-        s.fact_store.set_verification(fact.fact_id, "document_verified", reason="synthetic", by="test",
-                                      document_reference="DOC-1")
-        v = cv.build(s)
+        v = cv.build(r.s)
     assert v.holds == {}
     assert (v.engine["T"]["external"], v.engine["T"]["engine_status"], v.engine["T"]["unresolved"]) == (
         "CRITERIA_MISMATCH", "CONFIRMED_INELIGIBLE", None)
@@ -214,7 +223,7 @@ def test_confirmed_ineligible_control_keeps_the_mismatch_label(tmp_path):
 
 def test_unverified_exclusion_is_recorded_but_left_to_r2(tmp_path):
     """문서 검증 없는 불충족: 엔진은 미확정, 화면은 불충족. R2 소관이라 낮추지 않고 불일치로만 기록."""
-    _, v = view(tmp_path, {"T": [HB, AGE]}, "Hb 8 g/dL on 2026-09-01.")
+    _, v = view(tmp_path, {"T": [HB, AGE]}, "Hb 8 g/dL on 2026-09-01.", documented=False)
     assert v.holds == {}
     assert (v.engine["T"]["engine_status"], v.engine["T"]["pending_kinds"], v.engine["T"]["unresolved"]) == (
         "VERIFICATION_PENDING", ["exclusion_unverified"], "exclusion_not_document_verified")
@@ -253,7 +262,7 @@ def test_or_tie_is_read_from_the_engine_not_decided_here(tmp_path):
 
 # ------------------------------------------------------------ 표현 사본이 판정을 바꾸지 않음
 def test_view_changes_neither_verdicts_nor_facts_nor_session(tmp_path):
-    with Run(tmp_path, {"HELD": [HB, AGE], "OUT": [lab("H2", "hemoglobin", "9.5"), AGE]}, RISE) as r:
+    with Run(tmp_path, {"HELD": [HB, AGE], "OUT": [lab("H2", "hemoglobin", "9.5"), AGE]}, RISE, gate=False) as r:
         s = r.s
         facts = [f.model_dump() for f in s.fact_store.facts(s.case.patient_id)]
         before, source = s.result(), copy.deepcopy(s.result())
@@ -266,7 +275,7 @@ def test_view_changes_neither_verdicts_nor_facts_nor_session(tmp_path):
 
 
 def test_recommendation_regroups_and_every_held_field_is_lowered(tmp_path):
-    _, v = view(tmp_path, {"HELD": [HB, AGE], "CLEAN": [AGE]}, RISE)
+    _, v = view(tmp_path, {"HELD": [HB, AGE], "CLEAN": [AGE]}, RISE, gate=False)
     rec = v.result["recommendation"]
     assert [(r["trial_id"], r["rank"], r["match_status"]) for r in rec["ranked"]] == [
         ("CLEAN", 1, "CRITERIA_MATCH"), ("HELD", 2, "POTENTIAL_MATCH")]
@@ -276,7 +285,7 @@ def test_recommendation_regroups_and_every_held_field_is_lowered(tmp_path):
 
 
 def test_llm_text_of_a_held_trial_loses_the_confirmed_label(tmp_path):
-    with Run(tmp_path, {"T": [HB, AGE]}, RISE) as r:
+    with Run(tmp_path, {"T": [HB, AGE]}, RISE, gate=False) as r:
         result = r.s.result()
         result["recommendation"]["ranked"][0].update(rationale="공개 기준 충족 (CRITERIA_MATCH)",
                                                      key_matches=["공개 기준 충족"])
@@ -288,7 +297,7 @@ def test_llm_text_of_a_held_trial_loses_the_confirmed_label(tmp_path):
 
 # ------------------------------------------------------------ 경로별 출력
 def test_report_copy_fixes_code_lines_and_lines_naming_the_trial(tmp_path):
-    with Run(tmp_path, {"T": [HB, AGE]}, RISE, report=True) as r:
+    with Run(tmp_path, {"T": [HB, AGE]}, RISE, report=True, gate=False) as r:
         v = cv.build(r.s)
     assert v.report.startswith("> **확인 필요:**")
     assert "- **T** (기록 확인 시 충족 가능)" in v.report and "## 추천 그룹: 기록 확인 시 충족 가능" in v.report
@@ -298,7 +307,7 @@ def test_report_copy_fixes_code_lines_and_lines_naming_the_trial(tmp_path):
 
 
 def test_report_sentence_without_a_trial_id_is_lowered_when_nothing_is_confirmed(tmp_path):
-    with Run(tmp_path, {"T": [HB, AGE]}, RISE, report=True) as r:
+    with Run(tmp_path, {"T": [HB, AGE]}, RISE, report=True, gate=False) as r:
         v = cv.build(r.s)
         raw = r.s.report
     assert "이번 평가에서 공개 기준 충족 시험을 찾았습니다." in raw
@@ -307,7 +316,7 @@ def test_report_sentence_without_a_trial_id_is_lowered_when_nothing_is_confirmed
 
 def test_saved_outputs_use_the_same_standard_and_keep_the_originals(tmp_path):
     out = tmp_path / "out"
-    with Run(tmp_path / "w", {"T": [HB, AGE]}, RISE, report=True) as r:
+    with Run(tmp_path / "w", {"T": [HB, AGE]}, RISE, report=True, gate=False) as r:
         r.s.save(out)
         raw_report, raw_status = r.s.report, r.s.matches["T"].match_status
     saved = json.loads((out / "result.json").read_text(encoding="utf-8"))
@@ -329,7 +338,7 @@ def test_saved_outputs_without_a_hold_keep_the_report_file(tmp_path):
 
 
 def test_cli_prints_the_held_recommendation(tmp_path):
-    with Run(tmp_path, {"HELD": [HB, AGE], "CLEAN": [AGE]}, RISE) as r:
+    with Run(tmp_path, {"HELD": [HB, AGE], "CLEAN": [AGE]}, RISE, gate=False) as r:
         rec = cli.shown_recommendation(r.s)
         kept = r.s.matches["HELD"].match_status
     assert [(x.trial_id, x.match_status) for x in rec.recommended] == [("CLEAN", "CRITERIA_MATCH")]
@@ -338,7 +347,7 @@ def test_cli_prints_the_held_recommendation(tmp_path):
 
 
 def test_orchestrator_tool_result_uses_the_held_copy(tmp_path):
-    with Run(tmp_path, {"T": [HB, AGE]}, RISE) as r:
+    with Run(tmp_path, {"T": [HB, AGE]}, RISE, gate=False) as r:
         out = Orchestrator(r.s)._finalize_recommendation({})
     assert out["ranked"] == [(1, "T", "POTENTIAL_MATCH")]
 
@@ -424,12 +433,12 @@ def test_redacted_console_prints_the_held_copy_without_patient_text(monkeypatch,
 
 # ------------------------------------------------------------ Session 자체가 같은 기준을 따름
 def test_session_recommendation_itself_is_held(tmp_path):
-    with Run(tmp_path, {"T": [HB, AGE]}, RISE) as r:
+    with Run(tmp_path, {"T": [HB, AGE]}, RISE, gate=False) as r:
         assert r.s.recommendation.ranked[0].match_status == "POTENTIAL_MATCH"
         assert r.s.matches["T"].match_status == "CRITERIA_MATCH"  # 판정 쪽 값은 그대로
 
 
 def test_report_llm_is_not_told_the_held_trial_is_a_match(tmp_path):
-    with Run(tmp_path, {"T": [HB, AGE]}, RISE, report=True) as r:
+    with Run(tmp_path, {"T": [HB, AGE]}, RISE, report=True, gate=False) as r:
         assert r.s.recommendation is not None
         assert "CRITERIA_MATCH" not in r.prompts[0] and "ELIGIBLE" not in r.prompts[0]

@@ -45,15 +45,20 @@ def paths(r, out: Path) -> dict[str, dict]:
 # (이름, 시험, 원문, Run 인자, 판정, 표시, 엔진 상태, 추천 후보 여부)
 STATES = [
     ("confirmed", {"T": [HB, AGE]}, CLEAN, {}, "ELIGIBLE", "CRITERIA_MATCH", "CONFIRMED_ELIGIBLE", True),
-    ("conflict_dates", {"T": [HB, AGE]}, RISE, {}, "ELIGIBLE", "POTENTIAL_MATCH", "VERIFICATION_PENDING", True),
-    ("conflict_biomarker", {"T": [EG, AGE]}, f"{DEL} {WT}", {"verdicts": EG_YES}, "ELIGIBLE", "NEEDS_REVIEW",
+    ("conflict_dates", {"T": [HB, AGE]}, RISE, {"gate": False}, "ELIGIBLE", "POTENTIAL_MATCH", "VERIFICATION_PENDING", True),
+    ("conflict_biomarker", {"T": [EG, AGE]}, f"{DEL} {WT}", {"verdicts": EG_YES, "gate": False}, "ELIGIBLE", "NEEDS_REVIEW",
+     "VERIFICATION_PENDING", True),
+    # 문서 게이트가 적용되는 기본 경로: 판정은 보류(UNCERTAIN)되어도 상충 사유와 낮춘 표시가 남아야 함
+    ("conflict_dates_gated", {"T": [HB, AGE]}, RISE, {}, "UNCERTAIN", "POTENTIAL_MATCH", "VERIFICATION_PENDING", True),
+    ("conflict_biomarker_gated", {"T": [EG, AGE]}, f"{DEL} {WT}", {"verdicts": EG_YES}, "UNCERTAIN", "NEEDS_REVIEW",
      "VERIFICATION_PENDING", True),
     ("unknown_answer", {"T": [OTHER, AGE]}, "", {"answer": "모름"}, "UNCERTAIN", "INSUFFICIENT_INFORMATION", "INFO_MISSING", True),
     ("missing_evidence", {"T": [HB, AGE]}, "", {}, "UNCERTAIN", "INSUFFICIENT_INFORMATION", "INFO_MISSING", True),
     ("clinical_pending", {"T": [VAGUE, AGE]}, "", {}, "UNCERTAIN", "NEEDS_REVIEW", "EXPERT_REVIEW", True),
-    ("clinical_llm_pass", {"T": [VAGUE, AGE]}, "", {"verdicts": VAGUE_YES}, "ELIGIBLE", "NEEDS_REVIEW", "CONFIRMED_ELIGIBLE", True),
+    # 계약 변경: 임상의 경계(A)가 판정 자체를 보류함. 예전 기대값 ELIGIBLE/CONFIRMED_ELIGIBLE은 표시만 낮추던 시기의 값
+    ("clinical_llm_pass", {"T": [VAGUE, AGE]}, "", {"verdicts": VAGUE_YES}, "UNCERTAIN", "NEEDS_REVIEW", "EXPERT_REVIEW", True),
     ("no_required", {"T": [CONSENT]}, "", {}, "ELIGIBLE", "NEEDS_REVIEW", "NOT_EVALUATED", True),
-    ("ineligible", {"T": [HB, AGE]}, "Hb 8 g/dL on 2026-09-01.", {}, "INELIGIBLE", "CRITERIA_MISMATCH", "VERIFICATION_PENDING", False),
+    ("ineligible", {"T": [HB, AGE]}, "Hb 8 g/dL on 2026-09-01.", {"documented": False}, "INELIGIBLE", "CRITERIA_MISMATCH", "VERIFICATION_PENDING", False),
     ("disputed_exclusion", {"T": [HB, AGE]}, FALL, {}, "INELIGIBLE", "NEEDS_REVIEW", "VERIFICATION_PENDING", False),
 ]
 
@@ -77,8 +82,6 @@ def test_confirmed_results_are_unchanged_on_every_field(tmp_path):
     """확정 적격·확정 부적격 대조군: 표현 계층을 거쳐도 값이 그대로."""
     with Run(tmp_path, {"OK": [HB, AGE], "NO": [lab("HI", "hemoglobin", "50"), AGE]}, CLEAN, report=True) as r:
         s = r.s
-        fact = s.fact_store.facts(s.case.patient_id, "lab:hemoglobin")[0]
-        s.fact_store.set_verification(fact.fact_id, "document_verified", reason="synthetic", by="test", document_reference="D")
         raw, v = s.result(), cv.build(s)
         assert v.report == s.report
     assert v.holds == {} and v.claims == []
@@ -156,7 +159,7 @@ def test_no_matches_is_an_empty_recommendation(tmp_path):
 
 # ------------------------------------------------------------ LLM 입력
 def test_recommender_llm_gets_the_held_status_and_summary(tmp_path):
-    with Run(tmp_path, {"T": [HB, AGE]}, RISE) as r:
+    with Run(tmp_path, {"T": [HB, AGE]}, RISE, gate=False) as r:
         prompt = r.rec_prompts[0]
         kept = r.s.matches["T"]
     assert "CRITERIA_MATCH" not in prompt.split("</patient>")[1] and "ELIGIBLE:" not in prompt
@@ -164,7 +167,7 @@ def test_recommender_llm_gets_the_held_status_and_summary(tmp_path):
 
 
 def test_report_llm_gets_no_verdict_code_for_held_trials_only(tmp_path):
-    with Run(tmp_path, {"HELD": [HB, AGE], "OK": [AGE]}, RISE, report=True) as r:
+    with Run(tmp_path, {"HELD": [HB, AGE], "OK": [AGE]}, RISE, report=True, gate=False) as r:
         payload = json.loads(r.prompts[0].split("<results>")[1].split("</results>")[0])
         kept = r.s.match_history
     by_id = {m["trial_id"]: m for m in payload["matches"]}
@@ -309,7 +312,7 @@ EXTRA_C = AGE.model_copy(update={"rule_id": "C1", "cohort": "C"})
 
 
 def tied(tmp_path, order, raw=RISE, rules=(HB_A, AGE_B, EXTRA_C)):
-    with Run(tmp_path, {"T": list(rules)}, raw, cohorts={"T": tuple(order)}) as r:
+    with Run(tmp_path, {"T": list(rules)}, raw, cohorts={"T": tuple(order)}, gate=False) as r:
         return r.s.recommendation.ranked[0].match_status, cv.build(r.s), r.s.matches["T"].matched_cohort
 
 
