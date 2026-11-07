@@ -143,7 +143,7 @@ def evaluate_criterion(tid: str, parsed: ParsedTrial, rule: Rule, ctx: _Ctx, pol
         if meta.review:
             raw, evaluator = matcher._review_assessment(rule, meta.review), "review"
         else:
-            raw = rule_engine.evaluate(rule, ctx.profile)
+            raw = rule_engine.evaluate(rule, ctx.profile, policy.reference_date)
             evaluator = "rule_engine" if raw is not None else None
         field = _engine_field(rule)
         if field in ctx.excluded and (raw is None or raw.passes is None):
