@@ -2,13 +2,17 @@
 
 요청 종류(kind)와 상태(status)
 - ask_patient        : 환자가 화면에서 답하는 질문. pending -> answered | unknown | unreachable | superseded | cancelled
-- document_review    : 기록(검사지·진료 기록 등) 확인 필요. requires_document -> document_unavailable | superseded | cancelled
-- clinician_review   : 담당 의료진 판단 필요. requires_clinician -> superseded | cancelled
-                       (판단 완료 상태는 없음: 임상의 판단을 입력하는 계약이 아직 없어 시스템이 완료를 만들지 않음)
+- document_review    : 기록(검사지·진료 기록 등) 확인 필요.
+                       requires_document -> document_verified | document_unavailable | superseded | cancelled
+- clinician_review   : 담당 의료진 판단 필요. requires_clinician -> clinician_decided | superseded | cancelled
 - conflict_resolution: 같은 항목의 사실이 서로 맞지 않음. requires_document -> document_unavailable | superseded | cancelled
-                       (문서 권한이 없으면 어느 값도 채택하지 않고 보류를 유지)
-document_verified·clinician_confirmed 같은 완료 상태는 일부러 두지 않습니다. 문서 확인(document_authority)과
-임상의 판단 입력 계약이 생기면 그때 추가합니다.
+                       (어느 값도 채택하지 않고 보류를 유지. 문서 검증으로 닫지 않음)
+
+완료 상태 document_verified·clinician_decided는 요청의 운영 상태일 뿐 판정 근거가 아닙니다.
+- 이 두 상태는 상태 변경 API(STAFF_TRANSITIONS)로 만들 수 없고, 검증·판단 API(service.verify_document,
+  service.clinician_judgment)가 권한 확인과 서명된 증명·판단을 남길 때만 바뀝니다.
+- 판정은 사실 이력의 증명(document_authority)과 판단 기록(clinician_authority)을 현재 권한이 인정할 때만 바뀝니다.
+  상태 문자열만 남고 권한이 없으면(서명 비밀 없음, 운영 모드) 기준은 다시 보류됩니다.
 
 '모름'(unknown)·연락 불가(unreachable)·문서 없음(document_unavailable)은 같은 질문을 반복하지 않고 정책 엔진이 낸
 대체 경로(문서 검토 -> 임상 검토)를 새 요청으로 만듭니다 (follows로 이어짐).
@@ -24,11 +28,11 @@ FORMAT = "ctrec.followup_case/v1"
 
 RequestKind = Literal["ask_patient", "document_review", "clinician_review", "conflict_resolution"]
 RequestStatus = Literal["pending", "answered", "unknown", "unreachable", "requires_document", "requires_clinician",
-                        "document_unavailable", "superseded", "cancelled"]
+                        "document_unavailable", "document_verified", "clinician_decided", "superseded", "cancelled"]
 
 OPEN_STATUSES = frozenset({"pending", "requires_document", "requires_clinician"})
 PATIENT_KINDS = frozenset({"ask_patient"})
-# 연구 담당자가 바꿀 수 있는 상태 (답변·문서 확인·임상 판단 완료는 없음)
+# 연구 담당자가 바꿀 수 있는 상태 (답변·문서 확인·임상 판단 완료는 없음: 검증자·임상의 API만)
 STAFF_TRANSITIONS: dict[str, dict[str, frozenset[str]]] = {
     "ask_patient": {"pending": frozenset({"unreachable", "cancelled"})},
     "document_review": {"requires_document": frozenset({"document_unavailable", "cancelled"})},
@@ -44,7 +48,7 @@ ACTION_ROUTES: dict[str, tuple[str, str]] = {
 }
 
 CODE = r"^[a-z0-9_]{1,64}$"
-ACTOR = r"^(patient|system|staff:[A-Za-z0-9._-]{1,64})$"
+ACTOR = r"^(patient|system|(staff|verifier|clinician):[A-Za-z0-9._-]{1,64})$"
 
 
 class StatusEvent(BaseModel):

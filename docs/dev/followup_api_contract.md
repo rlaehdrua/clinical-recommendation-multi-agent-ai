@@ -32,13 +32,14 @@
 | kind | 처음 상태 | 이후 상태 | 누가 바꿈 |
 |---|---|---|---|
 | `ask_patient` (환자 질문) | `pending` | `answered`, `unknown`, `unreachable`, `superseded`, `cancelled` | 환자(답변·모름), 담당자(연락 불가·취소), 시스템(대상 해소) |
-| `document_review` (기록 확인) | `requires_document` | `document_unavailable`, `superseded`, `cancelled` | 담당자, 시스템 |
+| `document_review` (기록 확인) | `requires_document` | `document_verified`(문서 검증자만), `document_unavailable`, `superseded`, `cancelled` | 검증자, 담당자, 시스템 |
 | `conflict_resolution` (사실 충돌) | `requires_document` | `document_unavailable`, `superseded`(충돌이 사라짐), `cancelled` | 담당자, 시스템 |
-| `clinician_review` (임상 검토) | `requires_clinician` | `superseded`, `cancelled` | 담당자, 시스템 |
+| `clinician_review` (임상 검토) | `requires_clinician` | `clinician_decided`(임상의만), `superseded`, `cancelled` | 임상의, 담당자, 시스템 |
 
-- **"문서 확인 완료"와 "임상의 판단 완료" 상태는 없습니다.** 서버에는 문서를 확인하는 권한(`document_authority`)이
-  없고, 임상의 판단을 입력받는 계약도 없습니다. 그래서 시스템은 완료 상태를 만들지 않습니다. 이 요청들은 열린 채로 남고,
-  쌍은 확정되지 않습니다.
+- **완료 상태(`document_verified`, `clinician_decided`)는 검증자·임상의 API만 만듭니다.** 계약:
+  [document_clinician_api_contract.md](document_clinician_api_contract.md). 담당자 상태 변경 API로는 만들 수 없습니다(422).
+  지금 있는 권한은 **합성 시험 전용**입니다. 운영(설정 없음)에서는 검증자·임상의 API가 503이고, 이 요청들은 열린 채로
+  남으며 쌍은 확정되지 않습니다. 완료 상태 문자열은 판정 근거가 아닙니다: 판정은 서명된 증명·판단을 현재 권한이 인정할 때만 바뀝니다.
 - 환자 화면에는 `ask_patient`만 보입니다. 문서 검토, 충돌 확인, 임상 검토는 담당자 내부 작업입니다.
 - `unknown`('모름', '잘 모르겠어요' 등. 판별은 `engine.answers.answer_outcome` 하나): 같은 질문을 다시 만들지 않습니다.
   정책 엔진의 대체 경로가 새 요청으로 생깁니다 (`created_by: "system"`, `follows: <원래 요청>`).
@@ -304,8 +305,9 @@ GET /api/followup/staff/cases/FC-8691…/inspector
 
 ## 8. 하지 않은 것 (후속)
 
-- 임상의 판단 입력 계약, 문서 업로드·확인(`DocumentAuthority` 운영 어댑터): 없음. 그래서 `requires_document`·`requires_clinician`은
-  닫히지 않습니다.
+- 문서 등록·검증과 임상의 판단: 합성 시험 전용 권한으로 구현됨 ([document_clinician_api_contract.md](document_clinician_api_contract.md)).
+  운영 권한(의료기관 인증·권한 연동, `DocumentAuthority`·`ClinicianAuthority` 운영 어댑터)은 없음. 운영에서는
+  `requires_document`·`requires_clinician`이 닫히지 않습니다.
 - 환자가 다른 기기에서 다시 들어오는 경로 (쿠키를 잃으면 사례에 접근할 수 없음. 재발급은 담당자 기능으로 따로 설계 필요)
 - 담당자 계정·권한 분리 (공유 키 하나), 보관 기간·삭제, 여러 프로세스 잠금, 비동기 평가·진행 이벤트
 - 질문 문구: 엔진 질문은 기준 원문(영문)을 그대로 보여 주는 `free_text`입니다 (`engine_runner._wording`). 환자용 문구 개선은 질문 계약(P3) 쪽 작업입니다.

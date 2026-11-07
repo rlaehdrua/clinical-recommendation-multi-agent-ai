@@ -182,7 +182,8 @@ class CriterionAssessment(BaseModel):
     evidence: str
     reasoning: str
     missing_info: str | None
-    method: Literal["rule_engine", "llm", "contract"]  # contract = evaluator.py (승인된 IR + 계약 사실)
+    method: Literal["rule_engine", "llm", "contract", "clinician"]  # contract = evaluator.py (승인된 IR + 계약 사실)
+    # clinician = 현재 임상의 권한이 인정한 판단 (expert_boundary, clinician_authority). 다른 경로는 이 값을 만들지 않음
     category: str = "other"  # Rule.category (절차·행정 기준 구분용)
     underspecified: bool = False  # 원문에 구체 기준이 없어 '의사 확인 필요'로 분류
     cohort: str | None = None  # 특정 코호트 전용 기준이면 코호트 이름
