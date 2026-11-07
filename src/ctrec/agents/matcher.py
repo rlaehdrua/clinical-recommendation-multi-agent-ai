@@ -472,7 +472,7 @@ def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
         if review:
             results[rule.rule_id] = _review_assessment(rule, review)
             continue
-        res = rule_engine.evaluate(rule, profile)
+        res = rule_engine.evaluate(rule, profile, ref)
         if res is not None:
             if res.passes is not None:
                 res.evidence_directness = "structured"

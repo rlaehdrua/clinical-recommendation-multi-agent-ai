@@ -535,18 +535,106 @@ def _related(unit_objs: tuple[set[str], set[str]], other: str, concept: Concept 
     return all(w in other for w in words)
 
 
+# M-1 서술 상충: 같은 환자의 같은 질환을 다른 말로 쓴 진술 ("No history of ILD." / "steroid-treated pneumonitis 2024").
+# 흔한 제외 기준 질환의 동의어 묶음. 묶음에 없는 질환은 아래 핵심어 비교(조사를 뗀 낱말)로만 봄
+_CONDITION_GROUPS = {
+    "ild": re.compile(r"interstitial\s+(?:lung|pneumon)|\bild\b|pneumonitis|pulmonary\s+fibrosis|"
+                      r"간질성\s*(?:폐|폐질환|폐렴)|폐\s*섬유|방사선\s*폐렴|약물\s*(?:유발|성)\s*폐렴", re.I),
+    "cns_metastasis": re.compile(r"(?:brain|cns|cerebral|intracranial)\s+(?:metast\w*|mets|lesions?)|leptomening\w*|"
+                                 r"뇌\s*전이|중추\s*신경계\s*전이|연수막", re.I),
+    "heart_failure": re.compile(r"heart\s+failure|\bchf\b|\bhf[rp]ef\b|심부전", re.I),
+    "myocardial_infarction": re.compile(r"myocardial\s+infarct\w*|\b(?:n?stemi|mi)\b|heart\s+attack|심근\s*경색", re.I),
+    "stroke": re.compile(r"\bstroke\b|\bcva\b|cerebral\s+infarct\w*|\btia\b|뇌졸중|뇌경색|뇌출혈", re.I),
+    "hepatitis_b": re.compile(r"hepatitis\s*b\b|\bhbv\b|hbsag|b형\s*간염", re.I),
+    "hepatitis_c": re.compile(r"hepatitis\s*c\b|\bhcv\b|c형\s*간염", re.I),
+    "hiv": re.compile(r"\bhiv\b|\baids\b|에이즈", re.I),
+    "tuberculosis": re.compile(r"tubercul\w*|\btb\b|결핵", re.I),
+    "autoimmune": re.compile(r"autoimmun\w*|\blupus\b|\bsle\b|rheumatoid|자가\s*면역|루푸스|류마티스", re.I),
+    "diabetes": re.compile(r"diabet\w*|\bt[12]?dm\b|당뇨", re.I),
+    "seizure": re.compile(r"seizure|epilep\w*|경련|뇌전증", re.I),
+    "arrhythmia": re.compile(r"atrial\s+fibrillation|\ba-?fib\b|arrhythmi\w*|qtc\s+prolong\w*|심방\s*세동|부정맥", re.I),
+    "cirrhosis": re.compile(r"cirrho\w*|간\s*경(?:변|화)", re.I),
+}
+# 상충 비교에서 빼는 절: 다른 사람(가족력 포함)의 진술, 계획·선별·감별 문구 (질환 언급이지만 환자의 '있음' 진술이 아님)
+_CONFLICT_OTHER = re.compile(r"\b(?:father|mother|brother|sister|son|daughter|wife|husband|spouse|parent|sibling|uncle|aunt|"
+                             r"cousin|grand\w*|family\s+history|fhx?|donor|roommate)\b|\b(?:his|her)\s+(?:wife|husband|"
+                             r"father|mother)|가족력|아버지|어머니|부친|모친|형제|자매|남편|아내|배우자|아들|딸|할아버지|할머니|"
+                             r"삼촌|이모|고모|외삼촌|(?<![가-힣])형(?=[\s(이은의가,])|누나|언니|오빠|동생|공여자|기증자", re.I)
+_CONFLICT_NOT_CLAIM = re.compile(r"\b(?:screen\w*|work-?up|evaluat\w*\s+for|assess\w*\s+for|r/o|rule\s+out|to\s+exclude|"
+                                 r"if|criteri\w*|eligib\w*|exclusion|inclusion|ask\w*|question\w*|monitor\w*|risk\s+of|"
+                                 r"order\w*|schedul\w*|planned|plan\s+to)\b|\?|선별|검사\s*예정|예정|평가\s*필요|감별|"
+                                 r"여부|위험|모니터|문의", re.I)
+# 진단을 배제한 진술은 '없음'으로 읽음 ("ILD ruled out on HRCT", "뇌전이 배제", "HBsAg 음성")
+_RULED_OUT = re.compile(r"\bruled\s+out\b|\bexcluded\b|\bnegative\b|\bresolved?\s+without\b|배제(?:됨|되었|했|함)?|"
+                        r"음성", re.I)
+# 목록 절이 스스로 '있음'을 말하는 표지 (앞 절의 부정을 이어받지 않음): "No ILD, but has pneumonitis"
+_AFFIRMED = re.compile(r"\b(?:has|had|have|having|with|diagnosed|treated|underwent|on|positive|present|presents?|known|s/p|confirmed|"
+                       r"developed|started|requiring|required)\b|있|진단|치료|복용|받았|양성|확인", re.I)
+_KO_PARTICLE = re.compile(r"(?:으로|에서|에게|까지|부터|이나|이며|이고|은|는|이|가|을|를|에|의|도|로|과|와|만|랑)$")
+
+
+def _stem(token: str) -> str:
+    """한국어 낱말 끝의 조사 하나를 뗌 (\"병력은\" -> \"병력\"). 영어는 그대로."""
+    if re.fullmatch(r"[가-힣]+", token) and len(token) > 2:
+        return _KO_PARTICLE.sub("", token) or token
+    return token
+
+
+def _conditions(text: str) -> set[str]:
+    return {k for k, p in _CONDITION_GROUPS.items() if p.search(text)}
+
+
+def _conflict_polarity(clause: str) -> str:
+    """상충 비교용 극성: 배제 진술은 '없음', 그 밖에는 polarity와 같음."""
+    if _RULED_OUT.search(clause) and not hedged(clause):
+        return "negative"
+    return polarity(clause)
+
+
+def _same_condition(unit_text: str, objs: tuple[set[str], set[str]], other: str, concept: Concept | None) -> bool:
+    """같은 질환을 말하는가: 기존 대상 비교, 같은 동의어 묶음, 또는 조사를 뗀 핵심어가 모두 겹침."""
+    if _related(objs, other, concept):
+        return True
+    groups = _conditions(unit_text)
+    if groups and groups & _conditions(other):
+        return True
+    words = {_stem(w) for w in objs[1]}
+    if not words or concept is not None and objs[0]:
+        return False
+    other_words = {_stem(t) for t in _TOKEN.findall(other.lower())}
+    return words <= other_words
+
+
 def _conflicts(units: list[_Evidence], segs: list[Segment], concept: Concept | None) -> bool:
-    """같은 대상에 대한 원문 진술(질문 제외) 중 '있음'과 '없음'이 함께 있는가. 추측 진술은 상충으로 세지 않음."""
-    clauses = [c.strip(" ,;") for s in segs if s.role in ("record", "answer") for c in _CLAUSE_BOUNDARY.split(s.body)]
-    clauses = [c for c in clauses if c]
+    """같은 대상에 대한 원문 진술(질문 제외) 중 '있음'과 '없음'이 함께 있는가. 추측 진술은 상충으로 세지 않음.
+
+    M-1: 같은 질환을 다른 말이나 다른 조사로 쓴 진술도 같은 대상으로 봄. 다른 사람·가족력, 계획·선별·감별 문구는
+    환자의 '있음' 진술이 아니므로 빼고, 배제 진술은 '없음'으로 읽음."""
+    clauses: list[tuple[str, bool]] = []  # (절, 문장 첫 절의 부정이 이어지는 목록 절인가)
+    for s in segs:
+        if s.role not in ("record", "answer"):
+            continue
+        for sentence in _SENTENCE_BOUNDARY.split(s.body):
+            parts = [c.strip(" ,;.") for c in _CLAUSE_BOUNDARY.split(sentence)]
+            parts = [c for c in parts if c]
+            lead_negative = bool(parts) and _conflict_polarity(parts[0]) == "negative"
+            clauses += [(c, lead_negative and i > 0 and not _AFFIRMED.search(c)) for i, c in enumerate(parts)]
     for u in units:
-        objs = _objects(u.context if u.question and u.clause != u.context else u.clause, concept)
+        text = u.context if u.question and u.clause != u.context else u.clause
+        objs = _objects(text, concept)
         if not (objs[0] or objs[1]):
             objs = _objects(u.sentence, concept)
-        pols = {u.polarity}
-        for c in clauses:
-            if c != u.clause and _related(objs, c, concept):
-                pols.add(polarity(c))
+        pols = {u.polarity if u.linked or u.question else _conflict_polarity(u.clause)}
+        for c, listed in clauses:
+            if c == u.clause.strip(" ,;.") or c in u.clause:
+                continue
+            if not _same_condition(text, objs, c, concept):
+                continue
+            if _CONFLICT_OTHER.search(c) and not _CONFLICT_OTHER.search(text):
+                continue  # 다른 사람의 진술 (근거 절도 다른 사람에 관한 것이면 그대로 비교)
+            if _CONFLICT_NOT_CLAIM.search(c):
+                continue
+            pols.add("negative" if listed else _conflict_polarity(c))  # "No CHF, MI, or stroke": 앞의 부정이 목록 전체에 걸림
         if {"positive", "negative"} <= pols:
             return True
     return False
