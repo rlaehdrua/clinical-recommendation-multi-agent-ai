@@ -1,0 +1,69 @@
+From: 서연 (데이터) - P0-3 엔진 수정 제안 (적용하지 않음, 엔진 담당자 선우 승인 필요)
+Subject: [제안] 국가 한정 문구가 있는 나이 기준이 불충족이면 규칙 엔진이 확정하지 않음
+
+설명: docs/proposals/p0_3_region_condition.md
+적용: git apply docs/proposals/p0_3_region_condition.patch
+---
+diff --git a/src/ctrec/tools/rule_engine.py b/src/ctrec/tools/rule_engine.py
+index 361ee8e..628ec37 100644
+--- a/src/ctrec/tools/rule_engine.py
++++ b/src/ctrec/tools/rule_engine.py
+@@ -278,6 +278,11 @@ def _evaluate_age(rule: Rule, patient: PatientProfile) -> CriterionAssessment |
+                    f"{shown} = {lo:.0f}~{hi:.0f}일, 기준 {target:g} {rule_unit} = {t:.0f}일 → {_ko(at_lo)}")
+ 
+ 
++# 국가·지역 한정 문구 ('in the USA', 'outside of the USA'). 환자 국가를 알 수 없으므로 이런 나이 기준이 불충족이면
++# 확정하지 않음 (P0-3, NCT06216301 I1 '≥22 years of age in the USA': USA 밖 20세가 확정 부적격이 되던 결함)
++_REGION_QUALIFIER = re.compile(r"\b(?:in|outside(?:\s+of)?)\s+(?:the\s+)?(?:USA|U\.S\.(?:A\.)?|US|United States)\b")
++
++
+ def evaluate(rule: Rule, patient: PatientProfile, reference_date: str | None = None) -> CriterionAssessment | None:
+     """reference_date: 판정 기준일(YYYY-MM-DD). 기간 조건이 붙은 검사 기준에만 씀. 없으면 config.reference_date()."""
+     if not rule.structured_evaluable or not rule.field or not rule.operator:
+@@ -285,7 +290,10 @@ def evaluate(rule: Rule, patient: PatientProfile, reference_date: str | None = N
+     field = _norm(rule.field)
+ 
+     if field == "age":
+-        return _evaluate_age(rule, patient)
++        a = _evaluate_age(rule, patient)
++        if a is not None and a.holds == "no" and _REGION_QUALIFIER.search(rule.text or ""):
++            return None  # 지역 조건부 나이 기준 불충족: 국가 확인 전에는 판정하지 않음 (충족은 지역과 무관하게 그대로)
++        return a
+ 
+     if field == "sex":
+         if not rule.value or rule.operator not in ("==", "!="):
+diff --git a/tests/data/p0_3_region_cases.json b/tests/data/p0_3_region_cases.json
+index d0dc5d0..7fb1467 100644
+--- a/tests/data/p0_3_region_cases.json
++++ b/tests/data/p0_3_region_cases.json
+@@ -153,7 +153,7 @@
+     "I1": "UNKNOWN",
+     "I2": "MET"
+    },
+-   "known_defect": true
++   "known_defect": false
+   },
+   {
+    "case_id": "age20-USA",
+@@ -227,7 +227,7 @@
+     "I1": "UNKNOWN",
+     "I2": "MET"
+    },
+-   "known_defect": true
++   "known_defect": false
+   },
+   {
+    "case_id": "age22-unknown",
+diff --git a/tests/test_p_common_engine.py b/tests/test_p_common_engine.py
+index f7e14cf..a17ee97 100644
+--- a/tests/test_p_common_engine.py
++++ b/tests/test_p_common_engine.py
+@@ -370,8 +370,6 @@ def test_nsclc_pilot_never_confirms_eligible_offline():
+         assert r["system_confirmed_eligible"] == 0  # LLM 기준이 오프라인에서 판정 불가 -> 확정 적격이 나오면 결함
+ 
+ 
+-@pytest.mark.xfail(strict=True, reason="NCT06216301 I1 '미국에서 22세 이상'이 무조건 나이 기준으로 파싱됨 - 한국 20세 "
+-                                       "환자가 확정 부적격이 됨 (N4·R3에서 보고된 결함, 파서·국가 조건 미해결)")
+ def test_nsclc_us_only_age_rule_does_not_confirm_ineligible():
+     sc = nsclc_pilot.suite_cohort()
+     r = runner.run(runner.build_spec("p-us", "full_dcvc", sc.cohort, C.EffortBudget(
