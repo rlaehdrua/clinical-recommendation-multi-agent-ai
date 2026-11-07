@@ -1,0 +1,471 @@
+{
+ "$defs": {
+  "Adjudication": {
+   "additionalProperties": false,
+   "description": "agreed: 두 라벨러 일치·확신도 3 / adjudicated: 판정자가 결정 / ambiguous: 판정자도 판정 불가 (주 지표 분모 제외)\n/ pending: 아직 판정 전 (동결 불가).",
+   "properties": {
+    "status": {
+     "enum": [
+      "agreed",
+      "adjudicated",
+      "ambiguous",
+      "pending"
+     ],
+     "title": "Status",
+     "type": "string"
+    },
+    "adjudicator_id": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Adjudicator Id"
+    },
+    "adjudicated_at": {
+     "anyOf": [
+      {
+       "format": "date-time",
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Adjudicated At"
+    },
+    "reason": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Reason"
+    },
+    "log_ref": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Log Ref"
+    }
+   },
+   "required": [
+    "status"
+   ],
+   "title": "Adjudication",
+   "type": "object"
+  },
+  "Annotation_PairLabel_": {
+   "additionalProperties": false,
+   "properties": {
+    "labeler_id": {
+     "minLength": 1,
+     "title": "Labeler Id",
+     "type": "string"
+    },
+    "labeled_at": {
+     "format": "date-time",
+     "title": "Labeled At",
+     "type": "string"
+    },
+    "confidence": {
+     "maximum": 3,
+     "minimum": 1,
+     "title": "Confidence",
+     "type": "integer"
+    },
+    "evidence_spans": {
+     "default": [],
+     "items": {
+      "$ref": "#/$defs/Span"
+     },
+     "title": "Evidence Spans",
+     "type": "array"
+    },
+    "note": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Note"
+    },
+    "label": {
+     "$ref": "#/$defs/PairLabel"
+    }
+   },
+   "required": [
+    "labeler_id",
+    "labeled_at",
+    "confidence",
+    "label"
+   ],
+   "title": "Annotation[PairLabel]",
+   "type": "object"
+  },
+  "CriterionStatusLabel": {
+   "additionalProperties": false,
+   "properties": {
+    "criterion_id": {
+     "minLength": 1,
+     "title": "Criterion Id",
+     "type": "string"
+    },
+    "status": {
+     "enum": [
+      "MET",
+      "NOT_MET",
+      "UNKNOWN_FROM_RECORD",
+      "NEEDS_CLINICIAN"
+     ],
+     "title": "Status",
+     "type": "string"
+    },
+    "evidence_spans": {
+     "default": [],
+     "items": {
+      "$ref": "#/$defs/Span"
+     },
+     "title": "Evidence Spans",
+     "type": "array"
+    }
+   },
+   "required": [
+    "criterion_id",
+    "status"
+   ],
+   "title": "CriterionStatusLabel",
+   "type": "object"
+  },
+  "FileRef": {
+   "additionalProperties": false,
+   "properties": {
+    "path": {
+     "minLength": 1,
+     "title": "Path",
+     "type": "string"
+    },
+    "sha256": {
+     "pattern": "^[0-9a-f]{64}$",
+     "title": "Sha256",
+     "type": "string"
+    }
+   },
+   "required": [
+    "path",
+    "sha256"
+   ],
+   "title": "FileRef",
+   "type": "object"
+  },
+  "GridCell": {
+   "additionalProperties": false,
+   "description": "국가 격자 (D 3.3, EN-5).",
+   "properties": {
+    "gc_item_id": {
+     "minLength": 1,
+     "title": "Gc Item Id",
+     "type": "string"
+    },
+    "criterion_id": {
+     "minLength": 1,
+     "title": "Criterion Id",
+     "type": "string"
+    },
+    "country_cell": {
+     "enum": [
+      "in_scope",
+      "out_of_scope",
+      "unknown"
+     ],
+     "title": "Country Cell",
+     "type": "string"
+    },
+    "age_band": {
+     "enum": [
+      "below_both",
+      "between",
+      "above_both"
+     ],
+     "title": "Age Band",
+     "type": "string"
+    }
+   },
+   "required": [
+    "gc_item_id",
+    "criterion_id",
+    "country_cell",
+    "age_band"
+   ],
+   "title": "GridCell",
+   "type": "object"
+  },
+  "NeedsExpert": {
+   "additionalProperties": false,
+   "properties": {
+    "flag": {
+     "title": "Flag",
+     "type": "boolean"
+    },
+    "reason": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Reason"
+    }
+   },
+   "required": [
+    "flag"
+   ],
+   "title": "NeedsExpert",
+   "type": "object"
+  },
+  "PairInput": {
+   "additionalProperties": false,
+   "properties": {
+    "patient_id": {
+     "minLength": 1,
+     "title": "Patient Id",
+     "type": "string"
+    },
+    "record_ref": {
+     "$ref": "#/$defs/FileRef"
+    },
+    "trial_id": {
+     "minLength": 1,
+     "title": "Trial Id",
+     "type": "string"
+    },
+    "parsed_store_ref": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/FileRef"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null
+    },
+    "institution_country": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Institution Country"
+    },
+    "grid": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/GridCell"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null
+    }
+   },
+   "required": [
+    "patient_id",
+    "record_ref",
+    "trial_id"
+   ],
+   "title": "PairInput",
+   "type": "object"
+  },
+  "PairLabel": {
+   "additionalProperties": false,
+   "properties": {
+    "criteria": {
+     "items": {
+      "$ref": "#/$defs/CriterionStatusLabel"
+     },
+     "minItems": 1,
+     "title": "Criteria",
+     "type": "array"
+    },
+    "pair_status": {
+     "enum": [
+      "ELIGIBLE",
+      "INELIGIBLE",
+      "NOT_DETERMINABLE",
+      "NEEDS_CLINICIAN"
+     ],
+     "title": "Pair Status",
+     "type": "string"
+    },
+    "aggregation_rule_version": {
+     "minLength": 1,
+     "title": "Aggregation Rule Version",
+     "type": "string"
+    }
+   },
+   "required": [
+    "criteria",
+    "pair_status",
+    "aggregation_rule_version"
+   ],
+   "title": "PairLabel",
+   "type": "object"
+  },
+  "Source": {
+   "additionalProperties": false,
+   "description": "사례가 어디서 왔는지.",
+   "properties": {
+    "origin": {
+     "enum": [
+      "clinician_synthetic",
+      "separated_llm_draft_reviewed",
+      "deidentified_real",
+      "provided_example",
+      "ctgov_protocol",
+      "fixture"
+     ],
+     "title": "Origin",
+     "type": "string"
+    },
+    "detail": {
+     "minLength": 1,
+     "title": "Detail",
+     "type": "string"
+    },
+    "author_id": {
+     "minLength": 1,
+     "title": "Author Id",
+     "type": "string"
+    },
+    "author_independent_of_engine_work": {
+     "title": "Author Independent Of Engine Work",
+     "type": "boolean"
+    },
+    "created_at": {
+     "format": "date-time",
+     "title": "Created At",
+     "type": "string"
+    },
+    "not_derived_from_existing_sets": {
+     "title": "Not Derived From Existing Sets",
+     "type": "boolean"
+    }
+   },
+   "required": [
+    "origin",
+    "detail",
+    "author_id",
+    "author_independent_of_engine_work",
+    "created_at",
+    "not_derived_from_existing_sets"
+   ],
+   "title": "Source",
+   "type": "object"
+  },
+  "Span": {
+   "additionalProperties": false,
+   "description": "원문(input.text 또는 기록) 안의 문자 오프셋 [start, end).",
+   "properties": {
+    "start": {
+     "minimum": 0,
+     "title": "Start",
+     "type": "integer"
+    },
+    "end": {
+     "minimum": 0,
+     "title": "End",
+     "type": "integer"
+    }
+   },
+   "required": [
+    "start",
+    "end"
+   ],
+   "title": "Span",
+   "type": "object"
+  }
+ },
+ "additionalProperties": false,
+ "properties": {
+  "item_id": {
+   "minLength": 1,
+   "title": "Item Id",
+   "type": "string"
+  },
+  "needs_expert": {
+   "$ref": "#/$defs/NeedsExpert"
+  },
+  "adjudication": {
+   "$ref": "#/$defs/Adjudication"
+  },
+  "source": {
+   "$ref": "#/$defs/Source"
+  },
+  "layer": {
+   "const": "G-P",
+   "title": "Layer",
+   "type": "string"
+  },
+  "input": {
+   "$ref": "#/$defs/PairInput"
+  },
+  "annotations": {
+   "items": {
+    "$ref": "#/$defs/Annotation_PairLabel_"
+   },
+   "minItems": 1,
+   "title": "Annotations",
+   "type": "array"
+  },
+  "final": {
+   "anyOf": [
+    {
+     "$ref": "#/$defs/PairLabel"
+    },
+    {
+     "type": "null"
+    }
+   ],
+   "default": null
+  }
+ },
+ "required": [
+  "item_id",
+  "needs_expert",
+  "adjudication",
+  "source",
+  "layer",
+  "input",
+  "annotations"
+ ],
+ "title": "PairRecord",
+ "type": "object"
+}

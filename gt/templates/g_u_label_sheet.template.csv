@@ -1,0 +1,2 @@
+item_id,kind,text,criterion,quote,holds,field,value,unit,reference_date,labeler_id,labeled_at,decision,category,hearsay,approx,conflict,threshold_crossing,concept_cluster,source_priority_note,confidence,evidence_start,evidence_end,needs_expert,needs_expert_reason,note
+<U-0001>,<conflict|value>,<원문>,<기준>,<인용>,<yes|no>,<필드>,<값>,<단위>,<YYYY-MM-DD>,<L-A>,<ISO 8601>,<accept|hold>,<범주>,<true|false>,<true|false>,<true|false>,<true|false|빈칸>,<질환 묶음 (CL-2)>,<출처 우선순위 메모>,<1|2|3>,<오프셋>,<오프셋>,<true|false>,<사유>,<메모>
