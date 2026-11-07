@@ -611,6 +611,7 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 | 4 | `GET /api/followup/staff/insight` (담당자 키 필요, 읽기 전용): 열린 사례를 한 코호트로 보고 대기열과 같은 계획(Cohort C)에서 위 수치를 계산. 판정 가능 여부는 decision_state의 기준별 info_key·gap·required_evidence로만 셈(환자 답변은 진료 기록 필요 기준을 끝내지 못함), 분은 비용 원장(EffortLedger) 그대로 | `src/ctrec/web/followup_insight.py` (신규), `src/ctrec/web/followup_api.py` |
 | 5 | 테스트 4건(전체 5,039 passed, 5 skipped, 1 xfailed): `/staff` = 같은 페이지·역할 탭, `staff.js` 전역 없음, insight 수치 관계(판정 가능 ≤ 관련, 분 합, 대기열과 같은 순위·행동, 누적 분 단조, 두 순서의 최종 판정 수 같음), insight가 사례를 바꾸지 않음 | `tests/test_followup_web.py` |
 
+- 머리글 수정: 역할 탭에 붙인 클래스 `seg`가 기존 진행 막대 클래스(높이 6px)와 같아 탭 상자가 눌리고 '입력·진행 / 추천 결과' 탭과 겹치던 문제 - 클래스를 빼고 두 줄 사이 간격 10px, 탭 글자 줄바꿈 금지, 480px 이하에서는 부제를 숨겨 로고가 한 줄에 놓이게 (1280px·390px 폭에서 확인).
 - 해석: '판정 가능'은 답이 나온다고 볼 때의 상한, 분은 가정 비용. 데모 3명(합성 시험 3개)에서는 쌍마다 남은 항목이 둘 이상이라 '확인하면 판정 가능'은 처음엔 0이고, 헤모글로빈·ECOG 확인은 각각 3쌍을 '하나만 더 확인하면 판정'으로 만듦. 추천 순서와 환자 순서는 3쌍 판정까지 둘 다 81.5분 - 화면은 결과를 그대로 보여 주며 우열은 WP6 시뮬레이터로 판단.
 - 브라우저(Chrome, 오프라인 데모 서버): 환자 3명 입력 → `/staff`가 담당자 탭으로 열림 → 질문별 6개 카드 → 정렬 → 헤모글로빈 질문 3명에게 일괄 요청 → 환자 2명 답변·1명 '모름' → 요약 갱신(판정 가능 0 → 3쌍) → 환자 탭·담당자 탭 왕복 → 환자별 상세. 콘솔 오류 0.
 
