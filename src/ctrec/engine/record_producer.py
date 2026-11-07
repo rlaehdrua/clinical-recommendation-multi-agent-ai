@@ -349,7 +349,7 @@ def build_step(obs: StepObservation) -> StepResult:
             continue
         reason = reasons.get(tid)
         if reason is None and a2 == PairStatus.NOT_EVALUATED and b != a2:
-            reason = "evaluation_failed"  # 관찰된 상태 자체가 평가 실패
+            reason = pa[tid].review_code or "evaluation_failed"  # 관찰된 상태 자체가 평가 실패 (판정할 기준 없음은 그 코드로)
         if b in CONFIRMED and a2 != b and reason is None:
             issues.append(_issue(obs, "unexplained_confirmed_downgrade", "warning", tid, trial_id=tid,
                                  before=b.value, after=a2.value))

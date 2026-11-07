@@ -207,10 +207,15 @@ def candidates(st: DecisionState, cfg: PolicyConfig = DEFAULT_POLICY,
         b.add("DEFER", 6, "llm_reevaluation_required",
               f"사실이 바뀌어 LLM 판정 기준 {len(stale)}개를 다시 판정해야 하나 진단 모드에서는 LLM을 부르지 않음",
               stale, info_key="stale:llm")
-    if st.not_evaluated_trials:
+    failed = set(st.not_evaluated_trials) - set(st.no_required_trials)
+    if failed:
         b.add("NEEDS_REVIEW", 6, "evaluation_failed",
-              f"평가하지 못한 시험 {len(st.not_evaluated_trials)}개 - 부적격이 아니며 재평가·담당자 확인 필요",
-              info_key="not_evaluated", trials=set(st.not_evaluated_trials), cost=cfg.cost_review)
+              f"평가하지 못한 시험 {len(failed)}개 - 부적격이 아니며 재평가·담당자 확인 필요",
+              info_key="not_evaluated", trials=failed, cost=cfg.cost_review)
+    for code in sorted(set(st.no_required_trials.values())):
+        trials = {t for t, c in st.no_required_trials.items() if c == code}
+        b.add("NEEDS_REVIEW", 6, code, f"판정할 필수 기준이 없는 시험 {len(trials)}개 - 부적격이 아니며 담당자 확인 필요",
+              info_key=f"not_evaluated:{code}", trials=trials, cost=cfg.cost_review)
     if st.trials and not any(t.open and t.eligibility in ("ELIGIBLE", "UNCERTAIN") for t in st.trials.values()):
         b.add("RETRIEVE", 6, "no_open_candidate",
               "추천 가능한(모집 중·보류 또는 충족) 시험이 없음 - 추가 임상시험 검색 필요 (진단 모드에서는 검색하지 않음)",

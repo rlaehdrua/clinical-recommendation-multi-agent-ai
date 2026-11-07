@@ -1,11 +1,10 @@
 """E-1: 평가할 기준이 없는 시험이 근거 없이 CONFIRMED_ELIGIBLE이 되어 추천되지 않음 (합성 데이터, LLM·API 호출 없음).
 
-docs/dev/e1_empty_criteria_safety.md. 절차 기준만 남은 시험(R5)은 E-1 범위 밖이라 현재 동작을 층별로 기록만 합니다.
+docs/dev/e1_empty_criteria_safety.md. 절차 기준만 남은 시험(R5)의 층별 검증은 tests/test_r5_no_required_criteria.py가 다룹니다.
 """
 
 from __future__ import annotations
 
-import inspect
 import json
 import sys
 from pathlib import Path
@@ -260,23 +259,22 @@ def logistics_only_session() -> Session:
     return run_session(t)
 
 
-def test_known_risk_r5_session_layer_stays_eligible_and_ranked(env):
-    """알려진 잔여 위험 (R5): 규칙이 있으므로 E-1의 차단 대상이 아니고, Session 판정과 추천은 그대로입니다.
-
-    바람직한 동작을 고정하는 테스트가 아닙니다. 팀 결정으로 동작을 바꾸면 이 테스트도 함께 바꿉니다."""
+def test_known_risk_r5_session_layer_is_not_evaluated_and_excluded(env):
+    """R5 P3 확정: 절차 기준만 있는 시험은 Session에서도 NOT_EVALUATED이고 추천에서 빠지며 원인 코드를 남깁니다."""
     s = logistics_only_session()
     m = s.matches["SYN-R5"]
-    assert (m.eligibility, m.match_status, m.n_pass, m.evaluation_error) == ("ELIGIBLE", "CRITERIA_MATCH", 0, None)
-    assert [r.trial_id for r in s.recommendation.ranked] == ["SYN-R5"]
+    assert (m.eligibility, m.match_status, m.n_pass, m.evaluation_error) == (
+        "NOT_EVALUATED", "NOT_EVALUATED", 0, "no_required_criteria")
+    assert s.recommendation.ranked == []
+    assert "평가 실패" not in next(x.reason for x in s.recommendation.excluded if x.trial_id == "SYN-R5")
 
 
-def test_known_risk_r5_pair_status_belongs_to_the_contract_layer(env):
-    """R5의 PairStatus는 Session 판정과 다른 층: PR #14의 필수 기준 0개 차단이 있으면 NOT_EVALUATED.
-
-    PR #14 병합 뒤에는 분기를 없애고 NOT_EVALUATED만 남깁니다."""
-    has_gate = "required_criteria" in inspect.signature(C.derive_pair_status).parameters
-    expected = C.PairStatus.NOT_EVALUATED if has_gate else C.PairStatus.CONFIRMED_ELIGIBLE
-    assert cohort_of(logistics_only_session()).pair(ALIAS, "SYN-R5").status == expected
+def test_known_risk_r5_pair_status_matches_the_session(env):
+    """R5의 PairStatus도 Session과 같은 NOT_EVALUATED이고, 담당자 검토 사유는 평가 실패와 구분됩니다."""
+    co = cohort_of(logistics_only_session())
+    assert co.pair(ALIAS, "SYN-R5").status == C.PairStatus.NOT_EVALUATED
+    assert [(a.reason_code, a.target_trial_ids) for a in LegacyAdapterPolicy().propose(co)
+            if a.action_type == "CLINICIAN_REVIEW"] == [("no_required_criteria", ("SYN-R5",))]
 
 
 # ------------------------------------------------------------ 잠긴 기준표

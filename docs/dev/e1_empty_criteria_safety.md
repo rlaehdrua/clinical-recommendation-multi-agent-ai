@@ -1,6 +1,6 @@
 # E-1 빈 임상시험 기준 안전 메모
 
-작성일: 2026-11-05, 갱신: 2026-11-06. 상태: 빈 기준 차단 구현(미병합), R5 범위 결정됨, 표시 불일치·누락 기준은 **후속 결정 대기**.
+작성일: 2026-11-05, 갱신: 2026-11-07. 상태: 빈 기준 차단 병합(#17). R5는 **P3로 확정**(2026-11-07, 동겸)하고 P2는 폐기. R7·누락 기준은 **팀 결정 대기** (`docs/dev/r5_policy_comparison.md`).
 
 ## 1. 문제
 
@@ -10,12 +10,15 @@
 - 도달 경로: 사전 컴파일(파서가 빈 규칙 -> 검증기·저장소가 막지 않음), `CTREC_LAZY_COMPILE=1`, 원문 기준이 없는 시험.
 - 고정 기준표 26개 시험은 해당 없음: 모든 평가 경로에 절차 외 기준이 최소 5개 있습니다 (`tests/test_empty_criteria.py`).
 
-## 2. 이번 수정 (`src/ctrec/agents/matcher.py`)
+## 2. 수정 (`src/ctrec/agents/matcher.py`)
 
 | 입력 | 수정 전 | 수정 후 |
 |---|---|---|
 | `match_trial`, 규칙 0개 | ELIGIBLE | `NOT_EVALUATED` |
-| `decide([])` | ELIGIBLE | `UNCERTAIN` (`match_trial`을 거치지 않는 호출의 방어선) |
+| `match_trial`, 적용 경로에 실질 기준 없음 | ELIGIBLE | `NOT_EVALUATED` |
+| `qa_guard.recompose`, 재계산 뒤 실질 기준 없음 | ELIGIBLE | `NOT_EVALUATED` (`match_trial`과 같은 규칙) |
+| `decide`, 실질 기준 없음 (`[]` 포함) | ELIGIBLE | `UNCERTAIN` (진단용 `fact_compare._rebuild`와 `match_trial`을 거치지 않는 호출의 방어선) |
+| `_select_cohort`, 같은 판정의 경로 | 선언 순서 영향 | 실질 기준이 있는 경로 우선 |
 
 `evaluation_error`에는 코드만 남깁니다. 시험 원문과 환자 정보는 넣지 않습니다.
 
@@ -23,44 +26,40 @@
 |---|---|
 | `criteria_parse_empty` | 원문 기준 또는 구조화 조건(나이·성별)이 있는데 파싱 결과가 빔 |
 | `no_source_criteria` | 원문에도 평가할 조건이 없음 |
+| `no_required_criteria` | 규칙은 있지만 적용 경로의 기준이 절차 기준뿐 |
+| `no_applicable_criteria` | 절차 외 기준이 있지만 이 환자에게 모두 해당 없음 |
 
-원칙: 근거가 없다는 사실은 부적격이 아닙니다. 확정을 보류하고 기존 평가 실패 경로로 보냅니다
-(추천 제외, "부적격 아님" 표시, 정책의 `CLINICIAN_REVIEW(evaluation_failed)`). 새 상태와 계약 변경은 없습니다.
+실질 기준은 이 환자에게 적용되는 절차 외 기준입니다(`matcher.is_substantive`). 절차 기준의 통과와 조건부 기준의 '해당 없음'은
+기준 단위 판정으로 남지만 시험 단위 적격의 근거가 되지 않습니다. 불충족 근거나 확인할 항목이 있으면 기존 판정을 따릅니다.
 
-## 3. 이 수정이 해결하지 않는 것
+원칙: 근거가 없다는 사실은 부적격이 아닙니다. 확정을 보류하고 추천에서 빼며 "부적격 아님"으로 표시합니다. 새 상태는 없습니다.
+사유 코드에 따라 검토 행동과 문구가 다릅니다.
 
-이번 수정은 **규칙이 하나도 없는 경우만** 막습니다.
+| 코드 | 뜻 | 정책 검토 사유 | Inspector 문구 |
+|---|---|---|---|
+| `criteria_parse_empty`, `no_source_criteria`, 예외 | 평가 실패 | `CLINICIAN_REVIEW(evaluation_failed)` | 평가 실패 |
+| `no_required_criteria`, `no_applicable_criteria` | 평가는 했으나 판단할 기준 없음 | `CLINICIAN_REVIEW(<그 코드>)` | 판정할 필수 기준 없음 · 담당자 확인 필요 |
 
-### A. 절차 기준만 남은 시험 (R5) - 알려진 위험, E-1 범위 밖
+기준별 판정이 있는 `NOT_EVALUATED`는 Q&A 경계와 계약 평가기를 그대로 거칩니다. 건너뛰는 것은 기준별 판정이 없는 평가 실패뿐입니다
+(`qa_guard.evaluation_failed`).
 
-- 조건: 규칙이 모두 절차 선정 기준(`consent_or_logistics`, inclusion)이고 미확인.
-- 결정(2026-11-06): E-1의 차단 범위를 넓히지 않습니다. PR #14의 `required_criteria == 0` 차단은 그대로 둡니다. 두 수정은 서로 다른 층의 안전장치입니다.
-- 현재 동작은 층마다 다릅니다.
+## 3. 해결한 것과 해결하지 않는 것
 
-| 층 | E-1 단독 | E-1 + PR #14 |
-|---|---|---|
-| Session 판정 (`TrialMatch.eligibility`) | ELIGIBLE, 통과 0건 | ELIGIBLE, 통과 0건 |
-| 외부 표시·추천 | `CRITERIA_MATCH`, 추천 1순위 | `CRITERIA_MATCH`, 추천 1순위 |
-| 코호트 `PairStatus` | `CONFIRMED_ELIGIBLE` | `NOT_EVALUATED` |
+### A. 절차 기준만 남은 시험 (R5) - P3 확정
 
-PR #14가 있으면 근거 없는 확정은 막히지만, 코호트 상태와 추천 표시가 서로 다른 말을 합니다. 이 불일치는 아직 해결되지 않았습니다.
+- 이전: 통과 0건인데도 ELIGIBLE, `CRITERIA_MATCH`, 추천 1순위. PR #14를 더하면 코호트 상태만 `NOT_EVALUATED`였습니다.
+- 현재: 판정, 외부 표시, 코호트 상태가 모두 `NOT_EVALUATED`, 추천에서 제외, `CLINICIAN_REVIEW(no_required_criteria)`.
+- 절차 기준 불충족(`INELIGIBLE`)과 절차 제외 기준 미확인(`UNCERTAIN`, R6)은 P3 대상이 아닙니다. 불충족 근거나 물어볼 항목이 있으므로 기존 판정을 따릅니다.
+- 코호트(OR): 절차 기준만 있는 경로가 선언 순서로 정상 경로를 밀어내지 않습니다. 다른 경로가 정보 부족이면 그 경로의
+  질문으로 진행하고, 다른 경로가 불충족이면 `NOT_EVALUATED`입니다 (부적격으로 확정하지 않음).
+- 동작은 `tests/test_r5_no_required_criteria.py`, 출력 경로별 일관성은 `tests/test_r5_p3_contract.py`가 고정합니다. P1·P2와의 측정 비교는 `docs/dev/r5_policy_comparison.md`에 있습니다.
 
-- 고정 기준표 영향: 0건 (절차 외 기준이 없는 평가 경로가 없음). 새 시험을 컴파일할 때 발생할 수 있습니다.
-- 현재 동작은 `test_known_risk_r5_*` 두 테스트가 층별로 기록합니다. 바람직한 동작을 고정한 것이 아닙니다.
-
-아래 표는 Session 판정과 추천까지 바꿀지 후속으로 정할 때의 선택지입니다.
-
-| 안 | 동작 | 예상 영향 |
-|---|---|---|
-| P1 | 현행 유지 | 근거 없는 확정이 계속 가능 |
-| P2 | 절차 외 판정 근거가 없으면 `UNCERTAIN` | 고정 기준표 영향 없음. 쌍이 `INFO_MISSING`이 되지만 실행할 행동이 없어, 행동 또는 표시 보완이 필요할 수 있음 |
-| P3 | `NOT_EVALUATED` | 추천에서 빠지고 담당자 검토로 감. 기준을 평가한 시험을 '평가 실패'로 부르게 됨 |
-
-### B. 임상 기준은 충족, 절차 기준만 미확인 (R7)
+### B. 임상 기준은 충족, 절차 기준만 미확인 (R7) - 미해결 정책 사례
 
 - 조건: 절차 외 기준이 모두 통과, 절차 선정 기준만 미확인.
 - 현재 동작: `CONFIRMED_ELIGIBLE`, `CRITERIA_MATCH`. 외부 요약에 "절차 기준 확인 필요"가 붙습니다.
-- 정상 대조군으로 유지합니다 (`test_stage05.py`의 기존 테스트가 면제 규칙을 고정).
+- 이번 수정에서 바꾸지 않습니다. 정상 대조군으로 유지하지만, 확정 상태가 맞는지는 아직 결정되지 않았습니다.
+  (`test_stage05.py`의 기존 테스트가 면제 규칙을 고정)
 - 논점: `PairStatus` 정의의 "남은 확인 없음"과 절차 미확인이 맞는 표현인가. 바꾸려면 계약 검토가 필요합니다.
 
 ### C. 일부 기준의 `coverage_gaps`
@@ -72,9 +71,20 @@ PR #14가 있으면 근거 없는 확정은 막히지만, 코호트 상태와 �
 
 ## 4. 팀 합의가 필요한 항목
 
-1. R5의 Session 판정·추천을 코호트 상태와 맞출지: P1 / P2 / P3
-2. R7을 확정 상태로 둘지
-3. `coverage_gaps`가 남은 시험의 저장·판정 처리, 기존 7개 시험 검토
-4. 규칙 0개 파싱 결과를 컴파일 단계에서 거부할지 (`criteria_parser`, `parser_validator`, `trial_store`는 이번 범위 밖)
+R5는 합의를 마쳤습니다.
+
+| 항목 | 결정 |
+|---|---|
+| R5 정책 | P3. P2 폐기 (2026-11-07, 동겸) |
+| 절차 기준만 있는 시험 | Session에서도 `NOT_EVALUATED`, 추천 제외, 담당자 검토 |
+| Inspector 문구 | `no_required_criteria`: "판정할 필수 기준 없음 · 담당자 확인 필요". `criteria_parse_empty`·`no_source_criteria`: 기존 "평가 실패" |
+
+아직 남은 항목입니다.
+
+1. `no_applicable_criteria`를 별도 코드로 둘지. 이번 PR은 후보의 코드를 유지하고 동작과 Inspector 문구를 `no_required_criteria`와 같게 했습니다.
+2. 인구통계 기준(나이·성별)만 충족한 시험을 확정해도 되는지 (현재 실질 기준으로 인정)
+3. R7을 확정 상태로 둘지
+4. `coverage_gaps`가 남은 시험의 저장·판정 처리, 기존 7개 시험 검토
+5. 규칙 0개 파싱 결과를 컴파일 단계에서 거부할지 (`criteria_parser`, `parser_validator`, `trial_store`는 이번 범위 밖)
 
 결정이 나면 3절의 테스트와 이 문서를 함께 바꿉니다.
