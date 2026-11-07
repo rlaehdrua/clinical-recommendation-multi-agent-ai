@@ -4,6 +4,8 @@
     PYTHONPATH=src python scripts/render_inspector.py demo [--case M-SYN-DEMO-A-DEMO-LUNG-001-rescue2-3]
     # 이미 있는 실행 폴더(CLI outputs/<patient_id>/ 등) -> HTML
     PYTHONPATH=src python scripts/render_inspector.py render outputs/S001 [--out outputs/S001/inspector.html]
+    # 같은 환자의 이전 실행과 이번 실행 비교 (정제 보기끼리, JSON 출력)
+    PYTHONPATH=src python scripts/render_inspector.py diff outputs-prev/S001 outputs/S001
 
 - 출력은 기본으로 실행 폴더 안 inspector.html입니다(outputs/는 git에 올라가지 않음). data/·src/에는 쓰지 않습니다.
 - 기존 파일은 덮어쓰지 않습니다: 출력 HTML이 이미 있으면 거부(--out으로 새 경로 지정), demo는 비어 있지 않은 폴더를 거부.
@@ -110,7 +112,19 @@ def main(argv=None):
     r.add_argument("run_dir", type=Path)
     r.add_argument("--out", type=Path)
     r.add_argument("--synthetic-details", action="store_true")
+    c = sub.add_parser("diff", help="두 실행 폴더(이전 -> 이번)의 판정·기준·추천 차이 (JSON)")
+    c.add_argument("prev_dir", type=Path)
+    c.add_argument("cur_dir", type=Path)
     args = ap.parse_args(argv)
+
+    if args.cmd == "diff":
+        try:
+            out = inspector.compare_runs(args.prev_dir, args.cur_dir)
+        except inspector.InspectorError as e:
+            print(f"거부: {e}", file=sys.stderr)
+            raise SystemExit(2)
+        print(json.dumps(out, ensure_ascii=False, indent=1))
+        return
 
     try:
         if args.cmd == "demo":

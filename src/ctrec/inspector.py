@@ -1544,3 +1544,57 @@ def write_html(view: dict, out: Path) -> Path:
     with out.open("x", encoding="utf-8") as f:  # 배타 생성: 확인과 쓰기 사이에 생긴 파일도 덮어쓰지 않음
         f.write(render_html(view))
     return out
+
+
+# ---------------------------------------------------------------------------
+# 실행 간 비교 (N 감사 2026-11-07, 6단계 J: 이전 결과를 다시 불러와 차이를 봄)
+# ---------------------------------------------------------------------------
+
+COMPARE_SCHEMA = "ctrec.inspector.compare/v1"
+_COMPARE_CRITERION_KEYS = ("holds", "passes", "applicable", "needs_verification", "gap", "evidence_directness", "method")
+
+
+def compare_views(prev: dict, cur: dict) -> dict:
+    """정제된 두 view(build_view 결과)를 비교. 새 판단 없이 기록된 판정·기준·추천만 옮기고, 허용 목록 밖 값은 읽지 않음.
+
+    환자 별칭(run.patient)이 다르면 다른 환자의 실행이므로 비교하지 않고 status=different_patient로 돌려줌.
+    반환: trials(시험별 판정 변화), criteria(기준별 필드 변화), recommendation(추천·제외 목록 변화), added/removed 시험.
+    """
+    p_pat, c_pat = (prev.get("run") or {}).get("patient"), (cur.get("run") or {}).get("patient")
+    out: dict = {"schema": COMPARE_SCHEMA, "status": "ok", "trials": [], "criteria": [], "recommendation": {},
+                 "added_trials": [], "removed_trials": []}
+    if p_pat != c_pat:
+        return {**out, "status": "different_patient"}
+    pt = {t.get("trial_id"): t for t in prev.get("trials") or [] if isinstance(t, dict)}
+    ct = {t.get("trial_id"): t for t in cur.get("trials") or [] if isinstance(t, dict)}
+    out["added_trials"] = sorted(t for t in ct if t not in pt)
+    out["removed_trials"] = sorted(t for t in pt if t not in ct)
+    for tid in sorted(set(pt) & set(ct)):
+        a, b = pt[tid], ct[tid]
+        if (a.get("eligibility"), a.get("match_status")) != (b.get("eligibility"), b.get("match_status")):
+            out["trials"].append({"trial_id": tid, "before": {"eligibility": a.get("eligibility"),
+                                                              "match_status": a.get("match_status")},
+                                  "after": {"eligibility": b.get("eligibility"), "match_status": b.get("match_status")}})
+        pc = {c.get("rule_id"): c for c in a.get("criteria") or [] if isinstance(c, dict)}
+        cc = {c.get("rule_id"): c for c in b.get("criteria") or [] if isinstance(c, dict)}
+        for rid in sorted(set(pc) | set(cc), key=str):
+            x, y = pc.get(rid) or {}, cc.get(rid) or {}
+            diff = {k: {"before": x.get(k), "after": y.get(k)} for k in _COMPARE_CRITERION_KEYS if x.get(k) != y.get(k)}
+            if diff:
+                out["criteria"].append({"trial_id": tid, "rule_id": rid, "changes": diff})
+    pr, cr = prev.get("recommendation") or {}, cur.get("recommendation") or {}
+
+    def ids(rec: dict, key: str) -> list:
+        return [r if isinstance(r, str) else r.get("trial_id") for r in rec.get(key) or [] if isinstance(r, (str, dict))]
+    for key in ("recommended", "excluded"):
+        before, after = ids(pr, key), ids(cr, key)
+        if before != after:
+            out["recommendation"][key] = {"before": before, "after": after}
+    out["changed"] = bool(out["trials"] or out["criteria"] or out["recommendation"] or out["added_trials"]
+                          or out["removed_trials"])
+    return out
+
+
+def compare_runs(prev_dir: Path, cur_dir: Path) -> dict:
+    """저장된 두 실행 폴더를 다시 불러와 비교 (load_run -> build_view(strict) -> compare_views)."""
+    return compare_views(build_view(load_run(prev_dir)), build_view(load_run(cur_dir)))
