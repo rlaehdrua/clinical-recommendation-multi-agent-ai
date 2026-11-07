@@ -1,0 +1,22 @@
+gt_kind	budget_minutes	arm	runs	verified_eligible	false_eligible	verified_ineligible	false_ineligible	confirmed_unverified	coverage	gt_coverage	unresolved	waiting	unresolved_no_action	actions	assumed_cost_minutes	zero_allocation	allocation_gini	patients_opportunity_missed	rule_gt_circular_disagreements
+manual_protocol_reading_ineligible_only	30.0	no_action	3	0.0	0.0	0.0	0.0	0.0	0.0	0.0	48.0	48.0	0.0	0.0	0.0	8.0	0.0	1.0	0.0
+manual_protocol_reading_ineligible_only	30.0	random	3	0.0	0.0	0.0	0.0	0.0	0.0	0.0	48.0	48.0	0.0	10.0	30.0	4.0	0.536	1.0	0.0
+manual_protocol_reading_ineligible_only	30.0	patient_independent	3	0.0	0.0	0.0	0.0	0.0	0.0	0.0	48.0	48.0	0.0	17.0	30.0	7.0	0.875	1.0	0.0
+manual_protocol_reading_ineligible_only	30.0	cost_first	3	0.0	0.0	0.0	0.0	0.0	0.0	0.0	48.0	48.0	0.0	19.333	30.0	2.0	0.625	1.0	0.0
+manual_protocol_reading_ineligible_only	30.0	dcvc	3	0.0	0.0	6.0	0.0	0.0	0.125	0.4	42.0	42.0	0.0	9.0	30.0	7.0	0.875	1.0	0.0
+manual_protocol_reading_ineligible_only	30.0	dcvc-no_bundles	3	0.0	0.0	2.0	0.0	0.0	0.042	0.133	46.0	46.0	0.0	8.0	30.0	1.0	0.525	1.0	0.0
+manual_protocol_reading_ineligible_only	30.0	dcvc-no_dcv	3	0.0	0.0	6.0	0.0	0.0	0.125	0.4	42.0	42.0	0.0	9.0	30.0	7.0	0.875	1.0	0.0
+manual_protocol_reading_ineligible_only	30.0	dcvc-no_recovery	3	0.0	0.0	6.0	0.0	0.0	0.125	0.4	42.0	42.0	0.0	9.0	30.0	7.0	0.875	1.0	0.0
+manual_protocol_reading_ineligible_only	30.0	dcvc-no_evidence_routing	3	0.0	0.0	2.0	0.0	0.0	0.042	0.133	46.0	46.0	0.0	4.0	30.0	6.0	0.767	1.0	0.0
+manual_protocol_reading_ineligible_only	90.0	no_action	3	0.0	0.0	0.0	0.0	0.0	0.0	0.0	48.0	48.0	0.0	0.0	0.0	8.0	0.0	1.0	0.0
+manual_protocol_reading_ineligible_only	90.0	random	3	0.0	0.0	0.0	0.0	0.0	0.0	0.0	48.0	48.0	0.0	48.667	90.0	0.0	0.105	1.0	0.0
+manual_protocol_reading_ineligible_only	90.0	patient_independent	3	0.0	0.0	0.0	0.0	0.0	0.0	0.0	48.0	48.0	0.0	77.0	90.0	7.0	0.875	1.0	0.0
+manual_protocol_reading_ineligible_only	90.0	cost_first	3	0.0	0.0	0.0	0.0	0.0	0.0	0.0	48.0	48.0	0.0	80.0	90.0	2.0	0.792	1.0	0.0
+manual_protocol_reading_ineligible_only	90.0	dcvc	3	0.0	0.0	8.0	1.0	0.0	0.188	0.6	39.0	39.0	0.0	28.0	90.0	5.0	0.631	1.0	0.0
+manual_protocol_reading_ineligible_only	90.0	dcvc-no_bundles	3	0.0	0.0	4.0	1.0	0.0	0.104	0.333	43.0	43.0	0.0	18.0	90.0	0.0	0.358	1.0	0.0
+manual_protocol_reading_ineligible_only	90.0	dcvc-no_dcv	3	0.0	0.0	8.0	1.0	0.0	0.188	0.6	39.0	39.0	0.0	28.0	90.0	5.0	0.631	1.0	0.0
+manual_protocol_reading_ineligible_only	90.0	dcvc-no_recovery	3	0.0	0.0	8.0	1.0	0.0	0.188	0.6	39.0	39.0	0.0	28.0	90.0	5.0	0.631	1.0	0.0
+manual_protocol_reading_ineligible_only	90.0	dcvc-no_evidence_routing	3	0.0	0.0	4.0	1.0	0.0	0.104	0.333	43.0	43.0	0.0	33.0	90.0	4.0	0.6	1.0	0.0
+# p_suite/0.1: cohorts=['sim-nsclc-pilot-8x6'], gt=['manual_protocol_reading_ineligible_only'], seeds=[1, 2, 3], horizon=10
+# 비용: relative_policy_comparison_only (가정 비용 정보원 ['clinician_review', 'lab_report', 'medical_record', 'medication_list', 'pathology_report', 'patient_interview', 'trial_registry'])
+# 정확도 칸(verified_*/false_*)은 독립 합성 GT 기준이며 임상 GT가 아님. '-' = 독립 GT 없음(미검증). rule_gt_circular_disagreements는 같은 평가기의 순환 라벨과의 일관성 검사.
