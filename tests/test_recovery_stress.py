@@ -24,7 +24,8 @@ BUDGET = C.EffortBudget(coordinator_minutes=100000, clinician_minutes=100000, ho
 DOWN = SourceResponse(p_unreachable=1, p_no_answer=0)
 UP = SourceResponse(p_unreachable=0, p_no_answer=0)
 SCENARIOS = {"default": None, "patient_unreachable": {**DEFAULT_RESPONSES, "patient": DOWN, "document": UP}}
-EXPECTED_BLOCKED = {"default": 20, "patient_unreachable": 22}
+# default: 문서 게이트가 있으면 3쌍이 requested_documents_unresolved로 끝나 INFO_MISSING에 남음. 소진 여부는 동겸 결정 대기
+EXPECTED_BLOCKED = {"default": 17, "patient_unreachable": 22}
 
 
 @pytest.fixture(scope="module")
