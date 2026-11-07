@@ -182,7 +182,7 @@ def _text(value) -> str:
 
 def _value_pattern(field: str, v: str, unit: str | None) -> re.Pattern:
     if field == "age":
-        num = rf"(?<![\d.]){re.escape(v)}(?![\d.])"
+        num = rf"(?<![\d.]){re.escape(v)}(?!\d|\.\d)"  # 문장 끝 마침표("나이 62.")는 소수점이 아님
         pat = rf"{num}\s*(?:{_AGE_UNITS.get(unit or 'years', _AGE_UNITS['years'])})"
         if (unit or "years") == "years":
             pat += rf"|(?:나이|연령|\bage[d]?\b)[^0-9\n]{{0,10}}{num}|{num}\s*/?\s*[fm]\b"
