@@ -1,0 +1,21 @@
+From: 임상의 판단 경계 패치 제안 (적용하지 않음)
+Subject: [제안] 판정기가 임상의 판단 슬롯 연결을 판정하지 않음 — PR #20 영역, 작성자 승인 필요
+
+적용 조건: PR #20과 PR #22(Binding.needs_expert)가 모두 병합된 뒤.
+효과(측정): 분류되지 않은 기준을 판단 슬롯(cm.cardiac 등)에 reviewed로 연결해도 확정되지 않습니다 (CONFIRMED_ELIGIBLE -> INFO_MISSING).
+한계: 일반 슬롯 이름으로 연결하면 막지 못합니다. 그 경로는 분류 목록 확장이 필요합니다.
+적용: git apply --ignore-whitespace docs/proposals/expert_boundary_judge.patch
+---
+diff --git a/src/ctrec/sim/judge.py b/src/ctrec/sim/judge.py
+index 880efe7..6f91834 100644
+--- a/src/ctrec/sim/judge.py
++++ b/src/ctrec/sim/judge.py
+@@ -65,7 +65,7 @@ class CategoricalJudge:
+     def assess(self, trial_id: str, rule: Rule, facts) -> LLMAssessment | None:
+         """연결이 없으면 None (기존 대역처럼 판정 불가). 있으면 yes/no/unknown."""
+         b = self.bindings.get(f"{trial_id}:{rule.rule_id}")
+-        if b is None:
++        if b is None or b.needs_expert():  # 임상의 판단 슬롯은 사실로 판정하지 않음 (임의 연결로 전문가 판단을 우회하지 않음)
+             return None
+         values, quote = self.values(facts)
+         try:
