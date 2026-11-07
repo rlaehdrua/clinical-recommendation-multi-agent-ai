@@ -39,7 +39,7 @@ from ..dependency_graph import DependencyGraph, analyze_impact, resolve
 from ..engine.answers import answer_outcome
 from ..engine.cohort_state import CohortState, OpsState
 from ..engine.contracts import UNREACHABLE, Action, ActionOutcome, PairStatus
-from ..engine.cost import EffortLedger
+from ..engine.loop import EngineLoop
 from ..engine.dcvc import FullDCVCPolicy
 from ..engine.question_bridge import qa_pair
 from ..fact_changes import detect_changes, take_snapshot
@@ -57,6 +57,11 @@ CLOSED_PAIRS = frozenset({PairStatus.CONFIRMED_ELIGIBLE.value, PairStatus.CONFIR
 DECLINED = "모름"
 INPUT_SOURCES = ("self_report", "clinical_record", "unknown")
 FALLBACK_TYPES = ("REQUEST_DOCUMENT", "VERIFY_RECORD", "CLINICIAN_REVIEW")
+# 웹 엔진 실행기(DEFAULT_BUDGET)는 임상의 시간이 0: 화면에서 임상의 검토를 실행할 수단이 없어 not_executed로 정산함.
+# Follow-up은 임상 검토 요청(clinician_review, requires_clinician)으로 담당 의료진에게 넘길 수 있으므로 같은 예산에
+# 임상의 시간만 더함. 0이면 원문에 구체 기준이 없는 기준·임상의 전용 기준의 검토(CLINICIAN_REVIEW)가 언제나 over_budget으로
+# 빠져 담당자에게 제안되지 않음 (Q-P 통합 점검에서 NSCLC E3·E4·I2로 확인).
+FOLLOWUP_BUDGET = DEFAULT_BUDGET.model_copy(update={"clinician_minutes": DEFAULT_BUDGET.coordinator_minutes})
 
 
 class FollowupError(Exception):
@@ -141,20 +146,37 @@ class FollowupService:
                                   "mismatch": p.mismatch} for p in co.pairs()}
 
     # ------------------------------------------------------------------ 제안 (DCV+C)
-    def _plan(self, co: CohortState, open_actions: list[Action]):
-        pol = self.policy_factory()
-        ledger = EffortLedger(DEFAULT_BUDGET, pol.catalog)
-        for a in open_actions:  # 이미 요청한 (환자, 정보원)은 추가 비용이 줄어 C 점수에 묶음으로 반영
-            ledger.charge(a)
-        return pol.select(pol.propose(co), DEFAULT_BUDGET, ledger, co)
+    def _loop(self, requests: list[dict]) -> EngineLoop:
+        """P 공통 엔진 루프(engine.loop.EngineLoop)를 요청 기록에서 다시 세움. 웹(CohortRunner)·WP6 시뮬레이터와 같은 객체.
 
-    @staticmethod
-    def _open_actions(data: dict) -> list[Action]:
-        return [Action.model_validate(r["action"]) for r in data["requests"]
-                if r["status"] in OPEN_STATUSES and r.get("action")]
+        - 진행 중 요청(OPEN_STATUSES): 실행했으므로 원장에 청구(같은 정보원 묶음 할인). 아직 결과가 없어 시도로 세지 않음
+          -> 같은 제안이 화면에 남고, 다시 고르면 기존 요청을 돌려줌 (create_requests의 existing).
+        - 끝난 요청(답변·모름·연락 불가·문서 없음·대체됨): loop.begin(executed=True) = 청구 + 시도 기록. 같은 사실 상태에서
+          같은 정보원에 같은 행동을 다시 고르지 않음 (repeat_key, 시뮬레이터·웹과 같은 반복 억제).
+        - 취소: 실행하지 않았으므로 기록하지 않음."""
+        loop = EngineLoop(self.policy_factory(), FOLLOWUP_BUDGET)
+        for r in requests:
+            if not r.get("action") or r["status"] == "cancelled":
+                continue
+            a = Action.model_validate(r["action"])
+            if r["status"] in OPEN_STATUSES:
+                loop.ledger.charge(a)
+            else:
+                loop.begin(a, executed=True)
+        return loop
+
+    def _plan(self, co: CohortState, requests: list[dict]):
+        """제안 = 공통 루프의 계획 (propose -> 반복 억제 -> select). 상태를 바꾸지 않는 preview."""
+        return self._loop(requests).preview(co)
+
+    def _settle(self, co: CohortState, requests: list[dict], action: Action,
+                outcome: ActionOutcome) -> CohortState:
+        """결과 반영 = 공통 루프의 settle (policy.apply_outcome, 운영 상태만, 판정 불변)."""
+        co, _ = self._loop(requests).settle(co, action, outcome)
+        return co
 
     def _proposals(self, data: dict, session, co: CohortState) -> tuple[list[dict], list[dict]]:
-        plan = self._plan(co, self._open_actions(data))
+        plan = self._plan(co, data["requests"])
         by_proposal = {r["proposal_id"]: r for r in data["requests"] if r.get("proposal_id")}
         runner = EngineRunner(session)
         out = []
@@ -179,8 +201,10 @@ class FollowupService:
 
     @staticmethod
     def _route(a: Action) -> tuple[str, str] | None:
-        if a.action_type == "CLINICIAN_REVIEW" and a.purpose == "physician_reference":
-            return ("ask_patient", "pending")  # 의사 참고용 정보 수집 질문 (판정 근거가 아님, evidence_directness)
+        """행동 -> 요청 종류. 근거 요건은 정책(P full_dcvc 근거 경로)이 행동 유형으로 정함:
+        자기 보고 허용 기준 = ASK_PATIENT(환자 질문), 진료 기록 필요 기준 = REQUEST_DOCUMENT(문서 확인),
+        임상의 전용·원문에 구체 기준 없음 = CLINICIAN_REVIEW(임상 검토). 의사 참고용(physician_reference) 임상 검토도
+        환자 질문으로 바꾸지 않고 임상 검토로 보냄 (환자 답은 그 기준의 판정 근거가 될 수 없음)."""
         return ACTION_ROUTES.get(a.action_type)
 
     # ------------------------------------------------------------------ 결과 보기 (웹 실행 결과와 같은 형태)
@@ -270,7 +294,7 @@ class FollowupService:
             known.add(key)
             targets = sorted({f"{x.trial_id}:{x.rule_id}" for x in self._field_criteria(session, c["field"])})
             linked = {r["proposal_id"] for r in data["requests"] if r.get("proposal_id")}
-            verify = next((a for a in self._plan(co, self._open_actions(data)).selected
+            verify = next((a for a in self._plan(co, data["requests"]).selected
                            if a.action_type == "VERIFY_RECORD" and a.info_key == c["field"] and a.action_id not in linked),
                           None)
             r = self._new_request(data, kind="conflict_resolution", status="requires_document", by="system",
@@ -354,7 +378,7 @@ class FollowupService:
             session = self._restore(data)
             ops = codec.load_ops(data["ops"])
             _, co = self._cohort(session, data["alias"], ops)
-            plan = self._plan(co, self._open_actions(data))
+            plan = self._plan(co, data["requests"])
             current = {a.action_id: a for a in plan.selected}
             runner = EngineRunner(session)
             created, existing = [], []
@@ -454,8 +478,8 @@ class FollowupService:
             session.qa_log.append(pair)  # Session.clarify와 같은 기록·원문 블록
             session.case.raw_text += f"\n\n[추가 확인 정보 - 라운드 {session.rounds}]\nQ: {pair.question}\nA: {pair.answer}"
             _, co = self._cohort(session, data["alias"], ops)
-            co, _ = self.policy_factory().apply_outcome(
-                co, action, ActionOutcome(action_id=action.action_id, status=status, error_code=code))
+            co = self._settle(co, data["requests"], action,
+                              ActionOutcome(action_id=action.action_id, status=status, error_code=code))
             ops = co.ops[data["alias"]]
             facts_before = {f.fact_id for f in session.fact_store.facts(session.case.patient_id)}
             with self.llm_scope(f"followup-{case_id[3:15]}-r{base + 1}"):
@@ -494,7 +518,7 @@ class FollowupService:
         key = failed.get("info_key")
         live = {r["proposal_id"] for r in data["requests"] if r["status"] in OPEN_STATUSES and r.get("proposal_id")}
         _, co = self._cohort(session, data["alias"], ops)
-        plan = self._plan(co, self._open_actions(data))
+        plan = self._plan(co, data["requests"])
         for a in plan.selected:
             if a.action_type not in FALLBACK_TYPES or self._route(a)[0] == "ask_patient":
                 continue
@@ -603,12 +627,11 @@ class FollowupService:
                     group += [r for r in data["requests"] if r is not req and r["kind"] == "ask_patient"
                               and r["status"] == "pending"]
                 _, co = self._cohort(session, data["alias"], ops)
-                pol = self.policy_factory()
                 for r in group:
                     if r.get("action") and r["kind"] != "conflict_resolution":  # 충돌 확인은 정보원 실패가 아님
                         a = Action.model_validate(r["action"])
-                        co, _ = pol.apply_outcome(co, a, ActionOutcome(action_id=a.action_id, status="failed",
-                                                                       error_code=UNREACHABLE))
+                        co = self._settle(co, data["requests"], a, ActionOutcome(action_id=a.action_id, status="failed",
+                                                                                 error_code=UNREACHABLE))
                     self._set_status(r, status, by if r is req else "system",
                                      "staff_marked" if r is req else "source_unreachable")
                     failed.append(r)
@@ -667,7 +690,7 @@ class FollowupService:
             ops[data["alias"]] = codec.load_ops(data["ops"])
             case_of[data["alias"]] = data
             sessions[data["alias"]] = session
-            requested += self._open_actions(data)
+            requested += data["requests"]
         if not states:
             return {"items": []}
         co = CohortState.from_decision_states(states, ops=ops)

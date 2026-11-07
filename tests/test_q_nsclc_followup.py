@@ -216,3 +216,70 @@ def test_nsclc_conflicting_answer_holds_and_routes(env):
     assert case["pairs"][TID]["status"] not in (CONFIRMED, "CONFIRMED_INELIGIBLE")  # 어느 값도 채택하지 않음
     assert any(p["action_type"] == "VERIFY_RECORD" and p["safety_required"] for p in case["proposals"])
     assert_consistent(staff, cid, case)
+
+
+# ----------------------------------------------------------------------------- Q-P: P 공통 엔진과 Follow-up의 연결
+def test_followup_routes_by_evidence_requirement(env):
+    """자기 보고 허용 기준 = 환자 질문, 진료 기록 필요 기준 = 문서 확인, 임상의 전용(원문에 구체 기준 없음) = 임상 검토.
+
+    근거 요건은 판정 메타데이터(required_evidence, gap)에서 오고, 행동 유형은 P full_dcvc 근거 경로가 정함."""
+    patient, staff = clients()
+    cid = create(patient, trials=(TID,))
+    case = staff_case(staff, cid)
+    routes = {}
+    for p in case["proposals"]:
+        for k in p["target_criteria"]:
+            routes.setdefault(k, set()).add((p["action_type"], p["route"]))
+    assert routes[E2] == {("ASK_PATIENT", "ask_patient")}  # self_report_ok, 정보 없음
+    for k in ("I1", "I3", "I4", "I5"):  # clinical_record
+        assert routes[f"{TID}:{k}"] == {("REQUEST_DOCUMENT", "document_review")}, k
+    for k in ("I2", "E3", "E4"):  # physician_review (원문에 구체 기준 없음, 임상의만 판단)
+        assert routes[f"{TID}:{k}"] == {("CLINICIAN_REVIEW", "clinician_review")}, k
+    review = next(p for p in case["proposals"] if p["action_type"] == "CLINICIAN_REVIEW")
+    out = request(staff, cid, review["proposal_id"])
+    made = next(r for r in out["case"]["requests"] if r["request_id"] == out["created"][0])
+    assert (made["kind"], made["status"]) == ("clinician_review", "requires_clinician")
+    assert patient.get(f"/api/followup/cases/{cid}/requests").json()["pending"] == 0  # 환자 화면에 나오지 않음
+    assert out["case"]["pairs"][TID]["status"] != CONFIRMED
+
+
+def test_no_document_authority_keeps_the_pair_held(env):
+    """문서 확인 권한·임상의 판단 입력이 없으면 모든 확인을 요청해도 판정은 보류 (확정 적격 없음, 완료 상태 없음)."""
+    patient, staff = clients()
+    cid = create(patient, trials=(TID,))
+    case = staff_case(staff, cid)
+    out = request_all = staff.post(f"/api/followup/staff/cases/{cid}/requests", headers=STAFF,
+                                   json={"proposal_ids": [p["proposal_id"] for p in case["proposals"]
+                                                          if p["requestable"]]})
+    assert out.status_code == 200, out.text
+    ask = next(r for r in request_all.json()["case"]["requests"] if r["kind"] == "ask_patient")
+    answer(patient, cid, ask["request_id"], answer="둘 다 해당 없음")
+    case = staff_case(staff, cid)
+    assert case["pairs"][TID]["status"] != CONFIRMED
+    assert {"physician_review", "unverified"} <= set(case["pairs"][TID]["gaps"])
+    assert {r["kind"] for r in case["requests"]} >= {"ask_patient", "document_review", "clinician_review"}
+    assert not {r["status"] for r in case["requests"]} & {"document_verified", "clinician_confirmed", "completed"}
+    assert_consistent(staff, cid, case)
+
+
+def test_followup_plans_and_settles_through_the_common_engine_loop(env, monkeypatch):
+    """O가 정책을 직접 부르지 않고 P의 EngineLoop(웹·WP6와 같은 객체)로 계획·정산 (세 번째 선택 경로 없음)."""
+    import ast
+    import inspect
+
+    from ctrec.engine import loop as engine_loop
+    from ctrec.followup import service as fsvc
+    tree = ast.parse(inspect.getsource(fsvc))
+    direct = sorted({n.func.attr for n in ast.walk(tree) if isinstance(n, ast.Call)
+                     and isinstance(n.func, ast.Attribute) and n.func.attr in ("select", "apply_outcome", "propose")})
+    assert direct == [], direct
+    calls = []
+    for name in ("preview", "settle"):
+        real = getattr(engine_loop.EngineLoop, name)
+        monkeypatch.setattr(engine_loop.EngineLoop, name,
+                            lambda self, *a, _n=name, _r=real, **k: (calls.append(_n), _r(self, *a, **k))[1])
+    patient, staff = clients()
+    cid = create(patient, trials=(TID,))
+    rid = request(staff, cid, proposal(staff_case(staff, cid), E2_KEY)["proposal_id"])["created"][0]
+    answer(patient, cid, rid, unknown=True)
+    assert "preview" in calls and "settle" in calls
