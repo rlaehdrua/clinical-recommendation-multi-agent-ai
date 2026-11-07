@@ -37,6 +37,12 @@ OTHER_WORDS = ["Hb 12 g/dL 보류", "Hb 12 g/dL TBD", "Hb 12 g/dL 미정", "Hb 1
 STILL_MEASURED = ["Hb 12 g/dL 측정 오류 아님", "혈액검사 오류 수정 후 Hb 12 g/dL", "CBC 결과 대기 후 Hb 12 g/dL 확인", "Hb 12 g/dL 보험 심사 대기", "Hb 12 g/dL 동의서 대기", "Hb 12 g/dL로 항암 보류",
                   "Hb 12 g/dL, 수술 일정 미정", "CBC 결과 나옴, Hb 12 g/dL", "CBC: Hb 12 g/dL, 결과 대기 항목 없음", "Hb 12 g/dL, Plt 210 x10^9/L", "Hb 12 g/dL. 병리 결과 대기"]
 
+# 독립 평가 세트 1차에서 틀린 10건 (이 세트는 이제 독립 평가가 아님)
+HELD_OUT_NOT = ["헤모글로빈 12 g/dL 란 공란으로 남김, 검사 미시행 (당일 응급 수술로 채혈 생략)", "헤모글로빈 12 g/dL 결과 미도착, LIS 상 status: in progress", "Hgb 12 - 정상 참고치 하한 (female ref lower limit), 환자값 아님",
+                "헤모글로빈 12 g/dL (retracted by 작성의, 검사실 확인 후 취소)", "Hb 12 g/dL 라고 적은 것 철회합니다. 검사 결과 확인 전 작성 실수", "Hb 12 g/dL - 연구 모집단 평균치 인용, 본 환자 값 아님"]
+HELD_OUT_YES = ["Hgb 12 - 지난번 검체 응고로 무효, 금일 재채혈 값 12 확정", "혈색소 12 g/dL 금일 확정치. 용혈 소견 없음 (no hemolysis)", "Hb 12 g/dL (금일 final), 용혈 소견 없음 (no hemolysis), LDH 정상",
+                "Hb 12 g/dL (오늘 채혈 확정). Pending: 전해질 panel 결과 대기 중"]
+
 # 표현, 부정 사례, 같은 낱말을 쓰는 정상 양성 대조군
 ELEVEN = [
     ("미측정", "Hb 12 g/dL 미측정", "Hb 12 g/dL, CRP 미측정"),
@@ -200,12 +206,12 @@ def test_server_attestation_does_not_turn_the_expression_into_a_value(run, monke
 # 전체 표현: 값 근거 판정
 # ---------------------------------------------------------------------------
 
-@pytest.mark.parametrize("kind, text", [*flat(NOT_MEASURED), *(("later", t) for t in LATER_CLAUSE), *(("word", t) for t in OTHER_WORDS)])
+@pytest.mark.parametrize("kind, text", [*flat(NOT_MEASURED), *(("later", t) for t in LATER_CLAUSE), *(("word", t) for t in OTHER_WORDS), *(("held_out", t) for t in HELD_OUT_NOT)])
 def test_not_a_measurement(kind, text):
     assert lab(text) in (U, vg.CONFLICT)
 
 
-@pytest.mark.parametrize("kind, text", [*flat(MEASURED), *(("control", t) for t in STILL_MEASURED)])
+@pytest.mark.parametrize("kind, text", [*flat(MEASURED), *(("control", t) for t in STILL_MEASURED), *(("held_out", t) for t in HELD_OUT_YES)])
 def test_measurement_stays(kind, text):
     assert lab(text) is None
 

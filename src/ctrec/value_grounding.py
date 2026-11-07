@@ -109,15 +109,15 @@ _REFERENCE_BEFORE = re.compile(r"\b(?:reference|ref|normal|range|limit|uln|lln|c
 _REFERENCE_AFTER = re.compile(r"\s*[^\s,;()가-힣]*\s*(?:는|은|이|가)?\s*\(?(?:(?:기준|참고|정상)\s*(?:치|값)(?!\s*\(?\d)|참고용|정상\s*(?:하한|상한)|reference\s+value|for\s+reference)", re.IGNORECASE)
 _INSTITUTION = re.compile(r"(?:기관|본원|당원|원내|병원|센터|검사실|진단검사의학과|학회|협회|지침|가이드라인)(?:의)?\s*(?:기준|권고|지침)(?!\s*(?:범위\s*)?(?:내|이내|정상|충족))|"
                           r"\binstitution(?:al|'s)\b(?!\s+(?:lab|laboratory|hospital|record|chart))|\bper\s+(?:institution|guideline)|\bguidelines?\b|"
-                          r"대조군|환자군|코호트|시뮬레이션|모의|더미|\(테스트\)|\b(?:demo|dummy|simulated|mock|cohort|control\s+(?:arm|group))\b",
+                          r"대조군|환자군|코호트|모집단|시뮬레이션|모의|더미|\(테스트\)|\b(?:demo|dummy|simulated|mock|cohort|control\s+(?:arm|group))\b",
                           re.IGNORECASE)  # 기관 일반 기준과 모집단·모의 값: "오늘 기준", "기관 기준 범위 내"는 해당하지 않음
 _COMPARE_BEFORE = re.compile(r"[<>≤≥]=?\s*$")
 _COMPARE_AFTER = re.compile(r"\s*[^\s,;()]*\s*(?:이상|이하|미만|초과|or\s+(?:more|less|above|below|greater|higher|lower)|and\s+(?:above|below))", re.IGNORECASE)
 _NEGATED_BEFORE = re.compile(r"\b(?:not|never|isn'?t|wasn'?t|no\s+longer|rather\s+than|instead\s+of|den(?:y|ies|ied))\b[^,;]{0,12}$", re.IGNORECASE)
 _NEGATED_AFTER = re.compile(r"[^,;]{0,12}?(?:아님|아니|아닌|아닙|않|없(?:음|었|다|습|어)|정정|취소|ruled\s+out|corrected)", re.IGNORECASE)
-_CLEAN_AFTER = re.compile(r"\s*[^\s,;()가-힣]*\s*(?:검체\s*|측정\s*|검사\s*)?(?:용혈|오류|오염|응고|대기|무효|폐기|검체\s*문제)\s*(?:은|는|이|가)?\s*(?:없|아님|아니)")  # "Hb 12 용혈 없음"은 수치의 부정이 아님
-_RETRACTED = re.compile(r"틀[렸린림]|잘못\s*(?:말|적|기록|입력|알|측정)|(?<![가-힣])오기|오타|"
-                        r"\b(?:incorrect|wrong|erroneous|mistaken|typo|in\s+error)\b", re.IGNORECASE)  # 같은 문장의 값 뒤: 절이 바뀌어도 철회임
+_CLEAN_AFTER = re.compile(r"\s*[^\s,;()가-힣]*\s*(?:검체\s*|측정\s*|검사\s*)?(?:용혈|오류|오염|응고|대기|무효|폐기|검체\s*문제)\s*(?:소견)?\s*(?:은|는|이|가)?\s*(?:없|아님|아니)")  # "Hb 12 용혈 없음"은 수치의 부정이 아님
+_RETRACTED = re.compile(r"틀[렸린림]|잘못\s*(?:말|적|기록|입력|알|측정)|(?<![가-힣])오기|오타|철회|작성\s*실수|"
+                        r"\b(?:incorrect|wrong|erroneous|mistaken|typo|in\s+error|retract\w*)\b", re.IGNORECASE)  # 같은 문장의 값 뒤: 절이 바뀌어도 철회임
 _DENIED_AFTER = re.compile(r"\s*(?:세|살)?\s*(?:가|이|은|는|라는\s*뜻은)?\s*(?:아님|아니|아닌|아닙)")  # 나이·성별·ECOG: 값 바로 뒤의 부정만
 _DENIED_BEFORE = re.compile(r"\bnot\s+(?:an?\s+)?$", re.IGNORECASE)
 _PAST = re.compile(r"\b(?:previous|prior|former|old|last\s+(?:week|month|year))\b|과거|이전|지난|\d+\s*(?:일|주|개월|달|년)\s*전", re.IGNORECASE)
@@ -138,10 +138,10 @@ _PAST_AGE_AFTER = re.compile(r"\s*[세살]?\s*(?:에|때|무렵)|\s*(?:years?\s*
 
 # ---------------------------------------------------------------------------- 검사 상태
 _STATUS = re.compile(
-    r"미(?:측정|시행|실시|수행|채혈|검사|완료|보고|판독|입력|회신|수신)|미검(?![가-힣])|(?:측정|검사|시행|채혈)\s*(?:을|를|은|는)?\s*(?:안|못)\s*(?:함|했|됨|된|하|받)|"  # 하지 않음
+    r"미(?:측정|시행|실시|수행|채혈|검사|완료|보고|판독|입력|회신|수신|도착|제출)|미검(?![가-힣])|(?:측정|검사|시행|채혈)\s*(?:을|를|은|는)?\s*(?:안|못)\s*(?:함|했|됨|된|하|받)|"  # 하지 않음
     r"(?:측정|검사|채혈|평가|판정)\s*(?:전(?![가-힣])|불가)|"
     r"결과\s*(?:가|는)?\s*(?:대기|안\s*나|아직)|대기\s*(?:중|상태)|(?<![가-힣])대기(?![가-힣])|(?:판독|분석|처리)\s*중|"  # 결과 전
-    r"보류|미정|요망|펜딩|팬딩|"
+    r"보류|미정|요망|펜딩|팬딩|(?:환자|본인)\s*(?:의\s*)?(?:값|수치)\s*(?:이|가)?\s*아|"
     r"폐기|무효|취소|용혈(?!성)|부적합|오류|신뢰\s*불가|혼입|입력값|검체\s*(?:오염|응고|바뀜|뒤바뀜|혼동|부족|불량|분실|누락)|(?:오염|응고)된?\s*검체|"  # 무효
     r"\b(?:pending|awaiting|awaited|in\s+progress|unable|insufficient|cancell?ed|mislabell?ed|tbd|to\s+be\s+(?:confirmed|determined)|unreliable|"
     r"not\s+(?:yet\s+)?(?:done|performed|measured|obtained|tested|drawn|resulted|reported|back|available|valid|reliable)|wrong\s+(?:chart|patient|sample)|"
@@ -153,14 +153,15 @@ _AWAITING = re.compile(r"pending|awaiting", re.IGNORECASE)  # 뒤의 대상을 �
 _STATUS_FILLER = re.compile(r"(?:결과|검사|측정|수치|값|검체|샘플|시료|채혈|혈액|피검사|재검|아직|현재|오늘|내일|모레|다음|이번|주|추후|나중|상태|평가|확인|진행|세|살|"
                             r"the|result|results|sample|specimen|test|lab|level|value|cbc|was|were|is|are|has|have|been|still|yet|repeat|stat|redraw|today|tomorrow|"
                             r"g|dl|mg|ng|ml|l|k|ul|iu|mmol|fl|pg)?(?:으로|은|는|이|가|을|를|의|도|로|이고|이며|고|며|요|에)?", re.IGNORECASE)
-_OTHER_SUBJECT = re.compile(r"배양|병리|조직|생검|유전자|영상|초음파|심전도|내시경|엑스레이|소변|객담|항암|수술|방사선|치료|투약|입원|퇴원|외래|협진|상담|면담|이식|백신|접종|등록|참여|방문|투여|복용|보험|심사|동의서|서류|"
+_OTHER_SUBJECT = re.compile(r"배양|병리|조직|생검|유전자|영상|초음파|심전도|내시경|엑스레이|소변|객담|항암|수술|방사선|치료|투약|입원|퇴원|외래|협진|상담|면담|이식|백신|접종|등록|참여|방문|투여|복용|보험|심사|동의서|서류|전해질|"
                             r"\b(?:ct|mri|pet|x-?ray|cxr|ecg|ekg|echo|ultrasound|biopsy|patholog\w*|cultures?|genetic\w*|ngs|crp|esr|ua|urinalysis|sputum|"
-                            r"chemo\w*|surgery|radiation|therapy|treatment|consult\w*|admission|discharge)\b", re.IGNORECASE)
+                            r"chemo\w*|surgery|radiation|therapy|treatment|consult\w*|admission|discharge|panel|electrolytes?)\b", re.IGNORECASE)
 _CONJUNCTION = re.compile(r"\b(?:and|plus|with)\b|[&+]|이고|이며|및|그리고|하고", re.IGNORECASE)
-_MARK_NEGATED_AFTER = re.compile(r"\s*(?:항목|사항|건|내역)?\s*(?:은|는|이|가)?\s*(?:없|아님|아니|않)")
+_MARK_NEGATED_AFTER = re.compile(r"\s*(?:항목|사항|건|내역|소견)?\s*(?:은|는|이|가)?\s*(?:없|아님|아니|않)")
 _MARK_NEGATED_BEFORE = re.compile(r"(?:\b(?:no|non|not|without|never)[\s-]*|(?<![가-힣])비)$", re.IGNORECASE)
 _SUPERSEDED = re.compile(r"재검|재측정|재채혈|회신|완료|보고됨|(?<!안\s)(?<!안)나옴|수정\s*후|(?:^|\s)후(?=\s)|\b(?:repeat|recheck\w*|redraw\w*|resulted|reported|completed?)\b", re.IGNORECASE)  # 표지 뒤에 결과가 나옴
 _PANEL = re.compile(r"\b(?:cbc|labs?|blood\s*(?:work|tests?))\b|혈액\s*검사|피\s*검사", re.IGNORECASE)  # 수치가 속한 묶음 검사
+_PAREN = re.compile(r"\([^)]*\)")  # 괄호 안의 사유는 주어가 아님: "검사 미시행 (응급 수술로 생략)"
 _BACK_REFERENCE = re.compile(r"(?:위|해당|상기|앞선?|그|이)\s*(?:검체|결과|검사|수치|값|샘플)|실제(?:로)?\s*(?:측정|검사|시행|채혈)|\b(?:that|this|the|above)\s+(?:result|sample|specimen|value|test)\b", re.IGNORECASE)
 
 
@@ -189,7 +190,7 @@ def _live_marks(text: str, pattern: re.Pattern = _MARK) -> list[re.Match]:
 def _status_marked(before: str, after: str, *, key: str | None = None, adjacent: bool = False) -> bool:
     """같은 절의 상태 표지가 이 값을 서술하는가. adjacent: 값과 표지 사이에 내용어가 없을 때만 (나이처럼 뒤에 다른 서술이 흔한 값)."""
     for m in _live_marks(after):
-        if _AWAITING.fullmatch(m.group()) and _other_subject(after[m.end():], key):
+        if (_AWAITING.fullmatch(m.group()) and _other_subject(after[m.end():], key)) or _PAST.search(after[:m.start()]):
             continue
         if _only_filler(after[:m.start()]) if adjacent else not _subject_changes(after[:m.start()], key):
             return True
@@ -214,7 +215,7 @@ def _voided_elsewhere(body: str, lo: int, hi: int, key: str) -> bool:
     own = re.compile(rf"(?<![a-z가-힣])(?:{'|'.join(map(re.escape, names))})(?![a-z])", re.IGNORECASE)
     for start, end in _clause_spans(body):
         clause = body[start:end]
-        if not _live_marks(clause, _STATUS) or start <= lo < end or _SUPERSEDED.search(body[start:lo]) or _other_subject(clause, key) or _PAST.search(clause) \
+        if not _live_marks(clause, _STATUS) or start <= lo < end or _SUPERSEDED.search(body[start:lo]) or _other_subject(_PAREN.sub(" ", clause), key) or _PAST.search(clause) \
                 or any(owner == key for _, _, _, owner in _linked_numbers(clause, key)):
             continue
         if own.search(clause) or _PANEL.search(clause) or (start >= hi and _points_back(clause)):
