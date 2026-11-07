@@ -31,10 +31,11 @@ const STATUS_UI = {
   INFO_MISSING: { cls: "info", label: "정보 부족", desc: "판정에 필요한 정보가 없거나 검사가 오래됨" },
   EXPERT_REVIEW: { cls: "violet", label: "의료진 검토", desc: "임상의 판단이 필요한 기준이 남음" },
   BLOCKED_FAILURE: { cls: "muted", label: "확보 실패 보류", desc: "확인 수단을 모두 써도 정보를 얻지 못함" },
-  NOT_EVALUATED: { cls: "", label: "미평가", desc: "평가하지 못함 (부적격 아님)" },
+  NOT_EVALUATED: { cls: "", label: "미평가", desc: "필수 기준을 다 평가하지 못함 (부적격 아님)" },
 };
 const GAP_KO = { missing: "정보 없음", stale: "검사 오래됨", unverified: "기록 확인 필요", conflict: "정보 상충",
   physician_review: "의료진 판단 필요" };
+const LABEL_REASON_KO = { expert_review: "의료진 판단 필요", unbound_rules: "검수 전 기준 남음" };
 // 정보원 이름: 생성기 ID(S_*)와 엔진 계약 I-5 ID를 모두 표시 (Q-G1 통일 전후 공통)
 const SOURCE_KO = {
   S_lab: "혈액검사 결과지", S_path: "병리·유전자 결과지", S_med: "처방 목록", S_summary: "진료·퇴원 요약",
@@ -83,14 +84,20 @@ async function getJSON(url) {
 function pairStatus(c, pid, t) {
   const b = c.board.pairs[`${pid}|${t}`];
   const ui = STATUS_UI[b.status] || { cls: "", label: b.status };
-  const open = b.rules.filter((r) => r.gap !== "none").length;
+  const open = b.rules.filter((r) => r.gap !== "none" && r.applied !== false).length;
   const confirmed = b.status.startsWith("CONFIRMED_");
   return { ...ui, status: b.status, open, label: open && !confirmed ? `${ui.label} · ${open}개` : ui.label };
 }
-const ruleGap = (c, pid, t, rid) => {
-  const r = c.board.pairs[`${pid}|${t}`].rules.find((x) => x.rule_id === rid);
-  return r ? r.gap : "none";
-};
+const ruleBoard = (c, pid, t, rid) => c.board.pairs[`${pid}|${t}`].rules.find((x) => x.rule_id === rid) || { gap: "none" };
+// 시뮬레이터 정답 라벨. 라벨 없음(UNLABELED)을 부적격으로 보이지 않음: 사유는 oracle.label_reasons
+function truthText(c, pid, t) {
+  const key = `${pid}|${t}`;
+  const truth = c.oracle.pair_label[key];
+  if (truth === "ELIGIBLE") return "정답: 적격";
+  if (truth === "INELIGIBLE") return "정답: 부적격";
+  const why = ((c.oracle.label_reasons || {})[key] || []).map((r) => LABEL_REASON_KO[r] || r);
+  return why.length ? `정답 없음 · ${why.join(", ")}` : "정답 없음";
+}
 
 function fillSelectors() {
   const scenarios = [...new Set(list.map((c) => c.cohort_id.replace(/-r\d+$/, "")))];
@@ -135,10 +142,12 @@ function tile(label, value, sub, cls = "") {
 
 function renderTiles() {
   const c = current;
-  let pairs = 0, trueEligible = 0;
+  let pairs = 0, trueEligible = 0, noLabel = 0;
   for (const p of c.public.patients) for (const t of p.candidate_trials) {
     pairs++;
-    if (c.oracle.pair_label[`${p.patient_id}|${t}`] === "ELIGIBLE") trueEligible++;
+    const label = c.oracle.pair_label[`${p.patient_id}|${t}`];
+    if (label === "ELIGIBLE") trueEligible++;
+    else if (label !== "INELIGIBLE") noLabel++;
   }
   const counts = c.board.status_counts;
   const kids = [
@@ -147,7 +156,8 @@ function renderTiles() {
     ...c.board.status_order.map((s) => tile(STATUS_UI[s].label, counts[s] || 0, STATUS_UI[s].desc, `st ${STATUS_UI[s].cls}`)),
     tile("확인 수단", Object.keys(c.public.sources).length, "소스 수"),
   ];
-  if (showOracle()) kids.push(tile("실제 적격", trueEligible, `정답 기준 · ${pairs ? Math.round((trueEligible / pairs) * 100) : 0}%`));
+  if (showOracle()) kids.push(tile("실제 적격", trueEligible, `정답 기준 · ${pairs ? Math.round((trueEligible / pairs) * 100) : 0}%` +
+    (noLabel ? ` · 정답 없음 ${noLabel}쌍` : "")));
   $("tiles").replaceChildren(...kids);
 }
 
@@ -157,9 +167,14 @@ function renderUnbound() {
   const bound = Object.values(current.public.rules).reduce((a, r) => a + r.length, 0);
   $("unbound-note").hidden = !total;
   if (!total) return;
-  $("unbound-note").replaceChildren(el("b", { text: `검수 전 기준 ${total}개는 정답에서 빠져 있습니다. ` }),
-    `정답 계산에 쓰인 기준은 ${bound}개(자동 연결 + 사람 검수 완료)이며, 나머지는 '충족'으로 간주했습니다. ` +
-    "슬롯 사전 검수가 끝나면 적격률이 낮아지고 확인 수단도 다양해집니다.");
+  const legacy = current.unbound_policy === "assume_pass";  // 이전 형식(cohort-gen-1) 저장본
+  $("unbound-note").className = `note ${legacy ? "warn" : "soft"}`;
+  $("unbound-note").replaceChildren(el("b", { text: `검수 전 기준 ${total}개는 평가하지 못했습니다. ` }),
+    `평가에 쓰인 기준은 ${bound}개(자동 연결 + 사람 검수 완료)입니다. 검수 전 기준이 남은 시험은 적격으로 확정하지 않습니다. ` +
+    (legacy ? "다만 이 세트는 이전 형식이라 정답 라벨은 검수 전 기준을 '충족'으로 간주해 만들었습니다. " +
+      "scripts/build_cohort_benchmark.py generate로 다시 생성해 주세요. "
+      : "검수 전 기준이 남은 쌍은 적격 정답을 만들지 않습니다. ") +
+    "슬롯 사전 검수가 끝나면 평가 범위가 넓어지고 확인 수단도 다양해집니다.");
 }
 
 function renderMatrix() {
@@ -178,8 +193,7 @@ function renderMatrix() {
       const btn = el("button", { class: "cell", type: "button", "aria-label": `${p.patient_id} ${t}: ${s.label}` },
         el("span", { class: `badge ${s.cls}`, text: s.label }));
       if (showOracle()) {
-        const truth = c.oracle.pair_label[`${p.patient_id}|${t}`];
-        btn.append(el("span", { class: "truth", text: `정답: ${truth === "ELIGIBLE" ? "적격" : "부적격"}` }));
+        btn.append(el("span", { class: "truth", text: truthText(c, p.patient_id, t) }));
       }
       if (selected && selected.pid === p.patient_id && selected.t === t) btn.classList.add("sel");
       btn.addEventListener("click", () => { selected = { pid: p.patient_id, t }; renderMatrix(); renderDetail(); });
@@ -204,13 +218,15 @@ function renderDetail() {
     const h = c.public.initial_holds[key];
     const slots = [r.slot, ...(r.extra_slots || [])];
     const has = (s) => Object.prototype.hasOwnProperty.call(p.known, s);
-    const ps = passes(r.kind, h);
-    const gap = ruleGap(c, pid, t, r.rule_id);
+    const rb = ruleBoard(c, pid, t, r.rule_id);
+    const gap = rb.gap;
+    const ps = gap === "physician_review" ? null : passes(r.kind, h);  // 판단 기준은 값이 있어도 통과로 보이지 않음
     const cls = ps === true ? "ok" : ps === false ? "bad" : gap === "physician_review" ? "violet" : "info";
     const li = el("li", {},
       el("span", { class: "rid", text: r.rule_id }),
       el("span", { class: "badge", text: r.kind === "inclusion" ? "선정" : "제외" }),
-      el("span", { class: `badge ${cls}`, text: h === "unknown" ? `미확인 · ${GAP_KO[gap] || gap}` : ps ? "통과" : "불통과" }),
+      r.cohort ? el("span", { class: "badge", text: `경로 ${r.cohort}${rb.applied === false ? " · 미적용" : ""}` }) : null,
+      el("span", { class: `badge ${cls}`, text: ps === null ? `미확인 · ${GAP_KO[gap] || gap}` : ps ? "통과" : "불통과" }),
       el("span", { class: "slot", text: slots.map(slotName).join(" + ") }),
       el("span", { class: "val", text: slots.map((s) => (has(s) ? `${slotName(s)} ${fmt(p.known[s], s)}` : `${slotName(s)} 모름`)).join(" · ") }));
     if (r.time_window_days != null) {
@@ -220,8 +236,9 @@ function renderDetail() {
     }
     if (showOracle() && slots.some((s) => !has(s))) {
       const th = c.oracle.truth[key];
-      const vals = slots.filter((s) => !has(s)).map((s) => `${slotName(s)} ${fmt(hidden[s], s)}`).join(" · ");
-      li.append(el("span", { class: "val", text: `→ 실제 값 ${vals} · ${HOLDS_KO[th]}` }));
+      // 판단 슬롯은 숨긴 값도 없음 (생성기가 만들지 않음): 없는 값을 표시하지 않음
+      const vals = slots.filter((s) => !has(s) && hidden[s] !== undefined).map((s) => `${slotName(s)} ${fmt(hidden[s], s)}`).join(" · ");
+      if (vals) li.append(el("span", { class: "val", text: `→ 실제 값 ${vals} · ${HOLDS_KO[th]}` }));
     }
     const txt = ruleText(t, r.rule_id);
     if (txt) li.append(el("span", { class: "val", text: txt }));
@@ -229,14 +246,18 @@ function renderDetail() {
   });
   const ub = c.public.unbound_rules[t] || [];
   const st = pairStatus(c, pid, t);
-  const kinds = c.board.pairs[`${pid}|${t}`].pending_kinds;
+  const b = c.board.pairs[`${pid}|${t}`];
+  const kinds = b.pending_kinds;
+  const scopeNote = b.status !== "NOT_EVALUATED" ? null : !b.rules.length && !ub.length ? "연결된 기준이 없어 평가할 근거가 없습니다."
+    : b.bound_eligibility === "ELIGIBLE" ? "일부 기준만 평가: 연결된 기준은 통과했지만 평가하지 못한 기준이 남아 적격으로 확정하지 않습니다." : null;
   $("detail").replaceChildren(...[
     el("p", { class: "m0", text: `${pid} · ${t} ${trialTitle(t) !== t ? "· " + trialTitle(t) : ""}` }),
     el("p", { class: "m0 mt6" }, el("span", { class: `badge ${st.cls}`, text: STATUS_UI[st.status] ? STATUS_UI[st.status].label : st.status }),
       " ", el("span", { class: "faint", text: (STATUS_UI[st.status] || {}).desc || "" }),
       kinds.length ? el("span", { class: "faint", text: ` · 남은 작업: ${kinds.map((k) => GAP_KO[k] || k).join(", ")}` }) : null),
+    scopeNote ? el("p", { class: "m0 mt6 faint", text: scopeNote }) : null,
     el("ul", { class: "rules mt10" }, ...items),
-    ub.length ? el("p", { class: "faint mt10", text: `검수 전이라 정답에서 빠진 기준 ${ub.length}개: ${ub.join(", ")}` }) : null,
+    ub.length ? el("p", { class: "faint mt10", text: `검수 전이라 평가하지 못한 기준 ${ub.length}개: ${ub.join(", ")}` }) : null,
   ].filter(Boolean));
   $("detail-panel").hidden = false;
   $("detail-h").focus();
