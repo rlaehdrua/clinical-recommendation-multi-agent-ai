@@ -554,7 +554,50 @@ _CONDITION_GROUPS = {
     "seizure": re.compile(r"seizure|epilep\w*|경련|뇌전증", re.I),
     "arrhythmia": re.compile(r"atrial\s+fibrillation|\ba-?fib\b|arrhythmi\w*|qtc\s+prolong\w*|심방\s*세동|부정맥", re.I),
     "cirrhosis": re.compile(r"cirrho\w*|간\s*경(?:변|화)", re.I),
+    # A(P0-A): 상위어 묶음과 그 하위 묶음. 상위어의 부정("No history of hepatitis")과 하위어의 있음("chronic HBV")을
+    # 같은 질환으로 봄. 형제 묶음끼리(B형 vs C형 간염, 신장 vs 간 이식, 혈우병 vs von Willebrand)는 같은 질환이 아님.
+    # 구성원은 임상 어휘 결정이며 상충 '보류'에만 쓰임 (판정을 확정하지 않음) - 임상 검수 대상 CL-A1
+    "hepatitis_any": re.compile(r"\bhepatitis\b|간염", re.I),
+    "bleeding_disorder": re.compile(r"bleeding\s+(?:disorder|diathes[ie]s|tendenc)\w*|coagulopath\w*|"
+                                    r"출혈\s*(?:성\s*)?(?:질환|경향|장애|소인)|응고\s*장애", re.I),
+    "hemophilia": re.compile(r"ha?emophilia|혈우병", re.I),
+    "von_willebrand": re.compile(r"von\s+willebrand|\bvwd\b|폰\s*빌레브란트", re.I),
+    # 이식은 고형 장기만 (조혈모세포·골수 이식 HSCT/BMT/stem cell은 넣지 않음: 장기 이식 기준과 다른 개념)
+    "organ_transplant": re.compile(r"(?:solid[\s-]+)?organ\s+(?:allo)?transplant\w*|solid[\s-]+organ|"
+                                   r"(?:고형\s*)?장기\s*이식", re.I),
+    "kidney_transplant": re.compile(r"(?:renal|kidney)[\s-]+(?:allo)?(?:transplant|graft)\w*|신장\s*이식|신이식", re.I),
+    "liver_transplant": re.compile(r"(?:liver|hepatic)[\s-]+(?:allo)?transplant\w*|(?<![가-힣])간\s*이식", re.I),
+    "heart_transplant": re.compile(r"(?:heart|cardiac)[\s-]+(?:allo)?transplant\w*|심장\s*이식", re.I),
+    "lung_transplant": re.compile(r"lung[\s-]+(?:allo)?transplant\w*|(?<![가-힣])폐\s*이식", re.I),
+    # 자가면역 하위 질환 (위 autoimmune 묶음이 상위). 전신·국소 치료 구분은 하지 않음 -> 국소 치료 건선도 보류됨 (CL-A1)
+    "psoriasis": re.compile(r"psoria\w*|건선", re.I),
+    "inflammatory_bowel_disease": re.compile(r"crohn\w*|ulcerative\s+colitis|inflammatory\s+bowel|\bibd\b|크론|"
+                                             r"궤양성\s*대장염|염증성\s*장\s*질환", re.I),
+    "multiple_sclerosis": re.compile(r"multiple\s+sclerosis|다발성\s*경화증", re.I),
 }
+# 하위 묶음 -> 상위 묶음. 상위 묶음은 하위 묶음 표현을 지운 나머지에서만 찾음 ("hepatitis B"는 hepatitis_any가 아님)
+_CONDITION_PARENT = {
+    "hepatitis_b": "hepatitis_any", "hepatitis_c": "hepatitis_any",
+    "hemophilia": "bleeding_disorder", "von_willebrand": "bleeding_disorder",
+    "kidney_transplant": "organ_transplant", "liver_transplant": "organ_transplant",
+    "heart_transplant": "organ_transplant", "lung_transplant": "organ_transplant",
+    "psoriasis": "autoimmune", "inflammatory_bowel_disease": "autoimmune", "multiple_sclerosis": "autoimmune",
+}
+# 절 앞의 기록 머리말 ("HPI:", "Template ROS:", "과거력:", "Problem list:"). 대상 낱말 비교에서만 뗌
+_SECTION_LABEL = re.compile(r"^\s*[^:\n]{1,30}?:\s*")
+# 환자 본인이 받은 이식의 공여 형태 ("s/p deceased-donor renal transplant"): 'donor'가 있어도 다른 사람의 진술이 아님
+_OWN_DONOR = re.compile(r"\b(?:deceased|living|cadaveric)(?:[\s-]+(?:un)?related)?[\s-]+donor(?=[\s-]+(?:[a-z]+[\s-]+)?"
+                        r"(?:allo)?(?:transplant|graft))|(?:뇌사자?|생체)\s*(?:공여자?|기증자?)(?=\s*\S{0,4}\s*이식)", re.I)
+# 추측형 '있음' 기록 ("특발성 폐섬유증 추정", "전이 의심", "possible ILD"): 인용된 '없음'과 함께 있으면 상충(보류)
+_SPECULATIVE_POSITIVE = re.compile(r"추정|의심|가능성|\b(?:probabl[ey]|possib\w*|suspect\w*|suspicio\w*|presum\w*|"
+                                   r"likely|questionable|equivocal|cannot\s+(?:be\s+)?exclude[d]?|may\s+have|"
+                                   r"might\s+have|could\s+be|consistent\s+with|compatible\s+with)\b", re.I)
+# 배제하지 못했다는 표현은 배제 진술이 아님 ("ILD cannot be excluded", "배제할 수 없음")
+_NOT_RULED_OUT = re.compile(r"\b(?:cannot|can't|could\s+not|not)\s+(?:be\s+)?(?:excluded|ruled\s+out)\b|"
+                            r"배제\s*(?:할\s*수\s*없|하지\s*못|못|되지\s*않|안\s*됨)", re.I)
+# 추측이 '없음' 쪽인 표현은 추측형 '있음'이 아님 ("ILD unlikely", "가능성 낮음")
+_SPECULATIVE_ABSENCE = re.compile(r"\b(?:unlikely|less\s+likely|not\s+likely|doubtful|improbable|not\s+suspect\w*)\b|"
+                                  r"가능성\s*(?:은|이)?\s*(?:낮|적|희박|없)|의심\s*(?:되지|하지|은|이)?\s*(?:않|없|안)", re.I)
 # 상충 비교에서 빼는 절: 다른 사람(가족력 포함)의 진술, 계획·선별·감별 문구 (질환 언급이지만 환자의 '있음' 진술이 아님)
 _CONFLICT_OTHER = re.compile(r"\b(?:father|mother|brother|sister|son|daughter|wife|husband|spouse|parent|sibling|uncle|aunt|"
                              r"cousin|grand\w*|family\s+history|fhx?|donor|roommate)\b|\b(?:his|her)\s+(?:wife|husband|"
@@ -581,7 +624,30 @@ def _stem(token: str) -> str:
 
 
 def _conditions(text: str) -> set[str]:
-    return {k for k, p in _CONDITION_GROUPS.items() if p.search(text)}
+    parents = set(_CONDITION_PARENT.values())
+    out = {k for k, p in _CONDITION_GROUPS.items() if k not in parents and p.search(text)}
+    for parent in parents:  # 상위 묶음: 하위 묶음 표현을 지운 나머지에서 찾음
+        rest = text
+        for child, par in _CONDITION_PARENT.items():
+            if par == parent:
+                rest = _CONDITION_GROUPS[child].sub(" ", rest)
+        if _CONDITION_GROUPS[parent].search(rest):
+            out.add(parent)
+    return out
+
+
+def _condition_ancestors(group: str) -> set[str]:
+    out = {group}
+    while group in _CONDITION_PARENT:
+        group = _CONDITION_PARENT[group]
+        out.add(group)
+    return out
+
+
+def _strip_label(clause: str) -> str:
+    """절 앞 기록 머리말을 뗌. 떼고 나서 남는 것이 없으면 그대로 둠."""
+    rest = _SECTION_LABEL.sub("", clause, count=1)
+    return rest if rest.strip() else clause
 
 
 def _conflict_polarity(clause: str) -> str:
@@ -592,12 +658,14 @@ def _conflict_polarity(clause: str) -> str:
 
 
 def _same_condition(unit_text: str, objs: tuple[set[str], set[str]], other: str, concept: Concept | None) -> bool:
-    """같은 질환을 말하는가: 기존 대상 비교, 같은 동의어 묶음, 또는 조사를 뗀 핵심어가 모두 겹침."""
+    """같은 질환을 말하는가: 기존 대상 비교, 같은 동의어 묶음이나 상위·하위 묶음, 또는 조사를 뗀 핵심어가 모두 겹침."""
     if _related(objs, other, concept):
         return True
-    groups = _conditions(unit_text)
-    if groups and groups & _conditions(other):
+    groups, other_groups = _conditions(unit_text), _conditions(other)
+    if groups & other_groups:
         return True
+    if any(a in _condition_ancestors(b) or b in _condition_ancestors(a) for a in groups for b in other_groups):
+        return True  # A: 상위어·하위어 ("hepatitis" ⊃ "hepatitis B", "organ transplant" ⊃ "renal transplant")
     words = {_stem(w) for w in objs[1]}
     if not words or concept is not None and objs[0]:
         return False
@@ -606,11 +674,15 @@ def _same_condition(unit_text: str, objs: tuple[set[str], set[str]], other: str,
 
 
 def _conflicts(units: list[_Evidence], segs: list[Segment], concept: Concept | None) -> bool:
-    """같은 대상에 대한 원문 진술(질문 제외) 중 '있음'과 '없음'이 함께 있는가. 추측 진술은 상충으로 세지 않음.
+    """같은 대상에 대한 원문 진술(질문 제외) 중 '있음'과 '없음'이 함께 있는가.
 
     M-1: 같은 질환을 다른 말이나 다른 조사로 쓴 진술도 같은 대상으로 봄. 다른 사람·가족력, 계획·선별·감별 문구는
-    환자의 '있음' 진술이 아니므로 빼고, 배제 진술은 '없음'으로 읽음."""
-    clauses: list[tuple[str, bool]] = []  # (절, 문장 첫 절의 부정이 이어지는 목록 절인가)
+    환자의 '있음' 진술이 아니므로 빼고, 배제 진술은 '없음'으로 읽음.
+    A(P0-A): 상위어·하위어 묶음도 같은 질환으로 봄. 인용 절 앞 기록 머리말("HPI:")은 대상 낱말 비교에서 뗌(극성·타인
+    판별은 원래 절로 함). 환자 본인 이식의 공여 형태("deceased-donor renal transplant")는 다른 사람의 진술로 보지 않음.
+    인용 진술이 '없음'이고 같은 질환의 추측형 '있음' 기록("추정", "의심", "possible")이 있으면, 그 문장에 그 질환을
+    배제한 절이 없는 한 상충(보류)으로 봄. 추측 기록을 '있음'으로 확정하지는 않음: 결과는 보류(기록 확인)뿐임."""
+    clauses: list[tuple[str, bool, list[str]]] = []  # (절, 문장 첫 절의 부정이 이어지는 목록 절인가, 같은 문장의 배제 절)
     for s in segs:
         if s.role not in ("record", "answer"):
             continue
@@ -618,26 +690,44 @@ def _conflicts(units: list[_Evidence], segs: list[Segment], concept: Concept | N
             parts = [c.strip(" ,;.") for c in _CLAUSE_BOUNDARY.split(sentence)]
             parts = [c for c in parts if c]
             lead_negative = bool(parts) and _conflict_polarity(parts[0]) == "negative"
-            clauses += [(c, lead_negative and i > 0 and not _AFFIRMED.search(c)) for i, c in enumerate(parts)]
+            ruled = [c for c in parts if _RULED_OUT.search(_NOT_RULED_OUT.sub(" ", c))]
+            clauses += [(c, lead_negative and i > 0 and not _AFFIRMED.search(c), ruled) for i, c in enumerate(parts)]
     for u in units:
         text = u.context if u.question and u.clause != u.context else u.clause
-        objs = _objects(text, concept)
+        objs = _objects(_strip_label(text), concept)
         if not (objs[0] or objs[1]):
             objs = _objects(u.sentence, concept)
-        pols = {u.polarity if u.linked or u.question else _conflict_polarity(u.clause)}
-        for c, listed in clauses:
+        upol = u.polarity if u.linked or u.question else _conflict_polarity(u.clause)
+        pols = {upol}
+        speculative = False
+        for c, listed, ruled in clauses:
             if c == u.clause.strip(" ,;.") or c in u.clause:
                 continue
             if not _same_condition(text, objs, c, concept):
                 continue
-            if _CONFLICT_OTHER.search(c) and not _CONFLICT_OTHER.search(text):
+            if _CONFLICT_OTHER.search(_OWN_DONOR.sub(" ", c)) and not _CONFLICT_OTHER.search(text):
                 continue  # 다른 사람의 진술 (근거 절도 다른 사람에 관한 것이면 그대로 비교)
             if _CONFLICT_NOT_CLAIM.search(c):
                 continue
-            pols.add("negative" if listed else _conflict_polarity(c))  # "No CHF, MI, or stroke": 앞의 부정이 목록 전체에 걸림
-        if {"positive", "negative"} <= pols:
+            p = "negative" if listed else _conflict_polarity(c)  # "No CHF, MI, or stroke": 앞의 부정이 목록 전체에 걸림
+            if p == "uncertain" and _speculative_positive(c, ruled, text, objs, concept):
+                speculative = True
+            pols.add(p)
+        if {"positive", "negative"} <= pols or (upol == "negative" and speculative):
             return True
     return False
+
+
+def _speculative_positive(clause: str, ruled: list[str], unit_text: str, objs: tuple[set[str], set[str]],
+                          concept: Concept | None) -> bool:
+    """추측형 '있음' 기록인가. 같은 문장에 그 질환(또는 질환을 밝히지 않은 검사)을 배제한 절이 있으면 아님
+    ("Possible ILD on CXR, HRCT negative"). 다른 질환만 배제한 절("HBsAg negative")은 이 질환을 배제하지 않음."""
+    if not _SPECULATIVE_POSITIVE.search(clause) or _SPECULATIVE_ABSENCE.search(clause):
+        return False
+    for r in ruled:
+        if not _conditions(r) or _same_condition(unit_text, objs, r, concept):
+            return False
+    return True
 
 
 # ---------------------------------------------------------------------------- 기간
