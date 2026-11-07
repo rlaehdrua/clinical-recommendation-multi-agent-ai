@@ -1,6 +1,6 @@
 """WP6 Runner (설계 §1·§3.1·§6). spec 검증 -> 단계 반복 -> DecisionRecord·지표·manifest. 정책 내부는 바꾸지 않습니다.
 
-단계(라운드)마다
+단계(라운드)마다 - 1~5의 계획·반복 억제·청구·정산은 engine.loop.EngineLoop (웹·CLI의 web.engine_runner와 같은 객체)
 1. policy.propose(CohortState) - 정책은 public에서 만든 상태만 봄 (oracle 없음)
 2. 같은 사실 상태에서 같은 정보원에 이미 시도한 행동(같은 지문·유형·정보원)은 다시 실행하지 않음 (모든 정책 공통).
    같은 질문을 그대로 반복하지 않고, "모름" 뒤 다시 묻는 것은 정책의 바꿔 묻기(policy_config["rephrase"], 지문이 다름)뿐.
@@ -28,9 +28,10 @@ from ..engine import record_producer as rp
 from ..engine.baselines import make_policy
 from ..engine.bundles import SourceCatalog
 from ..engine.cohort_state import CohortState
-from ..engine.contracts import (CONTRACT_VERSION, NON_EXECUTING, SUPPORTED_CONTRACT_VERSIONS, ZERO_COST,
+from ..engine.contracts import (CONTRACT_VERSION, NON_EXECUTING, SUPPORTED_CONTRACT_VERSIONS,
                                 ActionOutcome, DataVersion, DecisionRecord, EffortBudget, ExperimentSpec, canonical_hash)
 from ..engine.cost import EffortLedger
+from ..engine.loop import EngineLoop, repeat_key
 from ..engine.experiment import ExperimentSpecError, catalog_claims, require_catalog_hash
 from .cohort import SimCohort
 from .environment import CohortEnvironment
@@ -55,6 +56,9 @@ class RunResult:
     manifest: dict
     final: CohortState = field(repr=False)
     per_patient: dict[str, dict] = field(default_factory=dict, repr=False)  # 별칭 -> 환자별 결과 (부트스트랩 단위)
+    # 종료 시 정책에 남은 실행 행동이 겨누는 쌍 (PairKey.key "<별칭>|<시험>"). 해시·지표 밖 (P 실험의 대기/미해결 구분용)
+    remaining_pairs: frozenset[str] = field(default_factory=frozenset, repr=False)
+    facts: dict = field(default_factory=dict, repr=False)  # 별칭 -> 종료 시 사실 목록 (풀 재평가 대조용, 해시 밖)
 
     @property
     def result_hash(self) -> str:
@@ -81,9 +85,7 @@ def _policy_kwargs(policy_id: str, cfg: dict, seed: int) -> dict:
     return kw
 
 
-def _repeat_key(a) -> tuple:
-    """같은 사실 상태(지문)에서 같은 정보원에 같은 행동. "모름" 뒤 정책이 같은 지문을 문서 요청으로 바꾼 행동은 다른 키."""
-    return (a.patient_alias, a.fingerprint, a.action_type, a.source_id)
+_repeat_key = repeat_key  # 같은 사실 상태(지문)에서 같은 정보원에 같은 행동 (engine.loop, 웹과 같은 기준)
 
 
 def _check(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog) -> None:
@@ -149,15 +151,12 @@ def run(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog | None =
     trial_ids = {a: frozenset(s.trials) | frozenset(s.not_evaluated_trials) for a, s in states.items()}
 
     ledger = EffortLedger(spec.budget, catalog)
-    tried: dict[tuple, int] = {}
+    loop = EngineLoop(policy, spec.budget, ledger)  # 웹·CLI(web.engine_runner)와 같은 계획·청구·정산 단계
     records, issues, results, steps = [], [], [], []
-    progress, elapsed, step, suppressed, unfunded = [], 0.0, 0, 0, 0
+    progress, elapsed, step, unfunded = [], 0.0, 0, 0
     termination, rounds = "horizon_reached", 0
     for rnd in range(spec.budget.horizon_steps):
-        cands = policy.propose(co)
-        fresh = [a for a in cands if a.action_type in NON_EXECUTING or _repeat_key(a) not in tried]
-        suppressed += len(cands) - len(fresh)
-        plan = policy.select(fresh, spec.budget, ledger, co)
+        plan = loop.plan(co)
         unfunded += len(plan.safety_unfunded)
         if not plan.selected:
             over = any(s.reason_code == "over_budget" for s in plan.skipped) or plan.safety_unfunded
@@ -165,18 +164,16 @@ def run(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog | None =
             break
         rounds += 1
         round_latency = 0.0
-        for action in plan.selected:
+        for action in loop.dispatch(plan).execute:  # 시뮬레이터: 모두 실행 가능, 라운드 한도 없음 (환경이 미실행을 정함)
             alias = action.patient_alias
             # 응답 난수의 시도 번호 = 같은 (환자, 지문, 유형, 정보원)을 시도한 횟수 (반복을 막으므로 항상 0). 정보원마다 따로
             # 세어, 다른 정보원에 먼저 물어본 횟수(바꿔 묻기 설정 등)가 이 정보원의 응답 운을 바꾸지 않게 함 (공통 난수)
-            attempt = tried.get(_repeat_key(action), 0)
+            attempt = loop.attempt(action)
             ref = f"sim:{step}"
             ex = env.execute(action, attempt, step, ref, facts[alias])
-            tried[_repeat_key(action)] = tried.get(_repeat_key(action), 0) + 1
-            cost, keys = ZERO_COST, ()
+            # 선택 때 같은 원장 사본으로 확인한 순서 그대로 청구 -> 초과 없음. 미실행은 청구 0
+            cost, keys = loop.begin(action, executed=ex.execution != "not_executed")
             if ex.execution != "not_executed":
-                cost, key = ledger.charge(action)  # 선택 때 같은 원장 사본으로 확인한 순서 그대로 -> 초과 없음
-                keys = (key,) if key else ()
                 round_latency = max(round_latency, ex.latency_minutes)
             before, fb = co, snaps[alias]
             reevaluated = frozenset()
@@ -193,7 +190,7 @@ def run(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog | None =
                                     new_fact_ids=tuple(sorted(f.fact_id for f in ex.facts)) if status == "succeeded" else (),
                                     cost_charged=cost, charge_keys=keys, error_code=ex.error_code,
                                     latency_minutes=ex.latency_minutes)
-            after, ptrans = policy.apply_outcome(mid, action, outcome)
+            after, ptrans = loop.settle(mid, action, outcome)
             asked = None if ex.execution == "not_executed" else rp.AskedQuestion(
                 question_id=f"q{step}", action_id=action.action_id, target_criteria=action.target_criteria,
                 purpose=action.purpose, source_ref=ref)
@@ -220,11 +217,13 @@ def run(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog | None =
         rounds = spec.budget.horizon_steps
 
     audit = rp.run_status(results)
+    remaining = frozenset(f"{a.patient_alias}|{t}" for a in loop.fresh(policy.propose(co))
+                          if a.action_type not in NON_EXECUTING for t in a.target_trial_ids)
     per_patient = _per_patient(co, labels, ledger, steps)
     metrics = summarize(initial=initial, final=co, labels=labels, steps=steps,
                         per_patient_minutes=dict(ledger.per_patient), total_cost=ledger.total,
                         elapsed_minutes=elapsed, rounds=rounds, progress=progress, termination=termination,
-                        repeat_suppressed=suppressed, safety_unfunded=unfunded,
+                        repeat_suppressed=loop.suppressed, safety_unfunded=unfunded,
                         audit={"records": audit.records, "warnings": audit.warnings, "blocking": audit.blocking,
                                "status": audit.status})
     metrics["correct_confirmed_eligible"] = sum(p["correct_confirmed_eligible"] for p in per_patient.values())
@@ -245,7 +244,8 @@ def run(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog | None =
         "environment": {"python": sys.version.split()[0], "platform": platform.platform(), "commit": _git_commit()},
     }
     manifest["reference_policy"] = spec.policy_id == ORACLE_ID
-    return RunResult(spec, records, issues, metrics, manifest, co, per_patient)
+    return RunResult(spec, records, issues, metrics, manifest, co, per_patient, remaining,
+                     {a: list(v) for a, v in facts.items()})
 
 
 def _per_patient(co: CohortState, labels: dict[str, str], ledger: EffortLedger, steps: list[dict]) -> dict[str, dict]:

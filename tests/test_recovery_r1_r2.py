@@ -330,8 +330,15 @@ def test_runner_does_not_repeat_an_action_the_policy_keeps_proposing(run_session
 
 
 def test_full_dcvc_runs_the_remaining_document_in_a_real_session(run_session):
-    r = run_session([ECOG], FullDCVCPolicy())
+    r = run_session([ECOG], FullDCVCPolicy(evidence_routing=False))  # 회복 경로 (환자 "모름" -> 기록)
     assert [a.action.source_id for a in r.asked] == [PATIENT, RECORD]
+
+
+def test_full_dcvc_routes_a_record_only_criterion_straight_to_the_record(run_session):
+    """P 근거 경로: ECOG가 진료 기록 근거가 필요한 기준이면 환자에게 먼저 묻지 않고 기록 요청 하나로."""
+    r = run_session([ECOG], FullDCVCPolicy())
+    assert [a.action.source_id for a in r.asked] == [RECORD]
+    assert r.asked[0].action.reason_code == "record_evidence_required"
 
 
 def test_ablation_does_not_extend_the_loop(run_session):
