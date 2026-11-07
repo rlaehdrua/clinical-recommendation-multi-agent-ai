@@ -283,3 +283,14 @@ def test_an_age_that_is_not_this_patients_stated_age(text, value):
 def test_ecog_by_hearsay_is_held():
     assert grounded({"field": "ecog", "value": 0, "text": "ECOG 0 per mother's phone report"}) is not None
     assert grounded({"field": "ecog", "value": 0, "text": "Husband (ECOG 3) needs help; patient ECOG 0."}) is None
+
+
+# ------------------------------------------------------------ 변이 검사에서 살아남은 동작
+@pytest.mark.parametrize("text", ["결과 대기. Hb 12 g/dL", "CBC 미시행 (응급 수술로 생략). Hb 12 g/dL", "Hb 12 g/dL로 추정", "Hb 12 g/dL; no Hb this time"])
+def test_held_by_a_single_structure(text):
+    assert lab(text) is not None
+
+
+@pytest.mark.parametrize("text", ["Hb 12 g/dL. Pending: zonulin", "Hb 12 g/dL. 첫 검체는 clot 무효", "첫 검체 무효. Hb 12 g/dL"])
+def test_kept_by_a_single_structure(text):
+    assert lab(text) is None
