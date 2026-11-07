@@ -278,8 +278,53 @@ def _evaluate_age(rule: Rule, patient: PatientProfile) -> CriterionAssessment | 
                    f"{shown} = {lo:.0f}~{hi:.0f}일, 기준 {target:g} {rule_unit} = {t:.0f}일 → {_ko(at_lo)}")
 
 
+# 국가·지역 한정 기준 (P0-C, NCT06216301 "≥22 years of age in the USA" / "≥18 years of age outside of the USA").
+# 파싱 IR(Rule)에는 국가 범위를 담을 필드가 없고 환자 프로필에도 참여 국가가 없으므로, 기준 원문(rule.text)에
+# 국가 한정 표현이 있으면 결정론적으로 알아봅니다. 보수적으로 좁게 잡습니다:
+#   - "in / outside (of) / within (the) <국가>", "for patients in <국가>", "non-US / ex-US", "<국가> sites/centers/..."
+#   - 약어(US, USA, U.S., UK, EU, EEA)는 대소문자를 구분 ("in us" 같은 일반 단어를 잡지 않음)
+#   - 국가 이름 뒤에 글자가 이어지면 적중하지 않음 ("European Respiratory Society", "Japanese" 등)
+_COUNTRY_NAME = (r"(?:U\.S\.A\.?|U\.S\.|USA|US|UK|EU|EEA"
+                 r"|(?i:united\s+states(?:\s+of\s+america)?|united\s+kingdom|european\s+union|europe|mainland\s+china"
+                 r"|china|south\s+korea|korea|japan|taiwan|canada|australia|india|germany|france|italy|spain|brazil"
+                 r"|mexico|israel|singapore|hong\s+kong))(?![A-Za-z])")
+_COUNTRY_SCOPE = re.compile(
+    r"(?i:\b(?:in|outside(?:\s+of)?|within|for\s+(?:patients|participants|subjects)\s+in)\s+(?:the\s+)?)" + _COUNTRY_NAME
+    + r"|(?i:\b(?:non|ex)-?)(?:U\.S\.|USA|US)(?![A-Za-z])"
+    + r"|\b" + _COUNTRY_NAME + r"\s+(?i:sites?|centers?|centres?|institutions?|participants|patients|subjects)\b")
+
+
+def country_scope(text: str | None) -> str | None:
+    """기준 원문이 국가·지역에 한정된 기준인가. 한정 표현(원문 그대로)을 반환하고, 없으면 None."""
+    m = _COUNTRY_SCOPE.search(text or "")
+    return m.group(0) if m else None
+
+
+def _country_hold(rule: Rule, a: CriterionAssessment, scope: str) -> CriterionAssessment:
+    """국가 한정 기준의 불충족은 확정하지 않음 (한쪽 보류, 옵션 B′).
+
+    환자의 참여 국가를 모르므로(프로필에 국가 필드 없음) 이 기준이 환자에게 적용되는지 알 수 없습니다.
+    - 통과(passes True)는 그대로 둡니다: 그 나라 환자이면 충족, 아니면 '해당 없음 = 통과'라 어느 쪽이든 통과.
+    - 불충족은 holds unknown으로 보류합니다. None을 돌려주지 않으므로 LLM에 넘어가 나라를 짐작하지 않습니다."""
+    return a.model_copy(update={
+        "holds": "unknown", "passes": None, "confidence": "low",
+        "missing_info": f"참여(등록) 기관 국가 - 원문의 국가 조건 '{scope}'이 이 환자에게 적용되는지 확인 필요",
+        "validation_flags": [*a.validation_flags, "country_scope_unknown"],
+        "reasoning": f"[국가 조건: 원문 '{scope}' - 환자 참여 국가 미상이라 불충족을 확정하지 않음] {a.reasoning}"})
+
+
 def evaluate(rule: Rule, patient: PatientProfile, reference_date: str | None = None) -> CriterionAssessment | None:
-    """reference_date: 판정 기준일(YYYY-MM-DD). 기간 조건이 붙은 검사 기준에만 씀. 없으면 config.reference_date()."""
+    """reference_date: 판정 기준일(YYYY-MM-DD). 기간 조건이 붙은 검사 기준에만 씀. 없으면 config.reference_date().
+
+    국가 한정 기준(country_scope)은 통과만 확정하고 불충족은 보류합니다(_country_hold)."""
+    a = _evaluate_structured(rule, patient, reference_date)
+    if a is None or a.passes is not False:
+        return a
+    scope = country_scope(rule.text)
+    return a if scope is None else _country_hold(rule, a, scope)
+
+
+def _evaluate_structured(rule: Rule, patient: PatientProfile, reference_date: str | None) -> CriterionAssessment | None:
     if not rule.structured_evaluable or not rule.field or not rule.operator:
         return None
     field = _norm(rule.field)
