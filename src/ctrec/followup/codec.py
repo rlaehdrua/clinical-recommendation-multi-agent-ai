@@ -70,6 +70,22 @@ def _fact_store(pid: str, facts: list[dict]) -> FactStore:
     return store
 
 
+def _reload_parsed(s, data: dict) -> None:
+    """카탈로그가 기준표를 주지 않은 시험(운영 카탈로그 = trial_store)은 고정 저장소에서 다시 읽음.
+
+    처음 Session은 parse_criteria에서 trial_store로 기준표를 채우지만, 복원한 Session은 비어 있음. 비어 있으면
+    decision_state가 그 시험의 기준을 보지 않아 계획(제안)이 비고, 담당자가 고른 제안이 모두 proposal_not_current가 됨.
+    trial_store.load는 사전 컴파일본만 읽음 (LLM 없음). 처음에 평가되지 않은 시험(NOT_EVALUATED)은 처음과 같이 비워 둠."""
+    from .. import trial_store
+    for tid, m in data["matches"].items():
+        if tid in s.parsed or tid not in s.trials or m.get("eligibility") == "NOT_EVALUATED":
+            continue
+        try:
+            s.parsed[tid] = trial_store.load(s.trials[tid])
+        except trial_store.CompilationPending:
+            pass
+
+
 def restore_session(data: dict, trials: dict[str, dict], parsed: dict | None = None, tracer: Tracer | None = None):
     if data.get("format") != SESSION_FORMAT:
         raise ValueError(f"unsupported session format: {data.get('format')!r}")
@@ -88,6 +104,7 @@ def restore_session(data: dict, trials: dict[str, dict], parsed: dict | None = N
     s.case.raw_text = c["raw_text"]  # ContractSession은 생성 시 원문을 처음 입력으로 잡으므로 처음 입력으로 만든 뒤 바꿈
     if parsed:
         s.parsed.update({t: p for t, p in parsed.items() if t in s.trials})
+    _reload_parsed(s, data)
     s.rounds = data["rounds"]
     s.profile = PatientProfile.model_validate(data["profile"]) if data["profile"] else None
     s.matches = {t: TrialMatch.model_validate(m) for t, m in data["matches"].items()}
