@@ -1,6 +1,6 @@
 """값 주변의 문맥: 상태 표지가 누구를 서술하는가, 값이 결과로 보고되었는가 (합성 데이터, LLM 호출 없음).
 
-`data/value_context_regression.json`은 이전 독립 평가 2회분과 개발용 세트입니다. 코드를 이 세트로 고쳤으므로 **더 이상 독립 평가가 아니고**
+`data/value_context_regression.json`은 이전 독립 평가 3회분과 개발용 세트입니다. 코드를 이 세트로 고쳤으므로 **더 이상 독립 평가가 아니고**
 회귀 세트입니다. 통과 수를 일반 성능으로 읽으면 안 됩니다. 표현은 임상 검수를 받지 않았습니다.
 `known_over_hold`는 알고 남겨 둔 과잉 보류입니다(안전 쪽, 사람 확인으로 넘어감).
 """
@@ -80,7 +80,7 @@ def contract_run(run, monkeypatch):
 
 # ------------------------------------------------------------ 회귀 세트 (독립 평가 아님)
 def test_the_regression_set_is_not_empty_and_lists_only_its_own_texts():
-    assert len(NEGATIVE) >= 150 and len(POSITIVE) >= 145
+    assert len(NEGATIVE) >= 220 and len(POSITIVE) >= 215
     assert KNOWN_OVER_HOLD <= {x["text"] for _, x in POSITIVE}
 
 
@@ -249,3 +249,37 @@ def test_an_answer_that_the_test_never_happened_overrides_a_stated_value(run):
     o = run(wrap(text), [HB, tsg.OPEN], prof(labs=[hb(quote=text)]), after=prof(labs=[hb(quote=text)]), answer=answer, meta=SELF_OK, question=Q_HB, target="T1:I3")  # OPEN: 질문 라운드가 돌게 함
     assert answer in o.session.case.raw_text  # 답변이 실제로 들어왔는지 함께 확인
     assert o.a.passes is None and o.status != "CONFIRMED_ELIGIBLE"
+
+
+# ------------------------------------------------------------ 세 번째 평가에서 드러난 구조
+@pytest.mark.parametrize("text", ["Serum Hb: 12 g/dL (today 08:00)", "Lipase pending. Hb 12 g/dL resulted at 09:05", "Hb = 12 g/dL"])
+def test_a_clock_time_is_not_a_second_value(text):
+    assert lab(text) is None
+
+
+@pytest.mark.parametrize("text", ["이전 검사 Hb 12 g/dL", "Hb 12 g/dL (04/2023, prior admission)", "Hb 12 g/dL previously normal", "Hb 12 g/dL, sample from before transfusion is no longer current"])
+def test_a_value_marked_past_is_not_current_on_its_own(text):
+    assert lab(text) is not None
+
+
+def test_a_past_value_next_to_a_current_one_changes_nothing():
+    assert lab("이전 Hb 9 g/dL, 금일 Hb 12 g/dL") is None
+
+
+@pytest.mark.parametrize("field, value, text", [("total bilirubin", 3.2, "직접 빌리루빈 3.2 mg/dL 만 확인됨"), ("total bilirubin", 3.2, "direct bilirubin 3.2 mg/dL")])
+def test_a_qualified_variant_is_another_test(field, value, text):
+    assert grounded({"field": field, "value": value, "text": text, "unit": "mg/dL"}) is not None
+
+
+def test_a_full_unit_is_read_before_a_subject_particle():
+    assert vg.ground_lab("platelets", 22.0, "혈소판 22 x10^3/uL 는 임시로 넣어 둔 숫자", wrap("혈소판 22 x10^3/uL 는 임시로 넣어 둔 숫자"), unit="x10^3/uL", known={"22"}) is not None
+
+
+@pytest.mark.parametrize("text, value", [("Bone age 12 years by hand X-ray", 12), ("Registration typo gave age 6 years", 6), ("system temporarily shows 64 years", 64), ("담당 간호사 본인 나이가 29세", 29), ("보호자 말로는 71세", 71)])
+def test_an_age_that_is_not_this_patients_stated_age(text, value):
+    assert grounded({"field": "age", "value": value, "text": text}) is not None
+
+
+def test_ecog_by_hearsay_is_held():
+    assert grounded({"field": "ecog", "value": 0, "text": "ECOG 0 per mother's phone report"}) is not None
+    assert grounded({"field": "ecog", "value": 0, "text": "Husband (ECOG 3) needs help; patient ECOG 0."}) is None

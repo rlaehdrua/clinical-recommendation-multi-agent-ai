@@ -5,7 +5,10 @@
 "neut# 1.4, lymph# 0.9 -- neut# 로 ANC 판단",
 "ANC 3.4 x10^9/L; flow cytometry sent, awaiting.",
 "Creatinine from the IV-arm draw was discarded. Recheck from opposite arm: 0.8 mg/dL.",
-"Ferritin rerun at 1:100 dilution after hook effect: 1850 ng/mL, final."
+"Ferritin rerun at 1:100 dilution after hook effect: 1850 ng/mL, final.",
+"My mother had a very low albumin years ago, mine on yesterday's draw was 4.2 g/dL.",
+"Albumin repeat (after line-contaminated first draw) = 3.9 g/dL, accepted by lab.",
+"Ferritin retest after the invalid specimen came back 310 ng/mL, verified."
 ],
 "sets": {
 "holdout_1": {
@@ -1816,6 +1819,852 @@
 "text": "No prior malignancy; 만 62세 남자 환자",
 "field": "age",
 "value": 62,
+"unit": "years"
+}
+]
+},
+"holdout_3": {
+"negative": [
+{
+"text": "Hemoglobin was not drawn at this morning's rounds because the patient refused. Her 2019 discharge letter lists 9.8 g/dL.",
+"field": "hemoglobin",
+"value": 9.8,
+"unit": "g/dL"
+},
+{
+"text": "혈소판 검사는 오늘 시행하지 못했음. 참고로 작년 기록에는 87 x10^3/uL 으로 적혀 있음.",
+"field": "platelets",
+"value": 87,
+"unit": "x10^3/uL"
+},
+{
+"text": "Creatinine: unable to obtain, specimen lost in transit. Lab slip on the clipboard shows 1.9 mg/dL.",
+"field": "creatinine",
+"value": 1.9,
+"unit": "mg/dL"
+},
+{
+"text": "Albumin level has not been resulted and the sample was never received by the lab. 2.4 g/dL",
+"field": "albumin",
+"value": 2.4,
+"unit": "g/dL"
+},
+{
+"text": "Dear Dr. Han, we skipped the bloods this cycle since she felt unwell. Ferritin 18 ng/mL was from the screening visit in spring.",
+"field": "ferritin",
+"value": 18,
+"unit": "ng/mL"
+},
+{
+"text": "ECOG 평가는 아직 실시하지 않았습니다. 처음 접수 때 환자가 본인이 2점 정도라고 말했음.",
+"field": "ecog",
+"value": 2,
+"unit": null
+},
+{
+"text": "WBC: test cancelled by physician. (draft template default 4.1 x10^9/L)",
+"field": "white blood cell count",
+"value": 4.1,
+"unit": "x10^9/L"
+},
+{
+"text": "Bilirubin not measured during this admission. Will be 1.3 mg/dL if we believe the transferring facility's old chart.",
+"field": "total bilirubin",
+"value": 1.3,
+"unit": "mg/dL"
+},
+{
+"text": "ANC wasn't checked, no differential ordered. 1200 /uL shows on a printout dated two cycles ago.",
+"field": "absolute neutrophil count",
+"value": 1200,
+"unit": "/uL"
+},
+{
+"text": "나이 확인 불가, 신분증 미지참 상태입니다. 보호자 말로는 대략 71세쯤.",
+"field": "age",
+"value": 71,
+"unit": "years"
+},
+{
+"text": "Platelets | not done |\nHgb | 10.4 g/dL (04/2023, prior admission) |",
+"field": "hemoglobin",
+"value": 10.4,
+"unit": "g/dL"
+},
+{
+"text": "Creatinine: NOT DONE\nComment: pt told nurse her kidney number last time was 2.2 mg/dL",
+"field": "creatinine",
+"value": 2.2,
+"unit": "mg/dL"
+},
+{
+"text": "혈색소: 미실시\n비고란: 외부병원 소견서상 8.9 g/dL",
+"field": "hemoglobin",
+"value": 8.9,
+"unit": "g/dL"
+},
+{
+"text": "Labs today: albumin - not performed.\nFree text below: 'albumin 3.0 g/dL per mother's memory of last visit'",
+"field": "albumin",
+"value": 3.0,
+"unit": "g/dL"
+},
+{
+"text": "PLT: N/D | WBC: 5.6 x10^9/L (resulted 14 days ago, outside lab) | ANC: N/D",
+"field": "platelets",
+"value": 5.6,
+"unit": null
+},
+{
+"text": "T.bili 미시행. 간호기록 3페이지: '황달 의심, 이전 수치 2.8 mg/dL 로 기억'",
+"field": "total bilirubin",
+"value": 2.8,
+"unit": "mg/dL"
+},
+{
+"text": "Ferritin ... deferred.\n\nPlan section: recheck once ferritin above 300 ng/mL (target, not result).",
+"field": "ferritin",
+"value": 300,
+"unit": "ng/mL"
+},
+{
+"text": "ECOG PS not assessed (patient unreachable by phone).\nProtocol requires ECOG 0-1 to enrol; eligible cut-off 1.",
+"field": "ecog",
+"value": 1,
+"unit": null
+},
+{
+"text": "ANC | pending specimen recollection |\nPrevious cycle note: ANC 900 /uL on day 15",
+"field": "absolute neutrophil count",
+"value": 900,
+"unit": "/uL"
+},
+{
+"text": "백혈구 수치 안 나옴 (검체 응고).\n옆 줄 메모: 지난번엔 11.2 x10^9/L 였다고 함",
+"field": "white blood cell count",
+"value": 11.2,
+"unit": "x10^9/L"
+},
+{
+"text": "Her brother's hemoglobin is 15.1 g/dL, which is why the donor workup moved ahead; the patient herself is still anaemic.",
+"field": "hemoglobin",
+"value": 15.1,
+"unit": "g/dL"
+},
+{
+"text": "Control group mean platelets 245 x10^3/uL versus treated arm lower; individual patient not yet measured.",
+"field": "platelets",
+"value": 245,
+"unit": "x10^3/uL"
+},
+{
+"text": "옆 침대 환자 크레아티닌이 3.4 mg/dL 라서 신장내과 협진 들어갔고, 우리 환자는 괜찮은 편.",
+"field": "creatinine",
+"value": 3.4,
+"unit": "mg/dL"
+},
+{
+"text": "Mother had albumin 2.1 g/dL at her own admission last year, so the family worries about liver disease.",
+"field": "albumin",
+"value": 2.1,
+"unit": "g/dL"
+},
+{
+"text": "Stem-cell donor (sister) ANC 4300 /uL, cleared for apheresis.",
+"field": "absolute neutrophil count",
+"value": 4300,
+"unit": "/uL"
+},
+{
+"text": "담당 간호사 본인 나이가 29세라 야간 근무를 맡았다고 함 — 환자 이야기가 아님.",
+"field": "age",
+"value": 29,
+"unit": "years"
+},
+{
+"text": "Reference cohort in the paper: median ferritin 410 ng/mL; our patient was told to expect something similar.",
+"field": "ferritin",
+"value": 410,
+"unit": "ng/mL"
+},
+{
+"text": "Husband's ECOG is 3 after his stroke, so she is the sole caregiver at home.",
+"field": "ecog",
+"value": 3,
+"unit": null
+},
+{
+"text": "Bed 12 (not ours) WBC 22.4 x10^9/L, flagged to wrong chart; ours is awaiting review.",
+"field": "white blood cell count",
+"value": 22.4,
+"unit": "x10^9/L"
+},
+{
+"text": "딸의 총빌리루빈이 신생아 때 14 mg/dL까지 올랐다고 환자가 전함, 본인은 해당 없음.",
+"field": "total bilirubin",
+"value": 14,
+"unit": "mg/dL"
+},
+{
+"text": "Ferritin and iron saturation not part of this panel; transferrin 212 mg/dL reported only.",
+"field": "ferritin",
+"value": 212,
+"unit": "mg/dL"
+},
+{
+"text": "LDH was checked, 180 U/L, but hemoglobin A1c 7.9 % is a different test and hemoglobin itself is awaited.",
+"field": "hemoglobin",
+"value": 7.9,
+"unit": "%"
+},
+{
+"text": "Cystatin C 1.6 mg/L reported; serum creatinine not available.",
+"field": "creatinine",
+"value": 1.6,
+"unit": "mg/L"
+},
+{
+"text": "직접 빌리루빈 3.2 mg/dL 만 확인됨, 총 빌리루빈은 별도 검사라 아직 없음.",
+"field": "total bilirubin",
+"value": 3.2,
+"unit": "mg/dL"
+},
+{
+"text": "Urine albumin/creatinine ratio 30 mg/g; serum albumin was not drawn.",
+"field": "albumin",
+"value": 30,
+"unit": "mg/g"
+},
+{
+"text": "Mean platelet volume 10.8 fL on the report; the platelet count line is blank.",
+"field": "platelets",
+"value": 10.8,
+"unit": "fL"
+},
+{
+"text": "Karnofsky 70 recorded by the oncology fellow; ECOG not documented.",
+"field": "ecog",
+"value": 70,
+"unit": null
+},
+{
+"text": "Hematocrit 33 % noted, no hemoglobin on this slip.",
+"field": "hemoglobin",
+"value": 33,
+"unit": "%"
+},
+{
+"text": "Lymphocyte count 0.9 x10^9/L; the neutrophil count is part of the pending differential.",
+"field": "absolute neutrophil count",
+"value": 0.9,
+"unit": "x10^9/L"
+},
+{
+"text": "Bone age 12 years by hand X-ray; chronological age to be confirmed from registry.",
+"field": "age",
+"value": 12,
+"unit": "years"
+},
+{
+"text": "Hgb 10.1 pending, redraw ordered for tomorrow AM.",
+"field": "hemoglobin",
+"value": 10.1,
+"unit": null
+},
+{
+"text": "혈소판 수치 결과 대기중 (예상치 120 x10^3/uL 로 접수됨).",
+"field": "platelets",
+"value": 120,
+"unit": "x10^3/uL"
+},
+{
+"text": "Creatinine requested STAT, preliminary read 1.4 mg/dL not yet verified by the lab director.",
+"field": "creatinine",
+"value": 1.4,
+"unit": "mg/dL"
+},
+{
+"text": "Dr. Park has ordered an albumin; result expected Friday. (Order note says 'last 3.6 g/dL', old).",
+"field": "albumin",
+"value": 3.6,
+"unit": "g/dL"
+},
+{
+"text": "WBC to be sent after chemo cycle 3; target 3.0 x10^9/L needed to proceed.",
+"field": "white blood cell count",
+"value": 3.0,
+"unit": "x10^9/L"
+},
+{
+"text": "ANC 보내놨습니다 — 결과 나오면 알려드릴게요. 어제 문자로는 1500 이라고 했는데 그건 구두 추정.",
+"field": "absolute neutrophil count",
+"value": 1500,
+"unit": null
+},
+{
+"text": "Bili awaiting verification: 0.9 mg/dL (prelim, in process).",
+"field": "total bilirubin",
+"value": 0.9,
+"unit": "mg/dL"
+},
+{
+"text": "ferritin to be drawn with next labs, scheduled for 12/05; patient thinks it was around 55 ng/mL.",
+"field": "ferritin",
+"value": 55,
+"unit": "ng/mL"
+},
+{
+"text": "ECOG will be assessed at the upcoming visit; clinic booked 2 weeks out. Provisional entry: 1.",
+"field": "ecog",
+"value": 1,
+"unit": null
+},
+{
+"text": "Date of birth awaiting verification with insurer; system temporarily shows 64 years.",
+"field": "age",
+"value": 64,
+"unit": "years"
+},
+{
+"text": "Hemoglobin 14.9 g/dL: hemolyzed sample, rejected; recollect.",
+"field": "hemoglobin",
+"value": 14.9,
+"unit": "g/dL"
+},
+{
+"text": "혈소판 22 x10^3/uL 는 검체 응집으로 부정확, 재검 예정.",
+"field": "platelets",
+"value": 22,
+"unit": "x10^3/uL"
+},
+{
+"text": "Potassium was haemolysed, and creatinine 4.5 mg/dL from the same tube was cancelled as well.",
+"field": "creatinine",
+"value": 4.5,
+"unit": "mg/dL"
+},
+{
+"text": "Albumin 5.2 g/dL (sample drawn from IV line with saline running, spurious). Redraw sent.",
+"field": "albumin",
+"value": 5.2,
+"unit": "g/dL"
+},
+{
+"text": "WBC 1.1 x10^9/L ← clotted EDTA tube, do not use, awaiting second tube.",
+"field": "white blood cell count",
+"value": 1.1,
+"unit": "x10^9/L"
+},
+{
+"text": "1st ANC 300 /uL=lab error per tech, rerun in progress",
+"field": "absolute neutrophil count",
+"value": 300,
+"unit": "/uL"
+},
+{
+"text": "빌리루빈 6.0 mg/dL, 빛 노출된 검체로 무효 처리되었고 재채혈함.",
+"field": "total bilirubin",
+"value": 6.0,
+"unit": "mg/dL"
+},
+{
+"text": "Ferritin 1200 ng/mL was mislabeled (belongs to another MRN); withdrawn pending recollection.",
+"field": "ferritin",
+"value": 1200,
+"unit": "ng/mL"
+},
+{
+"text": "ECOG 4 was entered by a student in error and struck through; reassessment pending.",
+"field": "ecog",
+"value": 4,
+"unit": null
+},
+{
+"text": "Registration typo gave age 6 years; corrected form requested.",
+"field": "age",
+"value": 6,
+"unit": "years"
+},
+{
+"text": "Hemoglobin 13.0 g/dL, not anaemic, but the sample is from before the transfusion and is no longer current; none since.",
+"field": "hemoglobin",
+"value": 13.0,
+"unit": "g/dL"
+},
+{
+"text": "Platelets 250 x10^3/uL - normal, however no result since the bleed, so value unknown now.",
+"field": "platelets",
+"value": 250,
+"unit": "x10^3/uL"
+},
+{
+"text": "크레아티닌 0.8 mg/dL 로 정상이었으나 검사 미시행 후 신기능 악화 소견이 있어 현재값 불명.",
+"field": "creatinine",
+"value": 0.8,
+"unit": "mg/dL"
+},
+{
+"text": "No jaundice reported; bili would be 0.7 mg/dL if rechecked, but not ordered.",
+"field": "total bilirubin",
+"value": 0.7,
+"unit": "mg/dL"
+},
+{
+"text": "Albumin 4.0 g/dL previously normal; patient denies recent labs and none are on file.",
+"field": "albumin",
+"value": 4.0,
+"unit": "g/dL"
+},
+{
+"text": "백혈구 6.5 x10^9/L 정상, 단 이 수치는 채혈하지 않은 가정값 (no sample).",
+"field": "white blood cell count",
+"value": 6.5,
+"unit": "x10^9/L"
+},
+{
+"text": "Denies fever or infection; ANC reportedly 2500 /uL in clinic last quarter, not rechecked.",
+"field": "absolute neutrophil count",
+"value": 2500,
+"unit": "/uL"
+},
+{
+"text": "Ferritin 90 ng/mL within range but test was cancelled before result release, so withheld.",
+"field": "ferritin",
+"value": 90,
+"unit": "ng/mL"
+},
+{
+"text": "No limitation in activity (ECOG 0) per mother's phone report; no clinician assessment has been done.",
+"field": "ecog",
+"value": 0,
+"unit": null
+},
+{
+"text": "Not elderly, no frailty; age field blank in chart, family says 45 but unverified.",
+"field": "age",
+"value": 45,
+"unit": "years"
+}
+],
+"positive": [
+{
+"text": "Labs were drawn at 06:10 and verified by the lab at 07:40. Hemoglobin 11.2 g/dL.",
+"field": "hemoglobin",
+"value": 11.2,
+"unit": "g/dL"
+},
+{
+"text": "오늘 아침 채혈 결과가 확정되어 나왔습니다. 혈소판 143 x10^3/uL.",
+"field": "platelets",
+"value": 143,
+"unit": "x10^3/uL"
+},
+{
+"text": "CMP finalised. Creatinine 0.9 mg/dL, eGFR fine.",
+"field": "creatinine",
+"value": 0.9,
+"unit": "mg/dL"
+},
+{
+"text": "No sample problems this time, tube received intact. Albumin 3.3 g/dL.",
+"field": "albumin",
+"value": 3.3,
+"unit": "g/dL"
+},
+{
+"text": "Regarding the blood tests completed yesterday afternoon: ferritin 142 ng/mL.",
+"field": "ferritin",
+"value": 142,
+"unit": "ng/mL"
+},
+{
+"text": "외래에서 직접 평가 완료함. ECOG 1.",
+"field": "ecog",
+"value": 1,
+"unit": null
+},
+{
+"text": "Result released after repeat verification, WBC 7.8 x10^9/L.",
+"field": "white blood cell count",
+"value": 7.8,
+"unit": "x10^9/L"
+},
+{
+"text": "Specimen adequate and analysed on schedule; total bilirubin 1.1 mg/dL.",
+"field": "total bilirubin",
+"value": 1.1,
+"unit": "mg/dL"
+},
+{
+"text": "차팅 확인: 차등계수까지 모두 resulted. ANC 2100 /uL.",
+"field": "absolute neutrophil count",
+"value": 2100,
+"unit": "/uL"
+},
+{
+"text": "Identity confirmed against passport at check-in. She is 58 years old.",
+"field": "age",
+"value": 58,
+"unit": "years"
+},
+{
+"text": "Platelets | 188 x10^3/uL |\nHgb | 12.6 g/dL |\nLDH | not done |",
+"field": "hemoglobin",
+"value": 12.6,
+"unit": "g/dL"
+},
+{
+"text": "Urinalysis: not done. Serum creatinine: 1.2 mg/dL (today 08:00).",
+"field": "creatinine",
+"value": 1.2,
+"unit": "mg/dL"
+},
+{
+"text": "CRP 미시행\n알부민 3.8 g/dL (금일 검사)",
+"field": "albumin",
+"value": 3.8,
+"unit": "g/dL"
+},
+{
+"text": "Ferritin: not drawn\nT.bili: 0.6 mg/dL today, normal range 0.2-1.2",
+"field": "total bilirubin",
+"value": 0.6,
+"unit": "mg/dL"
+},
+{
+"text": "WBC | 4.9 x10^9/L | final\nPT/INR | not done |",
+"field": "white blood cell count",
+"value": 4.9,
+"unit": "x10^9/L"
+},
+{
+"text": "ANC checked today: 1800 /uL. Cultures not done, no fever.",
+"field": "absolute neutrophil count",
+"value": 1800,
+"unit": "/uL"
+},
+{
+"text": "Imaging not done due to scanner failure.\nPlatelet count this morning 97 x10^3/uL.",
+"field": "platelets",
+"value": 97,
+"unit": "x10^3/uL"
+},
+{
+"text": "혈액배양 미시행. 페리틴 76 ng/mL 로 확인됨.",
+"field": "ferritin",
+"value": 76,
+"unit": "ng/mL"
+},
+{
+"text": "Pulmonary function: not done\nECOG: 2 (assessed by me at today's visit)",
+"field": "ecog",
+"value": 2,
+"unit": null
+},
+{
+"text": "EKG deferred.\nPatient age: 66 years.",
+"field": "age",
+"value": 66,
+"unit": "years"
+},
+{
+"text": "Her sister's hemoglobin was 9.0 and she was transfused, but our patient's own hemoglobin this morning is 13.4 g/dL.",
+"field": "hemoglobin",
+"value": 13.4,
+"unit": "g/dL"
+},
+{
+"text": "옆 병상 환자는 혈소판이 낮아 격리 중이지만 본 환자의 혈소판은 301 x10^3/uL 입니다.",
+"field": "platelets",
+"value": 301,
+"unit": "x10^3/uL"
+},
+{
+"text": "Donor creatinine was 0.7 mg/dL; recipient (our patient) creatinine today is 1.6 mg/dL.",
+"field": "creatinine",
+"value": 1.6,
+"unit": "mg/dL"
+},
+{
+"text": "My mother had a very low albumin years ago, mine on yesterday's draw was 4.2 g/dL.",
+"field": "albumin",
+"value": 4.2,
+"unit": "g/dL"
+},
+{
+"text": "간호사가 다른 환자 WBC 18을 잘못 불러서 정정함. 이 환자 백혈구는 6.1 x10^9/L.",
+"field": "white blood cell count",
+"value": 6.1,
+"unit": "x10^9/L"
+},
+{
+"text": "Husband (ECOG 3) needs help at home; patient herself is fully active, ECOG 0.",
+"field": "ecog",
+"value": 0,
+"unit": null
+},
+{
+"text": "Cohort median ANC was 1500 in the trial, but this patient's measured ANC today is 3200 /uL.",
+"field": "absolute neutrophil count",
+"value": 3200,
+"unit": "/uL"
+},
+{
+"text": "The nurse, aged 31, drew the sample; patient's total bilirubin from it is 0.8 mg/dL.",
+"field": "total bilirubin",
+"value": 0.8,
+"unit": "mg/dL"
+},
+{
+"text": "아버지는 철분 수치가 높았지만 저는 오늘 페리틴 33 ng/mL 로 나왔어요.",
+"field": "ferritin",
+"value": 33,
+"unit": "ng/mL"
+},
+{
+"text": "Her son is 40 and lives abroad; the patient is 72 years old.",
+"field": "age",
+"value": 72,
+"unit": "years"
+},
+{
+"text": "Transferrin and LDH were not requested. Hemoglobin 10.9 g/dL, drawn today.",
+"field": "hemoglobin",
+"value": 10.9,
+"unit": "g/dL"
+},
+{
+"text": "Lipase pending. Platelets 215 x10^3/uL resulted at 09:05.",
+"field": "platelets",
+"value": 215,
+"unit": "x10^3/uL"
+},
+{
+"text": "Cystatin C not done; serum creatinine 1.0 mg/dL.",
+"field": "creatinine",
+"value": 1.0,
+"unit": "mg/dL"
+},
+{
+"text": "Procalcitonin 0.2 ng/mL, beta-hCG negative; serum albumin 3.5 g/dL.",
+"field": "albumin",
+"value": 3.5,
+"unit": "g/dL"
+},
+{
+"text": "Haptoglobin was not run, retic count in process. WBC 5.2 x10^9/L, final.",
+"field": "white blood cell count",
+"value": 5.2,
+"unit": "x10^9/L"
+},
+{
+"text": "Direct bilirubin not sent. Total bilirubin 1.4 mg/dL.",
+"field": "total bilirubin",
+"value": 1.4,
+"unit": "mg/dL"
+},
+{
+"text": "Karnofsky not recorded in this clinic; ECOG performance status 1 documented today.",
+"field": "ecog",
+"value": 1,
+"unit": null
+},
+{
+"text": "Troponin 미시행, 응고검사 대기. 절대호중구수 ANC 2750 /uL 확인.",
+"field": "absolute neutrophil count",
+"value": 2750,
+"unit": "/uL"
+},
+{
+"text": "Vitamin B12 and folate outstanding; ferritin 260 ng/mL final result.",
+"field": "ferritin",
+"value": 260,
+"unit": "ng/mL"
+},
+{
+"text": "Bone age study not needed. Patient is 15 years old.",
+"field": "age",
+"value": 15,
+"unit": "years"
+},
+{
+"text": "Culture pending, coag panel ordered; hemoglobin 9.7 g/dL measured this morning.",
+"field": "hemoglobin",
+"value": 9.7,
+"unit": "g/dL"
+},
+{
+"text": "소변검사 결과 대기중이고 CT 예약됨. 혈소판은 오늘 118 x10^3/uL.",
+"field": "platelets",
+"value": 118,
+"unit": "x10^3/uL"
+},
+{
+"text": "Ferritin requested for next week; creatinine today 0.8 mg/dL (resulted).",
+"field": "creatinine",
+"value": 0.8,
+"unit": "mg/dL"
+},
+{
+"text": "Pending: CEA, CA-125. Albumin resulted 3.1 g/dL at 7am.",
+"field": "albumin",
+"value": 3.1,
+"unit": "g/dL"
+},
+{
+"text": "Next draw ordered for 12/01, today's WBC 8.4 x10^9/L stands as the baseline.",
+"field": "white blood cell count",
+"value": 8.4,
+"unit": "x10^9/L"
+},
+{
+"text": "Ordered a bilirubin fractionation; total bilirubin already back: 0.5 mg/dL.",
+"field": "total bilirubin",
+"value": 0.5,
+"unit": "mg/dL"
+},
+{
+"text": "MRI 신청해 둠, 방사선과 판독 대기. ANC는 오늘 1650 /uL.",
+"field": "absolute neutrophil count",
+"value": 1650,
+"unit": "/uL"
+},
+{
+"text": "Pharmacy has filled the iron infusion order for tomorrow; ferritin measured today was 24 ng/mL.",
+"field": "ferritin",
+"value": 24,
+"unit": "ng/mL"
+},
+{
+"text": "Next visit booked in 3 weeks. At this visit ECOG is 2.",
+"field": "ecog",
+"value": 2,
+"unit": null
+},
+{
+"text": "입원 수속 서류 접수 대기 중. 환자 나이 53세.",
+"field": "age",
+"value": 53,
+"unit": "years"
+},
+{
+"text": "First sample was hemolyzed (hemoglobin read 15.0, discarded); the recollected hemoglobin is 11.8 g/dL.",
+"field": "hemoglobin",
+"value": 11.8,
+"unit": "g/dL"
+},
+{
+"text": "1차 혈소판 검체 응집으로 무효, 재채혈 결과 혈소판 164 x10^3/uL.",
+"field": "platelets",
+"value": 164,
+"unit": "x10^3/uL"
+},
+{
+"text": "Clotted tube cancelled earlier. Repeat creatinine, valid: 1.3 mg/dL.",
+"field": "creatinine",
+"value": 1.3,
+"unit": "mg/dL"
+},
+{
+"text": "Albumin repeat (after line-contaminated first draw) = 3.9 g/dL, accepted by lab.",
+"field": "albumin",
+"value": 3.9,
+"unit": "g/dL"
+},
+{
+"text": "Mislabel corrected and rerun; WBC 9.3 x10^9/L now attributed to the right patient.",
+"field": "white blood cell count",
+"value": 9.3,
+"unit": "x10^9/L"
+},
+{
+"text": "Earlier ANC 300 was a lab error per tech. Rerun valid: ANC 2400 /uL.",
+"field": "absolute neutrophil count",
+"value": 2400,
+"unit": "/uL"
+},
+{
+"text": "빛 노출로 무효였던 첫 검체 이후 재검한 총빌리루빈은 1.0 mg/dL 입니다.",
+"field": "total bilirubin",
+"value": 1.0,
+"unit": "mg/dL"
+},
+{
+"text": "Ferritin retest after the invalid specimen came back 310 ng/mL, verified.",
+"field": "ferritin",
+"value": 310,
+"unit": "ng/mL"
+},
+{
+"text": "ECOG 4 entry by student was struck through; attending reassessed: ECOG 1.",
+"field": "ecog",
+"value": 1,
+"unit": null
+},
+{
+"text": "Typo in registration (6 years) corrected; the patient is 62 years old.",
+"field": "age",
+"value": 62,
+"unit": "years"
+},
+{
+"text": "Hemoglobin 12.9 g/dL today, no anaemia, no bleeding, no transfusion needed.",
+"field": "hemoglobin",
+"value": 12.9,
+"unit": "g/dL"
+},
+{
+"text": "혈소판 270 x10^3/uL, 출혈 소견 없고 멍도 없음 (오늘 검사).",
+"field": "platelets",
+"value": 270,
+"unit": "x10^3/uL"
+},
+{
+"text": "Creatinine 0.7 mg/dL - no renal impairment, denies dysuria, labs from this morning.",
+"field": "creatinine",
+"value": 0.7,
+"unit": "mg/dL"
+},
+{
+"text": "No jaundice, no pruritus; total bilirubin today 0.4 mg/dL.",
+"field": "total bilirubin",
+"value": 0.4,
+"unit": "mg/dL"
+},
+{
+"text": "알부민 4.3 g/dL로 정상, 부종 없음 and no ascites on exam today.",
+"field": "albumin",
+"value": 4.3,
+"unit": "g/dL"
+},
+{
+"text": "Afebrile, no infection signs. WBC 6.7 x10^9/L measured this morning.",
+"field": "white blood cell count",
+"value": 6.7,
+"unit": "x10^9/L"
+},
+{
+"text": "No neutropenia: ANC 3900 /uL on today's differential.",
+"field": "absolute neutrophil count",
+"value": 3900,
+"unit": "/uL"
+},
+{
+"text": "No iron overload; ferritin 120 ng/mL (this week's draw).",
+"field": "ferritin",
+"value": 120,
+"unit": "ng/mL"
+},
+{
+"text": "No symptoms, no restriction in activity at today's visit: ECOG 0.",
+"field": "ecog",
+"value": 0,
+"unit": null
+},
+{
+"text": "고령 아님, 거동 문제 없음. 환자 나이 47세.",
+"field": "age",
+"value": 47,
 "unit": "years"
 }
 ]

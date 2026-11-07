@@ -55,7 +55,7 @@ _TOPIC = {"age": re.compile(r"나이|연세|연령|몇\s*살|\bage\b|how old", r
 _SEX_QUESTION = re.compile(r"성별|남성.{0,6}여성|여성.{0,6}남성|남자.{0,6}여자|여자.{0,6}남자|\b(?:sex|gender)\b|male or female", re.IGNORECASE)
 _BARE_SEX = {"f": "female", "m": "male", "여": "female", "남": "male"}
 _LAB_KO = {"hemoglobin": ["혈색소", "헤모글로빈"], "platelets": ["혈소판"], "absolute neutrophil count": ["호중구"],
-           "white blood cell count": ["백혈구"], "creatinine": ["크레아티닌"], "total bilirubin": ["빌리루빈", "총빌리루빈", "t.bil", "t-bil", "t bil", "t bili", "tbil", "bilirubin"],
+           "white blood cell count": ["백혈구"], "creatinine": ["크레아티닌"], "total bilirubin": ["빌리루빈", "총빌리루빈", "t.bil", "t.bili", "t-bil", "t bil", "t bili", "tbil", "bilirubin"],
            "albumin": ["알부민"], "creatinine clearance": ["크레아티닌 청소율"], "lvef": ["박출률", "구혈률"],
            "potassium": ["칼륨"], "sodium": ["나트륨"], "calcium": ["칼슘"], "magnesium": ["마그네슘"], "glucose": ["혈당"],
            "procalcitonin": ["프로칼시토닌", "pct"], "ferritin": ["페리틴", "fer"]}
@@ -125,14 +125,17 @@ _RETRACTED = re.compile(r"틀[렸린림]|잘못\s*(?:말|적|기록|입력|알|�
                         r"\b(?:incorrect|wrong|erroneous|mistaken|typo|in\s+error|retract\w*)\b", re.IGNORECASE)  # 같은 문장의 값 뒤: 절이 바뀌어도 철회임
 _DENIED_AFTER = re.compile(r"\s*(?:세|살)?\s*(?:가|이|은|는|라는\s*뜻은)?\s*(?:아님|아니|아닌|아닙)")  # 나이·성별·ECOG: 값 바로 뒤의 부정만
 _DENIED_BEFORE = re.compile(r"\bnot\s+(?:an?\s+)?$", re.IGNORECASE)
-_PAST = re.compile(r"\b(?:previous|prior|former|old|last\s+(?:week|month|year|admission|visit|encounter|annual)|\d+\s*(?:days?|weeks?|months?|years?)\s+ago)\b|과거|이전|지난|\d+\s*(?:일|주|개월|달|년)\s*전", re.IGNORECASE)
-_OTHER_PERSON = (r"아버지|아버님|어머니|어머님|부친|모친|엄마|아빠|부모|남편|아내|배우자|형제|자매|보호자|파트너|공여|기증자|헌혈자|제공자|타인|동명이인|가족(?!력|사)|(?:다른|옆|타)\s*(?:환자|사람)|"
+_PAST = re.compile(r"\b(?:previous|previously|prior|former|old|last\s+(?:week|month|year|admission|visit|encounter|annual)|\d+\s*(?:days?|weeks?|months?|years?)\s+ago)\b|과거|이전|지난|\d+\s*(?:일|주|개월|달|년)\s*전", re.IGNORECASE)
+_OTHER_PERSON = (r"아버지|아버님|어머니|어머님|부친|모친|엄마|아빠|부모|남편|아내|배우자|형제|자매|보호자|파트너|공여|기증자|헌혈자|제공자|타인|동명이인|가족(?!력|사)|(?:다른|옆|타)\s*(?:침대|병상|환자|사람)|간호사|담당의|주치의|"
                  r"(?<![가-힣])(?:딸|아들|동생|언니|오빠|누나|삼촌|이모|고모|할머니|할아버지|친구|장인|장모|사위|며느리|조카)|(?<![가-힣a-z0-9])형(?=의|\s)|"
-                 r"\b(?:donor|roommate|bedmate|neighbou?r|index\s+case|father|mother|mom|dad|parents?|spouse|husband|wife|partner|sibling|brother|sister|son|daughter|child(?!\s*-?\s*pugh)|"
+                 r"\b(?:donor|nurse|roommate|bedmate|neighbou?r|index\s+case|father|mother|mom|dad|parents?|spouse|husband|wife|partner|sibling|brother|sister|son|daughter|child(?!\s*-?\s*pugh)|"
                  r"aunt|uncle|cousin|niece|nephew|friend|grand(?:mother|father)|family(?!\s+history)|(?:another|other)\s+(?:patient|person))\b")
 _ABOUT_OTHER = re.compile(_OTHER_PERSON, re.IGNORECASE)
 _NEXT_TO_OTHER = re.compile(rf"(?:\s*(?:세|살|-?old|years?\s+old|남성|여성|남자|여자|male|female))*\s*(?:{_OTHER_PERSON})", re.IGNORECASE)  # 값 바로 뒤: "남성 보호자", "62세 아버지", "62-year-old female donor"
-_OF_OTHER = re.compile(rf"(?:{_OTHER_PERSON})(?:의|는|은|가|이|'s)?[\s,]*(?:나이|연령|성별|\bage[d]?\b|\bis\b|\bwas\b|:)?\s*(?:는|은|가|이|of)?\s*$", re.IGNORECASE)  # 값 바로 앞
+_OF_OTHER = re.compile(rf"(?:{_OTHER_PERSON})(?:\s*(?:본인|자신))?(?:의|는|은|가|이|'s)?[\s,(]*(?:나이|연령|성별|\bage[d]?\b|\bis\b|\bwas\b|:)?\s*(?:는|은|가|이|of)?\s*$", re.IGNORECASE)  # 값 바로 앞
+_HEARSAY = re.compile(rf"\b(?:per|according\s+to)\s+(?:the\s+|her\s+|his\s+|my\s+|their\s+)?(?:{_OTHER_PERSON})|(?:{_OTHER_PERSON})\s*(?:의\s*)?말(?:로는|씀으로는|에\s*따르면)", re.IGNORECASE)  # 나이·ECOG를 다른 사람의 말로만 전함
+_NOT_AGE = re.compile(r"\b(?:bone|gestational|mental|skeletal|biological)\s+(?:age\s*)?$|골\s*연령\s*$", re.IGNORECASE)  # 달력 나이가 아님
+_STATED_ONLY = re.compile(r"\b(?:temporarily|system\s+shows?|typo)\b|임시|오타", re.IGNORECASE)
 _SEX_OF_OTHER = re.compile(r"\s*(?:친구|간호사|의사|교수|선생|호르몬|\b(?:nurse|physician|doctor|friend|hormones?)\b)", re.IGNORECASE)  # 성별 단어가 환자를 가리키지 않음
 _NOT_STATED_BEFORE = re.compile(r"(?:\b(?:target|goal|if|unless|assuming|when|at\s+least|at\s+most|over|under|required?)\b|목표|만약|정상|[<>≤≥]=?)\s*$", re.IGNORECASE)
 _NOT_STATED_AFTER = re.compile(r"\s*(?:세|살)?\s*(?:이|가|으로|로|을|를)?\s*(?:목표|되면|이면|라면|[일인]\s*(?:경우|때)|필요|되어야|대상)|"
@@ -149,7 +152,7 @@ _STATUS = re.compile(
     r"결과\s*(?:가|는)?\s*(?:대기|안\s*나|아직)|대기\s*(?:중|상태)|(?<![가-힣])대기(?![가-힣])|(?:판독|분석|처리)\s*중|"  # 결과 전
     r"보류|미정|요망|펜딩|팬딩|(?:환자|본인)\s*(?:의\s*)?(?:값|수치)\s*(?:이|가)?\s*아|"
     r"복사|붙여\s*넣|자동\s*입력|기본값|이월|\b(?:copied|carr(?:y|ied)[\s-]+forward|copy[\s-]+forward|auto-?(?:populated|filled)|pre-?(?:filled|populated)|template)\b|"  # 측정이 아니라 옮겨 적은 값
-    r"폐기|무효|취소|용혈(?!성)|부적합|오류|신뢰\s*불가|혼입|입력값|검체\s*(?:오염|응고|바뀜|뒤바뀜|혼동|부족|불량|분실|누락)|(?:오염|응고)된?\s*검체|"  # 무효
+    r"폐기|무효|취소|부정확|용혈(?!성)|부적합|오류|신뢰\s*불가|혼입|입력값|검체\s*(?:오염|응고|바뀜|뒤바뀜|혼동|부족|불량|분실|누락)|(?:오염|응고)된?\s*검체|"  # 무효
     r"\b(?:pending|awaiting|awaited|in\s+progress|unable|insufficient|cancell?ed|mislabell?ed|spurious|artifact\w*|artefact\w*|factitious|tbd|to\s+be\s+(?:confirmed|determined)|unreliable|"
     r"not\s+(?:yet\s+)?(?:done|run|performed|measured|assessed|evaluated|obtained|tested|rechecked|repeated|drawn|resulted|reported|back|available|valid|reliable)|wrong\s+(?:chart|patient|sample)|"
     r"invalid|void(?:ed)?|disregard\w*|lost|discarded|rejected|hemoly[sz]ed|hemolysis|clotted|contaminated|qns|error|erroneous)\b", re.IGNORECASE)
@@ -166,25 +169,27 @@ _OTHER_SUBJECT = re.compile(r"배양|병리|조직|생검|유전자|영상|초�
 _CONJUNCTION = re.compile(r"\b(?:and|plus|with)\b|[&+]|이고|이며|및|그리고|하고", re.IGNORECASE)
 _MARK_NEGATED_AFTER = re.compile(r"\s*(?:항목|사항|건|내역|소견|의심|징후|흔적|증거)?\s*(?:은|는|이|가)?\s*(?:없|아님|아니|않)")
 _MARK_NEGATED_BEFORE = re.compile(r"(?:\b(?:no|non|not|without|never)[\s-]*(?:[a-z]+\s+)?|(?<![가-힣])비)$", re.IGNORECASE)
-_SUPERSEDED = re.compile(r"재검|재측정|재채혈|회신|완료|보고됨|(?<!안\s)(?<!안)나옴|수정\s*후|(?:^|\s)후(?=\s)|\b(?:repeat|recheck\w*|redraw\w*|resulted|reported|completed?)\b", re.IGNORECASE)  # 표지 뒤에 결과가 나옴
+_SUPERSEDED = re.compile(r"재검|재측정|재채혈|회신|완료|보고됨|(?<!안\s)(?<!안)나옴|수정\s*후|(?:^|\s)후(?=\s)|\b(?:repeat|recheck\w*|redraw\w*|recollect\w*|retest\w*|rerun|resulted|reported|completed?)\b", re.IGNORECASE)  # 표지 뒤에 결과가 나옴
 _PANEL = re.compile(r"\b(?:cbc|labs?|blood\s*(?:work|tests?))\b|혈액\s*검사|피\s*검사", re.IGNORECASE)  # 수치가 속한 묶음 검사
+_PAREN_AFTER = re.compile(r"\s*[^\s,;()가-힣]*\s*\([^)]*\)")  # "Hgb 10.4 g/dL (04/2023, prior admission)"
 _PAREN = re.compile(r"\([^)]*\)")  # 괄호 안의 사유는 주어가 아님: "검사 미시행 (응급 수술로 생략)"
-_UNIT = r"(?:g/?dl|mg/?dl|[a-zµ]{0,3}/[a-zµ]{1,3}|%|세|살)?"
+_UNIT = r"(?:[^\s,;()가-힣]*[/%][^\s,;()가-힣]*|세|살)?"
 _VALUE_DATE = r"(?:\s*(?:on|at|dated)\s+\S+|\s*\([^)]*\))?"  # "Hb 12 on 2026-09-01 belongs to ..."
 _VALUE_SUBJECT_KO = re.compile(rf"\s*{_UNIT}{_VALUE_DATE}\s*(?:은|는|이|가|을|를|라고|라는|란)(?![가-힣])", re.IGNORECASE)  # "이고", "입니다"는 서술어
 _VALUE_SUBJECT_EN = re.compile(rf"\s*{_UNIT}{_VALUE_DATE}\s*(?:is|was|are|were|belongs?|comes?|came|refers?|appears?|seems?|looks?|represents?|reflects?)\b", re.IGNORECASE)
 _VALUE_AFFIRMED = re.compile(r"유효|현재|정상|측정|확인|확정|결과|최종|나[왔온]|들었|들음|검증|본인|"
                              r"\b(?:normal|within|stable|verified|confirmed|valid|final|current|measured|drawn|resulted|reported|obtained|today|this|on|low|high)\b", re.IGNORECASE)
 _VALUE_SLOT = re.compile(rf"\s*{_UNIT}\s*(?:항목|칸|란|필드|자리|\b(?:field|entry|slot|box|placeholder|template|default)\b)", re.IGNORECASE)  # 결과가 아니라 칸을 말함
+_DIRECT_BILI = re.compile(r"(?:직접|간접|결합|\b(?:direct|indirect|conjugated|d-?bil\w*))\s*(?:빌리루빈|bilirubin)?[^,;.]{0,8}$", re.IGNORECASE)
 _CONDITIONAL_HEAD = re.compile(r"\b(?:if|assuming|supposing|provided\s+that)\b|만약|가령", re.IGNORECASE)
 _SAMPLE_WORD = re.compile(r"채혈|검체|샘플|튜브|오더|장비|기기|시행|자체|실측|\b(?:specimen|sample|tube|draw|order|analyzer|phlebotomy|log|ever|never|no|before|after|at|this|point|purely)\b", re.IGNORECASE)  # 검사 과정 낱말: 다른 대상이 아님
-_PROCESS_FAILED = re.compile(r"재(?:검|채혈|측정)\s*(?:필요|요망|권고)|\b(?:recheck|redraw|repeat)\s+(?:is\s+)?(?:needed|required)\b|\bnew\s+(?:tube|sample|specimen)\s+sent\b|(?:채혈|검체\s*채취|시행|측정)[^,;.]{0,6}(?:안\s*(?:함|했|됨|된)|못|거부|실패)|(?:draw|venipuncture|phlebotomy|collection)\s+(?:was\s+)?(?:refused|failed|missed|cancell?ed|unsuccessful)|"
+_PROCESS_FAILED = re.compile(r"\bno\s+longer\s+(?:current|valid)\b|\boutdated\b|(?:채혈|측정|시행|검사)\s*(?:을|를)?\s*(?:하지|되지)\s*않|\bno\s+(?:sample|specimen|draw|result)\b(?!\s+(?:problems?|issues?|errors?))|재(?:검|채혈|측정)\s*(?:필요|요망|권고)|\b(?:recheck|redraw|repeat)\s+(?:is\s+)?(?:needed|required)\b|\bnew\s+(?:tube|sample|specimen)\s+sent\b|(?:채혈|검체\s*채취|시행|측정)[^,;.]{0,6}(?:안\s*(?:함|했|됨|된)|못|거부|실패)|(?:draw|venipuncture|phlebotomy|collection)\s+(?:was\s+)?(?:refused|failed|missed|cancell?ed|unsuccessful)|"
                              r"\b(?:lab|labs|test|cbc|blood\s*work)\s+(?:was\s+|were\s+)?(?:not|never)\s+(?:run|done|drawn|sent|performed)\b", re.IGNORECASE)  # 검사 과정 자체가 없었음: 사유 낱말이 있어도 다른 대상이 아님
-_RESULT_VOID = re.compile(r"(?:결과|값|수치|\bresult|\bvalue)\s*(?:은|는|이|가|을|를)?\s*(?:무효|폐기|취소|rejected|voided|invalid|discarded)", re.IGNORECASE)  # 사유가 어떤 말이든 결과 자체를 버림
+_RESULT_VOID = re.compile(r"(?:결과|값|수치|검체(?:로)?|샘플(?:로)?|\bresult|\bvalue|\bsample|\bspecimen)\s*(?:은|는|이|가|을|를)?\s*(?:무효|폐기|취소|rejected|voided|invalid|discarded)", re.IGNORECASE)  # 사유가 어떤 말이든 결과 자체를 버림
 _ASSUMED = re.compile(r"가정|추정|추측|\b(?:assum\w*|presum\w*)\b", re.IGNORECASE)
 _EARLIER_SAMPLE = re.compile(r"첫|처음|먼저|앞선|전회|\b(?:first|earlier|initial)\b", re.IGNORECASE)
 _LABEL_MARK = re.compile(r"\s*[:：]")  # "Pending: procalcitonin"은 뒤가 주어
-_RETEST_VALUE = re.compile(r"(?:재검|재측정|재채혈|repeat)\s*(?:결과|검사|값|result|value)?\s*(?:는|은|이|가|:)?\s*$|[:：]\s*$", re.IGNORECASE)  # 재검 값, "... resulted: 2.6"
+_RETEST_VALUE = re.compile(r"(?:재검|재측정|재채혈|repeat)\s*(?:결과|검사|값|result|value)?\s*(?:는|은|이|가|:)?\s*$|(?<!\d)[:：=]\s*$", re.IGNORECASE)  # 재검 값, "... resulted: 2.6"
 _BACK_REFERENCE = re.compile(r"(?:위|해당|상기|앞선?|그|이)\s*(?:검체|결과|검사|수치|값|샘플)|실제(?:로)?\s*(?:측정|검사|시행|채혈)|\b(?:that|this|the|above)\s+(?:result|sample|specimen|value|test)\b", re.IGNORECASE)
 
 
@@ -286,6 +291,11 @@ def _ecog_unassessed(text: str, hi: int) -> bool:
     return any(_ECOG_NAME.search(text[a:b]) and _live_marks(text[a:b], _STATUS) and not _ECOG_VALUE.search(text[a:b]) for a, b in _clause_spans(text))
 
 
+def _other_variant(sentence: str, lo: int, key: str | None) -> bool:
+    """수식어가 다른 검사를 가리키는가: "직접 빌리루빈 3.2"는 총빌리루빈이 아님."""
+    return key == "total bilirubin" and bool(_DIRECT_BILI.search(sentence[:lo]))
+
+
 def _value_is_subject(after: str) -> bool:
     """수치가 보고된 결과가 아니라 서술 대상인가: 칸 이름이거나, 값이 주어인데 측정을 긍정하는 서술이 없음."""
     if _VALUE_SLOT.match(after):
@@ -304,16 +314,19 @@ def _no_result(before: str, after: str, key: str | None) -> bool:
 def _role(text: str, lo: int, hi: int, key: str | None = None) -> str | None:
     """검사 수치의 역할: 'measured', 'past', 측정값이 아니면 None."""
     before, after = _clause_around(text, lo, hi)
-    if _CONDITIONAL_HEAD.search(text[:lo]) or _ASSUMED.search(after) or _no_result(before, after, key) or _REFERENCE_BEFORE.search(before) or _COMPARE_BEFORE.search(before) or _COMPARE_AFTER.match(after) or _NEGATED_BEFORE.search(before) \
+    if _CONDITIONAL_HEAD.search(text[:lo]) or _ASSUMED.search(after) or _other_variant(text, lo, key) or _no_result(before, after, key) or _REFERENCE_BEFORE.search(before) or _COMPARE_BEFORE.search(before) or _COMPARE_AFTER.match(after) or _NEGATED_BEFORE.search(before) \
             or (_NEGATED_AFTER.match(after) and not _CLEAN_AFTER.match(after)) \
             or _WHEN_BEFORE.search(before) or _WHEN_AFTER.match(after) or _retracted(text, hi):
         return None
-    return "past" if _PAST.search(before + " " + after) else "measured"
+    note = _PAREN_AFTER.match(text, hi)
+    return "past" if _PAST.search(before + " " + after) or (note and _PAST.search(note.group())) else "measured"
 
 
 def _about_patient(field: str, text: str, lo: int, hi: int) -> bool:
     """나이·성별·ECOG 값이 환자에 대한 긍정 진술인가. 같은 절의 다른 내용은 보지 않고 값에 붙은 표지만 봅니다."""
     before, after = _clause_around(text, lo, hi)
+    if field != "sex" and (_HEARSAY.search(text[:hi]) or _HEARSAY.search(after)):
+        return False
     if _DENIED_AFTER.match(after) or _DENIED_BEFORE.search(before) or _NEXT_TO_OTHER.match(after) or _OF_OTHER.search(text[:lo]) or _retracted(text, hi):  # 쉼표 너머도 봄: "Her sister, age 41"
         return False
     if field == "sex":
@@ -323,6 +336,8 @@ def _about_patient(field: str, text: str, lo: int, hi: int) -> bool:
     if _INSTITUTION.search(before + " " + after) or _status_marked(before + text[lo:hi], after, adjacent=field == "age"):  # 이름과 값 사이도 봄: "ECOG 미측정 1"
         return False
     if field == "ecog" and any(_points_back(text[a:b]) and not _other_subject(text[a:b], None) for a, b in _clause_spans(text) if a >= hi):
+        return False
+    if field == "age" and (_NOT_AGE.search(before[-16:]) or _STATED_ONLY.search(before + " " + after)):
         return False
     return not (_NOT_STATED_BEFORE.search(before) or _NOT_STATED_AFTER.match(after) or _COMPARE_INSIDE.search(text[lo:hi])
                 or _COMPARE_AFTER.match(after))
@@ -606,8 +621,8 @@ def ground_lab(lab: str, value, quote: str | None, source_text: str | None, *, k
             if not (h.lo <= lo and hi <= h.hi) or float(number) != float(value) or not _same_unit(body, hi, unit) \
                     or not _same_date(body, lo, hi, stated_date):
                 continue
-            if role == "past" and has_current:
-                continue
+            if role == "past":
+                continue  # 과거로 표시된 값은 현재 값의 근거가 아님 (현재 값이 없으면 보류)
             if h.seg.role == "record" and not any(float(x[2]) == float(value) for x in in_record):
                 continue  # 다음 줄의 무효 선언은 구간 안에서 보이지 않음: 기록 전체로 본 결과를 따름
             if _uncertain(body, lo, hi) if h.seg.role == "answer" else ed.hedged(ed._clause(body, lo, hi)):
