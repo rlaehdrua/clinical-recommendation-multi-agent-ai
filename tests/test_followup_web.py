@@ -83,3 +83,18 @@ def test_staff_screen_moves_match_server_transitions():
     assert {k: {s: sorted(v) for s, v in d.items()} for k, d in moves.items()} == server
     done = {"answered", "document_verified", "clinician_decided"}
     assert not any(t in done for d in moves.values() for v in d.values() for t in v)  # 완료 입력 버튼 없음
+
+
+def test_demo_default_path_is_followup():
+    """최종 데모 경로 통일 (docs/dev/web_demo_flow.md): 환자 화면 기본 = 연구진 확인 요청(/api/followup), 바로 분석(/api/runs)은 선택."""
+    index = (STATIC / "index.html").read_text(encoding="utf-8")
+    checked = re.search(r'name="flow-mode" value="(\w+)" checked', index)
+    assert checked and checked.group(1) == "followup"
+    assert 'id="fu-setup" hidden' not in index
+
+
+def test_staff_queue_can_send_and_marks_unconfirmed_states():
+    src = _js("staff.js")
+    assert "data-qsend" in src and "queueSend" in src
+    for status in ("VERIFICATION_PENDING", "EXPERT_REVIEW"):
+        assert re.search(status + r': "미확정', src), status

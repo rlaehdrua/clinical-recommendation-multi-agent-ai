@@ -80,7 +80,7 @@ async function fuShow(view, focus) {
   const v = view.view || {};
   state.sent = null;
   showResult({ result: v.result, display: v.display, trials: v.trials, match_note: v.match_note, report: v.report });
-  lockInput(true); $("#start").textContent = "연구진 확인 진행 중"; $("#progress-panel").hidden = true;
+  lockInput(true); fuLock(true); $("#start").textContent = "연구진 확인 진행 중"; $("#progress-panel").hidden = true;
   setRunState(view.pending_requests ? `연구진 요청 ${view.pending_requests}건` : "연구진 확인 대기", view.pending_requests ? "warn" : "");
   $("#fu-panel").hidden = false;
   await fuLoadRequests();
@@ -167,13 +167,15 @@ function fuPoll() {
   clearInterval(fu.timer);
   fu.timer = setInterval(() => { if (document.visibilityState === "visible" && !fu.sending) fuRefresh(false); }, FU_POLL_MS);
 }
+function fuLock(on) { document.querySelectorAll('input[name="flow-mode"], #fu-trials input').forEach(i => { i.disabled = on; }); }
 window.fuForget = function () {
-  clearInterval(fu.timer); fu.timer = null; fu.caseId = null; fu.revision = 0; fuSet(FU_KEY, null);
+  fuLock(false); clearInterval(fu.timer); fu.timer = null; fu.caseId = null; fu.revision = 0; fuSet(FU_KEY, null);
   $("#fu-panel").hidden = true; $("#fu-body").innerHTML = "";
   setTimeout(fuOnMode, 0);  // newRun이 입력을 다시 연 뒤 버튼 문구를 맞춤
 };
 window.fuInit = async function () {
   document.querySelectorAll('input[name="flow-mode"]').forEach(r => r.addEventListener("change", fuOnMode));
+  fuOnMode();  // 데모 기본 경로 = 연구진 확인 요청 (/api/followup). 바로 분석(/api/runs)은 선택 사항
   $("#fu-refresh").addEventListener("click", () => fuRefresh(true));
   $("#fu-body").addEventListener("click", (e) => {
     const box = e.target.closest(".fu-req"); if (!box) return;

@@ -20,6 +20,9 @@ const GAP = { missing: "정보 없음", stale: "검사 오래됨", unverified: "
 // 추천 화면 표시 상태 (app.js STATUS와 같은 표기)
 const MATCH = { CRITERIA_MATCH: ["ok", "공개 기준 충족"], POTENTIAL_MATCH: ["warn", "기록 확인 시 충족 가능"], NEEDS_REVIEW: ["warn", "의료진 검토 필요"],
   INSUFFICIENT_INFORMATION: ["warn", "추가 정보 필요"], CRITERIA_MISMATCH: ["bad", "공개 기준 불충족"], NOT_EVALUATED: ["warn", "평가 안 됨"] };
+// 확정이 아닌 상태의 뜻 (서류·의료진 확인 전에는 확정으로 보이지 않게)
+const UNCONFIRMED = { VERIFICATION_PENDING: "미확정 · 기록·서류 확인 전", EXPERT_REVIEW: "미확정 · 의료진 판단 전 (입력 기능 없음)",
+  INFO_MISSING: "미확정 · 정보 부족", BLOCKED_FAILURE: "미확정 · 확보 수단 소진", NOT_EVALUATED: "미확정 · 평가 근거 부족" };
 const KIND = { ask_patient: "환자 질문", document_review: "서류 확인", clinician_review: "의료진 판단", conflict_resolution: "상충 확인" };
 const ACTION = { ASK_PATIENT: "환자 질문", REQUEST_DOCUMENT: "서류 요청", VERIFY_RECORD: "기록 확인", CLINICIAN_REVIEW: "의료진 판단" };
 const REQ = {
@@ -76,18 +79,21 @@ function logout() {
 // ------------------------------------------------------------ 사례 목록·대기열
 async function loadLists() {
   const [cases, queue] = await Promise.all([api("/cases"), api("/queue")]);
-  const list = [...cases.cases].sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
-  $("#cases").innerHTML = list.length ? list.map(c => `<button class="case-item${c.case_id === S.caseId ? " on" : ""}" type="button" data-case="${esc(c.case_id)}">
-      <span class="cid">${esc(shortId(c.case_id))}</span> ${c.synthetic ? '<span class="badge demo">가상</span>' : ""}
+  const list = [...cases.cases].sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)) || String(a.case_id).localeCompare(String(b.case_id)));  // 같은 초면 ID 순 (번호가 흔들리지 않게)
+  $("#cases").innerHTML = list.length ? list.map((c, i) => `<button class="case-item${c.case_id === S.caseId ? " on" : ""}" type="button" data-case="${esc(c.case_id)}">
+      <span class="cid">환자 ${esc(list.length - i)}</span> <span class="mono">${esc(shortId(c.case_id))}</span> ${c.synthetic ? '<span class="badge demo">가상</span>' : ""}
       ${c.open_requests ? `<span class="badge warn">열린 요청 ${esc(c.open_requests)}</span>` : ""}<br>
       <span class="hint">${when(c.created_at)} · 개정 ${esc(c.revision)}</span><br>
       ${Object.entries(c.pair_counts || {}).map(([k, n]) => `${badge(PAIR, k)} ${esc(n)}`).join(" ")}</button>`).join("")
     : '<div class="empty">아직 사례가 없습니다. 환자 화면에서 "연구진 확인 요청"으로 시작하면 여기에 나타납니다.</div>';
   const items = queue.items || [];
-  $("#queue").innerHTML = items.length ? `<p class="hint m0">여러 사례에 걸친 확인 순서 (C 순서, 안전 필수 먼저).</p><table class="list"><thead><tr><th>#</th><th>사례</th><th>확인</th><th>상태</th></tr></thead><tbody>
-    ${items.map(x => `<tr><td>${esc(x.rank)}</td><td><button class="link" type="button" data-case="${esc(x.case_id)}">${esc(shortId(x.case_id))}</button></td>
+  const label = Object.fromEntries(list.map((c, i) => [c.case_id, `환자 ${list.length - i}`]));  // 생성 순서 번호 (화면 표시용)
+  $("#queue").innerHTML = items.length ? `<p class="hint m0">열린 사례 ${esc(queue.cases)}명을 한 코호트로 본 확인 순서 (Cohort C, 안전 필수 먼저).
+      같은 예산이면 위에서부터 확인합니다.</p><span class="err" id="queue-err" role="alert"></span><table class="list"><thead><tr><th>#</th><th>환자</th><th>확인</th><th>상태</th></tr></thead><tbody>
+    ${items.map(x => `<tr><td>${esc(x.rank)}</td><td><button class="link" type="button" data-case="${esc(x.case_id)}">${esc(label[x.case_id] || shortId(x.case_id))}</button></td>
       <td>${esc(ACTION[x.action_type] || x.action_type)} · <span class="mono">${esc(x.info_key || "")}</span>${x.safety_required ? ' <span class="badge bad">안전 필수</span>' : ""}</td>
-      <td>${x.request_status ? badge(REQ, x.request_status) : '<span class="hint">요청 전</span>'}</td></tr>`).join("")}</tbody></table>`
+      <td>${x.request_status ? badge(REQ, x.request_status) : x.route ? `<button class="btn soft sm" type="button" data-qsend="${esc(x.proposal_id)}" data-qcase="${esc(x.case_id)}">요청 보내기</button>`
+        : '<span class="hint">요청 경로 없음</span>'}</td></tr>`).join("")}</tbody></table>`
     : '<div class="empty">대기열이 비어 있습니다.</div>';
 }
 
@@ -117,7 +123,8 @@ function pairRows(d) {
     const r = shown[tid];
     const recTxt = r ? `${(rec.recommended || []).some(x => x.trial_id === tid) ? `<span class="badge ok">추천${r.rank ? ` ${esc(r.rank)}위` : ""}</span> ` : ""}${badge(MATCH, r.match_status)}`
       : excluded.has(tid) ? '<span class="badge muted">추천 제외</span>' : '<span class="hint">-</span>';
-    return `<tr><td class="mono">${esc(tid)}</td><td>${badge(PAIR, p.status)}</td>
+    const unconfirmed = UNCONFIRMED[p.status];
+    return `<tr><td class="mono">${esc(tid)}</td><td>${badge(PAIR, p.status)}${unconfirmed ? `<br><span class="hint">${esc(unconfirmed)}</span>` : ""}</td>
       <td>${(p.pending_kinds || []).map(k => `<span class="badge">${esc(GAP[k] || k)}</span>`).join(" ") || '<span class="hint">없음</span>'}</td><td>${recTxt}</td></tr>`;
   }).join("");
 }
@@ -192,6 +199,14 @@ async function sendRequests() {
     if (e.status === 409) await openCase(S.caseId);
   } finally { S.busy = false; }
 }
+async function queueSend(btn) {
+  btn.disabled = true; S.busy = true;
+  try {
+    const out = await api(`/cases/${encodeURIComponent(btn.dataset.qcase)}/requests`, { proposal_ids: [btn.dataset.qsend] });
+    await loadLists(); if (S.caseId === btn.dataset.qcase) await openCase(S.caseId);
+    $("#queue-err").textContent = out.created.length ? "요청을 보냈습니다." : "이미 보낸 요청입니다.";  // 목록을 다시 그린 뒤 (안내 칸도 새로 만들어짐)
+  } catch (e) { const el = $("#queue-err"); if (el) el.textContent = e.message; btn.disabled = false; } finally { S.busy = false; }
+}
 async function move(rid, status) {
   S.busy = true;
   try {
@@ -223,6 +238,7 @@ function init() {
   $("#reload").addEventListener("click", async () => { try { await loadLists(); if (S.caseId) await openCase(S.caseId); } catch (e) { setConn(e.message, "bad"); } });
   $("#tab-cases").addEventListener("click", () => tab("cases")); $("#tab-queue").addEventListener("click", () => tab("queue"));
   document.querySelector(".staff-grid").addEventListener("click", (e) => {
+    const q = e.target.closest("[data-qsend]"); if (q) { queueSend(q); return; }
     const c = e.target.closest("[data-case]"); if (c) { openCase(c.dataset.case, true); return; }
     if (e.target.closest("#send")) { sendRequests(); return; }
     if (e.target.closest("#insp")) { inspector(); return; }
