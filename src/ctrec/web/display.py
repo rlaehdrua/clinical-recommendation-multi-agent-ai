@@ -47,7 +47,7 @@ def exclusion_kind(m, trial: dict | None, recommended: set[str]) -> str | None:
     if trial is None:
         return "unknown"
     if m.eligibility == "NOT_EVALUATED":
-        return "not_evaluated"
+        return "needs_review" if m.evaluation_error in matcher.NO_EVIDENCE_CODES else "not_evaluated"
     if not is_open(trial):
         return "closed"
     if is_demo(trial) and not config.DEMO_MODE:
@@ -125,8 +125,11 @@ def redact_errors(result: dict) -> dict:
     rec = result.get("recommendation")
     if rec and failed:
         rec = dict(rec)
-        rec["excluded"] = [{**x, "reason": f"{_not_evaluated_cause(failed[x['trial_id']])} 적격 여부를 판정하지 못함(부적격 아님) - 재평가 또는 담당자 확인 필요. 원인: {failed[x['trial_id']]}"}
-                           if x.get("trial_id") in failed else x for x in rec.get("excluded") or []]
+        def reason(kind: str) -> str:
+            step = "담당자 확인 필요" if kind in matcher.NO_EVIDENCE_CODES else "재평가 또는 담당자 확인 필요"
+            return f"{_not_evaluated_cause(kind)} 적격 여부를 판정하지 못함(부적격 아님) - {step}. 원인: {kind}"
+        rec["excluded"] = [{**x, "reason": reason(failed[x["trial_id"]])} if x.get("trial_id") in failed else x
+                           for x in rec.get("excluded") or []]
         out["recommendation"] = rec
     return out
 

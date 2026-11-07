@@ -30,6 +30,7 @@ class PairState:
     gaps: frozenset[str] = frozenset()
     pending_kinds: frozenset[str] = frozenset()  # 0.2: 남은 작업 전체 (status는 우선순위 하나만)
     mismatch: str | None = None  # 기존 decision_state 불충족 확정 수준 (none/provisional/confirmed)
+    review_code: str | None = None  # NOT_EVALUATED가 평가 실패가 아니라 판정할 기준이 없어서일 때의 사유 코드
 
 
 @dataclass(frozen=True)
@@ -150,7 +151,7 @@ def _pair_states(alias: str, st: DecisionState, ops: OpsState,
                              t.mismatch))
     for tid in sorted(st.not_evaluated_trials):
         out.append(PairState(PairKey(patient_alias=alias, trial_id=tid), PairStatus.NOT_EVALUATED, "NOT_EVALUATED",
-                             True))
+                             True, review_code=st.no_required_trials.get(tid)))
     return tuple(out)
 
 

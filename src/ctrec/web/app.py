@@ -35,6 +35,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response, StreamingRes
 from pydantic import BaseModel, Field
 
 from .. import DISCLAIMER, config, llm, web_metering
+from ..agents import matcher
 from ..agents.recommender import is_open, screen_pool
 from ..orchestrator import Orchestrator
 from ..pipeline import PatientCase, Session, load_patients
@@ -339,7 +340,10 @@ _TRACE_DROP = frozenset({"profile", "screening", "assessments", "evaluation_erro
 
 
 def _client_record(rec: dict) -> dict:
+    code = rec.get("evaluation_error")  # 오류 원문은 보내지 않고, 고정 사유 코드만 진행 카드 문구에 씀
     rec = {k: v for k, v in rec.items() if k not in _TRACE_DROP}
+    if code in matcher.NO_EVIDENCE_CODES:
+        rec["review_code"] = code
     if (rec.get("agent"), rec.get("event")) not in _ERROR_TRACES:
         return rec
     kind = str(rec.get("message", "")).split("(", 1)[0].split(":", 1)[0].strip() or "Error"

@@ -408,6 +408,8 @@ CRITERIA_PARSE_EMPTY = "criteria_parse_empty"  # 원문·구조화 조건이 있
 NO_SOURCE_CRITERIA = "no_source_criteria"  # 원문에도 평가할 조건이 없음
 NO_REQUIRED_CRITERIA = "no_required_criteria"  # 적용 경로의 기준이 절차 기준뿐
 NO_APPLICABLE_CRITERIA = "no_applicable_criteria"  # 절차 외 기준이 있지만 이 환자에게 모두 해당 없음
+# 평가는 했으나 적격을 판단할 기준이 없는 경우: 평가 실패가 아니며 추천에서 빼고 담당자 확인으로 넘김 (P3 확정)
+NO_EVIDENCE_CODES = frozenset({NO_REQUIRED_CRITERIA, NO_APPLICABLE_CRITERIA})
 
 
 def _empty_criteria_code(trial: dict) -> str:
