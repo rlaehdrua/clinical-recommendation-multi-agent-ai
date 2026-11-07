@@ -18,6 +18,24 @@ USABLE = ("auto", "reviewed")  # 정답 계산에 쓰는 상태. draft·needs_re
 OVERRIDE_KEYS = {"field", "operator", "value", "unit"}
 LAB_AGE = "lab_age_days"  # 환자의 마지막 혈액검사가 며칠 전인지 (항상 공개). 기간 조건이 있는 검사 기준에만 쓰임
 
+# 임상의 판단이 필요한 슬롯 (단일 정의). 이 슬롯을 쓰는 기준은 값을 만들지 않고 정답·쌍 라벨도 만들지 않습니다.
+# - 접두어 judge.* : 현황판 web/cohort_board.EXPERT_SLOT_PREFIX와 같은 값 (tests/test_cohort_generator.py에서 일치 검사)
+# - EXPERT_SLOTS   : NSCLC 슬롯 후보표(data/nsclc/cohort/slot_candidates.csv)에서 adjudication_candidate=expert인 슬롯
+#                    (2026-11-07 결정: judge.* 접두어 ∪ 이 6개). 임상 검수로 바뀌면 여기만 고칩니다.
+EXPERT_SLOT_PREFIX = "judge."
+EXPERT_SLOTS = frozenset({"dx.disease_setting", "tx.recent_radiotherapy", "cm.cardiac", "other.tumor_tissue",
+                          "judge.life_expectancy", "judge.investigator_unsuitable"})
+
+
+def is_expert_slot(slot: str | None) -> bool:
+    return bool(slot) and (slot.startswith(EXPERT_SLOT_PREFIX) or slot in EXPERT_SLOTS)
+
+
+# 쌍 라벨: UNLABELED = 확정 라벨을 만들지 않음 (사유는 OraclePart.label_reasons)
+PairLabel = Literal["ELIGIBLE", "INELIGIBLE", "UNLABELED"]
+REASON_EXPERT = "expert_review"  # 임상의 판단 기준이 있음
+REASON_UNBOUND = "unbound_rules"  # 검수 전(미연결) 기준이 남음 - 충족으로 간주하지 않음
+
 
 # ---------------------------------------------------------------------------
 # 슬롯 사전
@@ -71,6 +89,10 @@ class Binding(BaseModel):
 
     def slots_used(self) -> list[str]:
         return ([self.slot] if self.slot else []) + [c.slot for c in self.also]
+
+    def needs_expert(self) -> bool:
+        """임상의 판단 슬롯을 하나라도 쓰는 기준 (주 슬롯·추가 조건 모두)."""
+        return any(is_expert_slot(s) for s in self.slots_used())
 
     @model_validator(mode="after")
     def _override_keys(self):
@@ -239,8 +261,9 @@ class PublicPatient(BaseModel):
 
 class PublicPart(BaseModel):
     trials: list[str]
-    rules: dict[str, list[RuleRef]]  # 시험 -> 정답 계산에 쓰는 기준
-    unbound_rules: dict[str, list[str]]  # 시험 -> 검수 전이라 정답에서 빠진 기준 (모두 충족으로 간주)
+    rules: dict[str, list[RuleRef]]  # 시험 -> 연결된 기준 (임상의 판단 기준 포함, 그 기준은 initial_holds가 항상 unknown)
+    unbound_rules: dict[str, list[str]]  # 시험 -> 검수 전이라 정답에서 빠진 기준 (충족으로 간주하지 않음 -> 쌍 라벨 없음)
+    expert_rules: dict[str, list[str]] = Field(default_factory=dict)  # 시험 -> 임상의 판단 기준 (값·정답 없음)
     enrollment_remaining: dict[str, int | None]
     sources: dict[str, EffectiveSource]
     budgets_min: list[int]
@@ -250,8 +273,13 @@ class PublicPart(BaseModel):
 
 class OraclePart(BaseModel):
     hidden: dict[str, dict[str, float | str]]  # 환자 -> 숨긴 슬롯의 실제 값
-    truth: dict[str, Holds]  # "환자|시험|기준" -> 실제 성립 여부 (yes/no)
-    pair_label: dict[str, Literal["ELIGIBLE", "INELIGIBLE"]]  # "환자|시험"
+    truth: dict[str, Holds]  # "환자|시험|기준" -> 실제 성립 여부 (yes/no). 임상의 판단 기준은 unknown (정답 없음)
+    pair_label: dict[str, PairLabel]  # "환자|시험"
+    label_reasons: dict[str, list[str]] = Field(default_factory=dict)  # UNLABELED 쌍 -> [expert_review, unbound_rules]
+    # INELIGIBLE은 미연결·판단 기준이 남아도 모든 OR 경로에서 불통과가 확인되면 허용 (2026-11-07 결정)
+    # 연결된 기준 중 임상의 판단 기준을 뺀 나머지만으로 본 OR 경로별 결과 (generate.label_pair).
+    # pass = 불통과 없음, or_partial = 일부 경로만 불통과, fail = 모든 경로 불통과 (fail이면 쌍 라벨 INELIGIBLE)
+    bound_result: dict[str, Literal["pass", "or_partial", "fail"]] = Field(default_factory=dict)
 
 
 class Cohort(BaseModel):
@@ -266,7 +294,8 @@ class Cohort(BaseModel):
     reference_date: str
     null: bool
     knobs: Knobs
-    unbound_policy: Literal["assume_pass"] = "assume_pass"
+    # assume_pass = 이전 형식(미연결 기준을 충족으로 간주, cohort-gen-1). unlabeled = 미연결 기준이 남은 쌍은 라벨 없음
+    unbound_policy: Literal["assume_pass", "unlabeled"] = "unlabeled"
     public: PublicPart
     oracle: OraclePart
 

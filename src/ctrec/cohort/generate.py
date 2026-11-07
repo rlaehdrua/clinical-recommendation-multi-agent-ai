@@ -4,7 +4,12 @@
 유효 소스(비용 이질성·묶음 knob 적용) -> public / oracle 분리.
 
 - 정답은 슬롯 사전에서 auto·reviewed 연결만으로 계산합니다. 검수 전 기준(unbound)은 정답에서 빠지며
-  '충족으로 간주'(assume_pass)하고 public.unbound_rules에 그대로 적어, 결과 해석에서 빠진 기준을 알 수 있게 합니다.
+  충족으로 간주하지 않습니다: 미연결 기준이 남은 쌍은 적격 라벨을 만들지 않고 UNLABELED(사유 unbound_rules)이며,
+  public.unbound_rules에 적습니다. (cohort-gen-1은 assume_pass로 충족 처리 -> 현황판 오확정의 원인이었음)
+- 임상의 판단 기준(spec.is_expert_slot 슬롯을 쓰는 연결)은 값을 뽑지 않고 정답도 만들지 않습니다(truth·initial_holds
+  = unknown). 공개 결측률과 무관하게 값이 공개되지 않으며, 그 쌍은 UNLABELED(사유 expert_review)입니다.
+- 예외: 연결 기준의 불통과가 모든 OR 경로(코호트)에서 성립하면 남은 기준과 관계없이 INELIGIBLE (label_pair).
+  일부 경로만 불통과면 확정하지 않습니다. oracle.bound_result에 pass / or_partial / fail을 남깁니다.
 - 규칙 엔진이 판정하지 못하는 값이 나오면 그 환자를 다시 샘플링합니다(max_resample). 그래도 안 되면 오류입니다.
 - 기간 조건이 있는 검사 기준은 lab_age_days(마지막 검사가 며칠 전인지, 항상 공개)로 유효 여부를 봅니다.
   유효 기간이 지났으면 값이 공개돼 있어도 initial_holds는 미확인입니다 (정답은 값이 그대로라고 가정).
@@ -23,11 +28,11 @@ from random import Random
 from .. import config as app_config
 from .. import trial_store
 from ..schemas import Holds, ParsedTrial
-from .spec import (CORE_SOURCE, LAB_AGE, Cohort, EffectiveSource, GeneratorConfig, Knobs, OraclePart, Prior, PublicPart,
-                   PublicPatient, RuleRef, Scenario, SlotDictionary, SourceCatalog)
+from .spec import (CORE_SOURCE, LAB_AGE, REASON_EXPERT, REASON_UNBOUND, Cohort, EffectiveSource, GeneratorConfig, Knobs,
+                   OraclePart, Prior, PublicPart, PublicPatient, RuleRef, Scenario, SlotDictionary, SourceCatalog)
 from .truth import IndeterminateTruth, holds3, passes, rule_holds, rule_index
 
-GENERATOR_VERSION = "cohort-gen-1"
+GENERATOR_VERSION = "cohort-gen-2"  # 2: 미연결 기준 충족 간주 폐지, 임상의 판단 기준 정답 미생성
 
 
 class GenerationError(RuntimeError):
@@ -131,24 +136,30 @@ def generate_cohort(cfg: GeneratorConfig, sd: SlotDictionary, cat: SourceCatalog
     trials = list(cluster.trials)
     rules = rule_index(parsed)
     bound = {t: sd.usable(t) for t in trials}
-    slots_used = sorted({s for bs in bound.values() for b in bs for s in _needed(b)})
-    _check_priors(cfg, sd, scenario.cluster, slots_used)
+    valued = {t: [b for b in bound[t] if not b.needs_expert()] for t in trials}  # 값·정답을 만드는 기준
+    expert = {t: [b.rule_id for b in bound[t] if b.needs_expert()] for t in trials}
+    unbound = {t: [b.rule_id for b in sd.unbound(t)] for t in trials}
+    paths = {t: trial_paths(parsed.get(t)) for t in trials}
+    slots_used = sorted({s for bs in bound.values() for b in bs for s in _needed(b)})  # 소스 구성용 (판단 슬롯 포함)
+    _check_priors(cfg, sd, scenario.cluster, sorted({s for bs in valued.values() for b in bs for s in _needed(b)}))
 
     seed = derive_seed(cfg.base_seed, scenario.scenario_id, replicate)
     rng = Random(seed)
     cohort_id = f"{scenario.scenario_id}-r{replicate:02d}"
     patients, hidden_all, truth, labels, initial = [], {}, {}, {}, {}
+    reasons_all, bound_result = {}, {}
 
     for i in range(scenario.n_patients):
         pid = f"P{i + 1:03d}"
         chosen = set(rng.sample(trials, k=min(knobs.trials_per_patient, len(trials))))
         cand = [t for t in trials if t in chosen]  # 시험 순서는 설정 순서로 고정
-        needed = sorted({s for t in cand for b in bound[t] for s in _needed(b)})
+        # 임상의 판단 슬롯은 값을 뽑지 않음 -> public.known에도 oracle.hidden에도 없음 (공개 여부와 무관하게 판단 대기)
+        needed = sorted({s for t in cand for b in valued[t] for s in _needed(b)})
         for attempt in range(cfg.max_resample + 1):
             values = {s: sample(cluster.priors[s], rng) for s in needed}
             try:
                 pt = {(t, b.rule_id): rule_holds(b, rules.get(b.key), values, sd.slots, cfg.reference_date)
-                      for t in cand for b in bound[t]}
+                      for t in cand for b in valued[t]}
                 break
             except IndeterminateTruth as e:
                 if attempt == cfg.max_resample:
@@ -161,22 +172,31 @@ def generate_cohort(cfg: GeneratorConfig, sd: SlotDictionary, cat: SourceCatalog
         hidden_all[pid] = {s: values[s] for s in sorted(hidden)}
 
         for t in cand:
-            ok = True
+            failing: list[str | None] = []  # 불통과 기준의 코호트 (None = 모든 경로 공통)
             for b in bound[t]:
-                h: Holds = pt[(t, b.rule_id)]
                 key = f"{pid}|{t}|{b.rule_id}"
+                if b.needs_expert():  # 정답을 만들지 않음 (임상의 판단 대기)
+                    truth[key] = initial[key] = "unknown"
+                    continue
+                h: Holds = pt[(t, b.rule_id)]
                 truth[key] = h
                 # 정책이 아는 값만으로 본 상태: 숨긴 슬롯·유효 기간이 지난 검사는 미확인, 묶인 조건은 3값 논리
                 initial[key] = holds3(b, rules.get(b.key), known, sd.slots, cfg.reference_date, check_fresh=True)
-                ok = ok and passes(b.kind, h) is True
-            labels[f"{pid}|{t}"] = "ELIGIBLE" if ok else "INELIGIBLE"
+                if passes(b.kind, h) is not True:
+                    failing.append(rules[b.key].cohort if b.key in rules else None)
+            pk = f"{pid}|{t}"
+            reasons = pair_label_reasons(expert[t], unbound[t])
+            labels[pk], bound_result[pk] = label_pair(failing, paths[t], reasons)
+            if labels[pk] == "UNLABELED":
+                reasons_all[pk] = reasons
 
     public = PublicPart(
         trials=trials,
         rules={t: [RuleRef(rule_id=b.rule_id, kind=b.kind, slot=b.slot, extra_slots=[c.slot for c in b.also],
                            time_window_days=b.time_window_days, required_evidence=b.required_evidence)
                    for b in bound[t]] for t in trials},
-        unbound_rules={t: [b.rule_id for b in sd.unbound(t)] for t in trials},
+        unbound_rules=unbound,
+        expert_rules=expert,
         enrollment_remaining={t: knobs.enrollment_remaining for t in trials},
         sources=effective_sources(cat, slots_used, sd, knobs),
         budgets_min=cfg.budgets_min, patients=patients, initial_holds=initial,
@@ -184,7 +204,38 @@ def generate_cohort(cfg: GeneratorConfig, sd: SlotDictionary, cat: SourceCatalog
     return Cohort(cohort_id=cohort_id, config_hash=chash, scenario_id=scenario.scenario_id, replicate=replicate,
                   split="dev" if replicate < scenario.dev_replicates else "test", seed=seed, cluster=scenario.cluster,
                   reference_date=cfg.reference_date, null=scenario.null, knobs=knobs, public=public,
-                  oracle=OraclePart(hidden=hidden_all, truth=truth, pair_label=labels))
+                  oracle=OraclePart(hidden=hidden_all, truth=truth, pair_label=labels, label_reasons=reasons_all,
+                                    bound_result=bound_result))
+
+
+def pair_label_reasons(expert_rules: list[str], unbound_rules: list[str]) -> list[str]:
+    """쌍에 적격 라벨을 만들지 않는 사유 (빈 목록 = 라벨을 만듦)."""
+    return ([REASON_EXPERT] if expert_rules else []) + ([REASON_UNBOUND] if unbound_rules else [])
+
+
+def trial_paths(parsed: ParsedTrial | None) -> list[str | None]:
+    """OR 경로(코호트). 기준이 하나라도 붙은 코호트만 경로이며(Matcher._select_cohort와 같은 뜻), 없으면 [None] 하나."""
+    if parsed is None:
+        return [None]
+    used = [c for c in parsed.cohorts if any(r.cohort == c for r in parsed.rules)]
+    used += sorted({r.cohort for r in parsed.rules if r.cohort and r.cohort not in used})
+    return used or [None]
+
+
+def label_pair(failing: list[str | None], paths: list[str | None], reasons: list[str]) -> tuple[str, str]:
+    """(쌍 라벨, bound_result). failing = 정답이 불통과인 (판단 기준 제외) 연결 기준의 코호트 목록.
+
+    경로 p에 적용되는 기준 = 공통(None) + 코호트 p 전용. 경로가 불통과 = 그 경로의 기준 하나 이상 불통과.
+    - 모든 경로가 불통과 -> INELIGIBLE (미연결·판단 기준이 남아도: 남은 기준이 무엇이든 어느 경로로도 적격이 안 됨)
+    - 사유(미연결·판단 기준)가 있으면 그 밖은 UNLABELED. 한 경로라도 불통과가 아니면 부적격 확정 금지
+    - 사유가 없으면 ELIGIBLE (불통과가 없는 경로가 있고, 그 경로의 기준은 정답이 모두 있음)
+    bound_result: pass = 불통과 없음 / or_partial = 일부 경로만 불통과 / fail = 모든 경로 불통과 (확정 라벨 아님)
+    """
+    dead = {p for p in paths if any(c is None or c == p for c in failing)}
+    result = "fail" if dead == set(paths) else "or_partial" if dead else "pass"
+    if result == "fail":
+        return "INELIGIBLE", result
+    return ("UNLABELED" if reasons else "ELIGIBLE"), result
 
 
 def generate_all(cfg: GeneratorConfig, sd: SlotDictionary, cat: SourceCatalog,
