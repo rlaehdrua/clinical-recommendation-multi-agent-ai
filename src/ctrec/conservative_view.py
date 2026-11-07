@@ -144,7 +144,7 @@ def _hold(tid: str, side: str, status: PairStatus, t, conflicting: dict[str, str
 def _unresolved(m, status: PairStatus, t, held: bool) -> str | None:
     """표현을 낮추지 않았지만 엔진과 어긋나는 쌍의 사유 코드. 어느 정책 결정을 기다리는지 나타냄."""
     if held:
-        return "no_required_criteria_policy_open" if required_count(t) == 0 else None
+        return "no_required_criteria" if required_count(t) == 0 else None
     if m.match_status == "CRITERIA_MISMATCH" and status != PairStatus.CONFIRMED_INELIGIBLE:
         return "exclusion_not_document_verified"
     return None

@@ -5,7 +5,7 @@ tests/test_empty_criteria.py(E-1)의 대역을 그대로 씁니다.
 
 일치 규칙 (불일치 코드)
 - confirmed_not_match: PairStatus가 CONFIRMED_ELIGIBLE인데 외부 상태가 CRITERIA_MATCH가 아님
-- match_not_confirmed: 외부 상태가 CRITERIA_MATCH인데 PairStatus가 확정 적격이 아님 (R5 - 알려진 불일치, 팀 결정 대기)
+- match_not_confirmed: 외부 상태가 CRITERIA_MATCH인데 PairStatus가 확정 적격이 아님
 - ranked_closed: 추천 목록에 있는데 PairStatus가 확정 부적격·평가 안 됨
 - unreviewed: PairStatus가 NOT_EVALUATED인 모집 중 쌍에 담당자 검토 행동이 없음
 - no_action: 열린 쌍(정보 없음·확인 대기·임상의 판단)에 아무 행동도 없음
@@ -91,14 +91,13 @@ def test_r6_logistics_exclusion_unknown_has_an_action(env):
     assert mismatches(x) == set()
 
 
-def test_r5_known_mismatch_is_reviewed(env):
-    """R5 (절차 기준만): Session은 CRITERIA_MATCH·추천 1순위, 엔진은 NOT_EVALUATED - 팀 결정(P1/P2/P3) 전까지 남은 불일치.
-
-    엔진 쪽은 담당자 검토(no_required_criteria)를 내므로 확인 없이 방치되지는 않음. 결정이 나면 기대값을 바꿉니다."""
+def test_r5_logistics_only_all_layers_agree(env):
+    """R5 (절차 기준만): P3 확정 동작. 네 층이 NOT_EVALUATED·추천 제외·담당자 검토로 일치 (docs/dev/r5_policy_comparison.md)."""
     x = layers(_session("SYN-R5", [CONSENT]), "SYN-R5")
-    assert (x["external"], x["status"], x["ranked"]) == ("CRITERIA_MATCH", C.PairStatus.NOT_EVALUATED, True)
+    assert (x["eligibility"], x["external"], x["status"], x["ranked"]) == (
+        "NOT_EVALUATED", "NOT_EVALUATED", C.PairStatus.NOT_EVALUATED, False)
     assert x["reviews"] == ["no_required_criteria"]
-    assert mismatches(x) == {"match_not_confirmed", "ranked_closed"}
+    assert mismatches(x) == set()
 
 
 @pytest.mark.parametrize("bad, code", [

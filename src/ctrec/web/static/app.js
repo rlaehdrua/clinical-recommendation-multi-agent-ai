@@ -23,7 +23,7 @@ const STATUS = {
 };
 // 진행 중 카드의 내부 판정 (최종 결과 전 중간 값)
 const INTERIM = { ELIGIBLE: ["중간 판정: 기준 충족", "ok"], INELIGIBLE: ["중간 판정: 기준 불충족", "bad"], UNCERTAIN: ["중간 판정: 확인 필요", "warn"],
-  NOT_EVALUATED: ["평가 실패", "warn"] };
+  NOT_EVALUATED: ["평가 실패", "warn"], NO_REQUIRED: ["판정할 필수 기준 없음 · 담당자 확인 필요", "warn", "평가 오류 아님 · 부적격 아님"] };  // NO_REQUIRED: 서버 상태값이 아니라 NOT_EVALUATED를 사유 코드로 구분한 표시
 const RECRUIT = { RECRUITING: ["모집 중","ok"], NOT_YET_RECRUITING: ["모집 예정","ok"], COMPLETED: ["모집 완료","bad"], TERMINATED: ["조기 종료","bad"],
   WITHDRAWN: ["철회","bad"], ACTIVE_NOT_RECRUITING: ["모집 종료","bad"], SUSPENDED: ["중단","bad"], ENROLLING_BY_INVITATION: ["초청 모집","warn"],
   UNKNOWN: ["모집 상태 미확인","warn"] };
@@ -33,6 +33,7 @@ function statusBadge(s) {
   const [t, c] = RECRUIT[s] || ["모집 상태 미확인", "warn"]; return `<span class="badge ${c}">${esc(t)}</span>`;
 }
 function recruitText(s) { return (RECRUIT[s] || ["모집 상태 미확인"])[0]; }
+const shownStatus = (status, d) => (d && d.exclusion === "needs_review" ? "NO_REQUIRED" : status);
 function matchBadge(s) { const [t, c] = STATUS[s] || INTERIM[s] || ["검토 중", "accent"]; return `<span class="badge ${c}">${esc(t)}</span>`; }
 // 외부 링크는 ClinicalTrials.gov의 https 주소만 링크로 만듦 (그 밖의 주소는 링크로 만들지 않음)
 function safeTrialUrl(u) {
@@ -479,7 +480,7 @@ function demoBadge(tid) { return trialMeta(tid).synthetic ? '<span class="badge 
 function roundSnap(r) {
   const m = /통과 (\d+) \/ 불충족 (\d+) \/ 판정불가 (\d+)(?: \(\+[^)]*?(\d+)\))?/.exec(String(r.message || ""));
   const [pass, fail, missing, verify] = m ? [+m[1], +m[2], +m[3], +(m[4] || 0)] : [r.n_pass, r.n_fail, r.n_unknown, null];
-  return { round: Number(r.round) || 0, status: r.match_status || String(r.message || "").split(":")[0], pass, fail, missing, verify };
+  return { round: Number(r.round) || 0, status: r.review_code ? "NO_REQUIRED" : r.match_status || String(r.message || "").split(":")[0], pass, fail, missing, verify };
 }
 function snapText(s) {
   return `충족 ${s.pass ?? "-"} · 불충족 ${s.fail ?? "-"} · 정보 부족 ${s.missing ?? "-"}` + (s.verify != null ? ` · 추가 확인 ${s.verify}` : "");
@@ -791,6 +792,7 @@ function condStat(m, d) {
 // 다음에 할 일: AI 문장이 아니라 서버 분류 결과(조건 묶음 수)로만 만듦. [할 일, 개수, 색]
 function todoLines(m, d) {
   if (!m) return [];
+  if (shownStatus(null, d)) return [["담당자 확인 필요 (부적격 아님)", "", "warn"]];
   if (m.eligibility === "NOT_EVALUATED") return [["평가 오류 · 다시 분석 필요 (부적격 아님)", "", "warn"]];
   const g = grouped(m, d), out = [];
   if (g.not_met.length) out.push(["맞지 않는 조건 확인", g.not_met.length, "bad"]);
@@ -816,6 +818,7 @@ function trialLink(tid, info) {
 }
 const EXCLUDE_TEXT = {
   not_evaluated: () => "제외 사유: 평가 오류 (부적격 아님)",
+  needs_review: () => "제외 사유: 판정할 필수 기준 없음 · 담당자 확인 필요 (부적격 아님)",
   closed: (d) => `제외 사유: 모집 종료 (${recruitText(d.recruitment_status)})`,
   demo: () => "제외 사유: 가상 데모 시험",
   mismatch: () => "제외 사유: 맞지 않는 조건 있음",
@@ -826,7 +829,7 @@ function noRecommendation(rec, display) {
   let html = `<div class="callout">현재 추천할 수 있는 임상시험이 없어요.`;
   if (kinds) {
     const label = { mismatch: "모집 중이지만 맞지 않는 조건이 있는 시험", closed: "모집이 끝난 시험", demo: "가상 데모 시험(실제 시험 아님)",
-      not_evaluated: "평가에 실패한 시험(부적격 아님)", engine_hold: "근거 확인이 필요한 시험(확정 제외 아님)", unknown: "그 밖의 이유로 제외된 시험" };
+      not_evaluated: "평가에 실패한 시험(부적격 아님)", engine_hold: "근거 확인이 필요한 시험(확정 제외 아님)", needs_review: "판정할 필수 기준이 없어 담당자 확인이 필요한 시험(부적격 아님)", unknown: "그 밖의 이유로 제외된 시험" };
     const items = Object.entries(kinds).filter(([k, v]) => k !== "null" && v.length).map(([k, v]) => `<li>${esc(label[k] || label.unknown)} ${v.length}개</li>`);
     if (items.length) html += `<ul>${items.join("")}</ul>`;
   }
@@ -865,9 +868,10 @@ function annotateKo(result) {
 function resultCard(tid, status, extra) {
   const R = state.res, info = R.trials[tid] || {}, m = R.matches[tid], d = R.dOf(tid), card = state.cards[tid];
   const ttl = koTitle(tid, info.title || "");
+  status = shownStatus(status, d);
   return `<article class="rec${extra && extra.top ? " top" : ""}">${badges(tid, status, info)}
     <div><h3 class="rtitle">${extra && extra.rank ? `<span class="rank" aria-label="표시 순서 ${esc(extra.rank)}">${esc(extra.rank)}.</span> ` : ""}${esc(ttl)}</h3>${origLine(ttl, info.title)}
-      <p class="rmeta mt4">${esc(tid)} · ${esc((STATUS[status] || [])[2] || "")}</p></div>
+      <p class="rmeta mt4">${esc(tid)} · ${esc((STATUS[status] || INTERIM[status] || [])[2] || "")}</p></div>
     ${extra && extra.note ? `<p class="hint m0">${esc(extra.note)}</p>` : ""}
     ${condStat(m, d)}${card ? compareBlock(card) : ""}${todoBox(m, d, false)}
     <div class="actions"><button class="btn ghost" type="button" data-detail="${esc(tid)}">자세히 보기</button></div></article>`;
@@ -904,7 +908,7 @@ function showResult(ev) {
     const m = matches[x.trial_id];
     const bad = kind === "mismatch" && m ? (m.assessments || []).filter(a => groupOf(d, a) === "not_met").slice(0, 3).map(critLabel) : [];
     return resultCard(x.trial_id, m ? m.match_status : null, { note: EXCLUDE_TEXT[kind](d || {}) + (bad.length ? ` · ${bad.join(" / ")}` : "") })
-      + (kind !== "not_evaluated" ? raw(x.reason, "시스템 원문 사유 보기") : "");  // 평가 오류 원문은 보이지 않음 (요청 내용이 섞일 수 있음)
+      + (kind !== "not_evaluated" && kind !== "needs_review" ? raw(x.reason, "시스템 원문 사유 보기") : "");  // 평가 오류 원문은 보이지 않음 (요청 내용이 섞일 수 있음)
   }).join("")}</div></details>`;
   const rest = Object.entries(matches).filter(([tid]) => !shown.has(tid));
   if (rest.length) html += `<details class="more"><summary>그 밖에 평가한 시험 ${rest.length}건</summary><div class="stack">${rest.map(([tid, m]) => resultCard(tid, m.match_status)).join("")}</div></details>`;
@@ -949,15 +953,16 @@ function renderDetail(tid) {
   const R = state.res; if (!R) return;
   const info = R.trials[tid] || {}, m = R.matches[tid], d = R.dOf(tid), card = state.cards[tid];
   const r = [...(R.rec.ranked || []), ...(R.rec.recommended || [])].find(x => x.trial_id === tid) || {};
-  const status = r.match_status || (m && m.match_status) || null, ttl = koTitle(tid, info.title || "");
+  const status = shownStatus(r.match_status || (m && m.match_status) || null, d), ttl = koTitle(tid, info.title || "");
   const said = Object.fromEntries(((d && d.record_checks) || []).map(x => [x.rule_id, x.said]));
   let html = `<div class="dhead"><div class="dmeta">${badges(tid, status, info)}</div><h2 id="detail-h" tabindex="-1">${esc(ttl)}</h2>${origLine(ttl, info.title)}
-    <p class="hint m0">${esc(tid)} · ${esc((STATUS[status] || [])[2] || "")}</p>${trialLink(tid, info)}</div>`;
+    <p class="hint m0">${esc(tid)} · ${esc((STATUS[status] || INTERIM[status] || [])[2] || "")}</p>${trialLink(tid, info)}</div>`;
   if (card && compareBlock(card)) html += `<section class="sec">${compareBlock(card)}</section>`;
   if (r.key_matches || r.key_concerns || r.next_steps) html += `<section class="sec"><h3>AI가 정리한 내용</h3>
     <div class="two">${aiList("맞는 점", r.key_matches, "good")}${aiList("확인할 점", r.key_concerns, "check")}</div>${aiList("다음 단계 제안", r.next_steps)}</section>`;
   html += todoBox(m, d, true);
-  if (m && m.eligibility === "NOT_EVALUATED") html += `<div class="note warn">평가 중 오류로 판정하지 못했습니다${d && d.error_type ? ` (오류 종류: ${esc(d.error_type)})` : ""}. 부적격이라는 뜻이 아니며, 오류 상세는 서버 기록에만 남깁니다.</div>`;
+  if (status === "NO_REQUIRED") html += `<div class="note warn">판정할 필수 기준이 없어 적격 여부를 판정하지 못했습니다. 부적격이라는 뜻이 아니며 담당자 확인이 필요합니다.</div>`;
+  if (m && m.eligibility === "NOT_EVALUATED" && status !== "NO_REQUIRED") html += `<div class="note warn">평가 중 오류로 판정하지 못했습니다${d && d.error_type ? ` (오류 종류: ${esc(d.error_type)})` : ""}. 부적격이라는 뜻이 아니며, 오류 상세는 서버 기록에만 남깁니다.</div>`;
   else if (m) {
     const g = grouped(m, d), total = (m.assessments || []).length;
     html += `<section class="stack"><div class="sech"><h3>내 조건 확인</h3><span>${g.met.length} / ${total}개 확인</span></div>`;

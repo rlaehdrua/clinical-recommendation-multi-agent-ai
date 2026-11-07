@@ -47,7 +47,7 @@ def exclusion_kind(m, trial: dict | None, recommended: set[str]) -> str | None:
     if trial is None:
         return "unknown"
     if m.eligibility == "NOT_EVALUATED":
-        return "not_evaluated"
+        return "needs_review" if m.evaluation_error in matcher.NO_EVIDENCE_CODES else "not_evaluated"
     if not is_open(trial):
         return "closed"
     if is_demo(trial) and not config.DEMO_MODE:
@@ -91,8 +91,11 @@ def display_missing_info(a: dict) -> dict:
     return {**a, "missing_info": f"이 기준을 확인할 정보 (원문): {str(a.get('criterion_text') or '')[:300]}"}
 
 
-# 오류가 아니라 시험에 평가할 기준이 없어서 판정하지 못한 경우 (matcher.CRITERIA_PARSE_EMPTY·NO_SOURCE_CRITERIA)
-NO_CRITERIA_CODES = {"criteria_parse_empty": "기준 해석 결과가 비어", "no_source_criteria": "시험에 평가할 기준이 없어"}
+# 오류가 아니라 판단할 기준이 없어서 판정하지 못한 경우
+# (matcher.CRITERIA_PARSE_EMPTY·NO_SOURCE_CRITERIA·NO_REQUIRED_CRITERIA·NO_APPLICABLE_CRITERIA)
+NO_CRITERIA_CODES = {"criteria_parse_empty": "기준 해석 결과가 비어", "no_source_criteria": "시험에 평가할 기준이 없어",
+                     "no_required_criteria": "판단할 기준이 절차 기준뿐이라",
+                     "no_applicable_criteria": "이 환자에게 적용되는 기준이 없어"}
 
 
 def _not_evaluated_cause(kind: str) -> str:
@@ -122,8 +125,11 @@ def redact_errors(result: dict) -> dict:
     rec = result.get("recommendation")
     if rec and failed:
         rec = dict(rec)
-        rec["excluded"] = [{**x, "reason": f"{_not_evaluated_cause(failed[x['trial_id']])} 적격 여부를 판정하지 못함(부적격 아님) - 재평가 또는 담당자 확인 필요. 원인: {failed[x['trial_id']]}"}
-                           if x.get("trial_id") in failed else x for x in rec.get("excluded") or []]
+        def reason(kind: str) -> str:
+            step = "담당자 확인 필요" if kind in matcher.NO_EVIDENCE_CODES else "재평가 또는 담당자 확인 필요"
+            return f"{_not_evaluated_cause(kind)} 적격 여부를 판정하지 못함(부적격 아님) - {step}. 원인: {kind}"
+        rec["excluded"] = [{**x, "reason": reason(failed[x["trial_id"]])} if x.get("trial_id") in failed else x
+                           for x in rec.get("excluded") or []]
         out["recommendation"] = rec
     return out
 
