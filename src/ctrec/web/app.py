@@ -20,6 +20,7 @@ import hmac
 import json
 import logging
 import os
+import re
 import secrets
 import sys
 import threading
@@ -69,6 +70,9 @@ ENDED_TTL_S = _env_int("CTREC_WEB_ENDED_TTL_S", 120)  # 취소·오류·시간 �
 MAX_ACTIVE_PER_CLIENT = _env_int("CTREC_WEB_MAX_ACTIVE_PER_CLIENT", 1)  # 같은 브라우저의 동시 실행 수
 MAX_STARTS_PER_HOUR = _env_int("CTREC_WEB_MAX_STARTS_PER_HOUR", 20)  # 같은 브라우저의 시간당 실행 시작 수
 MAX_BODY_BYTES = 256 * 1024  # 요청 본문 최대 크기
+# 문서 등록 경로만: 문서 계약(최대 2 MB, docs/dev/document_clinician_api_contract.md)의 base64 본문 + JSON 나머지 필드 여유 (감사 F-10)
+MAX_DOCUMENT_BODY_BYTES = (followup_api.verification.MAX_DOCUMENT_BYTES * 4) // 3 + 8 + 4096  # DocumentCreate.content_base64 한도와 같은 식
+_DOCUMENT_ROUTE = re.compile(r"^/api/followup/staff/cases/[^/]+/documents$")
 MAX_TEXT_CHARS = 20000  # 직접 입력 환자 정보 최대 길이
 MAX_ANSWER_CHARS = 2000  # 확인 질문 답변 하나의 최대 길이
 
@@ -82,7 +86,9 @@ _TOO_LARGE = "요청이 너무 큽니다."
 
 
 def _body_limit(scope) -> int:
-    """이 요청의 본문 한도 (바이트)."""
+    """이 요청의 본문 한도 (바이트). 문서 등록(POST)만 문서 계약 크기, 나머지는 MAX_BODY_BYTES."""
+    if scope.get("method") == "POST" and _DOCUMENT_ROUTE.match(scope.get("path", "")):
+        return MAX_DOCUMENT_BODY_BYTES
     return MAX_BODY_BYTES
 
 

@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import base64
 import sys
 from pathlib import Path
 
@@ -16,8 +17,10 @@ pytest.importorskip("httpx")
 sys.path.insert(0, str(Path(__file__).parent))
 
 import web_harness as h  # noqa: E402
-from test_document_clinician_completion import env  # noqa: E402,F401
+from test_document_clinician_completion import LAB_REPORT, create, env, register  # noqa: E402,F401
+from test_followup_flow import STAFF, staff_client  # noqa: E402
 
+from ctrec.followup import verification  # noqa: E402
 from ctrec.web import app as web  # noqa: E402
 
 HDR = {"x-ctrec-request": "1", "content-type": "application/json"}
@@ -51,3 +54,33 @@ def test_chunked_body_under_the_limit_still_reaches_the_route(env):  # noqa: F81
     body = json.dumps({"patient_text": TEXT, "trial_ids": ["T-A"]}).encode()
     r = c.post("/api/followup/cases", content=_chunks(body, 16), headers=HDR)
     assert r.status_code == 201, r.text  # 한도 안의 chunked 본문은 기존대로 처리됨
+
+
+# ------------------------------------------------------------------ F-10
+def _doc_body(size: int) -> dict:
+    content = LAB_REPORT + b"x" * (size - len(LAB_REPORT))
+    return {"kind": "lab_report", "media_type": "text/plain", "content_base64": base64.b64encode(content).decode()}
+
+
+@pytest.mark.parametrize("size", [300_000, verification.MAX_DOCUMENT_BYTES])
+def test_document_up_to_the_contract_size_is_accepted(env, size):  # noqa: F811
+    patient, staff = h.browser(), staff_client()
+    cid = create(patient, ["T-A"])
+    r = staff.post(f"/api/followup/staff/cases/{cid}/documents", headers=STAFF, json=_doc_body(size))
+    assert r.status_code == 201, r.text[:200]
+
+
+def test_document_over_the_contract_size_is_still_rejected(env):  # noqa: F811
+    patient, staff = h.browser(), staff_client()
+    cid = create(patient, ["T-A"])
+    r = staff.post(f"/api/followup/staff/cases/{cid}/documents", headers=STAFF,
+                   json=_doc_body(verification.MAX_DOCUMENT_BYTES * 2))
+    assert r.status_code == 413
+
+
+def test_other_routes_keep_the_256kb_limit(env):  # noqa: F811
+    patient, staff = h.browser(), staff_client()
+    cid = create(patient, ["T-A"])
+    big = b'{"proposal_ids": ["' + b"p" * 300_000 + b'"]}'
+    r = staff.post(f"/api/followup/staff/cases/{cid}/requests", headers={**STAFF, **HDR}, content=big)
+    assert r.status_code == 413
