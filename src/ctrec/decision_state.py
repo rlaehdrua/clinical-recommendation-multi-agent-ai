@@ -164,6 +164,7 @@ class DecisionState(BaseModel):
     fact_ids: list[str] = []
     trials: dict[str, TrialState] = {}
     not_evaluated_trials: list[str] = []
+    no_required_trials: dict[str, str] = {}  # not_evaluated_trials 중 판정할 필수 기준이 없는 시험 -> 사유 코드 (matcher.NO_EVIDENCE_CODES)
     conflicting_fields: dict[str, str] = {}  # 항목 -> 상태 (값은 넣지 않음)
     unverified_fact_ids: list[str] = []  # 검증되지 않은 사실 (document_verified가 아님)
     question_history: list[dict] = []  # {round, question_id, targets, declined}
@@ -286,6 +287,8 @@ def build_state(view: SessionView, overlay: dict[str, CriterionAssessment] | Non
         trial = view.trials.get(tid, {})
         if m.eligibility == "NOT_EVALUATED" or tid not in view.parsed:
             st.not_evaluated_trials.append(tid)  # 판정 실패: MET/NOT_MET으로 바꾸지 않음
+            if m.evaluation_error in matcher.NO_EVIDENCE_CODES:
+                st.no_required_trials[tid] = m.evaluation_error
             continue
         parsed = view.parsed[tid]
         rules = {r.rule_id: r for r in parsed.rules}

@@ -57,7 +57,8 @@ STATES = [
     ("clinical_pending", {"T": [VAGUE, AGE]}, "", {}, "UNCERTAIN", "NEEDS_REVIEW", "EXPERT_REVIEW", True),
     # 계약 변경: 임상의 경계(A)가 판정 자체를 보류함. 예전 기대값 ELIGIBLE/CONFIRMED_ELIGIBLE은 표시만 낮추던 시기의 값
     ("clinical_llm_pass", {"T": [VAGUE, AGE]}, "", {"verdicts": VAGUE_YES}, "UNCERTAIN", "NEEDS_REVIEW", "EXPERT_REVIEW", True),
-    ("no_required", {"T": [CONSENT]}, "", {}, "ELIGIBLE", "NEEDS_REVIEW", "NOT_EVALUATED", True),
+    # 계약 변경: R5 P3 확정. 판정부터 NOT_EVALUATED이고 추천 후보가 아님. 예전 ELIGIBLE/NEEDS_REVIEW는 정책 미정 시기의 값
+    ("no_required", {"T": [CONSENT]}, "", {}, "NOT_EVALUATED", "NOT_EVALUATED", "NOT_EVALUATED", False),
     ("ineligible", {"T": [HB, AGE]}, "Hb 8 g/dL on 2026-09-01.", {"documented": False}, "INELIGIBLE", "CRITERIA_MISMATCH", "VERIFICATION_PENDING", False),
     ("disputed_exclusion", {"T": [HB, AGE]}, FALL, {}, "INELIGIBLE", "NEEDS_REVIEW", "VERIFICATION_PENDING", False),
 ]
