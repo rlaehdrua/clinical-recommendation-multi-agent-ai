@@ -1,5 +1,7 @@
 # 2차 야간 R5: 엔진·Session·웹·추천 상태 경계 (2026-11-07)
 
+> 후속: 이 문서의 미해결 경로와 승인 패치는 `docs/dev/c2_session_boundary_2026_11_07.md`에서 실제로 수정했습니다. `pipeline_finalize.patch`는 범위가 부족해 삭제했습니다.
+
 기준: `origin/integration/dcvc` = `b2100d8`. 참조: `night/status-consistency-audit` `c0981b9`(읽기 전용), `f45ab65`.
 브랜치: `night2/status-boundary` (로컬, push 안 함).
 
