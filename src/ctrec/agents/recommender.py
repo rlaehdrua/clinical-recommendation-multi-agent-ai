@@ -17,7 +17,7 @@ from ..schemas import (
     ExcludedTrial, PatientProfile, QAPair, RankedTrial, Recommendation, RecommendationDraft, TrialMatch,
 )
 from ..status import GROUP_ORDER, LABEL_KO, label
-from .matcher import is_blocking_unknown, needs_physician_review, needs_record_check
+from .matcher import DECLARED_RECORD_HELD, is_blocking_unknown, needs_physician_review, needs_record_check
 
 # 참여 신청이 가능한 모집 상태. UNKNOWN(직접 입력한 시험 등)은 막지 않고 확인 필요로 표시
 OPEN_STATUSES = {"RECRUITING", "NOT_YET_RECRUITING", "UNKNOWN"}
@@ -186,7 +186,9 @@ def verification_notes(match: TrialMatch) -> list[str]:
         if not a.self_reported_applicable:
             return "해당 없음"
         return {"yes": "해당", "no": "해당하지 않음"}.get(a.self_reported_holds or "", "불명")
-    return [f"{a.rule_id} \"{a.criterion_text[:100]}\": UNVERIFIED - 환자 답변상 '{said(a)}'({a.evidence[:80]}). "
+    def basis(a) -> str:
+        return "선언된 기록상" if DECLARED_RECORD_HELD in a.validation_flags else "환자 답변상"
+    return [f"{a.rule_id} \"{a.criterion_text[:100]}\": UNVERIFIED - {basis(a)} '{said(a)}'({a.evidence[:80]}). "
             f"진료 기록이 필요한 기준이라 판정하지 않음 → 검사 결과지·보고서 등 문서로 확인 필요"
             for a in match.assessments if needs_record_check(a)]
 
@@ -222,7 +224,8 @@ def recommend(profile: PatientProfile, matches: list[TrialMatch], trials: dict[s
             "assessments": [
                 {"rule_id": a.rule_id, "kind": a.kind, "criterion": a.criterion_text,
                  "passes": a.passes, "evidence": a.evidence,
-                 **({"unverified_self_report": a.self_reported_holds} if a.needs_verification else {})}
+                 **({("unverified_declared_record" if DECLARED_RECORD_HELD in a.validation_flags
+                      else "unverified_self_report"): a.self_reported_holds} if a.needs_verification else {})}
                 for a in m.assessments
             ],
         })

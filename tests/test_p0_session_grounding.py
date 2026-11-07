@@ -14,6 +14,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent))
 
+from document_support import attest_declared  # noqa: E402
 from test_decisions import TRIAL, _parsed  # noqa: E402
 from test_offline import _rule  # noqa: E402
 
@@ -71,7 +72,7 @@ class Outcome:
 @pytest.fixture
 def run(monkeypatch):
     def go(initial, rules, before, after=None, answer=None, meta=None, input_source="unknown", question="확인 질문",
-           target="T1:I1", budget=None):
+           target="T1:I1", budget=None, documents=False):
         p = _parsed([r.model_copy() for r in rules])
         p.rule_meta = dict(meta or {})
 
@@ -100,6 +101,8 @@ def run(monkeypatch):
         s = Session(case=PatientCase(PID, initial, input_source=input_source), trials={"T1": dict(TRIAL)},
                     answerer=Ans(), tracer=Tracer(), **({} if budget is None else {"question_budget": budget}))
         s.profile_patient()
+        if documents:  # 문서 대조군: 선언된 사실을 합성 서버 문서로 확인
+            attest_declared(s.fact_store, PID)
         s.match()
         if answer is not None:
             s.clarify()
@@ -267,9 +270,15 @@ def test_16b_declared_record_without_the_value_keeps_the_document_path(run):
     assert "REQUEST_DOCUMENT" in o.actions and o.a.self_reported_holds is None
 
 
-def test_17_declared_record_with_the_value_is_confirmed(run):
-    """현행 정책 기록: 선언된 진료 기록의 값은 문서 검증 전에도 확정됨. docs/dev/night_safety_audit_2026_11_06.md 참고."""
-    confirmed(run("Hb 12 g/dL.", [HB], prof(labs=[hb()]), meta=RECORD, input_source="clinical_record"))
+def test_17_declared_record_with_the_value_is_held(run):
+    """선언만으로는 확정하지 않음. 값은 보존하고 문서 요청 경로로 (R2 대안 A + 서버 증명 요건)."""
+    o = run("Hb 12 g/dL.", [HB], prof(labs=[hb()]), meta=RECORD, input_source="clinical_record")
+    held(o, "VERIFICATION_PENDING")
+    assert "REQUEST_DOCUMENT" in o.actions and o.a.self_reported_holds == "yes"
+
+
+def test_17a_server_attested_value_is_confirmed(run):
+    confirmed(run("Hb 12 g/dL.", [HB], prof(labs=[hb()]), meta=RECORD, input_source="clinical_record", documents=True))
 
 
 def test_17b_document_rule_on_ineligible_value_still_rules_out(run):
@@ -322,14 +331,14 @@ HB_LOW_OUT = _rule(rule_id="E3", kind="exclusion", text="Hemoglobin < 9.0 g/dL",
 
 
 def test_record_quote_across_sentences_confirms_an_inclusion(run):
-    o = run(FULL_LINE, [HB], prof(labs=[hb(12.0, FULL_LINE)]), meta=RECORD, input_source="clinical_record")
+    o = run(FULL_LINE, [HB], prof(labs=[hb(12.0, FULL_LINE)]), meta=RECORD, input_source="clinical_record", documents=True)
     confirmed(o)
     assert o.a.passes is True and not o.a.needs_verification and "REQUEST_DOCUMENT" not in o.actions
 
 
 def test_record_quote_across_sentences_clears_an_exclusion(run):
     o = run(FULL_LINE, [HB_LOW_OUT], prof(labs=[hb(12.0, FULL_LINE)]), meta={"E3": RuleMeta(required_evidence="clinical_record")},
-            input_source="clinical_record")
+            input_source="clinical_record", documents=True)
     confirmed(o)
     assert o.a.holds == "no" and not o.a.needs_verification
 

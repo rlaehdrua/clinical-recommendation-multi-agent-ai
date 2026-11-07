@@ -1,7 +1,6 @@
 """출처 선언과 문서 검증의 구분 (합성 데이터, LLM·API 호출 없음).
 
-xfail(strict)은 알려진 위험입니다. 정책이 정해져 패치가 들어가면 XPASS로 실패하므로 그때 표시를 지웁니다.
-통과 테스트는 어느 대안을 고르더라도 보존해야 하는 동작입니다.
+선언 차단 게이트의 입력 유형별 회귀는 test_clinical_record_gate.py에 있습니다.
 """
 
 from __future__ import annotations
@@ -14,6 +13,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent))
 
+from document_support import attest_declared  # noqa: E402
 from test_decisions import TRIAL, _parsed  # noqa: E402
 from test_offline import _rule  # noqa: E402
 
@@ -92,41 +92,33 @@ def fact(input_source="clinical_record"):
 
 
 # ------------------------------------------------------------ 위험: 문서를 본 적 없는 선언
-@pytest.mark.xfail(strict=True, reason="clinical_record 선언만으로 적격 확정. 정책 결정 대기 (R2 대안 A/B/C)")
 def test_declaration_alone_does_not_confirm_eligibility(session):
     s, _ = session([HB], "clinical_record")
     assert pair_status(s) != "CONFIRMED_ELIGIBLE"
 
 
-def test_the_declared_path_is_what_the_helper_reports(session):
-    s, p = session([HB], "clinical_record")
-    assert eb.unverified_record_passes(s.matches["T1"], p, s.fact_store, PID) == ["I3"]
+def test_the_held_criterion_carries_the_flag(session):
+    s, _ = session([HB], "clinical_record")
+    assert eb.HELD_FLAG in s.matches["T1"].assessments[0].validation_flags
 
 
 def test_hold_keeps_the_stated_value_and_routes_to_a_document_request(session):
-    s, p = session([HB], "clinical_record")
-    m = eb.replace_unverified(s.matches["T1"], p, s.fact_store, PID)
+    s, _ = session([HB], "clinical_record")
+    m = s.matches["T1"]
     a = m.assessments[0]
     assert (m.eligibility, m.match_status) == ("UNCERTAIN", "POTENTIAL_MATCH") and a.passes is None and a.needs_verification
     assert a.self_reported_holds == "yes" and eb.HELD_FLAG in a.validation_flags
 
 
-def test_mark_keeps_the_verdict(session):
-    s, p = session([HB], "clinical_record")
-    m = eb.replace_unverified(s.matches["T1"], p, s.fact_store, PID, change=eb.mark)
-    assert m.eligibility == "ELIGIBLE" and m.assessments[0].passes is True and eb.HELD_FLAG in m.assessments[0].validation_flags
-
-
-def test_helper_is_not_wired_into_any_runtime_path():
+def test_the_gate_is_called_by_the_matcher_and_the_session():
     src = Path(__file__).parent.parent / "src" / "ctrec"
-    users = [p.name for p in src.rglob("*.py") if p.name != "evidence_basis.py" and "evidence_basis" in p.read_text(encoding="utf-8")]
-    assert users == []
+    users = sorted(p.name for p in src.rglob("*.py") if p.name != "evidence_basis.py" and "evidence_basis" in p.read_text(encoding="utf-8"))
+    assert {"matcher.py", "pipeline.py"} <= set(users)
 
 
-def test_helper_clears_once_a_document_reference_is_recorded(session):
+def test_helper_clears_once_a_server_document_is_recorded(session):
     s, p = session([HB], "clinical_record")
-    for f in s.fact_store.facts(PID):
-        s.fact_store.set_verification(f.fact_id, "document_verified", reason="합성 결과지", by="test", document_reference="SYN-DOC-1")
+    attest_declared(s.fact_store, PID)
     s.match()
     assert eb.unverified_record_passes(s.matches["T1"], p, s.fact_store, PID) == []
 
@@ -155,7 +147,7 @@ def test_tier_requires_a_verification_history():
     f.verification_status = "document_verified"
     assert tier(f) == "declared_record"
     store, g = fact()
-    store.set_verification(g.fact_id, "document_verified", reason="r", by="b", document_reference="SYN-DOC-1")
+    attest_declared(store, PID)
     assert tier(g) == "verified"
 
 
@@ -168,23 +160,22 @@ def test_forged_status_cannot_rule_out_or_clear_the_mismatch(session):
     assert pair_status(s) == "VERIFICATION_PENDING"
 
 
-@pytest.mark.xfail(strict=True, reason="evidence_satisfied 검증이 evidence_refs가 있을 때만 돎: 근거 없이 clinical_record 충족을 기록할 수 있음 (cohort_state.criterion_result가 이 경로)")
 def test_required_record_cannot_be_satisfied_with_no_refs():
     with pytest.raises(ValueError):
         CriterionResult(pair=PairKey(patient_alias=PID, trial_id="T1"), rule_id="I3", state="MET", adjudication="rule", decided_by="rule_engine",
                         required_evidence="clinical_record", evidence_satisfied=True, evaluator_version="x")
 
 
-@pytest.mark.xfail(strict=True, reason="EvidenceRef.verified는 상태 문자열뿐이고 문서 참조 필드가 없음: 계약 변경 필요 (대안 B)")
 def test_evidence_ref_says_which_document_verified_it():
     assert "document_reference" in EvidenceRef.model_fields
+    bare = EvidenceRef(fact_id="F1", field="age", source_type="clinical_record", verification_status="document_verified")
+    assert not bare.verified  # 상태 문자열만으로는 검증 근거가 아님
 
 
-def test_free_text_reference_is_accepted_and_proves_nothing():
-    """현재 계약의 한계를 고정: 참조 문자열은 문서가 있다는 증거가 아님. 서버 검증이 생기면 이 테스트를 바꿉니다."""
+def test_free_text_reference_proves_nothing():
     store, f = fact()
     store.set_verification(f.fact_id, "document_verified", reason="r", by="b", document_reference="아무 글자")
-    assert eb.document_backed(f) and tier(f) == "verified"
+    assert not eb.document_backed(f) and tier(f) == "declared_record"
 
 
 def test_contract_fact_is_not_promoted_to_record_before_verification():
@@ -206,8 +197,7 @@ def test_valid_self_report_criterion_still_confirms(session):
 
 def test_verified_synthetic_document_still_confirms(session):
     s, _ = session([HB], "clinical_record")
-    for f in s.fact_store.facts(PID):
-        s.fact_store.set_verification(f.fact_id, "document_verified", reason="합성 결과지", by="test", document_reference="SYN-DOC-1")
+    attest_declared(s.fact_store, PID)
     s.match()
     assert pair_status(s) == "CONFIRMED_ELIGIBLE"
 

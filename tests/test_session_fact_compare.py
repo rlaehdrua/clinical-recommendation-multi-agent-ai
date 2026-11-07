@@ -55,9 +55,11 @@ def test_llm_comparison_opt_in_keeps_results_identical(calls):
 
 
 def test_strict_mode_reports_declared_records(calls):
+    """문서 게이트가 판정 경로에 들어가 기준선부터 보류됨: MET에서 UNKNOWN으로의 변화는 사라지고 원인 코드만 남음."""
     s = _run(fact_compare="deterministic", fact_compare_strict=True)
     by = {x["rule_id"]: x for x in s.fact_comparison["trials"][0]["criteria"]}
-    assert (by["I3"]["change"], by["I3"]["cause"]) == ("met_to_unknown", "declared_unverified")
+    assert (by["I3"]["baseline"], by["I3"]["fact"], by["I3"]["cause"]) == ("UNKNOWN", "UNKNOWN", "declared_unverified")
+    assert by["I3"]["change"] == "same"
     assert s.fact_comparison["require_document_verification"] is True
 
 

@@ -9,13 +9,15 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent))
 
+from document_support import attest_declared
+
 from ctrec import incremental
 from ctrec.agents import matcher
 from ctrec.incremental import EvaluationPolicy, compare_states, evaluate_full, update
 from ctrec.tools import rule_engine
 
 from incremental_fixtures import (AGE, DX, DX_QUOTE, ECOG, EGFR, HB, OTHER, P, PDL1, POLICY, REF, FakeLLM, base_facts,
-                                  snap, store, trial)
+                                  snap, store as declared_store, trial)
 
 RULES = [AGE, ECOG, HB, EGFR, PDL1, DX]
 
@@ -27,12 +29,20 @@ def no_paid_llm(monkeypatch):
     monkeypatch.setattr(matcher.llm, "structured", boom)
 
 
+def store(*facts, patient=P):
+    """재사용·집계가 주제: 선언 사실은 합성 문서로 확인한 대조."""
+    s = declared_store(*facts, patient=patient)
+    attest_declared(s, patient)
+    return s
+
+
 def _run(change, rules=RULES, facts=None, assessor=None, cohorts=(), policy=POLICY, new_policy=None, **kw):
     s = store(*(facts or base_facts()))
     before = snap(s)
     parsed = {"T1": trial(rules, cohorts)}
     st0 = evaluate_full(before, parsed, policy, assessor)
     change(s)
+    attest_declared(s, P)
     after = snap(s)
     r = update(st0, before, after, parsed, new_policy or policy, assessor, **kw)
     full = evaluate_full(after, parsed, new_policy or policy, assessor)
@@ -200,7 +210,7 @@ def test_structural_guard_blocks_llm_reuse_even_if_graph_says_unaffected(monkeyp
 
 
 def test_llm_result_reused_only_when_fact_content_identical():
-    s = store(*base_facts())
+    s = declared_store(*base_facts())  # 같은 내용의 선언을 다시 넣음: 합성 문서로 확인하면 내용 변경이 됨
     before = snap(s)
     parsed = {"T1": trial([AGE, DX])}
     st0 = evaluate_full(before, parsed, POLICY, FakeLLM())

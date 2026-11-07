@@ -21,7 +21,8 @@
    - observation_window  : 기준의 기간 조건(time_window_days) 안에 관찰된 사실이 확인되지 않음 -> 판정 불가
    - self_report_only    : 진료 기록이 필요한 기준인데 근거가 자기 보고뿐 -> UNVERIFIED (답변 값 보존)
    - unknown_source      : 진료 기록이 필요한 기준인데 근거 출처를 모름 -> UNVERIFIED
-   - declared_unverified : (require_document_verification=True일 때만) clinical_record 선언뿐이고 문서 검증 없음 -> UNVERIFIED
+   - declared_unverified : clinical_record 선언뿐이고 서버 문서 확인이 없음 -> UNVERIFIED. 기본은 충족 쪽(passes=True)에만 적용하고
+                           (Matcher와 같은 요건: evidence_basis), require_document_verification=True면 불충족 쪽도 적용
    진료 기록이 필요한 기준이 아니면 자기 보고·출처 불명 근거도 그대로 인정합니다(미검증 정보를 무조건 불일치로 보지 않음).
 """
 
@@ -312,6 +313,19 @@ def relevant_biomarker_facts(rule: Rule, view: "FactEvidenceView") -> tuple[set[
     return wanted, [r for r in facts if not _fact_targets(r) or _fact_targets(r) & wanted]
 
 
+def document_coverage(facts: list[FactRef]) -> str:
+    """근거 전체의 수준: 값마다 가장 강한 근거를 고르고 그중 가장 약한 것. 근거가 없으면 unknown.
+
+    같은 값이면 문서 하나로 충분합니다(문서 + 같은 값의 자기 보고 = verified).
+    값이 다른 항목은 각각 확인돼야 합니다(한 항목의 문서가 다른 항목의 선언을 대신하지 않음)."""
+    best: dict[tuple[str, str], str] = {}
+    for r in facts:
+        key = (r.field_name, _norm(r.value))
+        if key not in best or _TIER_RANK[r.tier] > _TIER_RANK[best[key]]:
+            best[key] = r.tier
+    return min(best.values(), key=_TIER_RANK.__getitem__, default="unknown")
+
+
 def _differing(facts: list[FactRef]) -> bool:
     """값이 다른 사실이 있는가 (같은 값이면 상반된 결과가 아님)."""
     return len({_norm(r.value) for r in facts}) > 1
@@ -389,10 +403,12 @@ def gate(a: CriterionAssessment, rule: Rule, meta: RuleMeta, view: FactEvidenceV
                                                  "self_report": "self_report", "unknown": "unknown"}[best]})
     if meta.required_evidence != "clinical_record":
         return a, None
-    if best == "verified" or (best == "declared_record" and not require_document_verification):
-        return a, None
+    covered = document_coverage(facts)
+    if covered == "verified" or (best in ("verified", "declared_record") and a.passes is False
+                                 and not require_document_verification):
+        return a, None  # 선언된 기록의 불충족은 잠정 부적격으로 남김 (확정 부적격은 decision_state가 문서 확인으로만 인정)
     reason = {"declared_record": "declared_unverified", "self_report": "self_report_only",
-              "unknown": "unknown_source"}[best]
+              "unknown": "unknown_source"}[covered]
     said = "해당 없음" if not a.applicable else a.holds
     update = {"needs_verification": True,
               "missing_info": "진료 기록(검사 결과지, 병리·유전자 보고서 등)으로 확인 필요"}

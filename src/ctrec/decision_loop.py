@@ -30,6 +30,7 @@ from pydantic import BaseModel, Field
 from . import llm
 from .agents import matcher
 from .dependency_graph import DependencyGraph, analyze_impact, resolve
+from .fact_store import document_backed
 from .fact_view import _engine_field
 from .fact_changes import FactSnapshot, detect_changes, make_snapshot, snapshot_store, take_snapshot
 from .decision_policy import ALLOWED_TOOLS, DEFAULT_POLICY, PolicyConfig, candidates, validate
@@ -202,7 +203,7 @@ def _verify(ctx: LoopContext, action: Action, st: DecisionState) -> tuple[str, d
     still = sorted(k for k in action.target_criterion_ids
                    if k in by_key and (by_key[k].gap == "conflict" or by_key[k].conflict_on_decided))
     return "executed", {"checked_fact_ids": sorted(f.fact_id for f in checked),
-                        "document_verified": sum(f.verification_status == "document_verified" for f in checked),
+                        "document_verified": sum(document_backed(f) for f in checked),
                         "source_types": sorted({f.source_type for f in checked}),
                         "unresolved_conflict": still, "requires_review": bool(still)}
 

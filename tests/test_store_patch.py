@@ -301,7 +301,8 @@ def _match(parsed, monkeypatch):
     from ctrec.agents import matcher
     _mock_llm(monkeypatch)
     trial = json.loads((config.TRIALS_DIR / "NCT06125405.json").read_text(encoding="utf-8"))
-    return matcher.match_trial(_profile(age=10, labs=[]), parsed, trial, source_text=SRC, input_source="clinical_record")
+    return matcher.match_trial(_profile(age=10, labs=[]), parsed, trial, source_text=SRC, input_source="clinical_record",
+                               document_check=lambda a, r: True)  # 검토 표시의 효과만 봄: 문서 확인 있는 대조
 
 
 def _load(store_dir: Path):

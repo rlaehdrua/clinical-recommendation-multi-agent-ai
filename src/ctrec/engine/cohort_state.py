@@ -91,8 +91,9 @@ def criterion_result(alias: str, c: LegacyCriterion) -> CriterionResult:
         pair=PairKey(patient_alias=alias, trial_id=c.trial_id), rule_id=c.rule_id, state=state, adjudication=adj,
         decided_by=by, required_evidence=c.required_evidence if c.required_evidence in ("self_report_ok",
                                                                                          "clinical_record")
-        else "clinical_record", evidence_satisfied=state != "UNKNOWN" and c.gap == "none" and not c.conflict_on_decided,
-        evidence_fact_ids=tuple(c.evidence_refs), gap=c.gap,
+        else "clinical_record", evidence_satisfied=(state != "UNKNOWN" and c.gap == "none" and not c.conflict_on_decided
+                                                    and (c.required_evidence != "clinical_record" or bool(c.document_refs))),
+        evidence_fact_ids=tuple(c.evidence_refs), evidence_refs=tuple(c.document_refs), gap=c.gap,
         inputs_used=tuple(rec.used_fields) if rec and rec.inputs_verified and rec.used_fields else None,
         evaluator_version=f"{EVALUATOR_ADAPTER}:{rec.engine if rec else 'unknown'}",
         criterion_version=rec.criterion_version if rec else None)

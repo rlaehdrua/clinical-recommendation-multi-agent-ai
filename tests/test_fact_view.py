@@ -7,6 +7,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
+from document_support import attest, attest_declared
 from ctrec.fact_store import FactStore
 from ctrec.fact_view import FactEvidenceView, gate, tier
 from ctrec.schemas import CriterionAssessment, RuleMeta
@@ -78,7 +79,11 @@ def test_tier_never_promotes_declaration():
     f = s.facts(P)[0]
     assert tier(f) == "declared_record" and f.verification_status == "unknown"
     s.set_verification(f.fact_id, "document_verified", reason="외래 기록 확인", by="연구간호사", document_reference="doc-1")
-    assert tier(f) == "verified"
+    assert tier(f) == "declared_record"  # 문서 참조 문자열만으로는 검증이 아님
+    s2 = _store(("ecog", 1, {"source_type": "clinical_record"}))
+    f2 = s2.facts(P)[0]
+    attest(s2, f2.fact_id)
+    assert tier(f2) == "verified"
 
 
 # ------------------------------------------------------------ 체크포인트 2: 출처·검증·충돌 게이트
@@ -100,15 +105,22 @@ def test_self_report_allowed_when_protocol_allows():
 
 def test_declared_record_is_not_document_verified():
     s = _store(("ecog", 1, {"source_type": "clinical_record"}))
-    g, why = _gate(s, ECOG, _a(ECOG), RECORD)
-    assert why is None and g.passes is True  # 기존 기준선과 같이 선언된 기록은 잠정 인정
-    g, why = _gate(s, ECOG, _a(ECOG), RECORD, require_document_verification=True)
-    assert why == "declared_unverified" and g.passes is None and g.self_reported_holds is None
+    for kw in ({}, {"require_document_verification": True}):  # 통과는 어느 모드에서도 문서가 있어야 함 (Matcher와 같은 요건)
+        g, why = _gate(s, ECOG, _a(ECOG), RECORD, **kw)
+        assert why == "declared_unverified" and g.passes is None and g.self_reported_holds is None
+
+
+def test_declared_record_not_met_stays_provisional_unless_strict():
+    s = _store(("ecog", 3, {"source_type": "clinical_record"}))
+    g, why = _gate(s, ECOG, _a(ECOG, holds="no"), RECORD)
+    assert why is None and g.passes is False  # 잠정 부적격 (확정은 decision_state가 문서로만)
+    g, why = _gate(s, ECOG, _a(ECOG, holds="no"), RECORD, require_document_verification=True)
+    assert why == "declared_unverified" and g.passes is None
 
 
 def test_document_verified_fact_passes_strict_mode():
     s = _store(("ecog", 1, {"source_type": "self_report"}))
-    s.set_verification(s.facts(P)[0].fact_id, "document_verified", reason="확인", by="b", document_reference="doc")
+    attest(s, s.facts(P)[0].fact_id)
     g, why = _gate(s, ECOG, _a(ECOG), RECORD, require_document_verification=True)
     assert why is None and g.passes is True and g.evidence_source == "record"
 
@@ -135,7 +147,8 @@ def test_observation_window_not_met():
     month = _store(("lab:hemoglobin", 11.0, {"unit": "g/dL", "observed_at": "2026-09", "source_type": "clinical_record"}))
     assert _gate(month, HB, _a(HB), RECORD)[1] == "observation_window"  # 9월 1일부터면 28일을 넘을 수 있음
     recent = _store(("lab:hemoglobin", 11.0, {"unit": "g/dL", "observed_at": "2026-10-01", "source_type": "clinical_record"}))
-    assert _gate(recent, HB, _a(HB), RECORD) [1] is None
+    attest(recent, recent.facts(P)[0].fact_id)
+    assert _gate(recent, HB, _a(HB), RECORD)[1] is None
 
 
 def test_ecog_conflict_blocks_decision():
@@ -211,11 +224,12 @@ def test_different_targets_do_not_force_review():
     """EGFR과 PD-L1이 함께 있어도 각 기준은 자기 표적의 사실만 봄."""
     s = _store(_bm("EGFR exon 19 deletion positive", EGFR_Q), _bm("PD-L1 TPS 60%", PDL1_Q))
     g, why = _gate(s, EGFR, _a(EGFR, method="llm", evidence=EGFR_Q), RECORD)
+    assert why == "declared_unverified" and g.passes is None  # 표적을 구분해도 검증된 것은 아님
+    attest_declared(s, P)
+    g, why = _gate(s, EGFR, _a(EGFR, method="llm", evidence=EGFR_Q), RECORD)
     assert why is None and g.passes is True and not g.underspecified
     g, why = _gate(s, PDL1, _a(PDL1, method="llm", evidence=PDL1_Q), RECORD)
     assert why is None and g.passes is True
-    for f in s.facts(P):
-        assert f.verification_status == "unknown"  # 표적을 구분해도 검증된 것은 아님
 
 
 def test_same_target_opposite_results_stay_under_review():
@@ -225,6 +239,7 @@ def test_same_target_opposite_results_stay_under_review():
     assert why == "biomarker_unresolved" and g.passes is None and g.underspecified
     g, why = _gate(s, EGFR, _a(EGFR, holds="no", method="llm", evidence="EGFR 음성이라고 들음"), RECORD)
     assert why == "biomarker_unresolved" and g.passes is None  # NOT_MET도 확정하지 않음
+    attest_declared(s, P)
     g, why = _gate(s, PDL1, _a(PDL1, method="llm", evidence=PDL1_Q), RECORD)
     assert why is None and g.passes is True  # 다른 표적의 상반 결과로 PD-L1 기준까지 막지 않음
 
@@ -276,6 +291,7 @@ def test_structured_fact_id_links_exactly():
     fid = s.facts(P, "biomarker")[0].fact_id
     link = link_evidence(f"근거 사실 {fid}", FactEvidenceView(s, P))
     assert (link.status, link.fact_ids) == ("linked", [fid])
+    attest_declared(s, P)
     g, why = _gate(s, EGFR, _a(EGFR, method="llm", evidence=f"근거 사실 {fid}"), RECORD)
     assert why is None and g.passes is True
     assert link_evidence("근거 사실 F-000000000000", FactEvidenceView(s, P)).status == "invalid_ref"

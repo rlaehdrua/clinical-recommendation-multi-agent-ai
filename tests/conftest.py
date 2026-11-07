@@ -17,6 +17,16 @@ STOP_TIMEOUT_S = 30  # 대역 안에서 멈춘 호출(FakeLLM.block_on, 최대 2
 
 
 @pytest.fixture(autouse=True)
+def _synthetic_document_authority():
+    """합성 문서 대조군용 권한. 이 권한이 발급한 증명만 인정하므로 문자열 위조는 여전히 무효 (tests/document_support.py)."""
+    from ctrec import document_authority
+    from document_support import AUTHORITY
+
+    with document_authority.use(AUTHORITY):
+        yield
+
+
+@pytest.fixture(autouse=True)
 def _stop_leftover_web_runs(monkeypatch):
     before = set(threading.enumerate())
     yield

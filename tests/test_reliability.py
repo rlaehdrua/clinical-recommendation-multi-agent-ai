@@ -76,7 +76,7 @@ def test_matcher_retries_only_missing_rule_ids(monkeypatch):
 
     monkeypatch.setattr(matcher.llm, "structured", fake)
     monkeypatch.setattr(config, "MATCHER_MISSING_RETRIES", 1)
-    m = matcher.match_trial(_profile(), _parsed(rules), {"brief_summary": ""})
+    m = matcher.match_trial(_profile(), _parsed(rules), {"brief_summary": ""}, document_check=lambda a, r: True)
     assert asked == [["I1", "I2", "I3"], ["I2"]]
     assert m.retried_rule_ids == ["I2"] and m.eligibility == "ELIGIBLE"
     assert [a.rule_id for a in m.assessments] == ["I1", "I2", "I3"]

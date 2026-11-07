@@ -61,7 +61,7 @@ def test_record_rule_keeps_the_document_path(run, text, value):
 
 @pytest.mark.parametrize("text", ["Hb 12 g/dL", "hemoglobin is 12 g/dL", "혈색소 12 g/dL", "Hb | 12 | g/dL", "Hb 12", "2026-03-01 Hb 12 g/dL", "CBC 결과. 수치는 다음과 같음. Hb 12 g/dL"])
 def test_real_measurement_still_confirms(run, monkeypatch, text):
-    o = run(text, [HB], lab_profile(text, 12.0), meta=RECORD, input_source="clinical_record")
+    o = run(text, [HB], lab_profile(text, 12.0), meta=RECORD, input_source="clinical_record", documents=True)
     confirmed(o)
     assert ranked(o, monkeypatch).ranked[0].match_status == "CRITERIA_MATCH" and not o.actions
 

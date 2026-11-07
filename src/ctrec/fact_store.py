@@ -33,6 +33,9 @@ from typing import Literal, Union
 
 from pydantic import BaseModel, Field
 
+from . import document_authority
+from .document_authority import ServerAttestation
+
 FORMAT_VERSION = 1
 
 SourceType = Literal["clinical_record", "self_report", "unknown"]
@@ -69,6 +72,7 @@ class VerificationEvent(BaseModel):
     reason: str
     by: str
     document_reference: str | None = None
+    attestation: ServerAttestation | None = None  # 서버 문서 확인 증명. 없으면 서버 검증이 아님
     at: str
 
 
@@ -150,11 +154,15 @@ def relation(a: PatientFact, b: PatientFact) -> Relation:
 
 
 def document_backed(f: PatientFact) -> bool:
-    """문서 확인 이력이 실제로 있는가. 상태 문자열만 document_verified인 사실은 아님 (참조 문자열의 진위는 보지 못함)."""
+    """서버가 문서로 확인한 값인가. 상태 문자열·문서 참조 문자열만으로는 아님: 현재 권한이 인정한 증명이 마지막 이력에 있어야 함.
+
+    운영 기본 권한(NoDocumentAuthority)은 아무것도 인정하지 않으므로 지금 운영 경로에서는 항상 False입니다."""
     if f.verification_status != "document_verified" or not f.verification_history:
         return False
     last = f.verification_history[-1]
-    return last.to_status == "document_verified" and bool((last.document_reference or "").strip())
+    att = last.attestation
+    return (last.to_status == "document_verified" and att is not None and att.document_id == last.document_reference
+            and att.fact_digest == document_authority.fact_digest(f) and document_authority.current().valid(att, f))
 
 
 class FactStore:
@@ -231,6 +239,20 @@ class FactStore:
             from_status=f.verification_status, to_status=status, reason=reason.strip(), by=by.strip(),
             document_reference=(document_reference or None), at=_now()))
         f.verification_status = status  # type: ignore[assignment]
+        return f
+
+    def attest(self, fact_id: str, attestation: ServerAttestation, authority: document_authority.DocumentAuthority,
+               *, reason: str, by: str) -> PatientFact:
+        """서버가 확인한 문서로 검증 기록. 호출자가 만든 문자열이 아니라 권한 객체가 인정한 증명을 요구."""
+        f = self.get(fact_id)
+        if not (reason or "").strip() or not (by or "").strip():
+            raise FactStoreError("검증 상태를 바꾸려면 사유(reason)와 기록자(by)가 필요함")
+        if attestation.fact_digest != document_authority.fact_digest(f) or not authority.valid(attestation, f):
+            raise FactStoreError("서버가 확인하지 않은 문서 증명")
+        f.verification_history.append(VerificationEvent(
+            from_status=f.verification_status, to_status="document_verified", reason=reason.strip(), by=by.strip(),
+            document_reference=attestation.document_id, attestation=attestation, at=_now()))
+        f.verification_status = "document_verified"  # type: ignore[assignment]
         return f
 
     # ------------------------------------------------------------ 충돌

@@ -329,11 +329,11 @@ def test_experiment_requires_catalog_hash_and_limits_claims():
 
 
 # ------------------------------------------------------------ 6. midterm 계약 연결
-def _fact(fid="F-aaaaaaaaaaaa", status="unverified", source="self_report"):
+def _fact(fid="F-aaaaaaaaaaaa", status="unverified", source="self_report", document_reference=None):
     return PropFact(fact_id=fid, proposition=prop("surgery", "ever"), value=False, as_of="2026-10-01",
                     session_id="S1", contract_id="QC-SURGERY-LAST", contract_version=1, contract_digest12="0" * 12,
                     round=1, question_id="C1", answer_label="합성", source=source, verification_status=status,
-                    recorded_at="2026-10-01T00:00:00")
+                    recorded_at="2026-10-01T00:00:00", document_reference=document_reference)
 
 
 def _assessment(passes=True, required="self_report_ok", **kw):
@@ -352,8 +352,9 @@ def test_evidence_ref_preserves_proposition_key_and_status():
     assert (r.field, r.proposition_key, r.verification_status, r.source_type) == (
         "prop:surgery/event/ever", "surgery/event/ever", "unverified", "self_report")
     assert (r.contract_id, r.contract_version, r.verified) == ("QC-SURGERY-LAST", 1, False)
-    v = evidence_ref(_fact(status="document_verified", source="clinical_record"))
-    assert v.verified and v.source_type == "clinical_record"
+    v = evidence_ref(_fact(status="document_verified", source="clinical_record", document_reference="SYN-DOC-1"))
+    assert v.verified and v.source_type == "clinical_record" and v.document_reference == "SYN-DOC-1"
+    assert not evidence_ref(_fact(status="document_verified", source="clinical_record")).verified  # 문서 ID 없는 상태 문자열
     fake = evidence_ref(_fact(status="unverified", source="clinical_record"))  # 검증 전 clinical_record 표기
     assert fake.source_type == "self_report" and not fake.verified
 
@@ -380,7 +381,7 @@ def test_unverified_proposition_not_promoted_to_clinical_evidence():
     cr = criterion_result_from_assessment(A1, "T1", a, {**PROV, "outcome": "unverified"}, [_fact()])
     assert (cr.state, cr.gap, cr.evidence_satisfied, cr.decided_by) == ("UNKNOWN", "unverified", False, "none")
     ok = criterion_result_from_assessment(A1, "T1", _assessment(required="clinical_record"), PROV,
-                                          [_fact(status="document_verified", source="clinical_record")])
+                                          [_fact(status="document_verified", source="clinical_record", document_reference="SYN-DOC-1")])
     assert ok.evidence_satisfied
     no = criterion_result_from_assessment(A1, "T1", _assessment(required="clinical_record"), PROV, [_fact()])
     assert not no.evidence_satisfied  # 판정은 옮기되 근거 요구 충족으로 올리지 않음

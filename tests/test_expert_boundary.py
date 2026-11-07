@@ -20,6 +20,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent))
 
+from document_support import attest_declared  # noqa: E402
+
 from ctrec import config, expert_boundary as xb, pipeline, status  # noqa: E402
 from ctrec.agents import matcher  # noqa: E402
 from ctrec.contract_session import ContractSession  # noqa: E402
@@ -59,7 +61,7 @@ def _profile(age):
                           ecog=None, other_facts=[], missing_or_ambiguous=[])
 
 
-def _run(monkeypatch, trial_id, rules, meta, verdicts, text, age=62, cls=Session, **kw):
+def _run(monkeypatch, trial_id, rules, meta, verdicts, text, age=62, cls=Session, documents=False, **kw):
     """실제 Session 한 번 (LLM 자리만 대역). 반환: 쌍의 층별 결과."""
     parsed = ParsedTrial(trial_id=trial_id, title="t", target_population="", intervention_summary="", key_conditions=[],
                          cohorts=[], rules=[r.model_copy() for r in rules], parsing_notes="")
@@ -81,6 +83,8 @@ def _run(monkeypatch, trial_id, rules, meta, verdicts, text, age=62, cls=Session
     s = cls(case=PatientCase(PID, text, input_source="clinical_record"), trials={trial_id: {**TRIAL, "trial_id": trial_id}},
             answerer=None, tracer=_Tracer(), **kw)
     s.profile_patient()
+    if documents:
+        attest_declared(s.fact_store, PID)
     s.match()
     v = SessionView.from_session(s)
     v.matched_versions = {t: v.snapshot.version for t in s.matches}
@@ -158,8 +162,8 @@ def test_independent_ineligible_stays_confirmed_in_decision(monkeypatch, cls):
 def test_ordinary_rules_keep_their_decisions(monkeypatch, cls, age, eligibility):
     """대조군: 수치 규칙과 일반 LLM 기준(임상 판단 아님)의 판정은 그대로."""
     dx = _rule(rule_id="I2", text="Histologically confirmed NSCLC", category="diagnosis", structured_evaluable=False)
-    x = _run(monkeypatch, "T1", [AGE, dx], None, {"I2": ("yes", "조직검사로 확인된 NSCLC")}, f"{age}세 남성. 조직검사로 확인된 NSCLC.",
-             age=age, cls=cls)
+    x = _run(monkeypatch, "T1", [AGE, dx], {"I2": RuleMeta(required_evidence="self_report_ok")}, {"I2": ("yes", "조직검사로 확인된 NSCLC")},
+             f"{age}세 남성. 조직검사로 확인된 NSCLC.", age=age, cls=cls)  # 문서 게이트가 아닌 임상의 경계만 보는 대조
     assert x["match"].eligibility == eligibility
     assert all(xb.FLAG not in a.validation_flags for a in x["match"].assessments)
     assert next(a for a in x["match"].assessments if a.rule_id == "I2").passes is True

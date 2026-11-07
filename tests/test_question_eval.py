@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from bench_incremental import load_frozen  # noqa: E402
 from decision_scenarios import load_trials  # noqa: E402
+from document_support import attest  # noqa: E402
 
 from ctrec import config, llm, question_eval as qe, store_patch  # noqa: E402
 from ctrec.schemas import ClarifyingQuestion, QAPair  # noqa: E402
@@ -180,7 +181,7 @@ def test_relevance_classification(stub_matcher):
     d = stub_matcher
     s = d.store(("age", 12, {"unit": "years"}))
     f = s.facts(d.P, "age")[0]
-    s.set_verification(f.fact_id, "document_verified", reason="합성", by="t", document_reference="DOC")
+    attest(s, f.fact_id)
     age_a = d.AGE.model_copy(update={"rule_id": "I7", "cohort": "A"})
     ecog_b = d.ECOG.model_copy(update={"rule_id": "I8", "cohort": "B"})
     v = d.view({"T1": d.trial("T1", [d.AGE, d.ECOG]), "T2": d.trial("T2", [d.DX, age_a, ecog_b], cohorts=["A", "B"])}, s)

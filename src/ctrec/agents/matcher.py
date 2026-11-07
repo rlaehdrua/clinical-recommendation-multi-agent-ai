@@ -56,6 +56,7 @@ SYSTEM = """당신은 임상시험 적격성을 판정하는 '추론·매칭 에
 
 
 LOGISTICS = "consent_or_logistics"
+DECLARED_RECORD_HELD = "declared_record_unverified"  # 진료 기록으로 선언됐으나 서버 문서 확인이 없어 통과를 보류한 기준
 
 
 def is_waivable_logistics(a: CriterionAssessment) -> bool:
@@ -429,14 +430,17 @@ def _no_criteria_match(profile: PatientProfile, parsed: ParsedTrial, trial: dict
 def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
                 reference_date: str | None = None, source_text: str | None = None,
                 input_source: str = "unknown", qa_log: list[QAPair] | None = None,
-                qa: list[QAPair] | None = None, session_id: str | None = None) -> TrialMatch:
+                qa: list[QAPair] | None = None, session_id: str | None = None,
+                document_check=None) -> TrialMatch:
     """source_text: 환자 원문(확인 질문 답변 포함). 주어지면 LLM 판정의 인용 근거를 원문과 대조합니다.
     input_source: 최초 입력의 선언된 출처(evidence.InputSource). 밝히지 않으면 unknown(진료 기록으로 보지 않음).
     qa_log: 확인 질문 기록(질문 ID·대상 기준·답변). 주어지면 짧은 답변(예/아니요)을 그 질문의 대상 기준에 한해 근거로 씀.
             없으면(현재 Session 기본) 짧은 답변은 근거로 쓰지 않음.
     qa, session_id: Session의 확인 질문 기록과 세션 ID (Session.match가 넘김). 모델 판정이 인용 검증에서 되돌려졌을 때만,
             이 기준을 겨냥한 예/아니요 답이 같은 대상·기간을 물은 것으로 코드가 검증되면 그 문답을 근거로 인정
-            (answer_verification.py). 검증할 수 없으면 기존대로 판정 불가."""
+            (answer_verification.py). 검증할 수 없으면 기존대로 판정 불가.
+    document_check: (판정, 규칙) -> 서버 문서 확인이 있는가 (evidence_basis.document_check). 없으면 어떤 기준도 문서로
+            확인되지 않은 것으로 봅니다: 진료 기록 필요 기준의 통과를 확정하지 않음 (input_source는 선언일 뿐 검증이 아님)."""
     if not parsed.rules:
         return _no_criteria_match(profile, parsed, trial)
     ref = reference_date or config.reference_date()
@@ -538,6 +542,9 @@ def match_trial(profile: PatientProfile, parsed: ParsedTrial, trial: dict,
     all_assessments = [_apply_evidence_policy(results[r.rule_id], _meta(parsed, r), source_text, input_source, rule=r,
                                               profile=profile, key=f"{parsed.trial_id}:{r.rule_id}", qa=qa, reference_date=ref)
                        for r in parsed.rules]
+    # 진료 기록이 필요한 기준의 통과는 서버 문서 확인이 있을 때만 확정 (Session·시뮬레이터 공통 경계)
+    from .. import evidence_basis
+    all_assessments = [evidence_basis.enforce(a, by_id[a.rule_id], document_check) for a in all_assessments]
     # Q&A 정책 (qa_guard.policy): contract면 계약 없는 확인 답변에 기댄 확정을 UNVERIFIED로. 기본 legacy는 기존과 같음
     from .. import qa_guard
     if qa_guard.policy() == "contract":

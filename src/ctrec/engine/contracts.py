@@ -239,10 +239,11 @@ class EvidenceRef(_Frozen):
     verification_status: VerificationStatus = "unknown"
     contract_id: str | None = Field(default=None, pattern=QUESTION_CONTRACT_PATTERN)
     contract_version: NonNegativeInt | None = None
+    document_reference: str | None = None  # 검증에 쓴 문서 ID (값·원문 아님)
 
     @property
     def verified(self) -> bool:
-        return self.verification_status == "document_verified"
+        return self.verification_status == "document_verified" and bool((self.document_reference or "").strip())
 
     @property
     def proposition_key(self) -> str | None:
@@ -281,6 +282,8 @@ class CriterionResult(_Frozen):
             raise ValueError("규칙 판정 기준을 LLM이 확정했다고 기록할 수 없음")
         if not decided and self.evidence_satisfied:
             raise ValueError("판정되지 않은 기준은 근거 요구를 충족했다고 기록할 수 없음")
+        if self.required_evidence == "clinical_record" and self.evidence_satisfied and not self.evidence_refs:
+            raise ValueError("진료 기록이 필요한 기준은 근거 참조 없이 충족될 수 없음")
         if self.evidence_refs:
             ids = {r.fact_id for r in self.evidence_refs}
             if not ids <= set(self.evidence_fact_ids):
