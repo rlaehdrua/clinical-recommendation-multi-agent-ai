@@ -161,9 +161,9 @@ def test_default_mode_is_legacy_and_changes_nothing(monkeypatch):
 def test_policy_comes_from_the_shared_registry(monkeypatch):
     from ctrec.engine.dcvc import FullDCVCPolicy
     monkeypatch.delenv(er.ENV_POLICY_ID, raising=False)
+    assert isinstance(er.policy_from_env(), FullDCVCPolicy)  # P: 제품 기본 = 실험의 제안 정책 (같은 클래스)
+    monkeypatch.setenv(er.ENV_POLICY_ID, "legacy_greedy")
     assert er.policy_from_env().policy_id == "legacy_adapter_greedy"
-    monkeypatch.setenv(er.ENV_POLICY_ID, "full_dcvc")
-    assert isinstance(er.policy_from_env(), FullDCVCPolicy)
     monkeypatch.setenv(er.ENV_POLICY_ID, "nope")
     with pytest.raises(ValueError):
         er.policy_from_env()

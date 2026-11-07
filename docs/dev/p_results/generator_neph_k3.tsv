@@ -1,0 +1,22 @@
+gt_kind	budget_minutes	arm	runs	verified_eligible	false_eligible	verified_ineligible	false_ineligible	confirmed_unverified	coverage	gt_coverage	unresolved	waiting	unresolved_no_action	actions	assumed_cost_minutes	zero_allocation	allocation_gini	patients_opportunity_missed	rule_gt_circular_disagreements
+synthetic_generator_gt	200.0	no_action	6	0.0	0.0	0.0	0.0	0.0	0.0	0.0	60.0	60.0	0.0	0.0	0.0	20.0	0.0	0.0	0.0
+synthetic_generator_gt	200.0	random	6	0.0	0.0	0.833	0.0	0.0	0.014	0.025	59.167	59.167	0.0	68.167	200.0	0.5	0.234	0.0	0.0
+synthetic_generator_gt	200.0	patient_independent	6	0.0	0.0	1.0	0.0	0.0	0.017	0.032	59.0	59.0	0.0	153.0	200.0	16.0	0.855	0.0	0.0
+synthetic_generator_gt	200.0	cost_first	6	0.0	0.0	0.0	0.0	0.0	0.0	0.0	60.0	60.0	0.0	166.333	200.0	11.0	0.745	0.0	0.0
+synthetic_generator_gt	200.0	dcvc	6	0.0	0.0	7.5	0.0	0.0	0.125	0.22	52.5	52.5	0.0	109.333	200.0	9.0	0.599	0.0	0.0
+synthetic_generator_gt	200.0	dcvc-no_bundles	6	0.0	0.0	6.833	0.0	0.0	0.114	0.2	53.167	53.167	0.0	27.667	200.0	6.0	0.472	0.0	0.0
+synthetic_generator_gt	200.0	dcvc-no_dcv	6	0.0	0.0	7.5	0.0	0.0	0.125	0.22	52.5	52.5	0.0	109.333	200.0	9.0	0.599	0.0	0.0
+synthetic_generator_gt	200.0	dcvc-no_recovery	6	0.0	0.0	7.5	0.0	0.0	0.125	0.22	52.5	52.0	0.5	109.333	200.0	9.0	0.599	0.0	0.0
+synthetic_generator_gt	200.0	dcvc-no_evidence_routing	6	0.0	0.0	6.833	0.0	0.0	0.114	0.2	53.167	53.167	0.0	57.667	199.5	7.667	0.569	0.0	0.0
+synthetic_generator_gt	800.0	no_action	6	0.0	0.0	0.0	0.0	0.0	0.0	0.0	60.0	60.0	0.0	0.0	0.0	20.0	0.0	0.0	0.0
+synthetic_generator_gt	800.0	random	6	0.0	0.0	5.167	0.0	0.0	0.086	0.154	54.833	54.833	0.0	498.833	800.0	0.0	0.113	0.0	0.0
+synthetic_generator_gt	800.0	patient_independent	6	0.0	0.0	4.333	0.0	0.0	0.072	0.129	55.667	55.667	0.0	600.0	800.0	8.0	0.443	0.0	0.0
+synthetic_generator_gt	800.0	cost_first	6	0.0	0.0	0.0	0.0	0.0	0.0	0.0	60.0	60.0	0.0	699.0	800.0	0.0	0.178	0.0	0.0
+synthetic_generator_gt	800.0	dcvc	6	0.0	0.0	8.167	0.0	0.0	0.136	0.237	51.833	51.833	0.0	577.833	800.0	0.0	0.206	0.0	0.0
+synthetic_generator_gt	800.0	dcvc-no_bundles	6	0.0	0.0	11.167	0.0	0.0	0.186	0.321	48.833	48.833	0.0	433.333	800.0	0.0	0.098	0.0	0.0
+synthetic_generator_gt	800.0	dcvc-no_dcv	6	0.0	0.0	8.167	0.0	0.0	0.136	0.237	51.833	51.833	0.0	577.833	800.0	0.0	0.206	0.0	0.0
+synthetic_generator_gt	800.0	dcvc-no_recovery	6	0.0	0.0	8.167	0.0	0.0	0.136	0.237	51.833	45.167	6.667	577.333	800.0	0.0	0.206	0.0	0.0
+synthetic_generator_gt	800.0	dcvc-no_evidence_routing	6	0.0	0.0	6.833	0.0	0.0	0.114	0.2	53.167	53.167	0.0	576.0	800.0	2.667	0.348	0.0	0.0
+# p_suite/0.1: cohorts=['neph-k3-catalog-source-r00@9a99bd0d88a444a0+map7403ddeb', 'neph-k3-catalog-source-r01@9a99bd0d88a444a0+map7403ddeb', 'neph-k3-catalog-source-r02@9a99bd0d88a444a0+map7403ddeb'], gt=['synthetic_generator_gt'], seeds=[1, 2], horizon=10
+# 비용: relative_policy_comparison_only (가정 비용 정보원 ['clinician_review', 'lab_report', 'medical_record', 'medication_list', 'pathology_report', 'patient_interview', 'trial_registry'])
+# 정확도 칸(verified_*/false_*)은 독립 합성 GT 기준이며 임상 GT가 아님. '-' = 독립 GT 없음(미검증). rule_gt_circular_disagreements는 같은 평가기의 순환 라벨과의 일관성 검사.

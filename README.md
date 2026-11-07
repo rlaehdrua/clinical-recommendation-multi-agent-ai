@@ -599,6 +599,21 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 
 수정할 때마다 무엇을 왜 바꿨는지 여기에 기록합니다. 최신 항목이 위에 옵니다.
 
+### 2026-11-07 — P: 웹·WP6 공통 엔진 루프, 코호트 실행기, 근거 경로 DCV, 기준선·ablation 실험
+
+배경: 웹 Session과 시뮬레이터가 같은 정책을 쓰는지 점검했습니다. 반복 억제·청구·정산은 두 경로에 따로 구현돼 있었습니다. 웹은 다시 매칭하지 않은 시험의 판정 시점을 숨겼고, 코호트(여러 환자) 실행은 시뮬레이터에만 있었습니다. 보고서는 `docs/dev/p_common_engine_2026_11_07.md`, 결과는 `docs/dev/p_results/`에 있습니다.
+
+| # | 변경 | 파일 |
+|---|---|---|
+| 1 | `EngineLoop`: 계획(propose → 반복 억제 → select) · 실행 배분 · 실행 시 청구 · 정산. 시뮬레이터와 웹이 같은 객체를 쓰며, 리팩터만으로는 WP6 해시 56/56이 같음 | `src/ctrec/engine/loop.py` (신규), `src/ctrec/sim/runner.py` |
+| 2 | 웹 `CohortRunner`·`run_cohort`·`activate_cohort`: 여러 Session을 한 정책·한 원장·라운드당 한 계획으로 묶음. 화면에서 실행할 수 없는 행동은 not_executed로 정산. 실제 판정 시점을 기록하고, 엔진 모드에서는 판정이 오래된 시험을 다시 매칭(풀 재평가와 같은 상태). 엔진 모드 기본 정책은 `full_dcvc` | `src/ctrec/web/engine_runner.py` |
+| 3 | `full_dcvc` 0.2-draft: 진료 기록 근거가 필요한 기준만 겨냥한 환자 질문은 남은 문서 정보원으로 보냄(`record_evidence_required`, 스위치 `evidence_routing`). 불충족 필수 기준의 근거 확인은 쌍을 닫는 행동으로 셈. WP6 해시는 `full_dcvc` 8개만 바뀜 | `src/ctrec/engine/dcvc.py` |
+| 4 | 실험 `python -m ctrec.sim.suite`: random·환자 독립·비용 우선·DCV+C와 ablation(번들·DCV·회복·근거 경로 제거). 독립 GT·순환 GT·미검증을 섞지 않음. NSCLC 파일럿(실제 프로토콜 6개 x 합성 환자 8명) | `src/ctrec/sim/suite.py`, `src/ctrec/sim/nsclc_pilot.py` (신규) |
+| 5 | 테스트 32건(재생 일치, 증분=풀, 시나리오, GT 격리, 반복 금지 등). 기존 3건은 0.1 경로(`evidence_routing=False`)로 고정하고, 새 기본 동작 1건을 추가 | `tests/test_p_common_engine.py` (신규), `tests/test_engine_baselines.py`, `tests/test_recovery_r1_r2.py`, `tests/test_engine_runner.py` |
+
+- 웹 **기본** 모드는 여전히 `legacy`(LLM 질문 생성기)라서, 기본 웹 경로는 공통 정책을 쓰지 않습니다. 엔진 모드를 강제하면 테스트 16건이 실패합니다(선택형 질문·형식 검증·브라우저 흐름). 엔진 질문 렌더러가 선택형 answer_type을 내야 기본을 바꿀 수 있으며, 이는 팀 결정입니다.
+- NCT06216301 I1(미국 22세) 결함이 파일럿에서 거짓 부적격 1건으로 재현됩니다(strict xfail). 생성기 800분 예산에서는 번들 제거가 더 많이 확정합니다(점수식 재검토 필요).
+
 ### 2026-11-07 — D+E 통합: 환자값 문맥 판단, 과거 값 단독 불인정
 
 배경: 값이 적혀 있어도 환자의 현재 측정값이 아닌 표현이 절 경계를 넘어 확정에 닿았습니다. 상태 표지가 누구를 서술하는지 판단하도록 바꿨습니다.

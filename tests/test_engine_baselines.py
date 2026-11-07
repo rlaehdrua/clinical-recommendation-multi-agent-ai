@@ -127,7 +127,8 @@ def test_make_policy_rejects_unknown_and_passes_switches():
     with pytest.raises(ValueError):
         make_policy("oracle_upper")  # 정답을 보는 정책은 엔진에 두지 않음 (sim/ 전용)
     pol = make_policy("full_dcvc", bundles=False, recovery=False)
-    assert pol.switches == {"dcv_impact": True, "bundles": False, "fairness_floor": True, "recovery": False}
+    assert pol.switches == {"dcv_impact": True, "bundles": False, "fairness_floor": True, "recovery": False,
+                            "evidence_routing": True}
     assert make_policy("random", seed=3).seed == 3
 
 
@@ -177,7 +178,7 @@ def test_recovery_switch_holds_instead_of_alternative_source():
     """회복 제거: "모름" 뒤 대체 문서를 찾지 않고 그 항목을 바로 보류·소진. 회복을 켜면 문서 요청."""
     co = CohortState.from_decision_states({PA: _state_missing()})
     for recovery, expect in ((True, "REQUEST_DOCUMENT"), (False, "DEFER")):
-        pol = FullDCVCPolicy(recovery=recovery)
+        pol = FullDCVCPolicy(recovery=recovery, evidence_routing=False)  # 근거 경로(P)는 ECOG를 바로 문서로 보냄
         ecog = next(a for a in pol.propose(co) if a.info_key == "ecog" and a.action_type == "ASK_PATIENT")
         co2, _ = pol.apply_outcome(co, ecog, _no_answer(ecog))
         nxt = next(a for a in pol.propose(co2) if a.fingerprint == ecog.fingerprint)

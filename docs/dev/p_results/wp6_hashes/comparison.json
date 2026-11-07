@@ -1,0 +1,18 @@
+{
+ "runs": 56,
+ "key_format": "cohort_index|budget_minutes|rephrase|policy_id (cohort 0 = demo, 1 = generator neph-k3-catalog-source r0; seed 1, horizon 10)",
+ "refactor_vs_base_changed": [],
+ "final_vs_base_changed": [
+  "0|20|0|full_dcvc",
+  "0|20|1|full_dcvc",
+  "0|400|0|full_dcvc",
+  "0|400|1|full_dcvc",
+  "1|20|0|full_dcvc",
+  "1|20|1|full_dcvc",
+  "1|400|0|full_dcvc",
+  "1|400|1|full_dcvc"
+ ],
+ "final_changed_policies": [
+  "full_dcvc"
+ ]
+}
