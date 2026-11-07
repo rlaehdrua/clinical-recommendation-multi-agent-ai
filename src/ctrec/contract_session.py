@@ -21,7 +21,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from . import acquisition
+from . import acquisition, expert_boundary
 from .agents import matcher, question_generator
 from .evaluator import evaluate
 from .ir_review import Registry
@@ -124,6 +124,11 @@ class ContractSession(Session):
             if res.decided and res.assessment is not None:
                 base = replaced.get(rule.rule_id, current[rule.rule_id])
                 replaced[rule.rule_id] = merge(base, res.assessment)
+        for rule in parsed.rules:  # 임상의 판단 기준은 LLM·계약 평가기 어느 쪽 판정도 확정으로 남기지 않음
+            a = replaced.get(rule.rule_id, current.get(rule.rule_id))
+            held = expert_boundary.enforce(m.trial_id, rule, a) if a is not None else None
+            if held is not a:
+                replaced[rule.rule_id] = held
         if not replaced:
             return m
         new = recompose(m, parsed, replaced)
