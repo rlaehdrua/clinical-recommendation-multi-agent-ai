@@ -1,0 +1,212 @@
+{
+ "version": 1,
+ "status": "draft",
+ "scope": "생성기 예시(신증후군 소아) 슬롯 사전 data/cohort/slot_dictionary.draft.json",
+ "basis": "설계 §2.1과 같은 규칙. 정보원은 코호트의 유효 소스(reveals)에서 슬롯별로 정함",
+ "sources": {
+  "S_lab": "lab_report",
+  "S_path": "pathology_report",
+  "S_med": "medication_list",
+  "S_summary": "medical_record",
+  "S_chart": "medical_record",
+  "S_phone": "patient_interview",
+  "S_md": "clinician_review"
+ },
+ "core_slots": [
+  "age",
+  "sex",
+  "lab_age_days"
+ ],
+ "value_encoding": "값 표기(③, draft): age·ecog·수치 검사 슬롯은 숫자 그대로(검사는 단위 포함), sex는 female/male 그대로, 그 밖의 슬롯은 '<슬롯>=<값>' 문자열 사실(예: diagnosis 'cm.hiv=no'). 판정기(sim.judge)가 이 표기를 다시 읽음. 임상 표현(예: 'EGFR exon 19 deletion')으로 바꾸는 것은 WP2b D1 검수 뒤",
+ "slots": {
+  "age": {
+   "fields": [
+    "age"
+   ]
+  },
+  "cm.acute_infection": {
+   "fields": [
+    "diagnosis"
+   ]
+  },
+  "cm.chronic_active_infection": {
+   "fields": [
+    "diagnosis"
+   ]
+  },
+  "cm.family_ns_history": {
+   "fields": [
+    "diagnosis"
+   ]
+  },
+  "cm.heme_endocrine": {
+   "fields": [
+    "diagnosis"
+   ]
+  },
+  "cm.immune_onc": {
+   "fields": [
+    "diagnosis"
+   ]
+  },
+  "cm.serious_organ_disease": {
+   "fields": [
+    "diagnosis"
+   ]
+  },
+  "cm.severe_drug_immunosuppression": {
+   "fields": [
+    "diagnosis"
+   ]
+  },
+  "dx.active_hepatitis": {
+   "fields": [
+    "diagnosis"
+   ]
+  },
+  "dx.ns_etiology": {
+   "fields": [
+    "diagnosis"
+   ]
+  },
+  "dx.ns_steroid_response": {
+   "fields": [
+    "diagnosis"
+   ]
+  },
+  "judge.investigator_unsuitable": {
+   "fields": [],
+   "note": "담당의 판단: 사실을 만들지 않음"
+  },
+  "lab.absolute neutrophil count": {
+   "fields": [
+    "lab:absolute neutrophil count"
+   ]
+  },
+  "lab.egfr": {
+   "fields": [
+    "lab:egfr"
+   ]
+  },
+  "lab.hbv_status": {
+   "fields": [
+    "lab:hbv_status"
+   ]
+  },
+  "lab.hcv_status": {
+   "fields": [
+    "lab:hcv_status"
+   ]
+  },
+  "lab.hemoglobin": {
+   "fields": [
+    "lab:hemoglobin"
+   ]
+  },
+  "lab.hiv_ab": {
+   "fields": [
+    "lab:hiv_ab"
+   ]
+  },
+  "lab.inr_within_1_5uln": {
+   "fields": [
+    "lab:inr_within_1_5uln"
+   ]
+  },
+  "lab.liver_dysfunction_sustained": {
+   "fields": [
+    "lab:liver_dysfunction_sustained"
+   ]
+  },
+  "lab.platelets": {
+   "fields": [
+    "lab:platelets"
+   ]
+  },
+  "lab.urine_protein_remission": {
+   "fields": [
+    "lab:urine_protein_remission"
+   ]
+  },
+  "lab.white blood cell count": {
+   "fields": [
+    "lab:white blood cell count"
+   ]
+  },
+  "med.acth_3m": {
+   "fields": [
+    "medication"
+   ]
+  },
+  "med.anti_cd20_recency": {
+   "fields": [
+    "medication"
+   ]
+  },
+  "med.live_vaccine_4w": {
+   "fields": [
+    "medication"
+   ]
+  },
+  "med.steroid_sparing_recent": {
+   "fields": [
+    "medication"
+   ]
+  },
+  "med.transfusion_or_gf_7d": {
+   "fields": [
+    "medication"
+   ]
+  },
+  "other.followup_1y": {
+   "fields": [
+    "other_fact"
+   ]
+  },
+  "other.rec_cd19_followup": {
+   "fields": [
+    "other_fact"
+   ]
+  },
+  "other.rec_followup_outcomes": {
+   "fields": [
+    "other_fact"
+   ]
+  },
+  "other.rec_relapse_pre_1y": {
+   "fields": [
+    "other_fact"
+   ]
+  },
+  "other.rec_rtx_admin": {
+   "fields": [
+    "other_fact"
+   ]
+  },
+  "proc.major_surgery_4w": {
+   "fields": [
+    "treatment_history"
+   ]
+  },
+  "sex": {
+   "fields": [
+    "sex"
+   ]
+  },
+  "tx.other_trial_3m": {
+   "fields": [
+    "treatment_history"
+   ]
+  },
+  "tx.prior_anti_cd38": {
+   "fields": [
+    "treatment_history"
+   ]
+  },
+  "tx.rtx_first_course_for_ns": {
+   "fields": [
+    "treatment_history"
+   ]
+  }
+ }
+}

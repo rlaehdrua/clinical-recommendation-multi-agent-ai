@@ -1,0 +1,530 @@
+{
+ "version": 1,
+ "status": "draft",
+ "scope": "NSCLC 55 슬롯 (data/nsclc/cohort/slot_candidates.csv, PR #8)",
+ "basis": "docs/dev/wp6_experiment_design.md §2.1 표 그대로 (제안·임상 검수 전). 슬롯별 sources = CSV info_sources",
+ "sources": {
+  "S_lab": "lab_report",
+  "S_path": "pathology_report",
+  "S_med": "medication_list",
+  "S_summary": "medical_record",
+  "S_chart": "medical_record",
+  "S_phone": "patient_interview",
+  "S_md": "clinician_review"
+ },
+ "core_slots": [
+  "age",
+  "sex",
+  "lab_age_days"
+ ],
+ "value_encoding": "값 표기(③, draft): age·ecog·수치 검사 슬롯은 숫자 그대로(검사는 단위 포함), sex는 female/male 그대로, 그 밖의 슬롯은 '<슬롯>=<값>' 문자열 사실(예: diagnosis 'cm.hiv=no'). 판정기(sim.judge)가 이 표기를 다시 읽음. 임상 표현(예: 'EGFR exon 19 deletion')으로 바꾸는 것은 WP2b D1 검수 뒤",
+ "slots": {
+  "age": {
+   "fields": [
+    "age"
+   ],
+   "sources": [
+    "medical_record",
+    "patient_interview"
+   ],
+   "unit": "years"
+  },
+  "dx.histology": {
+   "fields": [
+    "primary_diagnosis"
+   ],
+   "sources": [
+    "pathology_report",
+    "medical_record"
+   ]
+  },
+  "dx.stage": {
+   "fields": [
+    "disease_stage"
+   ],
+   "sources": [
+    "medical_record",
+    "pathology_report"
+   ]
+  },
+  "dx.disease_setting": {
+   "fields": [
+    "diagnosis"
+   ],
+   "sources": [
+    "medical_record"
+   ]
+  },
+  "bm.driver_alteration": {
+   "fields": [
+    "biomarker"
+   ],
+   "sources": [
+    "pathology_report",
+    "medical_record"
+   ]
+  },
+  "bm.pdl1_tps": {
+   "fields": [
+    "biomarker"
+   ],
+   "sources": [
+    "pathology_report",
+    "medical_record"
+   ],
+   "unit": "%"
+  },
+  "ecog": {
+   "fields": [
+    "ecog"
+   ],
+   "sources": [
+    "medical_record",
+    "patient_interview"
+   ]
+  },
+  "tx.prior_systemic_advanced": {
+   "fields": [
+    "treatment_history"
+   ],
+   "sources": [
+    "medical_record",
+    "medication_list",
+    "patient_interview"
+   ]
+  },
+  "tx.prior_platinum": {
+   "fields": [
+    "treatment_history"
+   ],
+   "sources": [
+    "medical_record",
+    "medication_list",
+    "patient_interview"
+   ]
+  },
+  "tx.prior_pd1_pdl1": {
+   "fields": [
+    "treatment_history"
+   ],
+   "sources": [
+    "medical_record",
+    "medication_list",
+    "patient_interview"
+   ]
+  },
+  "tx.prior_targeted_tki": {
+   "fields": [
+    "treatment_history"
+   ],
+   "sources": [
+    "medical_record",
+    "medication_list",
+    "patient_interview"
+   ]
+  },
+  "tx.prior_docetaxel": {
+   "fields": [
+    "treatment_history"
+   ],
+   "sources": [
+    "medical_record",
+    "medication_list",
+    "patient_interview"
+   ]
+  },
+  "tx.prior_il12": {
+   "fields": [
+    "treatment_history"
+   ],
+   "sources": [
+    "medical_record",
+    "medication_list",
+    "patient_interview"
+   ]
+  },
+  "tx.days_since_last_anticancer": {
+   "fields": [
+    "treatment_history"
+   ],
+   "sources": [
+    "medical_record",
+    "medication_list",
+    "patient_interview"
+   ],
+   "unit": "days"
+  },
+  "tx.recent_radiotherapy": {
+   "fields": [
+    "treatment_history"
+   ],
+   "sources": [
+    "medical_record",
+    "patient_interview"
+   ]
+  },
+  "tx.unresolved_toxicity": {
+   "fields": [
+    "treatment_history"
+   ],
+   "sources": [
+    "medical_record",
+    "patient_interview"
+   ]
+  },
+  "tx.severe_irae": {
+   "fields": [
+    "treatment_history"
+   ],
+   "sources": [
+    "medical_record",
+    "patient_interview"
+   ]
+  },
+  "tx.other_investigational_4w": {
+   "fields": [
+    "treatment_history"
+   ],
+   "sources": [
+    "medical_record",
+    "medication_list",
+    "patient_interview"
+   ]
+  },
+  "cns.brain_mets": {
+   "fields": [
+    "diagnosis"
+   ],
+   "sources": [
+    "medical_record"
+   ]
+  },
+  "cns.leptomeningeal": {
+   "fields": [
+    "diagnosis"
+   ],
+   "sources": [
+    "medical_record"
+   ]
+  },
+  "med.systemic_steroid_dose": {
+   "fields": [
+    "medication"
+   ],
+   "sources": [
+    "medication_list",
+    "medical_record",
+    "patient_interview"
+   ],
+   "unit": "mg prednisone eq/day"
+  },
+  "med.immunosuppressant_recent": {
+   "fields": [
+    "medication"
+   ],
+   "sources": [
+    "medication_list",
+    "medical_record",
+    "patient_interview"
+   ]
+  },
+  "med.live_vaccine_30d": {
+   "fields": [
+    "medication"
+   ],
+   "sources": [
+    "medical_record",
+    "patient_interview"
+   ]
+  },
+  "med.anticoagulant": {
+   "fields": [
+    "medication"
+   ],
+   "sources": [
+    "medication_list",
+    "medical_record",
+    "patient_interview"
+   ]
+  },
+  "cm.autoimmune": {
+   "fields": [
+    "diagnosis"
+   ],
+   "sources": [
+    "medical_record"
+   ]
+  },
+  "cm.ild_pneumonitis": {
+   "fields": [
+    "diagnosis"
+   ],
+   "sources": [
+    "medical_record"
+   ]
+  },
+  "cm.other_malignancy": {
+   "fields": [
+    "diagnosis"
+   ],
+   "sources": [
+    "medical_record"
+   ]
+  },
+  "cm.hiv": {
+   "fields": [
+    "diagnosis"
+   ],
+   "sources": [
+    "medical_record"
+   ]
+  },
+  "cm.cardiac": {
+   "fields": [
+    "diagnosis"
+   ],
+   "sources": [
+    "medical_record",
+    "clinician_review"
+   ]
+  },
+  "cm.bleeding_risk": {
+   "fields": [
+    "diagnosis"
+   ],
+   "sources": [
+    "medical_record"
+   ]
+  },
+  "cm.uncontrolled_hypertension": {
+   "fields": [
+    "diagnosis"
+   ],
+   "sources": [
+    "medical_record"
+   ]
+  },
+  "cm.immunodeficiency": {
+   "fields": [
+    "diagnosis"
+   ],
+   "sources": [
+    "medical_record"
+   ]
+  },
+  "cm.organ_transplant": {
+   "fields": [
+    "diagnosis"
+   ],
+   "sources": [
+    "medical_record"
+   ]
+  },
+  "repro.pregnant_or_breastfeeding": {
+   "fields": [
+    "reproductive"
+   ],
+   "sources": [
+    "patient_interview"
+   ]
+  },
+  "proc.days_since_major_surgery": {
+   "fields": [
+    "treatment_history"
+   ],
+   "sources": [
+    "medical_record",
+    "patient_interview"
+   ],
+   "unit": "days"
+  },
+  "other.measurable_disease": {
+   "fields": [
+    "other_fact"
+   ],
+   "sources": [
+    "medical_record"
+   ]
+  },
+  "other.tumor_tissue": {
+   "fields": [
+    "other_fact"
+   ],
+   "sources": [
+    "medical_record"
+   ]
+  },
+  "judge.life_expectancy": {
+   "fields": [],
+   "sources": [
+    "clinician_review"
+   ],
+   "note": "담당의 판단: 사실을 만들지 않음 (정답 없음, EXPERT_REVIEW)"
+  },
+  "judge.investigator_unsuitable": {
+   "fields": [],
+   "sources": [
+    "clinician_review"
+   ],
+   "note": "담당의 판단: 사실을 만들지 않음 (정답 없음, EXPERT_REVIEW)"
+  },
+  "lab.anc": {
+   "fields": [
+    "lab:absolute neutrophil count"
+   ],
+   "sources": [
+    "lab_report",
+    "medical_record"
+   ],
+   "unit": "10^9/L"
+  },
+  "lab.platelets": {
+   "fields": [
+    "lab:platelets"
+   ],
+   "sources": [
+    "lab_report",
+    "medical_record"
+   ],
+   "unit": "10^9/L"
+  },
+  "lab.hemoglobin": {
+   "fields": [
+    "lab:hemoglobin"
+   ],
+   "sources": [
+    "lab_report",
+    "medical_record"
+   ],
+   "unit": "g/dL"
+  },
+  "lab.ast_alt_uln": {
+   "fields": [
+    "lab:ast",
+    "lab:alt"
+   ],
+   "sources": [
+    "lab_report",
+    "medical_record"
+   ],
+   "note": "슬롯 하나 = 검사 두 개 (같은 값으로 두 사실). 슬롯 분리 여부는 WP2b 검수",
+   "unit": "x ULN"
+  },
+  "lab.bilirubin_uln": {
+   "fields": [
+    "lab:total bilirubin"
+   ],
+   "sources": [
+    "lab_report",
+    "medical_record"
+   ],
+   "unit": "x ULN"
+  },
+  "lab.creatinine_clearance": {
+   "fields": [
+    "lab:creatinine clearance"
+   ],
+   "sources": [
+    "lab_report",
+    "medical_record"
+   ],
+   "unit": "mL/min"
+  },
+  "lab.inr_aptt_uln": {
+   "fields": [
+    "lab:inr",
+    "lab:aptt"
+   ],
+   "sources": [
+    "lab_report",
+    "medical_record"
+   ],
+   "note": "슬롯 하나 = 검사 두 개 (같은 값으로 두 사실). 슬롯 분리 여부는 WP2b 검수",
+   "unit": "x ULN"
+  },
+  "lab.tsh_normal": {
+   "fields": [
+    "lab:tsh"
+   ],
+   "sources": [
+    "lab_report",
+    "medical_record"
+   ]
+  },
+  "lab.qtcf": {
+   "fields": [
+    "lab:qtcf"
+   ],
+   "sources": [
+    "medical_record"
+   ],
+   "unit": "ms"
+  },
+  "lab.hbv_hcv_status": {
+   "fields": [
+    "lab:hbv",
+    "lab:hcv"
+   ],
+   "sources": [
+    "lab_report",
+    "medical_record"
+   ],
+   "note": "슬롯 하나 = 검사 두 개 (같은 값으로 두 사실). 슬롯 분리 여부는 WP2b 검수"
+  },
+  "other.body_weight": {
+   "fields": [
+    "other_fact"
+   ],
+   "sources": [
+    "medical_record",
+    "patient_interview"
+   ],
+   "unit": "kg"
+  },
+  "other.weight_loss_3m": {
+   "fields": [
+    "other_fact"
+   ],
+   "sources": [
+    "patient_interview",
+    "medical_record"
+   ],
+   "unit": "%"
+  },
+  "dx.liver_mets": {
+   "fields": [
+    "diagnosis"
+   ],
+   "sources": [
+    "medical_record"
+   ]
+  },
+  "cm.gilbert": {
+   "fields": [
+    "diagnosis"
+   ],
+   "sources": [
+    "medical_record"
+   ]
+  },
+  "med.on_anticoagulant": {
+   "fields": [
+    "medication"
+   ],
+   "sources": [
+    "medication_list",
+    "medical_record",
+    "patient_interview"
+   ]
+  },
+  "lab.adequate_function": {
+   "fields": [],
+   "sources": [
+    "lab_report",
+    "medical_record"
+   ],
+   "status": "unresolved",
+   "note": "기준값 없음 (WP2b D4): 사실·정답 없음"
+  }
+ }
+}
