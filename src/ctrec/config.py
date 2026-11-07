@@ -22,6 +22,16 @@ CTGOV_CACHE_DIR = CACHE_DIR / "ctgov"
 PARSED_DIR = DATA_DIR / "parsed"
 OUTPUT_DIR = ROOT / "outputs"
 
+# 시험 세트 (N 감사, 2026-11-07). 기본(default)은 위의 대회 시험(data/trials + data/parsed) 그대로.
+# nsclc: ClinicalTrials.gov에서 가져온 NSCLC 프로토콜(data/nsclc/trials)과 그 파싱본(data/nsclc/parsed, WP2a, 임상 검수 전)을
+# 웹·CLI·Session이 같은 경로로 쓰게 함. 파싱본이 없는 시험은 기존과 같이 COMPILATION_PENDING -> NOT_EVALUATED.
+TRIAL_SETS = {"default": (DATA_DIR / "trials", DATA_DIR / "parsed"),
+              "nsclc": (DATA_DIR / "nsclc" / "trials", DATA_DIR / "nsclc" / "parsed")}
+TRIAL_SET = os.getenv("CTREC_TRIAL_SET", "default").strip().lower() or "default"
+if TRIAL_SET not in TRIAL_SETS:
+    raise ValueError(f"CTREC_TRIAL_SET은 {sorted(TRIAL_SETS)} 중 하나여야 합니다: {TRIAL_SET!r}")
+TRIALS_DIR, PARSED_DIR = TRIAL_SETS[TRIAL_SET]
+
 MODEL = os.getenv("CTREC_MODEL", "claude-sonnet-5")
 USE_FALLBACKS = os.getenv("CTREC_FALLBACKS", "1") == "1"
 MAX_WORKERS = int(os.getenv("CTREC_MAX_WORKERS", "4"))
