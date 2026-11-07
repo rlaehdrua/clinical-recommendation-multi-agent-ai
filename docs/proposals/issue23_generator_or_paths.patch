@@ -1,0 +1,84 @@
+From: 이슈 #23 패치 제안 (적용하지 않음)
+Subject: [제안] 생성기가 OR 경로를 public으로 내보냄 — 서연 PR #22 영역, 생성기 담당자 승인 필요
+
+왜 필요한가: public.rules에 코호트 정보가 없어 현황판이 OR 시험의 경로를 알 수 없습니다.
+fix/issue-23-cohort-board-unbound는 cohort·paths를 선택 입력으로 읽지만, 생성기가 내보내기 전에는
+OR 시험에서 한 경로만 불통과여도 CONFIRMED_INELIGIBLE이 됩니다.
+측정: tests의 OR 고정 데이터 180쌍, or_partial 92쌍 중 52쌍이 오확정 -> 이 패치 적용 후 0쌍.
+현재 기본 데이터(신증후군 3개 시험)는 코호트가 없어 영향 0쌍입니다.
+적용 시점: 이 브랜치와 PR #22가 모두 병합된 뒤. 신규 필드는 기본값이 있어 기존 저장본과 호환됩니다.
+적용: git apply --ignore-whitespace docs/proposals/issue23_generator_or_paths.patch
+---
+diff --git a/src/ctrec/cohort/generate.py b/src/ctrec/cohort/generate.py
+index 81b5717..3fc8ac3 100644
+--- a/src/ctrec/cohort/generate.py
++++ b/src/ctrec/cohort/generate.py
+@@ -193,8 +193,10 @@ def generate_cohort(cfg: GeneratorConfig, sd: SlotDictionary, cat: SourceCatalog
+     public = PublicPart(
+         trials=trials,
+         rules={t: [RuleRef(rule_id=b.rule_id, kind=b.kind, slot=b.slot, extra_slots=[c.slot for c in b.also],
+-                           time_window_days=b.time_window_days, required_evidence=b.required_evidence)
++                           time_window_days=b.time_window_days, required_evidence=b.required_evidence,
++                           cohort=rules[b.key].cohort if b.key in rules else None)
+                    for b in bound[t]] for t in trials},
++        paths={t: [p for p in paths[t] if p] for t in trials},
+         unbound_rules=unbound,
+         expert_rules=expert,
+         enrollment_remaining={t: knobs.enrollment_remaining for t in trials},
+diff --git a/src/ctrec/cohort/spec.py b/src/ctrec/cohort/spec.py
+index c60ce15..678a401 100644
+--- a/src/ctrec/cohort/spec.py
++++ b/src/ctrec/cohort/spec.py
+@@ -239,6 +239,7 @@ class RuleRef(BaseModel):
+     extra_slots: list[str] = Field(default_factory=list)  # also 조건의 슬롯
+     time_window_days: int | None = None
+     required_evidence: RequiredEvidence
++    cohort: str | None = None  # OR 경로(코호트) 전용 기준이면 그 이름. None = 모든 경로 공통
+ 
+     def slots(self) -> list[str]:
+         return [self.slot, *self.extra_slots]
+@@ -264,6 +265,7 @@ class PublicPart(BaseModel):
+     rules: dict[str, list[RuleRef]]  # 시험 -> 연결된 기준 (임상의 판단 기준 포함, 그 기준은 initial_holds가 항상 unknown)
+     unbound_rules: dict[str, list[str]]  # 시험 -> 검수 전이라 정답에서 빠진 기준 (충족으로 간주하지 않음 -> 쌍 라벨 없음)
+     expert_rules: dict[str, list[str]] = Field(default_factory=dict)  # 시험 -> 임상의 판단 기준 (값·정답 없음)
++    paths: dict[str, list[str]] = Field(default_factory=dict)  # 시험 -> OR 경로 (기준이 모두 미연결인 경로 포함). 없으면 빈 목록
+     enrollment_remaining: dict[str, int | None]
+     sources: dict[str, EffectiveSource]
+     budgets_min: list[int]
+diff --git a/tests/test_cohort_board.py b/tests/test_cohort_board.py
+index ac5abe8..f97b648 100644
+--- a/tests/test_cohort_board.py
++++ b/tests/test_cohort_board.py
+@@ -14,7 +14,7 @@ from ctrec.cohort import generate as gen  # noqa: E402
+ from ctrec.engine.contracts import PairStatus, derive_pair_status  # noqa: E402
+ from ctrec.web import cohort_board as cb  # noqa: E402
+ 
+-from test_cohort_generator import _cohorts, _web_client  # noqa: E402
++from test_cohort_generator import CATALOG, PARSED_OR, _config, _cohorts, _or_dictionary, _web_client  # noqa: E402
+ 
+ STATIC = Path(__file__).resolve().parents[1] / "src" / "ctrec" / "web" / "static"
+ 
+@@ -273,3 +273,23 @@ def test_board_page_explains_partial_evaluation_and_or_rule():
+     assert "일부 기준만 평가" in js
+     assert "기준 하나만 맞지 않아도 확정됩니다" not in html  # OR 시험은 모든 경로 불통과일 때만 확정
+     assert "미평가는 실제 확인" not in html  # 이제 정적 데이터에도 미평가가 나옴
++
++
++def test_generated_or_trial_reaches_board_with_paths():
++    """생성기가 경로를 내보내면, 공개 값으로 한 경로만 불통과인 쌍을 부적격 확정하지 않음 (라벨과 독립으로 값에서 다시 계산)."""
++    cfg = _config(n_patients=60, knobs={"trials_per_patient": 1, "cost_heterogeneity": 1.0, "grouping": "source",
++                                        "missing_rate": {"default": 0.5}})
++    cfg.clusters["c"].trials = ["T3"]
++    seen = set()
++    for c in gen.generate_all(cfg, _or_dictionary(), CATALOG, PARSED_OR):
++        d = c.model_dump(mode="json")
++        assert d["public"]["paths"] == {"T3": ["A", "B"]}
++        for p in c.public.patients:
++            s = cb.board(d)["pairs"][f"{p.patient_id}|T3"]
++            k = p.known
++            a = k["age"] < 18 or ("lab.hemoglobin" in k and k["lab.hemoglobin"] < 11)
++            b = k["age"] < 18 or ("lab.platelets" in k and k["lab.platelets"] < 150)
++            assert (s["status"] == "CONFIRMED_INELIGIBLE") == (a and b), (p.patient_id, k)
++            assert s["status"] != "CONFIRMED_ELIGIBLE"  # 미연결 기준 E1이 남음
++            seen.add(s["status"])
++    assert seen >= {"CONFIRMED_INELIGIBLE", "NOT_EVALUATED"}

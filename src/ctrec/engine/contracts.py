@@ -42,6 +42,8 @@ CODE_PATTERN = r"^[a-z0-9_]{1,64}$"
 # 기준 키 "<trial_id>:<rule_id>"
 CRITERION_KEY_PATTERN = r"^[A-Za-z0-9._-]{1,64}:[A-Za-z0-9._-]{1,32}$"
 ID_PATTERN = r"^[A-Za-z0-9._:-]{1,128}$"
+# decision_state.info_key 형식. 검사명에 공백이 있음 ("lab:absolute neutrophil count") - 앞뒤 공백만 막음, 최대 160자
+INFO_KEY_PATTERN = r"^[A-Za-z0-9._:+\-](?:[A-Za-z0-9._:+\- ]{0,158}[A-Za-z0-9._:+\-])?$"
 
 
 class _Frozen(BaseModel):
@@ -388,7 +390,7 @@ class Action(_Frozen):
     #   physician_reference = 원문에 구체 기준이 없는 기준에 대한 의사 참고용 정보 수집. 그 답은 적격성 근거가 아님
     #   (evidence_directness.eligibility_answers가 제외).
     purpose: Literal["eligibility", "physician_reference"] = "eligibility"
-    info_key: str | None = Field(default=None, pattern=r"^[A-Za-z0-9._:+\-]{1,160}$")  # decision_state.info_key
+    info_key: str | None = Field(default=None, pattern=INFO_KEY_PATTERN)  # decision_state.info_key
     question_contract_id: str | None = Field(default=None, pattern=QUESTION_CONTRACT_PATTERN)  # 검수된 질문 계약
 
     @field_validator("target_criteria")
@@ -425,6 +427,9 @@ OutcomeStatus = Literal["succeeded", "partial", "failed", "no_response", "not_ex
 NO_ANSWER = "no_answer"  # 이 항목을 모름·답하지 않음 -> 그 (정보원, 항목)만 막음. record_producer.NO_ANSWER_ERROR와 같은 값
 UNREACHABLE = "unreachable"  # 연락·접근 불가 -> 정보원 전체
 DECLINED_ALL = "declined_all"  # 확인 자체를 거부 -> 정보원 전체
+# "모름" 뒤 같은 항목을 다른 말로 다시 묻는 환자 질문의 사유 코드 (LegacyAdapterPolicy rephrase). 같은 질문의 반복이
+# 아니므로 비용 원장은 새 연락으로 청구하고(cost.EffortLedger), 시뮬레이터 응답 모델은 따로 정한 확률을 씀
+REPHRASE = "rephrase_after_no_answer"
 ITEM_FAILURE_CODES = frozenset({NO_ANSWER})
 SOURCE_FAILURE_CODES = frozenset({UNREACHABLE, DECLINED_ALL})
 

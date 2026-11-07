@@ -31,10 +31,10 @@
 
 | 결정 항목 | WP6에서 쓰는 곳 | 상태 |
 |---|---|---|
-| "모름"을 `ActionOutcome`에 어떻게 기록할지: 현재 오프라인 기록은 `status="no_response"` + `error_code="no_answer"`(`offline_records.py`) | §2.2 I-4 표의 `status`·`error_code`, §3.1 단계 3 | 코드 `no_answer` **확정**, `status` 값은 동겸 확인 |
-| 항목 단위 소진: 단위가 `info_key`인지 기준(`<trial>:<rule>`)인지, 쌍 단위 `exhausted`로 어떻게 합칠지 | `policy.apply_outcome` 뒤 쌍 상태(BF 전이), §4 진척 지표 | **TODO (동겸)** |
-| 같은 항목을 다른 문장으로 다시 물을 수 있는지, 몇 번째 "모름"에서 소진인지 | `ResponseModel`의 시도 횟수(`OpsState.attempts`) 스트림, §3.2 | **TODO (동겸)** |
-| "모름" 뒤 대체 정보원(문서 요청)으로 넘어가는 규칙 | §3.2 대체 정보원 | **TODO (동겸)**. 대체는 정책이 고르고 환경은 자동 실행하지 않음(확정) |
+| "모름"을 `ActionOutcome`에 어떻게 기록할지: 현재 오프라인 기록은 `status="no_response"` + `error_code="no_answer"`(`offline_records.py`) | §2.2 I-4 표의 `status`·`error_code`, §3.1 단계 3 | **확정**: `status="no_response"` + `error_code="no_answer"` (2026-11-05 PR #6·#9 리뷰) |
+| 항목 단위 소진: 단위가 `info_key`인지 기준(`<trial>:<rule>`)인지, 쌍 단위 `exhausted`로 어떻게 합칠지 | `policy.apply_outcome` 뒤 쌍 상태(BF 전이), §4 진척 지표 | **확정**: (환자, 정보원, `info_key`/지문) 단위. 쌍 소진은 필요한 모든 항목의 모든 정보원이 소진됐을 때만(`cohort_state.items_exhausted`). 판단은 `policy.apply_outcome` 소관(§8 Q-D2) |
+| "모름" 뒤 같은 (정보원, 항목)을 막는 시점 | `ResponseModel`의 시도 횟수(`OpsState.attempts`) 스트림, §3.2 | **확정 (기본)**: 첫 `no_answer`에서 막음. 재질문 없음(WP3 설계 §5 Q-D3). 옵션 `rephrase`(PR #20, 기본 꺼짐)는 민감도 분석에서만 켬 |
+| "모름" 뒤 대체 정보원(문서 요청)으로 넘어가는 규칙 | §3.2 대체 정보원 | **확정**: 대체 정보원 선택·소진은 `policy.apply_outcome`(`InformationSource.alternatives` 순서, 남은 문서 정보원이 없으면 `exhausted_items`). 환경은 자동 실행하지 않음 |
 | "모름"은 의료 사실로 저장하지 않음 | 환경이 새 사실을 만들지 않음 | **확정** (WP3 설계 §3.1, WP2b D1) |
 
 **(2) 정보원 카탈로그 대응표 (I-5 `InformationSource`)** — 비용·청구·해시는 엔진 카탈로그 하나로 정하고, 생성기 카탈로그는 슬롯 공개 범위에만 씁니다(§2.1).
@@ -75,7 +75,7 @@ ExperimentSpec ──► Runner ────────────────
 | `ResponseModel` | `src/ctrec/sim/response_model.py` | 정보원별 성공·부분·실패·무응답·지연을 seed로 결정 | 사실 값 결정 (값은 oracle) |
 | `OfflineEvaluator` | `src/ctrec/sim/evaluator.py` | 공개·확보된 사실만으로 기준 상태 재계산 (LLM 없음) | 숨긴 값 읽기 |
 | `Runner` | `src/ctrec/sim/runner.py`, `scripts/run_cohort_experiment.py` | spec 검증, 단계 반복, 기록·지표·manifest | 정책 내부 변경 |
-| 기준선 정책 | `src/ctrec/engine/` 아래 새 파일 (예: `engine/baselines.py`, 동겸 WP5 소유 영역) | `PolicyEngine` 프로토콜의 **새 클래스**들. 웹(WP8)과 시뮬레이터가 같은 클래스를 씀 | `sim/`에 정책 코드 두기, `LegacyAdapterPolicy.select`·`EffortLedger` 규칙 수정 |
+| 기준선 정책 | `src/ctrec/engine/baselines.py` (확정, 2026-11-05 PR #9 리뷰 · PR #16 병합, 동겸 WP5 소유 영역) | `PolicyEngine` 프로토콜의 **새 클래스**들. 웹(WP8)과 시뮬레이터가 같은 클래스를 씀 | `sim/`에 정책 코드 두기, `LegacyAdapterPolicy.select`·`EffortLedger` 규칙 수정 |
 
 **같은 정책 함수 (M14)**: 웹(`web/engine_runner.py`, WP8)과 시뮬레이터는 **같은 정책 함수**(`PolicyEngine.propose` / `select` / `apply_outcome`)를 부릅니다. 제안 정책("full DCV+C")과 기준선 정책은 모두 `engine/`에 `PolicyEngine` 구현으로 두고, `sim/`에는 실행 코드(환경·응답 모델·평가기·Runner)만 둡니다. 시뮬레이터 전용 정책 분기를 만들지 않으므로, 오프라인에서 비교한 정책이 웹에서 도는 정책과 같습니다. 이 동등성은 같은 `CohortState` 입력에 대해 웹 경로와 시뮬레이터 경로의 `Plan`(행동 ID 순서)이 같은지로 검사합니다(§9).
 
@@ -198,7 +198,7 @@ ExperimentSpec ──► Runner ────────────────
    - `succeeded`/`partial`: 그 정보원이 드러내는 슬롯 중 행동의 `required_fields`에 해당하는 oracle 값을 사실로 만듭니다(`partial`은 일부만).
      출처는 정보원 종류에 따라 `self_report`(환자) 또는 `clinical_record` + 문서 검증(`document_verified`, `can_verify=True`일 때)으로 둡니다.
    - `failed`/`no_response`: 새 사실 0개, `error_code` 필수(계약이 강제). 비용은 청구합니다(M9 테스트 조건).
-   - "모름"(환자 질문): 새 사실 0개, `error_code="no_answer"`. 그 (정보원, 항목)만 막고 같은 환자의 다른 질문은 계속함(PR #10 정책).
+   - "모름"(환자 질문): `status="no_response"`, `error_code="no_answer"`, 새 사실 0개. 막기는 정책이 함: `policy.apply_outcome`이 그 (정보원, 항목)만 막고 같은 환자의 다른 질문은 계속함(PR #10 정책). 환경은 결과만 냄.
 4. 판정 계층 재평가(§3.3) → 쌍 상태 변화.
 5. `policy.apply_outcome`(운영 상태만: 소진, 대체 정보원 순서).
 6. `record_producer`로 `DecisionRecord` v2 기록. 차단 진단(`direct_confirmed_reversal` 등)은 진단 파일에 남깁니다.
@@ -289,7 +289,7 @@ M2(코디네이터 능동 작업시간 예산)의 원칙대로, 시간은 두 �
 
 1. **안건 1 `RuleMeta.adjudication`**: §3.3의 rule/fact_llm/expert 나누기와 오프라인 평가기 범위가 바뀜. 결정 전에는 `contract_bridge.provisional_adjudication`과 WP2b 후보값을 씀.
 2. **안건 5 비용 실측·문헌값**: `cost_basis`가 `assumed`가 아니게 되면 분 단위 절대 주장 가능 여부가 바뀜.
-3. **동겸 "모름"(`no_answer`)**: 코드는 `no_answer`로 확정. 남은 것은 항목 단위 소진을 쌍 단위 `exhausted`로 합치는 규칙(PR #10 병합 후 그대로 따름). 그 전에는 "모름" = 새 사실 0 + 별도 카운트만 남김.
+3. **동겸 "모름"(`no_answer`)**: `status="no_response"` + `error_code="no_answer"` 확정. 항목 단위 소진을 쌍 단위로 합치는 규칙은 PR #10(병합됨)의 `policy.apply_outcome`·`cohort_state.items_exhausted`를 그대로 따름(§8 Q-D2).
 4. **PR #3 병합**: 역전 지표 열은 병합 뒤 추가.
 5. **WP4 부분 재평가**: 들어오기 전에는 `-partial_reeval`과 기본이 같음(ablation 비활성으로 표시).
 6. **생성기 통합**: `research/cohort-generator`가 `integration/dcvc`에 들어와야 WP6 코드를 시작할 수 있음.
@@ -299,8 +299,9 @@ M2(코디네이터 능동 작업시간 예산)의 원칙대로, 시간은 두 �
 - **Q-G1 (생성기 브랜치 작성자)** 생성기 `SourceCatalog`를 엔진 카탈로그 + 대응표(§2.1)로 바꾸는 데 동의하나요? 아니면 생성기 카탈로그에서 엔진 카탈로그를 만드는 변환을 둘까요?
 - **Q-G2 (생성기)** NSCLC용 슬롯 사전·생성 설정은 `data/nsclc/cohort/`에 두면 되나요? (지금 예시는 `data/cohort/`의 신증후군 소아)
 - **Q-G3 (생성기)** `assume_pass`(검수 전 기준을 충족으로 간주)를 WP6에서 끌 수 있는 옵션이 있나요? 없으면 라벨을 "판정 불가"로 바꾸는 후처리를 WP6에서 할까요?
-- **Q-D1 (동겸)** (리뷰 반영으로 닫힘) 기준선 정책 클래스(`random`, `patient_order`, `cheapest_first`)와 제안 정책(`full_dcvc`)은 `engine/`에 `PolicyEngine`으로 두고, `sim/`에는 실행 코드만 둡니다. 파일 이름(`engine/baselines.py` 등)은 WP5 소유자가 정해 주세요.
+- **Q-D1 (동겸)** (리뷰 반영으로 닫힘) 기준선 정책 클래스(`random`, `patient_order`, `cheapest_first`)와 제안 정책(`full_dcvc`)은 `engine/`에 `PolicyEngine`으로 두고, `sim/`에는 실행 코드만 둡니다. 파일 이름은 `engine/baselines.py`로 확정(동겸, 2026-11-05 PR #9 리뷰). PR #16으로 병합됨.
 - **Q-D2 (동겸)** `ResponseModel`의 "모름" 결과는 `no_answer`(항목 단위), 연락 불가·전체 거부는 `unreachable`/`declined_all`(정보원 단위)로 맞춥니다. PR #10의 `failure_scope` 외에 시뮬레이터가 따로 알아야 할 규칙이 있나요?
+  → **답 (동겸, 2026-11-05 PR #9 코멘트): 없음.** 시뮬레이터의 책임은 `ActionOutcome`(`status`, `error_code`)을 정확히 내는 것까지입니다. 막기·대체 정보원·소진 판단은 전부 `policy.apply_outcome` 소관입니다(`failure_scope` → 항목이면 `failed_items`, 대체 문서 정보원이 없으면 `exhausted_items`, 쌍 소진은 `cohort_state.items_exhausted`). 시뮬레이터 쪽 별도 규칙은 두지 않습니다.
 - **Q-D3 (동겸)** (리뷰 반영으로 닫힘) 시도 번호는 `Action`에 두지 않고 `OpsState.attempts`(행동 fingerprint별 횟수)로 셉니다. 대체 정보원 행동은 fingerprint가 달라 횟수를 따로 셉니다.
 - **Q-J1 (선우)** 오프라인 평가기를 `sim/` 아래 새 모듈로 두는 것이 "결정적 평가기를 다시 만들지 않는다" 규칙과 충돌하나요? 충돌하면 `evaluator.py`를 그대로 쓸 수 있는 범위를 정해 주세요.
 - **Q-J2 (선우)** NSCLC 시험 저장소 FROZEN 해시를 `frozen_store_hash`에 넣는 방식(별도 `store_dir`)으로 진행해도 되나요?
