@@ -1,0 +1,37 @@
+{
+ "pairs": 240,
+ "agree": 237,
+ "cells": {
+  "eligible_pending_expert|PENDING_EXPERT_ELIGIBLE": 23,
+  "ineligible|INELIGIBLE": 127,
+  "unlabeled|INELIGIBLE": 3,
+  "unlabeled|NOT_EVALUATED": 87
+ },
+ "disagreements": [
+  {
+   "sim_pair_key": "PA-d3a5cc07725fe546|NCT07098338",
+   "patient_id": "P019",
+   "trial_id": "NCT07098338",
+   "circular": "unlabeled",
+   "independent": "INELIGIBLE",
+   "reasons": "fail:E19"
+  },
+  {
+   "sim_pair_key": "PA-0dd0dfa09527da66|NCT06216301",
+   "patient_id": "P058",
+   "trial_id": "NCT06216301",
+   "circular": "unlabeled",
+   "independent": "INELIGIBLE",
+   "reasons": "fail:E16|fail:I9"
+  },
+  {
+   "sim_pair_key": "PA-dccfcf91eda74edb|NCT07098338",
+   "patient_id": "P075",
+   "trial_id": "NCT07098338",
+   "circular": "unlabeled",
+   "independent": "INELIGIBLE",
+   "reasons": "fail:E19"
+  }
+ ],
+ "note": "순환 GT = 같은 엔진 평가기로 정답 사실을 판정. 불일치 원인은 엔진 판정 경로라 미검증"
+}
