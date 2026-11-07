@@ -46,7 +46,7 @@
 | 환자 연락 불가 100% | 모든 항목이 소진 보류인데 BLOCKED가 아닌 쌍 | 14 | 0 |
 | 환자 연락 불가 100% | VERIFICATION_PENDING | 8 | 0 |
 
-패치 후 관련 테스트 158건이 통과합니다. 전체 pytest 결과는 작업 보고에 따로 적습니다.
+패치를 임시 트리에 적용한 전체 pytest는 2481 passed, 9 skipped, 1 xfailed, 2 failed입니다. 실패 2건은 R1 xfail 테스트의 XPASS(strict)로, 패치가 듣는다는 신호입니다. 그 외 회귀는 없습니다.
 
 **확인이 필요한 영향.**
 
