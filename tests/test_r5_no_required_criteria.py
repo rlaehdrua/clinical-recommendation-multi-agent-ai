@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 import test_session_fact_shadow as tsf  # noqa: E402  (Session 고정 대역)
+from document_support import attest_declared  # noqa: E402
 
 from ctrec import config, fact_compare, llm, qa_guard, question_eval as qe, trial_store  # noqa: E402
 from ctrec.agents import matcher, parser_validator as pv  # noqa: E402
@@ -85,10 +86,12 @@ def env(monkeypatch, tmp_path):
 class Result:
     """한 시험의 층별 결과."""
 
-    def __init__(self, tid: str, s: Session, verified: bool = False):
+    def __init__(self, tid: str, s: Session, verified: bool = False, forged: bool = False):
         if verified:
+            attest_declared(s.fact_store, ALIAS)
+        if forged:  # 서버 증명 없이 상태 문자열만 바꾼 경우: 문서 확인으로 치지 않음
             for f in s.fact_store.facts(ALIAS):
-                s.fact_store.set_verification(f.fact_id, "document_verified", reason="합성 문서 확인", by="test",
+                s.fact_store.set_verification(f.fact_id, "document_verified", reason="증명 없음", by="test",
                                               document_reference="synthetic-doc")
         self.session = s
         self.match = s.matches[tid]
@@ -103,7 +106,8 @@ class Result:
         self.excluded = {x.trial_id: x.reason for x in self.rec.excluded}
 
 
-def run(tid: str, rules=(), cohorts=(), source: str = SOURCE, input_source="clinical_record", verified=False) -> Result:
+def run(tid: str, rules=(), cohorts=(), source: str = SOURCE, input_source="clinical_record", verified=False,
+        forged=False) -> Result:
     t = trial(tid, source)
     trial_store.save(t, parsed(tid, rules, cohorts), {}, pv.ValidationReport())
     s = Session(case=PatientCase(ALIAS, RAW, input_source=input_source, candidate_trials=[tid]),
@@ -111,7 +115,7 @@ def run(tid: str, rules=(), cohorts=(), source: str = SOURCE, input_source="clin
     s.profile_patient()
     s.match()
     s.finalize()
-    return Result(tid, s, verified)
+    return Result(tid, s, verified, forged)
 
 
 def assert_not_evaluated(r: Result, tid: str, code: str) -> None:
@@ -273,6 +277,11 @@ def test_document_verified_ineligibility_stays_confirmed(env):
     r = run("SYN-CI", [age("I1", "70")], verified=True)
     assert (r.match.eligibility, r.match.match_status) == ("INELIGIBLE", "CRITERIA_MISMATCH")
     assert r.pair == C.PairStatus.CONFIRMED_INELIGIBLE and r.ranked == []
+
+
+def test_status_string_alone_does_not_confirm_ineligibility(env):
+    r = run("SYN-CI", [age("I1", "70")], forged=True)
+    assert r.match.eligibility == "INELIGIBLE" and r.pair == C.PairStatus.VERIFICATION_PENDING
 
 
 @pytest.mark.parametrize("rules", [[age("I1", "70")], [age("I1", "70"), rule("I2", CONSENT)]], ids=["alone", "logistics"])

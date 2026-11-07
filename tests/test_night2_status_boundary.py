@@ -235,13 +235,13 @@ def test_info_missing_matches_a_non_final_label(tmp_path):
     assert v.holds == {}
 
 
-def test_no_required_criteria_is_held_while_the_policy_stays_open(tmp_path):
-    """필수 기준 0개: 엔진 NOT_EVALUATED인데 외부 CRITERIA_MATCH였음. 판정은 ELIGIBLE 그대로, 표시만 낮추고 R5 정책은 정하지 않음."""
+def test_no_required_criteria_is_not_evaluated_on_both_sides(tmp_path):
+    """R5 P3 확정: 필수 기준 0개는 판정부터 NOT_EVALUATED입니다. 표시 계층이 낮출 것이 없고 추천에도 오르지 않습니다."""
     s, v = view(tmp_path, {"T": [CONSENT]}, "")
-    assert s.matches["T"].eligibility == "ELIGIBLE" and v.result["matches"]["T"]["match_status"] == "NEEDS_REVIEW"
-    assert v.holds["T"].kinds == ("no_required_criteria",)
-    assert (v.engine["T"]["engine_status"], v.engine["T"]["unresolved"]) == ("NOT_EVALUATED",
-                                                                             "no_required_criteria_policy_open")
+    assert s.matches["T"].eligibility == "NOT_EVALUATED" and v.result["matches"]["T"]["match_status"] == "NOT_EVALUATED"
+    assert s.matches["T"].evaluation_error == "no_required_criteria"
+    assert v.holds == {} and [x.trial_id for x in s.recommendation.ranked] == []
+    assert (v.engine["T"]["engine_status"], v.engine["T"]["unresolved"]) == ("NOT_EVALUATED", None)
 
 
 def test_evaluation_failure_is_consistent_on_both_sides(tmp_path):
