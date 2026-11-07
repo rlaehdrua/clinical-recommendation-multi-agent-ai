@@ -31,7 +31,8 @@ SCENARIOS = {"default": None, "patient_unreachable": {**DEFAULT_RESPONSES, "pati
 # - 두 시나리오 모두 1쌍(NCT07087314)이 BLOCKED -> CONFIRMED_INELIGIBLE: 기간 안 혈소판 I8이 규칙 엔진으로 불충족. 시뮬레이터
 #   GT 라벨도 ineligible (확정 부적격 전체가 라벨과 일치, 확정 적격 0)
 # - 아래 불변식(소진 쌍이 BLOCKED 아닌 채 남지 않음, 기록 없는 BLOCKED 0, 실행 가능한 행동이 남은 BLOCKED 0)은 M 전후 모두 성립
-EXPECTED_BLOCKED = {"default": 19, "patient_unreachable": 21}
+# 팀 결정 5(11-07): 신증후군 cm.serious_organ_disease·cm.immune_onc가 판단 기준이 되어 BLOCKED 수가 바뀜 (19·21 -> 16·24)
+EXPECTED_BLOCKED = {"default": 16, "patient_unreachable": 24}
 
 
 @pytest.fixture(scope="module")
