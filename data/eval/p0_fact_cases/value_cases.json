@@ -2,22 +2,22 @@
  "author": "서연(데이터)",
  "written": "2026-11-08",
  "clinical_review": "미완료",
- "independence": "판정 구현 코드(ctrec.value_grounding, ctrec.evidence_directness 등)를 열어 보지 않고 원문 처리 원칙만으로 기대값을 정함. 평가 스크립트의 입력 형식(scripts/eval_m_holdout.py)과 held-out 6 사례 문장은 읽었으므로 held-out 6과 완전히 독립은 아님",
- "expected_values": "accept = 그 값을 사실로 채택 / hold = 채택하지 않고 보류 / conflict = 상충으로 탐지(보류 이상)",
+ "independence": "판정 구현 코드(ctrec.value_grounding, ctrec.evidence_directness 등)를 열어 보지 않고 원문 처리 원칙만으로 기대값을 정함. 평가 스크립트 입력 형식(scripts/eval_m_holdout.py)과 held-out 6 사례 문장은 읽었고, 1차 사례(C 단계 48건)의 현재 결과는 확장 전에 보았음 -> 완전 비공개 작성은 아님. 확장 사례(I 단계)의 기대값은 결과를 보고 고치지 않음",
+ "expected_values": "accept = 그 값을 사실로 채택 / hold = 채택하지 않고 보류 / conflict = 상충으로 탐지(보류도 안전)",
  "note": "합성 문장. 실제 기록의 빈도·분포를 대표하지 않음",
  "cases": [
   {
-   "case_id": "V01",
+   "case_id": "V001",
    "category": "conflict_same_item",
    "field": "hemoglobin",
    "value": 11.4,
    "unit": "g/dL",
    "text": "CBC 2026-11-05: Hb 9.6 g/dL. Same-day progress note: Hb 11.4 g/dL.",
    "expected": "hold",
-   "basis": "같은 날 같은 항목에 9.6과 11.4 - 어느 쪽이 맞는지 원문으로 정할 수 없음"
+   "basis": "같은 날 같은 항목 9.6·11.4"
   },
   {
-   "case_id": "V02",
+   "case_id": "V002",
    "category": "conflict_same_item",
    "field": "platelets",
    "value": 152,
@@ -27,17 +27,17 @@
    "basis": "같은 날 두 출처 값이 다름"
   },
   {
-   "case_id": "V03",
+   "case_id": "V003",
    "category": "conflict_same_item",
    "field": "creatinine",
    "value": 1.1,
    "unit": "mg/dL",
    "text": "Lab report: creatinine 1.1 mg/dL. Discharge summary lists creatinine 1.9 mg/dL for the same draw.",
    "expected": "hold",
-   "basis": "같은 채혈의 값이 문서마다 다름"
+   "basis": "같은 채혈 값이 문서마다 다름"
   },
   {
-   "case_id": "V04",
+   "case_id": "V004",
    "category": "conflict_same_item",
    "field": "absolute neutrophil count",
    "value": 1.6,
@@ -47,118 +47,238 @@
    "basis": "같은 검체 재측정 값이 다름"
   },
   {
-   "case_id": "V05",
+   "case_id": "V005",
    "category": "conflict_same_item",
    "field": "total bilirubin",
    "value": 1.0,
    "unit": "mg/dL",
    "text": "Total bilirubin 1.0 mg/dL (lab A) and 2.3 mg/dL (lab B), both dated 2026-11-04.",
    "expected": "hold",
-   "basis": "같은 날짜 두 검사실 값이 다름"
+   "basis": "같은 날짜 두 검사실 값"
   },
   {
-   "case_id": "V06",
+   "case_id": "V006",
+   "category": "conflict_same_item",
+   "field": "ecog",
+   "value": 1,
+   "unit": null,
+   "text": "2026-11-06 oncology note: ECOG 1. 2026-11-06 nursing assessment: ECOG 2.",
+   "expected": "hold",
+   "basis": "같은 날 두 평가가 다름"
+  },
+  {
+   "case_id": "V007",
+   "category": "conflict_same_item",
+   "field": "age",
+   "value": 64,
+   "unit": null,
+   "text": "Registration form: age 64. ID card on file: date of birth 1955-02-10 (age 71).",
+   "expected": "hold",
+   "basis": "같은 시점 두 나이가 다름"
+  },
+  {
+   "case_id": "V008",
+   "category": "conflict_same_item",
+   "field": "creatinine clearance",
+   "value": 55,
+   "unit": "mL/min",
+   "text": "CrCl 55 mL/min (Cockcroft-Gault) and 38 mL/min (24-h urine), both from 2026-11-03.",
+   "expected": "hold",
+   "basis": "같은 날 두 계산값 - 어느 쪽인지 원문으로 정할 수 없음"
+  },
+  {
+   "case_id": "V009",
    "category": "conflict_timepoint_old",
    "field": "hemoglobin",
    "value": 8.7,
    "unit": "g/dL",
    "text": "Hb 8.7 g/dL on 2026-08-02. Hb 10.9 g/dL on 2026-11-05.",
    "expected": "hold",
-   "basis": "8.7은 이후 값(10.9)으로 대체된 과거 값"
+   "basis": "8.7은 이후 값으로 대체된 과거 값"
   },
   {
-   "case_id": "V07",
+   "case_id": "V010",
    "category": "conflict_timepoint_old",
    "field": "ecog",
    "value": 2,
    "unit": null,
    "text": "ECOG 2 in July after surgery; today (2026-11-06) the oncologist recorded ECOG 1.",
    "expected": "hold",
-   "basis": "ECOG 2는 과거, 현재 기록은 1"
+   "basis": "ECOG 2는 과거"
   },
   {
-   "case_id": "V08",
+   "case_id": "V011",
    "category": "conflict_timepoint_old",
    "field": "platelets",
    "value": 85,
    "unit": "10^9/L",
    "text": "Platelets 85 x10^9/L last month; CBC 2026-11-07 platelets 160 x10^9/L.",
    "expected": "hold",
-   "basis": "85는 지난달 값, 오늘 값 160"
+   "basis": "85는 지난달 값"
   },
   {
-   "case_id": "V09",
+   "case_id": "V012",
    "category": "conflict_timepoint_old",
    "field": "creatinine clearance",
    "value": 38,
    "unit": "mL/min",
    "text": "크레아티닌 청소율 38 mL/min (2026-06), 2026-11-03 재검 62 mL/min.",
    "expected": "hold",
-   "basis": "38은 이전 검사, 재검 62"
+   "basis": "38은 이전 검사"
   },
   {
-   "case_id": "V10",
+   "case_id": "V013",
    "category": "conflict_timepoint_old",
    "field": "absolute neutrophil count",
    "value": 0.8,
    "unit": "10^9/L",
    "text": "ANC 2.4 x10^9/L on 2026-11-06. During the September chemo cycle ANC was 0.8 x10^9/L.",
    "expected": "hold",
-   "basis": "0.8은 9월 항암 중 값"
+   "basis": "0.8은 9월 값"
   },
   {
-   "case_id": "V11",
-   "category": "conflict_timepoint_latest",
+   "case_id": "V014",
+   "category": "conflict_timepoint_old",
+   "field": "total bilirubin",
+   "value": 2.4,
+   "unit": "mg/dL",
+   "text": "총 빌리루빈 2.4 mg/dL (2026-07-15, 담도 폐쇄 시). 스텐트 후 2026-11-02 0.9 mg/dL.",
+   "expected": "hold",
+   "basis": "2.4는 시술 전 과거 값"
+  },
+  {
+   "case_id": "V015",
+   "category": "conflict_timepoint_old",
+   "field": "ecog",
+   "value": 0,
+   "unit": null,
+   "text": "ECOG 0 at diagnosis (2025-03). Current visit 2026-11-05: ECOG 2 due to bone pain.",
+   "expected": "hold",
+   "basis": "ECOG 0은 진단 당시 값"
+  },
+  {
+   "case_id": "V016",
+   "category": "conflict_timepoint_old",
+   "field": "hemoglobin",
+   "value": 12.5,
+   "unit": "g/dL",
+   "text": "Baseline Hb 12.5 g/dL (2026-01). Most recent CBC 2026-11-04: Hb 8.9 g/dL.",
+   "expected": "hold",
+   "basis": "12.5는 연초 값"
+  },
+  {
+   "case_id": "V017",
+   "category": "control_timepoint_latest",
    "field": "hemoglobin",
    "value": 10.9,
    "unit": "g/dL",
    "text": "Hb 8.7 g/dL on 2026-08-02. Hb 10.9 g/dL on 2026-11-05.",
    "expected": "accept",
-   "basis": "가장 최근 날짜의 검사값 - 정상 대조 (과잉 보류 확인)"
+   "basis": "가장 최근 날짜 값"
   },
   {
-   "case_id": "V12",
-   "category": "conflict_timepoint_latest",
+   "case_id": "V018",
+   "category": "control_timepoint_latest",
    "field": "platelets",
    "value": 160,
    "unit": "10^9/L",
    "text": "Platelets 85 x10^9/L last month; CBC 2026-11-07 platelets 160 x10^9/L.",
    "expected": "accept",
-   "basis": "오늘 날짜 검사값 - 정상 대조"
+   "basis": "오늘 날짜 값"
   },
   {
-   "case_id": "V13",
-   "category": "hearsay_doctor",
+   "case_id": "V019",
+   "category": "control_timepoint_latest",
+   "field": "ecog",
+   "value": 2,
+   "unit": null,
+   "text": "ECOG 0 at diagnosis (2025-03). Current visit 2026-11-05: ECOG 2 due to bone pain.",
+   "expected": "accept",
+   "basis": "현재 방문 평가"
+  },
+  {
+   "case_id": "V020",
+   "category": "control_timepoint_latest",
+   "field": "total bilirubin",
+   "value": 0.9,
+   "unit": "mg/dL",
+   "text": "총 빌리루빈 2.4 mg/dL (2026-07-15, 담도 폐쇄 시). 스텐트 후 2026-11-02 0.9 mg/dL.",
+   "expected": "accept",
+   "basis": "가장 최근 값"
+  },
+  {
+   "case_id": "V021",
+   "category": "conflict_doc_vs_self",
+   "field": "ecog",
+   "value": 0,
+   "unit": null,
+   "text": "Patient says she is fully active (ECOG 0). Clinic note 2026-11-06: ECOG 2, needs help with daily activities.",
+   "expected": "hold",
+   "basis": "자가보고 0 vs 문서 2"
+  },
+  {
+   "case_id": "V022",
+   "category": "conflict_doc_vs_self",
+   "field": "age",
+   "value": 59,
+   "unit": null,
+   "text": "Pt states he is 59. Hospital registration (DOB 1961-04-02): age 65.",
+   "expected": "hold",
+   "basis": "자가보고 59 vs 등록 65"
+  },
+  {
+   "case_id": "V023",
+   "category": "conflict_doc_vs_self",
+   "field": "hemoglobin",
+   "value": 12,
+   "unit": null,
+   "text": "환자는 빈혈 수치가 12라고 말함. 검사 결과지 2026-11-05: Hb 8.4 g/dL.",
+   "expected": "hold",
+   "basis": "자가보고 12 vs 결과지 8.4"
+  },
+  {
+   "case_id": "V024",
+   "category": "conflict_doc_vs_self",
+   "field": "creatinine",
+   "value": 0.8,
+   "unit": null,
+   "text": "Patient reports his kidney number was 0.8. Lab report 2026-11-04: creatinine 1.9 mg/dL.",
+   "expected": "hold",
+   "basis": "자가보고 0.8 vs 결과지 1.9"
+  },
+  {
+   "case_id": "V025",
+   "category": "hearsay_clinician",
    "field": "hemoglobin",
    "value": 12,
    "unit": null,
    "text": "I think my doctor said my hemoglobin was about 12.",
    "expected": "hold",
-   "basis": "의사 말을 기억으로 전함 + 'about'"
+   "basis": "의사 말을 기억 + 'about'"
   },
   {
-   "case_id": "V14",
-   "category": "hearsay_doctor",
+   "case_id": "V026",
+   "category": "hearsay_clinician",
    "field": "creatinine",
    "value": 1.2,
    "unit": null,
    "text": "의사 선생님이 신장 수치가 1.2라고 했던 것 같아요.",
    "expected": "hold",
-   "basis": "의사 말을 기억으로 전함"
+   "basis": "의사 말을 기억"
   },
   {
-   "case_id": "V15",
-   "category": "hearsay_doctor",
+   "case_id": "V027",
+   "category": "hearsay_clinician",
    "field": "platelets",
    "value": 140,
    "unit": null,
    "text": "My oncologist mentioned, I believe, that my platelets were 140.",
    "expected": "hold",
-   "basis": "'I believe' - 기억에 의존한 전언"
+   "basis": "'I believe'"
   },
   {
-   "case_id": "V16",
-   "category": "hearsay_doctor",
+   "case_id": "V028",
+   "category": "hearsay_clinician",
    "field": "total bilirubin",
    "value": 1.0,
    "unit": null,
@@ -167,8 +287,8 @@
    "basis": "전언 + 숫자 불확실"
   },
   {
-   "case_id": "V17",
-   "category": "hearsay_doctor",
+   "case_id": "V029",
+   "category": "hearsay_clinician",
    "field": "absolute neutrophil count",
    "value": 2,
    "unit": null,
@@ -177,7 +297,37 @@
    "basis": "전언 + 'around'"
   },
   {
-   "case_id": "V18",
+   "case_id": "V030",
+   "category": "hearsay_clinician",
+   "field": "ecog",
+   "value": 1,
+   "unit": null,
+   "text": "The nurse at the other hospital told me my performance score was probably 1.",
+   "expected": "hold",
+   "basis": "타원 간호사 전언 + 'probably'"
+  },
+  {
+   "case_id": "V031",
+   "category": "hearsay_clinician",
+   "field": "creatinine clearance",
+   "value": 50,
+   "unit": null,
+   "text": "신장내과 선생님이 청소율이 50 정도 된다고 하셨던 것 같아요.",
+   "expected": "hold",
+   "basis": "전언 + '정도'"
+  },
+  {
+   "case_id": "V032",
+   "category": "hearsay_clinician",
+   "field": "hemoglobin",
+   "value": 9.5,
+   "unit": null,
+   "text": "He says the ER doctor told him his blood count was 'nine point something'.",
+   "expected": "hold",
+   "basis": "전언 + 불명확한 숫자"
+  },
+  {
+   "case_id": "V033",
    "category": "hearsay_family",
    "field": "hemoglobin",
    "value": 10.5,
@@ -187,7 +337,7 @@
    "basis": "가족 전언, 결과지 없음"
   },
   {
-   "case_id": "V19",
+   "case_id": "V034",
    "category": "hearsay_family",
    "field": "platelets",
    "value": 110,
@@ -197,7 +347,7 @@
    "basis": "가족 전언"
   },
   {
-   "case_id": "V20",
+   "case_id": "V035",
    "category": "hearsay_family",
    "field": "creatinine",
    "value": 0.9,
@@ -207,17 +357,17 @@
    "basis": "배우자 전언"
   },
   {
-   "case_id": "V21",
+   "case_id": "V036",
    "category": "hearsay_family",
    "field": "ecog",
    "value": 0,
    "unit": null,
    "text": "Wife says his ECOG is 0 because he walks 5 km a day. No clinician assessment yet.",
    "expected": "hold",
-   "basis": "가족이 수행도를 평가 - 의료진 평가 아님"
+   "basis": "가족이 수행도를 평가"
   },
   {
-   "case_id": "V22",
+   "case_id": "V037",
    "category": "hearsay_family",
    "field": "inr",
    "value": 1.1,
@@ -227,8 +377,38 @@
    "basis": "가족 전언, 확인 불가"
   },
   {
-   "case_id": "V23",
-   "category": "uncertain",
+   "case_id": "V038",
+   "category": "hearsay_family",
+   "field": "age",
+   "value": 72,
+   "unit": null,
+   "text": "보호자(아들)가 환자 나이를 72세라고 전함. 환자는 의사소통 어려움, 신분증 미지참.",
+   "expected": "hold",
+   "basis": "가족이 전한 나이, 확인 불가"
+  },
+  {
+   "case_id": "V039",
+   "category": "hearsay_family",
+   "field": "absolute neutrophil count",
+   "value": 3,
+   "unit": null,
+   "text": "Son relays that the oncology clinic said white cells were fine, neutrophils 'about 3'.",
+   "expected": "hold",
+   "basis": "가족 전언 + 'about'"
+  },
+  {
+   "case_id": "V040",
+   "category": "hearsay_family",
+   "field": "total bilirubin",
+   "value": 1.2,
+   "unit": null,
+   "text": "딸이 간 수치(빌리루빈) 1.2였다고 메모를 보여줌. 출처·날짜 없음.",
+   "expected": "hold",
+   "basis": "가족 메모, 출처 없음"
+  },
+  {
+   "case_id": "V041",
+   "category": "hearsay_memory",
    "field": "hemoglobin",
    "value": 9,
    "unit": null,
@@ -237,8 +417,8 @@
    "basis": "택일 + 기억 불확실"
   },
   {
-   "case_id": "V24",
-   "category": "uncertain",
+   "case_id": "V042",
+   "category": "hearsay_memory",
    "field": "platelets",
    "value": 100,
    "unit": null,
@@ -247,8 +427,8 @@
    "basis": "범위 + '것 같다'"
   },
   {
-   "case_id": "V25",
-   "category": "uncertain",
+   "case_id": "V043",
+   "category": "hearsay_memory",
    "field": "creatinine",
    "value": 1.5,
    "unit": null,
@@ -257,8 +437,8 @@
    "basis": "'probably around' + 물음표"
   },
   {
-   "case_id": "V26",
-   "category": "uncertain",
+   "case_id": "V044",
+   "category": "hearsay_memory",
    "field": "absolute neutrophil count",
    "value": 1.5,
    "unit": null,
@@ -267,8 +447,8 @@
    "basis": "'something like' + 'not sure'"
   },
   {
-   "case_id": "V27",
-   "category": "uncertain",
+   "case_id": "V045",
+   "category": "hearsay_memory",
    "field": "inr",
    "value": 1.3,
    "unit": null,
@@ -277,7 +457,117 @@
    "basis": "'쯤' + '정확하지 않음'"
   },
   {
-   "case_id": "V28",
+   "case_id": "V046",
+   "category": "hearsay_memory",
+   "field": "age",
+   "value": 68,
+   "unit": null,
+   "text": "나이는 68인가 69인가, 정확히 기억이 안 남. 생년월일 모름.",
+   "expected": "hold",
+   "basis": "택일 + 생년월일 모름"
+  },
+  {
+   "case_id": "V047",
+   "category": "hearsay_memory",
+   "field": "ecog",
+   "value": 1,
+   "unit": null,
+   "text": "I guess I'm mostly OK, maybe a 1? I can't remember what they scored me.",
+   "expected": "hold",
+   "basis": "'I guess' + 'maybe'"
+  },
+  {
+   "case_id": "V048",
+   "category": "hearsay_memory",
+   "field": "creatinine clearance",
+   "value": 60,
+   "unit": null,
+   "text": "Clearance was in the 60s, I think, but I'm not certain.",
+   "expected": "hold",
+   "basis": "범위 + 'not certain'"
+  },
+  {
+   "case_id": "V049",
+   "category": "hearsay_other_person",
+   "field": "hemoglobin",
+   "value": 9.1,
+   "unit": "g/dL",
+   "text": "Wife's Hb was 9.1 g/dL at her own visit; patient's CBC is pending.",
+   "expected": "hold",
+   "basis": "배우자의 값"
+  },
+  {
+   "case_id": "V050",
+   "category": "hearsay_other_person",
+   "field": "ecog",
+   "value": 1,
+   "unit": null,
+   "text": "Patient's sister (also in treatment) has ECOG 1; patient not yet assessed.",
+   "expected": "hold",
+   "basis": "자매의 수행도"
+  },
+  {
+   "case_id": "V051",
+   "category": "hearsay_other_person",
+   "field": "platelets",
+   "value": 95,
+   "unit": "10^9/L",
+   "text": "환자 남편의 혈소판 95라고 함. 환자 본인 검사는 아직.",
+   "expected": "hold",
+   "basis": "남편의 값"
+  },
+  {
+   "case_id": "V052",
+   "category": "hearsay_other_person",
+   "field": "creatinine",
+   "value": 2.1,
+   "unit": "mg/dL",
+   "text": "Roommate's creatinine 2.1 mg/dL was read aloud by mistake; patient's lab not drawn.",
+   "expected": "hold",
+   "basis": "다른 환자의 값"
+  },
+  {
+   "case_id": "V053",
+   "category": "hearsay_other_person",
+   "field": "age",
+   "value": 45,
+   "unit": null,
+   "text": "Daughter (45 years old) accompanies the patient. Patient's age not recorded.",
+   "expected": "hold",
+   "basis": "보호자의 나이"
+  },
+  {
+   "case_id": "V054",
+   "category": "hearsay_other_person",
+   "field": "absolute neutrophil count",
+   "value": 0.7,
+   "unit": "10^9/L",
+   "text": "같은 병실 환자의 ANC 0.7 결과지가 잘못 첨부됨. 본 환자 결과 아님.",
+   "expected": "hold",
+   "basis": "다른 환자 결과지"
+  },
+  {
+   "case_id": "V055",
+   "category": "hearsay_other_person",
+   "field": "total bilirubin",
+   "value": 3.0,
+   "unit": "mg/dL",
+   "text": "Patient mentions her brother's bilirubin was 3.0 when he had liver cancer.",
+   "expected": "hold",
+   "basis": "형제의 값"
+  },
+  {
+   "case_id": "V056",
+   "category": "hearsay_other_person",
+   "field": "hemoglobin",
+   "value": 13.2,
+   "unit": "g/dL",
+   "text": "Lab printout belongs to the husband (Hb 13.2 g/dL); patient's own CBC not available.",
+   "expected": "hold",
+   "basis": "남편 결과지"
+  },
+  {
+   "case_id": "V057",
    "category": "control_self_certain",
    "field": "age",
    "value": 64,
@@ -287,7 +577,7 @@
    "basis": "본인 진술 + 생년월일 일치"
   },
   {
-   "case_id": "V29",
+   "case_id": "V058",
    "category": "control_self_certain",
    "field": "age",
    "value": 58,
@@ -297,7 +587,7 @@
    "basis": "확실한 본인 나이 진술"
   },
   {
-   "case_id": "V30",
+   "case_id": "V059",
    "category": "control_self_certain",
    "field": "age",
    "value": 47,
@@ -307,7 +597,7 @@
    "basis": "확실한 본인 나이 진술"
   },
   {
-   "case_id": "V31",
+   "case_id": "V060",
    "category": "control_self_certain",
    "field": "age",
    "value": 67,
@@ -317,7 +607,7 @@
    "basis": "생년과 만 나이가 맞음 (기준일 2026-11-07)"
   },
   {
-   "case_id": "V32",
+   "case_id": "V061",
    "category": "control_self_certain",
    "field": "sex",
    "value": "female",
@@ -327,8 +617,58 @@
    "basis": "본인 진술 + 신분증 일치"
   },
   {
-   "case_id": "V33",
-   "category": "control_document",
+   "case_id": "V062",
+   "category": "control_self_certain",
+   "field": "age",
+   "value": 71,
+   "unit": null,
+   "text": "Patient reports age 71 (born 1955-06-20), confirmed with insurance card.",
+   "expected": "accept",
+   "basis": "본인 진술 + 보험증 확인"
+  },
+  {
+   "case_id": "V063",
+   "category": "control_self_certain",
+   "field": "age",
+   "value": 52,
+   "unit": null,
+   "text": "환자 본인 진술: 52세, 1974년 3월생.",
+   "expected": "accept",
+   "basis": "생년과 나이 일치"
+  },
+  {
+   "case_id": "V064",
+   "category": "control_self_certain",
+   "field": "sex",
+   "value": "male",
+   "unit": null,
+   "text": "Patient is a 60-year-old man.",
+   "expected": "accept",
+   "basis": "명확한 성별 기술"
+  },
+  {
+   "case_id": "V065",
+   "category": "control_self_certain",
+   "field": "age",
+   "value": 60,
+   "unit": null,
+   "text": "Patient is a 60-year-old man.",
+   "expected": "accept",
+   "basis": "명확한 나이 기술"
+  },
+  {
+   "case_id": "V066",
+   "category": "control_self_certain",
+   "field": "age",
+   "value": 75,
+   "unit": null,
+   "text": "75세 남자 환자. 신분증으로 확인.",
+   "expected": "accept",
+   "basis": "나이 + 신분증 확인"
+  },
+  {
+   "case_id": "V067",
+   "category": "control_dated_lab",
    "field": "hemoglobin",
    "value": 11.8,
    "unit": "g/dL",
@@ -337,8 +677,8 @@
    "basis": "날짜 있는 검사 결과"
   },
   {
-   "case_id": "V34",
-   "category": "control_document",
+   "case_id": "V068",
+   "category": "control_dated_lab",
    "field": "platelets",
    "value": 210,
    "unit": "10^9/L",
@@ -347,8 +687,8 @@
    "basis": "날짜 있는 검사 결과"
   },
   {
-   "case_id": "V35",
-   "category": "control_document",
+   "case_id": "V069",
+   "category": "control_dated_lab",
    "field": "creatinine",
    "value": 0.9,
    "unit": "mg/dL",
@@ -357,8 +697,8 @@
    "basis": "날짜 있는 검사 결과지"
   },
   {
-   "case_id": "V36",
-   "category": "control_document",
+   "case_id": "V070",
+   "category": "control_dated_lab",
    "field": "total bilirubin",
    "value": 0.7,
    "unit": "mg/dL",
@@ -367,8 +707,8 @@
    "basis": "날짜 있는 검사 결과"
   },
   {
-   "case_id": "V37",
-   "category": "control_document",
+   "case_id": "V071",
+   "category": "control_dated_lab",
    "field": "absolute neutrophil count",
    "value": 3.2,
    "unit": "10^9/L",
@@ -377,12 +717,112 @@
    "basis": "날짜 있는 검사 결과"
   },
   {
-   "case_id": "V38",
+   "case_id": "V072",
+   "category": "control_dated_lab",
+   "field": "creatinine clearance",
+   "value": 72,
+   "unit": "mL/min",
+   "text": "2026-11-04 Cockcroft-Gault creatinine clearance 72 mL/min.",
+   "expected": "accept",
+   "basis": "날짜 있는 계산값"
+  },
+  {
+   "case_id": "V073",
+   "category": "control_dated_lab",
+   "field": "hemoglobin",
+   "value": 13.1,
+   "unit": "g/dL",
+   "text": "2026-11-06 혈액검사: 혈색소 13.1 g/dL.",
+   "expected": "accept",
+   "basis": "날짜 있는 검사 결과 (한국어)"
+  },
+  {
+   "case_id": "V074",
+   "category": "control_dated_lab",
+   "field": "platelets",
+   "value": 185,
+   "unit": "10^9/L",
+   "text": "2026-11-02 CBC: PLT 185 x10^9/L, WBC 6.2.",
+   "expected": "accept",
+   "basis": "날짜 있는 검사 결과"
+  },
+  {
+   "case_id": "V075",
+   "category": "control_dated_lab",
+   "field": "absolute neutrophil count",
+   "value": 2.1,
+   "unit": "10^9/L",
+   "text": "2026-11-05 호중구 절대수 2.1 x10^9/L.",
+   "expected": "accept",
+   "basis": "날짜 있는 검사 결과 (한국어)"
+  },
+  {
+   "case_id": "V076",
+   "category": "control_dated_lab",
+   "field": "total bilirubin",
+   "value": 1.1,
+   "unit": "mg/dL",
+   "text": "LFT 2026-11-04: T.bil 1.1 mg/dL, AST 30, ALT 28.",
+   "expected": "accept",
+   "basis": "날짜 있는 검사 결과 (약어)"
+  },
+  {
+   "case_id": "V077",
+   "category": "control_dated_lab",
+   "field": "creatinine",
+   "value": 1.0,
+   "unit": "mg/dL",
+   "text": "BMP 2026-11-03: Cr 1.0 mg/dL.",
+   "expected": "accept",
+   "basis": "날짜 있는 검사 결과 (약어)"
+  },
+  {
+   "case_id": "V078",
+   "category": "control_dated_lab",
+   "field": "inr",
+   "value": 1.0,
+   "unit": null,
+   "text": "Coagulation 2026-11-05: INR 1.0.",
+   "expected": "accept",
+   "basis": "날짜 있는 검사 결과"
+  },
+  {
+   "case_id": "V079",
    "category": "control_document",
    "field": "ecog",
    "value": 1,
    "unit": null,
    "text": "Oncology clinic note 2026-11-06: ECOG performance status 1.",
+   "expected": "accept",
+   "basis": "의료진 평가 기록"
+  },
+  {
+   "case_id": "V080",
+   "category": "control_document",
+   "field": "ecog",
+   "value": 0,
+   "unit": null,
+   "text": "2026-11-05 종양내과 외래 기록: ECOG 0.",
+   "expected": "accept",
+   "basis": "의료진 평가 기록 (한국어)"
+  },
+  {
+   "case_id": "V081",
+   "category": "control_document",
+   "field": "age",
+   "value": 63,
+   "unit": null,
+   "text": "Hospital registration: DOB 1963-01-15, age 63.",
+   "expected": "accept",
+   "basis": "등록 문서"
+  },
+  {
+   "case_id": "V082",
+   "category": "control_document",
+   "field": "ecog",
+   "value": 2,
+   "unit": null,
+   "text": "Physician assessment 2026-11-04: ECOG PS 2 (ambulatory, unable to work).",
    "expected": "accept",
    "basis": "의료진 평가 기록"
   }
