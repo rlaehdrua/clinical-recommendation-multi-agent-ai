@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 
-from . import config, llm
+from . import config, conservative_view, llm
 from .agents.matcher import compact
 from .pipeline import Session
 from .tools import ctgov
@@ -149,10 +149,10 @@ class Orchestrator:
             raise RuntimeError("평가된 시험이 없습니다. evaluate_trials를 먼저 호출하세요.")
         self.s.finalize()
         self.done = True
-        rec = self.s.recommendation
-        return {"recommended": [r.trial_id for r in rec.recommended],
-                "ranked": [(r.rank, r.trial_id, r.match_status) for r in rec.ranked],
-                "no_recommendation_reason": rec.no_recommendation_reason}
+        rec = conservative_view.build(self.s).result["recommendation"]  # 모델이 쓰는 종료 문구도 표현 사본만 봄
+        return {"recommended": [r["trial_id"] for r in rec["recommended"]],
+                "ranked": [(r["rank"], r["trial_id"], r["match_status"]) for r in rec["ranked"]],
+                "no_recommendation_reason": rec["no_recommendation_reason"]}
 
     # ------------------------------------------------------------ 루프
     def run(self) -> None:

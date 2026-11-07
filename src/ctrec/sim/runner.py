@@ -34,7 +34,7 @@ from ..engine.cost import EffortLedger
 from ..engine.experiment import ExperimentSpecError, catalog_claims, require_catalog_hash
 from .cohort import SimCohort
 from .environment import CohortEnvironment
-from .evaluator import OfflineEvaluator, make_fact, verify_fact
+from .evaluator import DOCUMENT_ASSUMPTION, OfflineEvaluator, make_fact, verify_fact
 from .metrics import ELIGIBLE, label_of, summarize
 from .oracle import ORACLE_ID, ORACLE_VERSION, OracleUpperPolicy
 from .response_model import ResponseModel, SourceResponse
@@ -233,7 +233,7 @@ def run(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog | None =
     manifest = {
         "runner_version": RUNNER_VERSION, "run_id": run_id, "spec": spec.model_dump(mode="json"),
         "spec_hash": spec.spec_hash(), "result_hash": result_hash, "contract_version": CONTRACT_VERSION,
-        "catalog_claims": catalog_claims(catalog), "claims": CLAIMS,
+        "catalog_claims": catalog_claims(catalog), "claims": CLAIMS, "document_authority": DOCUMENT_ASSUMPTION,
         "cohort": {"cohort_id": cohort.cohort_id, "cohort_hash": cohort.digest(), "store_hash": cohort.store_hash(),
                    "patients": len(cohort.patients), "trials": len(cohort.trials)},
         "evaluator": {"id": ev.evaluator_id, "scope": EVALUATOR_SCOPE if cohort.judge is None else JUDGE_SCOPE,

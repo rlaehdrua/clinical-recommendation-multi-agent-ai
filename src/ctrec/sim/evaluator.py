@@ -119,6 +119,9 @@ class SimDocumentAuthority:
 
 
 SIM_AUTHORITY = SimDocumentAuthority()
+# 실행 산출물에 남기는 가정. 시뮬레이터의 확정 수는 서버 문서 계약이 있는 미래를 가정한 값이고, 운영에는 문서 권한이 없음
+DOCUMENT_ASSUMPTION = {"authority": "SimDocumentAuthority", "kind": "synthetic", "assumes": "future_server_document_contract",
+                       "production_authority": "NoDocumentAuthority", "operational_performance": False}
 
 
 def _verified_event(f: PatientFact, origin: str) -> VerificationEvent:
@@ -214,5 +217,5 @@ class OfflineEvaluator:
             return build_state(view), snap
 
 
-__all__ = ["OfflineEvaluator", "OfflineMatcherClient", "OfflineLLMRequest", "EVALUATOR_ID", "SIM_AUTHORITY", "fact_id", "fact_line",
+__all__ = ["OfflineEvaluator", "OfflineMatcherClient", "OfflineLLMRequest", "EVALUATOR_ID", "DOCUMENT_ASSUMPTION", "SIM_AUTHORITY", "fact_id", "fact_line",
            "make_fact", "verify_fact", "same_value", "source_text"]
