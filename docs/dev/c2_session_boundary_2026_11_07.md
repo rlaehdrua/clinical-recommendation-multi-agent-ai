@@ -101,8 +101,8 @@ LLM 경로:
 
 | 대상 | 결과 |
 |---|---|
-| 이 브랜치 전체 pytest | 최종 커밋 기준 수치는 작업 보고 참조 (직전 코드 커밋 `d6c4705`: 2745 passed, 9 skipped, exit 0) |
-| PR #24·#25 결합 (`local/c2-pr24-pr25`) | PR #24는 이미 포함, PR #25 충돌 없이 병합. `d6c4705` 기준 2773 passed, 9 skipped, exit 0 |
+| 이 브랜치 전체 pytest | 2745 passed, 9 skipped, exit 0 |
+| PR #24·#25 결합 (`local/c2-pr24-pr25`) | PR #24는 이미 포함, PR #25 충돌 없이 병합. 2773 passed, 9 skipped, exit 0 |
 | 변이 검사 | 20종 전부 검출 |
 | 고정 사례 259쌍 전후 | 판정·기준 판정·외부 상태·추천 차이 0 |
 
