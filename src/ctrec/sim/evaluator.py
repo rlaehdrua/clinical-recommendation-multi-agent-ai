@@ -94,7 +94,9 @@ def fact_line(f: SimFact | PatientFact) -> str:
         return f"ECOG {v}"
     if f.field.startswith("lab:"):
         num = f"{v:g}" if isinstance(v, float) else str(v)
-        return f"{f.field[4:]} {num}{' ' + f.unit if f.unit else ''}"
+        # 검사일을 함께 씀: 기간 조건 기준의 근거 검사(evidence_directness)는 인용 줄 안의 날짜를 요구함 (PR #32 리뷰, 12행)
+        when = f" ({f.observed_at[:10]})" if f.observed_at else ""
+        return f"{f.field[4:]} {num}{' ' + f.unit if f.unit else ''}{when}"
     return f"{f.field}: {v}"
 
 

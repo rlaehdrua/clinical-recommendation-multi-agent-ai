@@ -322,3 +322,14 @@ def test_fact_line_writes_whole_number_age_without_decimal():
     assert fact_line(SimFact(field="age", value=15.0)) == "나이 15세"
     assert fact_line(SimFact(field="ecog", value=1.0)) == "ECOG 1"
     assert fact_line(SimFact(field="age", value=15.5)) == "나이 15.5세"
+
+
+def test_fact_line_writes_the_lab_date_so_time_windows_can_be_checked():
+    """기간 조건 기준의 근거 검사는 인용 줄 안의 날짜를 봄 (PR #32 리뷰: 날짜가 없어 판정이 UNKNOWN으로 되돌아가던 검사 12행)."""
+    from ctrec.evidence_directness import _within
+    from ctrec.sim.cohort import SimFact
+    from ctrec.sim.evaluator import fact_line
+    line = fact_line(SimFact(field="lab:platelets", value=150.0, unit="x10^9/L", observed_at="2026-10-01"))
+    assert line == "platelets 150 x10^9/L (2026-10-01)"
+    assert _within(line, 30, "2026-10-12") and not _within(line, 7, "2026-10-12")  # 7일 기준이면 오래된 검사
+    assert fact_line(SimFact(field="lab:platelets", value=150.0, unit="x10^9/L")) == "platelets 150 x10^9/L"  # 날짜 모름
