@@ -342,6 +342,9 @@ def main(argv: list[str] | None = None) -> None:
             rec = shown_recommendation(session)
             if rec.recommended:
                 print(f"\n[{_who(case, args)}] 추천 그룹: {status_label(rec.recommended[0].match_status)}")
+            if rec.held_out:  # 추천도 확정 제외도 아닌 시험이 출력에서 사라지지 않게 (시험 ID·상태만)
+                print("  근거 확인 대기(확정 제외 아님): " + ", ".join(f"{h.trial_id}({status_label(h.match_status)})"
+                                                         for h in rec.held_out))
             if args.redact_console:  # 시험 ID·상태만: 근거 문장에는 환자 원문이 인용될 수 있음
                 print("  " + ", ".join(f"{r.rank}. {r.trial_id}({status_label(r.match_status)})" for r in rec.ranked))
                 continue

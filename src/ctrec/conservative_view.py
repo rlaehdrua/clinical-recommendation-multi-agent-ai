@@ -405,6 +405,8 @@ def save(session, out_dir: Path) -> View:
     상태는 engine_boundary의 external에 남음. 표현이 달라졌을 때만 report.raw.md(LLM 원문)와 conservative_view.json을 둠."""
     view = build(session)
     (out_dir / "result.json").write_text(json.dumps(view.result, ensure_ascii=False, indent=2), encoding="utf-8")
+    if view.report:
+        (out_dir / "report.md").write_text(view.report, encoding="utf-8")
     if view.holds or view.claims:
         (out_dir / "conservative_view.json").write_text(json.dumps({
             "note": "표현 사본입니다. 판정·사실은 그대로이고 외부 상태·추천 그룹·문구만 다릅니다.",
@@ -412,7 +414,6 @@ def save(session, out_dir: Path) -> View:
             "engine_boundary": view.engine}, ensure_ascii=False, indent=2), encoding="utf-8")
     if view.report != session.report:
         (out_dir / "report.raw.md").write_text(session.report, encoding="utf-8")
-        (out_dir / "report.md").write_text(view.report, encoding="utf-8")
     return view
 
 

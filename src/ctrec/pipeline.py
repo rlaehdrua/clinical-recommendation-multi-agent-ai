@@ -534,11 +534,6 @@ class Session:
     def save(self, out_dir: Path) -> None:
         self.usage = llm.usage_snapshot()
         out_dir.mkdir(parents=True, exist_ok=True)
-        (out_dir / "result.json").write_text(
-            json.dumps(self.result(), ensure_ascii=False, indent=2), encoding="utf-8"
-        )
-        if self.report:
-            (out_dir / "report.md").write_text(self.report, encoding="utf-8")
         from . import conservative_view  # 순환 import 방지
         conservative_view.save(self, out_dir)  # 저장 경로마다 호출하지 않아도 저장 결과가 같은 기준을 따름
 

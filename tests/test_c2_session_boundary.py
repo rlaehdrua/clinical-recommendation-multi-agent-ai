@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from night_consistency_support import AGE, ALIAS, CONSENT, Env, cohort_of, lab, layers, rule, run_once, session  # noqa: E402
 from test_night2_status_boundary import DEL, EG, EG_YES, FALL, HB, OTHER, RISE, WT, Run  # noqa: E402
 
-from ctrec import cli, conservative_view as cv, pipeline  # noqa: E402
+from ctrec import cli, config, conservative_view as cv, pipeline, question_eval as qe  # noqa: E402
 from ctrec.orchestrator import Orchestrator  # noqa: E402
 from ctrec.web import app as web, display  # noqa: E402
 
@@ -85,6 +85,33 @@ def test_confirmed_results_are_unchanged_on_every_field(tmp_path):
     assert {k: x for k, x in v.result.items() if k != "engine_boundary"} == raw
     assert (v.engine["OK"]["engine_status"], v.engine["NO"]["engine_status"]) == ("CONFIRMED_ELIGIBLE", "CONFIRMED_INELIGIBLE")
     assert raw["recommendation"]["held_out"] == []
+
+
+def test_failed_boundary_at_save_leaves_no_unlowered_file(tmp_path, monkeypatch):
+    out = tmp_path / "out"
+    with Run(tmp_path / "w", {"T": [HB, AGE]}, RISE) as r:
+        monkeypatch.setattr(cv, "evaluate", lambda s: (_ for _ in ()).throw(RuntimeError("boundary")))
+        with pytest.raises(RuntimeError):
+            r.s.save(out)
+    assert not (out / "result.json").exists()
+
+
+@pytest.mark.parametrize("flag", [[], ["--redact-console"]], ids=["plain", "redacted"])
+def test_cli_lists_a_held_out_trial_instead_of_dropping_it(monkeypatch, tmp_path, capsys, flag):
+    """실제 cli.main 경로. 대역 프로필은 상충 사실을 만들지 않아 보류 판단만 대역. PR #24 --redact-console과 함께 확인."""
+    demo = Path(__file__).resolve().parents[1] / "data" / "trials" / "DEMO-LUNG-001.json"
+    patient = tmp_path / "patient_input.json"
+    patient.write_text(json.dumps({"patient_id": "CLI-T3", "text": "62-year-old female. ECOG performance status 1.",
+                                   "candidate_trials": ["DEMO-LUNG-001"]}), encoding="utf-8")
+    hold = cv.Hold("DEMO-LUNG-001", "mismatch", "VERIFICATION_PENDING", ("contradictory",), ("R1",), "NEEDS_REVIEW")
+    monkeypatch.setattr(cv, "evaluate", lambda s: ({"DEMO-LUNG-001": hold}, {}))
+    with qe.OfflineEnvironment(2), pipeline.question_generator.use_generator(qe.baseline_generator):
+        monkeypatch.setattr(config, "DEMO_MODE", True)
+        cli.main(["run", "--patient", str(patient), "--trials", str(demo), "--mode", "fixed", "--candidates", "given",
+                  "--answers", "none", "--max-rounds", "1", *flag, "--out", str(tmp_path / "out")])
+    text = capsys.readouterr().out
+    assert "근거 확인 대기(확정 제외 아님): DEMO-LUNG-001(의료진 검토 필요)" in text
+    assert ("CLI-T3" in text) != bool(flag)
 
 
 # ------------------------------------------------------------ 추천 없는 상태

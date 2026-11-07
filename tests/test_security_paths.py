@@ -279,7 +279,7 @@ def _raise_pydantic(*a):
 
 def _session(*a):
     r = SimpleNamespace(rank=1, trial_id="NCT0", match_status="eligible", rationale=f"r {SYN}", physician_review=[f"p {SYN}"])
-    rec = SimpleNamespace(recommended=[r], ranked=[r], selection_reason=f"s {SYN}", no_recommendation_reason=f"n {SYN}")
+    rec = SimpleNamespace(recommended=[r], ranked=[r], selection_reason=f"s {SYN}", no_recommendation_reason=f"n {SYN}", held_out=[])
     return SimpleNamespace(usage={}, recommendation=rec)
 
 
