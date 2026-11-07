@@ -104,11 +104,22 @@ def test_the_default_authority_trusts_nothing():
 
 
 def test_no_production_code_installs_an_authority():
-    """운영 권한이 생기기 전에는 시뮬레이터 말고 document_authority.use를 부르는 코드가 없어야 함."""
+    """운영 권한이 생기기 전에는 시뮬레이터와 follow-up 서비스 말고 document_authority.use를 부르는 코드가 없어야 함.
+
+    follow-up 서비스(_scope)는 사례마다 권한을 명시적으로 설정하며, 합성 모드 + 합성 사례가 아니면 NoDocumentAuthority입니다
+    (문서 검증·임상의 판단 완료 경로, docs/dev/document_clinician_api_contract.md)."""
     src = Path(__file__).parent.parent / "src" / "ctrec"
-    users = [p.relative_to(src).as_posix() for p in src.rglob("*.py") if p.name != "document_authority.py"
-             and re.search(r"document_authority\.use\(", p.read_text(encoding="utf-8"))]
-    assert users in ([], ["sim/evaluator.py"])
+    users = sorted(p.relative_to(src).as_posix() for p in src.rglob("*.py") if p.name != "document_authority.py"
+                   and re.search(r"document_authority\.use\(", p.read_text(encoding="utf-8")))
+    assert set(users) <= {"sim/evaluator.py", "followup/service.py"}
+    from ctrec.document_authority import NoDocumentAuthority
+    from ctrec.followup import verification
+    real, synthetic = {"case_id": "FC-" + "0" * 32, "synthetic": False}, {"case_id": "FC-" + "0" * 32, "synthetic": True}
+    on = {"CTREC_VERIFICATION_MODE": "synthetic", "CTREC_SYNTHETIC_DOC_VERIFIER_KEY": "a" * 16,
+          "CTREC_SYNTHETIC_CLINICIAN_KEY": "b" * 16, "CTREC_SYNTHETIC_SIGNING_SECRET": "c" * 16}
+    for env, data in (({}, synthetic), ({**on, "CTREC_VERIFICATION_MODE": "production"}, synthetic), (on, real)):
+        assert isinstance(verification.document_authority_for(verification.VerificationConfig(env), data),
+                          NoDocumentAuthority)
 
 
 def forged_status(s):

@@ -17,10 +17,18 @@
    어느 값도 채택하지 않음. 엔진 쌍 상태는 확인 대기(VERIFICATION_PENDING)로 보류됨.
 7. 매 평가 뒤: 대상 기준이 더는 열려 있지 않은 요청은 superseded로 닫음 (환자에게 지난 질문을 보이지 않음).
 
+8. 문서 검증 (verify_document, 문서 검증자 권한): 등록된 문서 + 요청 범위의 사실 -> 서명된 증명(FactStore.attest)
+   -> 증명이 바꾼 사실에 영향받은 기준 재평가 (프로필 재추출 없음) -> 요청 document_verified.
+9. 임상의 판단 (clinician_judgment, 임상의 권한): 임상의 판단 기준(expert_boundary.clinician_reason)만, 서명된 판단 기록
+   -> 재평가 (expert_boundary가 인정한 판단만 반영) -> 요청 clinician_decided.
+   임상의 판단 기준이 EXPERT_REVIEW로 남으면 정책 제안과 별개로 임상 검토 요청을 엶 (충돌 확인과 같은 방식).
+
 지키는 것
 - 확정 적격은 판정 계층(conservative_view·engine)만 정함. 이 모듈은 판정 값을 만들거나 고치지 않음.
-- 담당 의료진의 판단 완료, 문서 확인 완료 상태를 만들지 않음 (그런 입력 계약이 없음).
-- 연구 담당자가 환자 답을 대신 입력하는 경로가 없음 (respond는 웹 계층에서 환자 권한으로만 부름).
+- 문서 확인·임상의 판단은 상태 문자열이 아니라 현재 권한(_scope: document_authority·clinician_authority)이 인정한
+  증명·판단으로만 판정에 들어감. 운영에는 그 권한이 없음 (verification.py). 모든 평가·보기는 _scope 안에서 함.
+- 연구 담당자·검증자·임상의가 환자 답을 대신 입력하는 경로가 없음 (respond는 웹 계층에서 환자 권한으로만 부름).
+- 사례 기록의 events는 저장 뒤 추가 전용 감사 기록(verification.AuditLog)으로 옮김.
 """
 
 from __future__ import annotations
@@ -32,6 +40,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Callable
 
+from .. import clinician_authority, document_authority, expert_boundary
 from ..agents import matcher
 from ..contract_session import session_class
 from ..decision_state import SessionView, build_state
@@ -47,7 +56,7 @@ from ..pipeline import PatientCase
 from ..schemas import ClarifyingQuestion, ParsedTrial
 from ..trace import Tracer
 from ..web.engine_runner import DEFAULT_BUDGET, EngineRunner
-from . import codec
+from . import codec, verification
 from .models import (ACTION_ROUTES, FORMAT, OPEN_STATUSES, PATIENT_KINDS, STAFF_TRANSITIONS, EvaluationRecord,
                      FollowupRequest, FollowupResponse, PatientQuestion, StatusEvent)
 from .store import CaseStore, new_case_id
@@ -110,12 +119,33 @@ def _criteria_snapshot(session) -> dict[str, dict]:
 class FollowupService:
     def __init__(self, store: CaseStore, catalog: TrialCatalog, *, full_check: bool = True,
                  llm_scope: Callable[[str], contextlib.AbstractContextManager] | None = None,
-                 policy_factory: Callable[[], FullDCVCPolicy] = FullDCVCPolicy):
+                 policy_factory: Callable[[], FullDCVCPolicy] = FullDCVCPolicy,
+                 verification_config: Callable[[], verification.VerificationConfig] = verification.VerificationConfig):
         self.store = store
         self.catalog = catalog
         self.full_check = full_check
         self.llm_scope = llm_scope or (lambda label: contextlib.nullcontext())
         self.policy_factory = policy_factory
+        self.verification_config = verification_config  # 호출할 때마다 읽음 (재시작 뒤 설정이 바뀌면 그 설정으로)
+        self.documents = verification.DocumentStore(store.root)
+        self.audit = verification.AuditLog(store.root)
+
+    # ------------------------------------------------------------------ 권한 범위·저장
+    @contextlib.contextmanager
+    def _scope(self, data: dict, session):
+        """이 사례의 문서·임상의 권한 아래에서 평가·보기. 합성 모드가 아니거나 실제 사례면 권한 없음(아무것도 인정 안 함).
+
+        프로세스 기본값(테스트 conftest의 합성 권한 포함)을 쓰지 않도록 항상 명시적으로 설정."""
+        cfg = self.verification_config()
+        with document_authority.use(verification.document_authority_for(cfg, data)), \
+                clinician_authority.use(verification.clinician_authority_for(cfg, data, session)):
+            yield cfg
+
+    def _commit(self, data: dict, base: int | None) -> dict:
+        self.store.save(data, expected_revision=base)
+        saved = self.store.load(data["case_id"])
+        self.audit.sync(saved)
+        return saved
 
     # ------------------------------------------------------------------ Session
     def _new_session(self, case: PatientCase, trial_ids: list[str], sink: list[dict]):
@@ -128,8 +158,40 @@ class FollowupService:
         return codec.restore_session(data["session"], self.catalog.trials, self.catalog.parsed,
                                      tracer=_sink_tracer(sink if sink is not None else []))
 
-    def _cohort(self, session, alias: str, ops: OpsState):
+    def _match(self, session, ids: list[str]) -> None:
+        """Session.match 뒤 자기 보고 보류 해제 (evidence_basis.release_match, 이 사례의 문서 권한 범위 안에서 부름)."""
+        session.match(ids)
+        self._release(session, ids)
+
+    @staticmethod
+    def _release(session, ids) -> None:
+        from .. import evidence_basis
+        pid = session.case.patient_id
+        for tid in ids:
+            m, p = session.matches.get(tid), session.parsed.get(tid)
+            if m is not None and p is not None:
+                check = evidence_basis.document_check(session.fact_store, pid, p, session.reference_date)
+                session.matches[tid] = evidence_basis.release_match(m, p, check)
+
+    @staticmethod
+    def _view(session) -> SessionView:
+        """판정 상태를 읽는 사본. 저장된 임상의 판정은 지금 권한이 그 판단을 인정할 때만 그대로 (아니면 판단 대기)."""
+        from .. import evidence_basis
         view = SessionView.from_session(session)
+        for tid, m in list(view.matches.items()):
+            p = session.parsed.get(tid)
+            allx = m.assessments + m.other_cohort_assessments
+            if p is None or not any(a.method == "clinician" for a in allx):
+                continue
+            rules = {r.rule_id: r for r in p.rules}
+            after = [expert_boundary.unrecognized_to_unknown(tid, rules[a.rule_id], a) if a.rule_id in rules else a
+                     for a in allx]
+            if any(x is not y for x, y in zip(after, allx)):
+                view.matches[tid] = evidence_basis.reaggregate(m, p, after, "인정되지 않은 임상의 판단 보류")
+        return view
+
+    def _cohort(self, session, alias: str, ops: OpsState):
+        view = self._view(session)
         view.matched_versions = {t: view.snapshot.version for t in session.matches}
         ds = build_state(view)
         return ds, CohortState.from_decision_states({alias: ds}, ops={alias: ops})
@@ -207,6 +269,7 @@ class FollowupService:
         pairs = self._pairs(co)
         self._supersede(data, ds, pairs, session)
         self._open_conflicts(data, session, co)
+        self._open_clinician_reviews(data, ds, pairs, session)
         proposals, held = self._proposals(data, session, co)
         cur_criteria = _criteria_snapshot(session)
         transitions = [{"trial_id": t, "before": (prev_pairs or {}).get(t, {}).get("status"), "after": p["status"]}
@@ -227,6 +290,10 @@ class FollowupService:
         data["ops"] = codec.dump_ops(ops)
         data["current"] = {"revision": rev, "pairs": pairs, "proposals": proposals, "held": held,
                            "view": self._result_view(session)}
+        # 판정 변경 감사: 쌍 상태 전이와 바뀐 기준 (값·원문은 넣지 않음)
+        self._event(data, "evaluation_recorded", "system", revision=rev, trigger=trigger.get("type"),
+                    transitions=transitions, criteria_changed=sorted(c["criterion"] for c in changes),
+                    equivalence=rec.equivalence.get("status"), fact_version=ds.fact_version)
         return rec
 
     def _event(self, data: dict, kind: str, by: str, **kw) -> None:
@@ -280,9 +347,30 @@ class FollowupService:
             made.append(r)
         return made
 
+    def _open_clinician_reviews(self, data: dict, ds, pairs: dict, session) -> list[dict]:
+        """임상의 판단 기준(expert_boundary)이 판단 대기로 남은 열린 쌍마다 임상 검토 요청 (기준 하나에 열린 요청 하나).
+
+        정책 엔진은 이 기준에 판정 근거가 되는 제안을 내지 않으므로(의사 참고용 질문만) 서비스가 직접 엶."""
+        live_pairs = {t for t, p in pairs.items() if p["status"] not in CLOSED_PAIRS}
+        covered = {k for r in data["requests"] if r["kind"] == "clinician_review" and r["status"] in OPEN_STATUSES
+                   for k in r["target_criteria"]}
+        made = []
+        for c in _criteria(ds):
+            key = f"{c.trial_id}:{c.rule_id}"
+            parsed = session.parsed.get(c.trial_id)
+            rule = next((r for r in parsed.rules if r.rule_id == c.rule_id), None) if parsed else None
+            if (c.gap != "physician_review" or c.trial_id not in live_pairs or key in covered or rule is None
+                    or expert_boundary.clinician_reason(c.trial_id, rule) is None):
+                continue
+            covered.add(key)
+            made.append(self._new_request(data, kind="clinician_review", status="requires_clinician", by="system",
+                                          reason_code="clinician_judgment_required", action=None, targets=[key],
+                                          info_key=c.info_key, source_id="clinician_review"))
+        return made
+
     @staticmethod
     def _field_criteria(session, field_name: str) -> list:
-        view = SessionView.from_session(session)
+        view = FollowupService._view(session)
         ds = build_state(view)
         return [c for c in _criteria(ds) if field_name in (c.fields or []) or c.info_key == field_name]
 
@@ -326,19 +414,20 @@ class FollowupService:
                            candidate_trials=ids)
         sink: list[dict] = []
         session = self._new_session(case, ids, sink)
-        with self.llm_scope(f"followup-{case_id[3:15]}-r1"):
-            session.profile_patient()
-            session.match(ids)
-            session.finalize()
         data = {"format": FORMAT, "case_id": case_id, "created_at": _now(), "revision": 0,
                 "patient_token_digest": patient_token_digest, "alias": "PA-" + secrets.token_hex(8),
                 "catalog": self.catalog.name, "synthetic": synthetic, "trial_ids": ids,
-                "requests": [], "responses": [], "evaluations": [], "events": [], "trace": sink}
-        self._record(data, session, OpsState(), {"type": "intake", "by": "patient"}, prev_pairs=None,
-                     prev_criteria=None)
-        self._event(data, "case_created", "patient", trials=len(ids))
-        self.store.save(data, expected_revision=None)
-        return self.store.load(case_id)
+                "requests": [], "responses": [], "evaluations": [], "events": [], "trace": sink,
+                "documents": [], "verifications": [], "judgments": []}
+        with self._scope(data, session):  # 문서·판단이 아직 없음: 어떤 증명도 인정되지 않음
+            with self.llm_scope(f"followup-{case_id[3:15]}-r1"):
+                session.profile_patient()
+                self._match(session, ids)
+                session.finalize()
+            self._event(data, "case_created", "patient", trials=len(ids))
+            self._record(data, session, OpsState(), {"type": "intake", "by": "patient"}, prev_pairs=None,
+                         prev_criteria=None)
+        return self._commit(data, None)
 
     # ------------------------------------------------------------------ 3. 요청 생성 (연구 담당자)
     def create_requests(self, case_id: str, proposal_ids: list[str], *, staff_id: str,
@@ -352,53 +441,53 @@ class FollowupService:
             if expected_revision is not None and expected_revision != base:
                 raise FollowupError(409, "stale_revision", "다른 변경이 먼저 저장되었습니다. 화면을 새로 고친 뒤 다시 고르세요.")
             session = self._restore(data)
-            ops = codec.load_ops(data["ops"])
-            _, co = self._cohort(session, data["alias"], ops)
-            plan = self._plan(co, self._open_actions(data))
-            current = {a.action_id: a for a in plan.selected}
-            runner = EngineRunner(session)
-            created, existing = [], []
-            todo = list(dict.fromkeys(proposal_ids))
-            for pid in todo:  # 먼저 모두 검사 (일부만 만들지 않음)
-                if pid not in current:
-                    raise FollowupError(409, "proposal_not_current", "지금 상태의 제안이 아닙니다. 화면을 새로 고치세요.")
-                if self._route(current[pid]) is None:
-                    raise FollowupError(400, "not_requestable", "기록용 행동은 요청으로 만들 수 없습니다.")
-            for pid in todo:
-                a = current[pid]
-                kind, status = self._route(a)
-                same = [r for r in data["requests"] if r.get("proposal_id") == pid]
-                live = [r for r in same if r["status"] in OPEN_STATUSES]
-                if live:
-                    existing.append(live[0])
-                    continue
-                if any(r["status"] == "document_unavailable" for r in same):
-                    raise FollowupError(409, "already_unavailable", "기록을 구할 수 없다고 표시한 확인입니다. 대체 경로를 쓰세요.")
-                if kind == "ask_patient":
-                    if any(r["status"] == "answered" for r in same):
-                        raise FollowupError(409, "already_answered", "이미 답을 받은 질문입니다.")
-                    if self._unknown_before(data, a):
-                        raise FollowupError(409, "already_unknown",
-                                            "환자가 '모름'으로 답한 항목입니다. 같은 질문 대신 대체 경로(문서·임상 검토)를 쓰세요.")
-                rid = "FR-" + secrets.token_hex(8)
-                question = None
-                if kind == "ask_patient":
-                    q = runner.render(a, rid)
-                    if q is None:
-                        raise FollowupError(422, "not_renderable", "이 제안은 환자 질문으로 만들 수 없습니다.")
-                    question = PatientQuestion(question=q.question, answer_type=q.answer_type, options=list(q.options),
-                                               unit=q.unit)
-                created.append(self._new_request(data, kind=kind, status=status, by=by, reason_code=a.reason_code,
-                                                 action=a, targets=list(a.target_criteria), question=question,
-                                                 request_id=rid))
-            if created:
-                self._event(data, "requests_created", by, request_ids=[r["request_id"] for r in created])
+            with self._scope(data, session):
+                ops = codec.load_ops(data["ops"])
                 _, co = self._cohort(session, data["alias"], ops)
-                data["current"]["proposals"], data["current"]["held"] = self._proposals(data, session, co)
-                self.store.save(data, expected_revision=base)
-                data = self.store.load(case_id)
-            return {"created": [r["request_id"] for r in created], "existing": [r["request_id"] for r in existing],
-                    "case": data}
+                plan = self._plan(co, self._open_actions(data))
+                current = {a.action_id: a for a in plan.selected}
+                runner = EngineRunner(session)
+                created, existing = [], []
+                todo = list(dict.fromkeys(proposal_ids))
+                for pid in todo:  # 먼저 모두 검사 (일부만 만들지 않음)
+                    if pid not in current:
+                        raise FollowupError(409, "proposal_not_current", "지금 상태의 제안이 아닙니다. 화면을 새로 고치세요.")
+                    if self._route(current[pid]) is None:
+                        raise FollowupError(400, "not_requestable", "기록용 행동은 요청으로 만들 수 없습니다.")
+                for pid in todo:
+                    a = current[pid]
+                    kind, status = self._route(a)
+                    same = [r for r in data["requests"] if r.get("proposal_id") == pid]
+                    live = [r for r in same if r["status"] in OPEN_STATUSES]
+                    if live:
+                        existing.append(live[0])
+                        continue
+                    if any(r["status"] == "document_unavailable" for r in same):
+                        raise FollowupError(409, "already_unavailable", "기록을 구할 수 없다고 표시한 확인입니다. 대체 경로를 쓰세요.")
+                    if kind == "ask_patient":
+                        if any(r["status"] == "answered" for r in same):
+                            raise FollowupError(409, "already_answered", "이미 답을 받은 질문입니다.")
+                        if self._unknown_before(data, a):
+                            raise FollowupError(409, "already_unknown",
+                                                "환자가 '모름'으로 답한 항목입니다. 같은 질문 대신 대체 경로(문서·임상 검토)를 쓰세요.")
+                    rid = "FR-" + secrets.token_hex(8)
+                    question = None
+                    if kind == "ask_patient":
+                        q = runner.render(a, rid)
+                        if q is None:
+                            raise FollowupError(422, "not_renderable", "이 제안은 환자 질문으로 만들 수 없습니다.")
+                        question = PatientQuestion(question=q.question, answer_type=q.answer_type, options=list(q.options),
+                                                   unit=q.unit)
+                    created.append(self._new_request(data, kind=kind, status=status, by=by, reason_code=a.reason_code,
+                                                     action=a, targets=list(a.target_criteria), question=question,
+                                                     request_id=rid))
+                if created:
+                    self._event(data, "requests_created", by, request_ids=[r["request_id"] for r in created])
+                    _, co = self._cohort(session, data["alias"], ops)
+                    data["current"]["proposals"], data["current"]["held"] = self._proposals(data, session, co)
+                    data = self._commit(data, base)
+                return {"created": [r["request_id"] for r in created], "existing": [r["request_id"] for r in existing],
+                        "case": data}
 
     @staticmethod
     def _unknown_before(data: dict, a: Action) -> bool:
@@ -442,49 +531,49 @@ class FollowupService:
                 text = DECLINED  # '잘 모르겠어요' 등도 무응답 규칙 하나로 (engine.answers)
             sink: list[dict] = []
             session = self._restore(data, sink)
-            ops = codec.load_ops(data["ops"])
-            prev_pairs, prev_criteria = data["current"]["pairs"], _criteria_snapshot(session)
-            action = Action.model_validate(req["action"])
-            q = req["question"]
-            cq = ClarifyingQuestion(question_id=request_id, question=q["question"], answer_type=q["answer_type"],
-                                    options=q["options"], unit=q.get("unit"), target=req["target_criteria"],
-                                    purpose=action.purpose, why=req["reason_code"])
-            session.rounds += 1
-            pair = qa_pair(action, cq, round_no=session.rounds, answer=text, session_id=session.session_id)
-            session.qa_log.append(pair)  # Session.clarify와 같은 기록·원문 블록
-            session.case.raw_text += f"\n\n[추가 확인 정보 - 라운드 {session.rounds}]\nQ: {pair.question}\nA: {pair.answer}"
-            _, co = self._cohort(session, data["alias"], ops)
-            co, _ = self.policy_factory().apply_outcome(
-                co, action, ActionOutcome(action_id=action.action_id, status=status, error_code=code))
-            ops = co.ops[data["alias"]]
-            facts_before = {f.fact_id for f in session.fact_store.facts(session.case.patient_id)}
-            with self.llm_scope(f"followup-{case_id[3:15]}-r{base + 1}"):
-                session, reeval = self._reevaluate(session, req["target_criteria"], data["alias"], ops, sink)
-            data.setdefault("trace", []).extend(reeval.pop("trace"))  # 채택한 결과(증분 또는 전체)의 판정 기록
-            added = [f.fact_id for f in session.fact_store.facts(session.case.patient_id) if f.fact_id not in facts_before]
-            rid = "FS-" + secrets.token_hex(8)
-            self._set_status(req, outcome, "patient", "patient_answered" if outcome == "answered" else "patient_unknown")
-            req["response_id"] = rid
-            trigger = {"type": "response", "request_id": request_id, "outcome": outcome}
-            before_ids = {r["request_id"] for r in data["requests"]}
-            rec = self._record(data, session, ops, trigger, prev_pairs=prev_pairs, prev_criteria=prev_criteria,
-                               reeval=reeval)
-            routed = []
-            if outcome == "unknown":
-                routed = self._route_after_failure(data, req, session, ops)
-            conflicts = [r for r in data["requests"] if r["request_id"] not in before_ids
-                         and r["kind"] == "conflict_resolution"]
-            resp = FollowupResponse(response_id=rid, request_id=request_id, at=_now(), outcome=outcome, answer=text,
-                                    answer_digest=digest, client_response_id=client_response_id,
-                                    revision_after=rec.revision, fact_ids_added=added,
-                                    conflicts=[{"request_id": r["request_id"], **r["conflict"]} for r in conflicts])
-            data["responses"].append(resp.model_dump(mode="json"))
-            self._event(data, "response_recorded", "patient", request_id=request_id, outcome=outcome,
-                        routed=[r["request_id"] for r in routed])
-            self.store.save(data, expected_revision=base)
-            data = self.store.load(case_id)
-            return {"duplicate": False, "response": resp.model_dump(mode="json"), "request": req,
-                    "routed": routed, "evaluation": rec.model_dump(mode="json"), "case": data}
+            with self._scope(data, session):
+                ops = codec.load_ops(data["ops"])
+                prev_pairs, prev_criteria = data["current"]["pairs"], _criteria_snapshot(session)
+                action = Action.model_validate(req["action"])
+                q = req["question"]
+                cq = ClarifyingQuestion(question_id=request_id, question=q["question"], answer_type=q["answer_type"],
+                                        options=q["options"], unit=q.get("unit"), target=req["target_criteria"],
+                                        purpose=action.purpose, why=req["reason_code"])
+                session.rounds += 1
+                pair = qa_pair(action, cq, round_no=session.rounds, answer=text, session_id=session.session_id)
+                session.qa_log.append(pair)  # Session.clarify와 같은 기록·원문 블록
+                session.case.raw_text += f"\n\n[추가 확인 정보 - 라운드 {session.rounds}]\nQ: {pair.question}\nA: {pair.answer}"
+                _, co = self._cohort(session, data["alias"], ops)
+                co, _ = self.policy_factory().apply_outcome(
+                    co, action, ActionOutcome(action_id=action.action_id, status=status, error_code=code))
+                ops = co.ops[data["alias"]]
+                facts_before = {f.fact_id for f in session.fact_store.facts(session.case.patient_id)}
+                with self.llm_scope(f"followup-{case_id[3:15]}-r{base + 1}"):
+                    session, reeval = self._reevaluate(session, req["target_criteria"], data["alias"], ops, sink)
+                data.setdefault("trace", []).extend(reeval.pop("trace"))  # 채택한 결과(증분 또는 전체)의 판정 기록
+                added = [f.fact_id for f in session.fact_store.facts(session.case.patient_id) if f.fact_id not in facts_before]
+                rid = "FS-" + secrets.token_hex(8)
+                self._set_status(req, outcome, "patient", "patient_answered" if outcome == "answered" else "patient_unknown")
+                req["response_id"] = rid
+                trigger = {"type": "response", "request_id": request_id, "outcome": outcome}
+                before_ids = {r["request_id"] for r in data["requests"]}
+                rec = self._record(data, session, ops, trigger, prev_pairs=prev_pairs, prev_criteria=prev_criteria,
+                                   reeval=reeval)
+                routed = []
+                if outcome == "unknown":
+                    routed = self._route_after_failure(data, req, session, ops)
+                conflicts = [r for r in data["requests"] if r["request_id"] not in before_ids
+                             and r["kind"] == "conflict_resolution"]
+                resp = FollowupResponse(response_id=rid, request_id=request_id, at=_now(), outcome=outcome, answer=text,
+                                        answer_digest=digest, client_response_id=client_response_id,
+                                        revision_after=rec.revision, fact_ids_added=added,
+                                        conflicts=[{"request_id": r["request_id"], **r["conflict"]} for r in conflicts])
+                data["responses"].append(resp.model_dump(mode="json"))
+                self._event(data, "response_recorded", "patient", request_id=request_id, outcome=outcome,
+                            routed=[r["request_id"] for r in routed])
+                data = self._commit(data, base)
+                return {"duplicate": False, "response": resp.model_dump(mode="json"), "request": req,
+                        "routed": routed, "evaluation": rec.model_dump(mode="json"), "case": data}
 
     def _route_after_failure(self, data: dict, failed: dict, session, ops: OpsState) -> list[dict]:
         """'모름'·연락 불가·문서 없음 뒤: 같은 질문을 반복하지 않고 정책 엔진의 대체 경로를 새 요청으로.
@@ -534,11 +623,14 @@ class FollowupService:
         data["current"]["proposals"], data["current"]["held"] = self._proposals(data, session, co)
 
     # ------------------------------------------------------------------ 증분·전체 재평가
-    def _reevaluate(self, session, targets: list[str], alias: str, ops: OpsState, sink: list[dict]):
+    def _reevaluate(self, session, targets: list[str], alias: str, ops: OpsState, sink: list[dict], *,
+                    reprofile: bool = True, before=None):
+        """reprofile=False: 새 원문이 없는 변경(문서 증명·임상의 판단). 이미 바뀐 사실은 before(변경 전 스냅샷)와 비교."""
         pid = session.case.patient_id
         prev = {t: m.model_copy(deep=True) for t, m in session.matches.items()}
-        before = take_snapshot(session.fact_store, pid)
-        session.profile_patient()
+        before = before or take_snapshot(session.fact_store, pid)
+        if reprofile:
+            session.profile_patient()
         after = take_snapshot(session.fact_store, pid)
         changes = detect_changes(before, after)
         parsed_map = {t: (None if m.eligibility == "NOT_EVALUATED" else session.parsed.get(t)) for t, m in prev.items()}
@@ -559,14 +651,14 @@ class FollowupService:
         pre_match = codec.dump_session(session)
         sink.clear()
         if affected:
-            session.match(affected)
+            self._match(session, affected)
         kept = list(sink)
         equivalence: dict = {"status": "not_checked"}
         if self.full_check:
             full_sink: list[dict] = []
             full = codec.restore_session(pre_match, self.catalog.trials, self.catalog.parsed,
                                          tracer=_sink_tracer(full_sink))
-            full.match(list(prev))
+            self._match(full, list(prev))
             diffs = sorted(t for t in prev if _match_signature(session.matches[t]) != _match_signature(full.matches[t]))
             inc_pairs = self._pairs(self._cohort(session, alias, ops)[1])
             full_pairs = self._pairs(self._cohort(full, alias, ops)[1])
@@ -594,37 +686,401 @@ class FollowupService:
             if status not in allowed:
                 raise FollowupError(409, "transition_not_allowed", "이 요청에서 할 수 없는 상태 변경입니다.")
             session = self._restore(data)
+            with self._scope(data, session):
+                ops = codec.load_ops(data["ops"])
+                prev_pairs = data["current"]["pairs"]
+                failed: list[dict] = []
+                if status in ("unreachable", "document_unavailable"):
+                    group = [req]
+                    if status == "unreachable":  # 연락 불가는 정보원 전체: 같은 환자의 다른 대기 질문도 함께
+                        group += [r for r in data["requests"] if r is not req and r["kind"] == "ask_patient"
+                                  and r["status"] == "pending"]
+                    _, co = self._cohort(session, data["alias"], ops)
+                    pol = self.policy_factory()
+                    for r in group:
+                        if r.get("action") and r["kind"] != "conflict_resolution":  # 충돌 확인은 정보원 실패가 아님
+                            a = Action.model_validate(r["action"])
+                            co, _ = pol.apply_outcome(co, a, ActionOutcome(action_id=a.action_id, status="failed",
+                                                                           error_code=UNREACHABLE))
+                        self._set_status(r, status, by if r is req else "system",
+                                         "staff_marked" if r is req else "source_unreachable")
+                        failed.append(r)
+                    ops = co.ops.get(data["alias"], ops)
+                else:
+                    self._set_status(req, status, by, "staff_marked")
+                rec = self._record(data, session, ops, {"type": "staff_status", "request_id": request_id, "status": status},
+                                   prev_pairs=prev_pairs, prev_criteria=_criteria_snapshot(session))
+                routed = [x for r in failed for x in (self._conflict_to_clinician(data, r, session, ops)
+                                                      if r["kind"] == "conflict_resolution"
+                                                      else self._route_after_failure(data, r, session, ops))]
+                self._event(data, "request_status", by, request_id=request_id, status=status,
+                            routed=[r["request_id"] for r in routed])
+                return {"request": req, "routed": routed, "evaluation": rec.model_dump(mode="json"),
+                        "case": self._commit(data, base)}
+
+    # ------------------------------------------------------------------ 10. 문서 등록·검증, 임상의 판단 (합성 전용 권한)
+    _NOT_CONFIGURED = {
+        "verification_not_configured": "문서 검증·임상의 판단 권한이 이 서버에 설정되지 않았습니다. 운영 의료기관 인증 연동은 아직 없습니다.",
+        "production_authority_unavailable": "운영 검증 권한(의료기관 인증·권한 연동)은 구현되지 않았습니다. 완료를 기록할 수 없습니다.",
+    }
+
+    def _require_authority(self, data: dict, actor: str, action: str, request_id: str | None = None):
+        cfg = self.verification_config()
+        problems = cfg.problems()
+        if problems:
+            code = problems[0] if problems[0] in self._NOT_CONFIGURED else "verification_misconfigured"
+            raise FollowupError(503, code, self._NOT_CONFIGURED.get(code, "검증 권한 설정이 올바르지 않습니다."))
+        if not data.get("synthetic"):
+            raise FollowupError(403, "synthetic_authority_real_case",
+                                "합성 시험 전용 검증 권한은 실제 시험 저장소 사례에 쓸 수 없습니다. 운영 검증 권한은 없습니다.")
+        return cfg
+
+    @contextlib.contextmanager
+    def _audited(self, case_id: str, actor: str, action: str, request_id: str | None = None):
+        """권한 확인을 통과한 사람의 거부된 시도를 감사 기록에 남김 (설정 없음 503은 사례와 무관하므로 제외)."""
+        try:
+            yield
+        except FollowupError as e:
+            if e.status != 503 and e.code != "case_not_found":
+                self.audit.denied(case_id, actor=actor, action=action, code=e.code, request_id=request_id)
+            raise
+
+    def register_document(self, case_id: str, *, content: bytes, media_type: str, kind: str, staff_id: str,
+                          expected_revision: int | None = None) -> dict:
+        """연구 담당자가 합성 사례에 문서를 등록 (서버가 내용과 SHA-256을 보관). 판정은 바뀌지 않음."""
+        by = f"staff:{staff_id}"
+        with self.store.lock(case_id), self._audited(case_id, by, "register_document"):
+            data = self._load(case_id)
+            base = data["revision"]
+            self._require_authority(data, by, "register_document")
+            if expected_revision is not None and expected_revision != base:
+                raise FollowupError(409, "stale_revision", "다른 변경이 먼저 저장되었습니다. 화면을 새로 고치세요.")
+            if kind not in verification.DOCUMENT_KINDS:
+                raise FollowupError(400, "bad_document_kind", "지원하지 않는 문서 종류입니다.")
+            if media_type not in verification.MEDIA_TYPES:
+                raise FollowupError(400, "bad_media_type", "지원하지 않는 파일 형식입니다.")
+            doc_id, sha = self.documents.put(case_id, content)
+            doc = {"document_id": doc_id, "sha256": sha, "size": len(content), "media_type": media_type, "kind": kind,
+                   "registered_by": by, "registered_at": _now()}
+            data.setdefault("documents", []).append(doc)
+            self._event(data, "document_registered", by, document_id=doc_id, sha256=sha, document_kind=kind,
+                        size=len(content))
+            return {"document": doc, "case": self._commit(data, base)}
+
+    def document_content(self, case_id: str, document_id: str) -> tuple[bytes, dict]:
+        data = self._load(case_id)
+        doc = next((d for d in data.get("documents", []) if d["document_id"] == document_id), None)
+        if doc is None:
+            raise FollowupError(404, "document_not_found", "문서를 찾을 수 없습니다.")
+        try:
+            return self.documents.get(case_id, document_id, doc["sha256"]), doc
+        except KeyError:
+            raise FollowupError(404, "document_not_found", "문서를 찾을 수 없습니다.") from None
+        except ValueError:
+            raise FollowupError(409, "document_integrity", "저장된 문서의 해시가 등록 기록과 다릅니다.") from None
+
+    @staticmethod
+    def _allowed_fields(ds, req: dict) -> set[str]:
+        """요청 범위의 사실 항목: 요청 항목 키 + 대상 기준의 항목 (다른 항목의 사실은 이 요청으로 검증하지 않음)."""
+        keys = set(req["target_criteria"])
+        out = {req["info_key"]} if req.get("info_key") else set()
+        for c in _criteria(ds):
+            if f"{c.trial_id}:{c.rule_id}" in keys:
+                out |= set(c.fields or [])
+                if c.info_key:
+                    out.add(c.info_key)
+        return out
+
+    @staticmethod
+    def _fact_view(f, backed: bool) -> dict:
+        return {"fact_id": f.fact_id, "field": f.field, "value": f.value, "unit": f.unit, "observed_at": f.observed_at,
+                "source_type": f.source_type, "source_reference": f.source_reference.model_dump(),
+                "verification_status": f.verification_status, "document_verified": backed,
+                "conflict_status": f.conflict_status}
+
+    def verifier_view(self, case_id: str) -> dict:
+        """문서 검증자 화면: 열린 문서 검토 요청, 요청마다 검증할 수 있는 사실, 등록된 문서. 환자 원문은 넣지 않음."""
+        from ..fact_store import document_backed
+        data = self._load(case_id)
+        session = self._restore(data)
+        with self._scope(data, session):
+            ds, _ = self._cohort(session, data["alias"], codec.load_ops(data["ops"]))
+            facts = session.fact_store.facts(session.case.patient_id)
+            items = []
+            for r in data["requests"]:
+                if r["kind"] not in ("document_review", "conflict_resolution"):
+                    continue
+                allowed = self._allowed_fields(ds, r)
+                items.append({"request_id": r["request_id"], "kind": r["kind"], "status": r["status"],
+                              "verifiable": r["kind"] == "document_review" and r["status"] == "requires_document",
+                              "info_key": r.get("info_key"), "source_id": r.get("source_id"),
+                              "target_criteria": r["target_criteria"], "criteria": self._criteria_text(session, r),
+                              "allowed_fields": sorted(allowed),
+                              "facts": [self._fact_view(f, document_backed(f)) for f in facts if f.field in allowed]})
+        return {"case_id": case_id, "revision": data["revision"], "synthetic": data["synthetic"],
+                "documents": data.get("documents", []), "requests": items,
+                "verifications": data.get("verifications", [])}
+
+    @staticmethod
+    def _criteria_text(session, req: dict) -> list[dict]:
+        out = []
+        for key in req["target_criteria"]:
+            tid, rid = key.split(":", 1)
+            p = session.parsed.get(tid)
+            rule = next((x for x in p.rules if x.rule_id == rid), None) if p else None
+            out.append({"criterion": key, "kind": rule.kind if rule else None, "text": rule.text if rule else None,
+                        "clinician_reason": expert_boundary.clinician_reason(tid, rule) if rule else None,
+                        "required_evidence": matcher._meta(p, rule).required_evidence if rule else None})
+        return out
+
+    def verify_document(self, case_id: str, request_id: str, *, verifier_id: str, document_id: str,
+                        document_sha256: str, items: list[dict], expected_revision: int | None = None) -> dict:
+        """문서 검증: 등록된 문서로 요청 범위의 사실을 확인하고 서명된 증명을 남긴 뒤 영향받은 기준을 재평가.
+
+        items: {"fact_id"} = 기존 사실이 문서와 같음 / {"field", "value", "unit"?, "observed_at"?} = 문서의 값을 새 사실로
+        (출처 clinical_record, 참조 = 이 문서). 증명은 사실 값에 묶이므로 값이 다른 사실로 옮겨지지 않음."""
+        from ..fact_store import FactStoreError, _norm_field, document_backed
+        by = f"verifier:{verifier_id}"
+        with self.store.lock(case_id), self._audited(case_id, by, "verify_document", request_id):
+            data = self._load(case_id)
+            base = data["revision"]
+            self._require_authority(data, by, "verify_document", request_id)
+            if expected_revision is not None and expected_revision != base:
+                raise FollowupError(409, "stale_revision", "다른 변경이 먼저 저장되었습니다. 화면을 새로 고치세요.")
+            req = next((r for r in data["requests"] if r["request_id"] == request_id), None)
+            if req is None:
+                raise FollowupError(404, "request_not_found", "요청을 찾을 수 없습니다.")
+            if req["kind"] == "conflict_resolution":
+                raise FollowupError(409, "conflict_not_closed_by_document",
+                                    "충돌 확인은 문서 검증으로 닫지 않습니다 (어느 값도 채택하지 않음). 문서 검토 요청을 쓰세요.")
+            if req["kind"] != "document_review":
+                raise FollowupError(409, "not_document_review", "문서 검토 요청이 아닙니다.")
+            if req["status"] != "requires_document":
+                raise FollowupError(409, "request_closed", "이미 처리된 요청입니다.")
+            doc = next((d for d in data.get("documents", []) if d["document_id"] == document_id), None)
+            if doc is None:
+                raise FollowupError(404, "document_not_found", "이 사례에 등록된 문서가 아닙니다.")
+            if doc["sha256"] != document_sha256:
+                raise FollowupError(409, "document_changed", "확인한 문서의 해시가 등록 기록과 다릅니다.")
+            self.document_content(case_id, document_id)  # 디스크의 내용도 같은지
+            if not items:
+                raise FollowupError(400, "no_items", "확인한 사실을 하나 이상 고르세요.")
+            sink: list[dict] = []
+            session = self._restore(data, sink)
             ops = codec.load_ops(data["ops"])
-            prev_pairs = data["current"]["pairs"]
-            failed: list[dict] = []
-            if status in ("unreachable", "document_unavailable"):
-                group = [req]
-                if status == "unreachable":  # 연락 불가는 정보원 전체: 같은 환자의 다른 대기 질문도 함께
-                    group += [r for r in data["requests"] if r is not req and r["kind"] == "ask_patient"
-                              and r["status"] == "pending"]
-                _, co = self._cohort(session, data["alias"], ops)
-                pol = self.policy_factory()
-                for r in group:
-                    if r.get("action") and r["kind"] != "conflict_resolution":  # 충돌 확인은 정보원 실패가 아님
-                        a = Action.model_validate(r["action"])
-                        co, _ = pol.apply_outcome(co, a, ActionOutcome(action_id=a.action_id, status="failed",
-                                                                       error_code=UNREACHABLE))
-                    self._set_status(r, status, by if r is req else "system",
-                                     "staff_marked" if r is req else "source_unreachable")
-                    failed.append(r)
-                ops = co.ops.get(data["alias"], ops)
-            else:
-                self._set_status(req, status, by, "staff_marked")
-            rec = self._record(data, session, ops, {"type": "staff_status", "request_id": request_id, "status": status},
-                               prev_pairs=prev_pairs, prev_criteria=_criteria_snapshot(session))
-            routed = [x for r in failed for x in (self._conflict_to_clinician(data, r, session, ops)
-                                                  if r["kind"] == "conflict_resolution"
-                                                  else self._route_after_failure(data, r, session, ops))]
-            self._event(data, "request_status", by, request_id=request_id, status=status,
-                        routed=[r["request_id"] for r in routed])
-            self.store.save(data, expected_revision=base)
-            return {"request": req, "routed": routed, "evaluation": rec.model_dump(mode="json"),
-                    "case": self.store.load(case_id)}
+            pid = session.case.patient_id
+            with self._scope(data, session):
+                authority = document_authority.current()
+                prev_pairs, prev_criteria = data["current"]["pairs"], _criteria_snapshot(session)
+                ds, _ = self._cohort(session, data["alias"], ops)
+                allowed = self._allowed_fields(ds, req)
+                todo = []
+                for it in items:  # 먼저 모두 검사 (일부만 검증하지 않음)
+                    if it.get("fact_id"):
+                        try:
+                            f = session.fact_store.get(it["fact_id"])
+                        except FactStoreError:
+                            raise FollowupError(404, "fact_not_found", "이 사례의 사실이 아닙니다.") from None
+                        if f.patient_id != pid:
+                            raise FollowupError(404, "fact_not_found", "이 사례의 사실이 아닙니다.")
+                        if f.field not in allowed:
+                            raise FollowupError(409, "field_out_of_scope", "이 요청이 확인하는 항목의 사실이 아닙니다.")
+                        if document_backed(f):
+                            raise FollowupError(409, "already_verified", "이미 문서로 확인된 사실입니다.")
+                        todo.append(("confirm", f.fact_id, None))
+                    else:
+                        try:
+                            name = _norm_field(it.get("field") or "")
+                        except FactStoreError:
+                            raise FollowupError(400, "bad_field", "항목 이름이 올바르지 않습니다.") from None
+                        if name not in allowed:
+                            raise FollowupError(409, "field_out_of_scope", "이 요청이 확인하는 항목이 아닙니다.")
+                        todo.append(("record", None, {**it, "field": name}))
+                if len({t[1] for t in todo if t[1]}) != sum(1 for t in todo if t[1]):
+                    raise FollowupError(400, "duplicate_items", "같은 사실을 두 번 고를 수 없습니다.")
+                before = take_snapshot(session.fact_store, pid)
+                done = []
+                for mode, fid, it in todo:
+                    if mode == "record":
+                        try:
+                            fid = session.fact_store.add(
+                                pid, it["field"], it.get("value"), unit=it.get("unit"), source_type="clinical_record",
+                                source_reference={"kind": "document", "ref": document_id},
+                                observed_at=it.get("observed_at"), session_id=session.session_id).fact_id
+                        except FactStoreError:
+                            raise FollowupError(400, "bad_value", "문서 값이 항목 형식에 맞지 않습니다.") from None
+                    f = session.fact_store.get(fid)
+                    att = authority.issue(f, document_id, verifier_id)
+                    session.fact_store.attest(fid, att, authority, reason=f"document_review:{request_id}", by=by)
+                    done.append({"fact_id": fid, "field": f.field, "mode": mode})
+                with self.llm_scope(f"followup-{case_id[3:15]}-r{base + 1}"):
+                    session, reeval = self._reevaluate(session, req["target_criteria"], data["alias"], ops, sink,
+                                                       reprofile=False, before=before)
+                data.setdefault("trace", []).extend(reeval.pop("trace"))
+                vid = "DV-" + secrets.token_hex(8)
+                self._set_status(req, "document_verified", by, "document_attested")
+                rec = self._record(data, session, ops, {"type": "document_verification", "request_id": request_id,
+                                                        "verification_id": vid},
+                                   prev_pairs=prev_pairs, prev_criteria=prev_criteria, reeval=reeval)
+                ver = {"verification_id": vid, "request_id": request_id, "document_id": document_id,
+                       "document_sha256": document_sha256, "verifier": verification.DOC_VERIFIER_PREFIX + verifier_id,
+                       "by": by, "at": _now(), "items": done, "revision_after": rec.revision,
+                       "authority": "synthetic"}
+                data.setdefault("verifications", []).append(ver)
+                self._event(data, "document_verified", by, request_id=request_id, verification_id=vid,
+                            document_id=document_id, document_sha256=document_sha256,
+                            fact_ids=[d["fact_id"] for d in done])
+            return {"verification": ver, "request": req, "evaluation": rec.model_dump(mode="json"),
+                    "case": self._commit(data, base)}
+
+    def clinician_view(self, case_id: str) -> dict:
+        """임상의 화면: 임상 검토 요청, 기준 원문, 판단할 수 있는지, 환자 사실(출처·문서 확인 여부), 이전 판단과 상태."""
+        from ..fact_store import document_backed
+        data = self._load(case_id)
+        session = self._restore(data)
+        with self._scope(data, session):
+            auth = clinician_authority.current()
+            items = [{"request_id": r["request_id"], "status": r["status"], "reason_code": r["reason_code"],
+                      "follows": r.get("follows"), "criteria": self._criteria_text(session, r),
+                      "judgeable": r["status"] == "requires_clinician" and bool(r["target_criteria"]) and all(
+                          c["clinician_reason"] for c in self._criteria_text(session, r))}
+                     for r in data["requests"] if r["kind"] == "clinician_review"]
+            facts = [self._fact_view(f, document_backed(f)) for f in session.fact_store.facts(session.case.patient_id)]
+            judgments = [{**j, "recognition": self._judgment_status(auth, j)} for j in data.get("judgments", [])]
+        return {"case_id": case_id, "revision": data["revision"], "synthetic": data["synthetic"],
+                "pairs": data["current"]["pairs"], "requests": items, "facts": facts, "judgments": judgments}
+
+    @staticmethod
+    def _judgment_status(auth, j: dict) -> str:
+        if isinstance(auth, verification.SyntheticCaseClinicianAuthority):
+            return auth.status(clinician_authority.ClinicianJudgment.model_validate(j))
+        return "not_recognized"  # 권한 없음 (운영 모드·설정 없음·실제 사례)
+
+    def clinician_judgment(self, case_id: str, request_id: str, *, clinician_id: str, decisions: list[dict],
+                           expected_revision: int | None = None) -> dict:
+        """임상의 판단: 요청의 모든 대상 기준이 임상의 판단 기준이어야 하고 한 번에 모두 판단. 서명된 판단 -> 재평가.
+
+        decisions: [{"criterion": "<시험>:<기준>", "decision": "MET"|"NOT_MET", "rationale_code": "<코드>",
+                     "basis_fact_ids": ["F-..."]}]. 근거 사실은 이 환자의 사실이어야 하고, 진료 기록이 필요한 기준
+        (matcher._meta의 required_evidence=clinical_record)이면 하나 이상이며 모두 지금 문서로 확인된 사실이어야 함:
+        임상의 판단이 문서 확인 요건을 대신하지 않음.
+        판단은 그때의 사실에 묶여, 이후 사실이 바뀌면 인정되지 않고 기준은 다시 판단 대기로 돌아감."""
+        by = f"clinician:{clinician_id}"
+        with self.store.lock(case_id), self._audited(case_id, by, "clinician_judgment", request_id):
+            data = self._load(case_id)
+            base = data["revision"]
+            self._require_authority(data, by, "clinician_judgment", request_id)
+            if expected_revision is not None and expected_revision != base:
+                raise FollowupError(409, "stale_revision", "다른 변경이 먼저 저장되었습니다. 화면을 새로 고치세요.")
+            req = next((r for r in data["requests"] if r["request_id"] == request_id), None)
+            if req is None:
+                raise FollowupError(404, "request_not_found", "요청을 찾을 수 없습니다.")
+            if req["kind"] != "clinician_review":
+                raise FollowupError(409, "not_clinician_review", "임상 검토 요청이 아닙니다.")
+            if req["status"] != "requires_clinician":
+                raise FollowupError(409, "request_closed", "이미 처리된 요청입니다.")
+            by_key = {d.get("criterion"): d for d in decisions}
+            if len(by_key) != len(decisions) or set(by_key) != set(req["target_criteria"]) or not by_key:
+                raise FollowupError(409, "judgment_incomplete", "요청의 대상 기준을 모두, 한 번씩 판단해야 합니다.")
+            sink: list[dict] = []
+            session = self._restore(data, sink)
+            ops = codec.load_ops(data["ops"])
+            for key, d in by_key.items():
+                tid, rid = key.split(":", 1)
+                p = session.parsed.get(tid)
+                rule = next((x for x in p.rules if x.rule_id == rid), None) if p else None
+                if rule is None or expert_boundary.clinician_reason(tid, rule) is None:
+                    raise FollowupError(409, "not_clinician_criterion",
+                                        "임상의 판단 기준이 아닙니다 (문서·환자 답으로 확인할 기준은 임상의 판단으로 확정하지 않음).")
+                if d.get("decision") not in ("MET", "NOT_MET"):
+                    raise FollowupError(400, "bad_decision", "decision은 MET 또는 NOT_MET입니다.")
+            from ..fact_store import FactStoreError, document_backed
+            with self._scope(data, session):
+                auth = clinician_authority.current()
+                prev_pairs, prev_criteria = data["current"]["pairs"], _criteria_snapshot(session)
+                pid = session.case.patient_id
+                for key, d in by_key.items():  # 근거 사실 검사 (모두 통과해야 기록)
+                    tid, rid = key.split(":", 1)
+                    rule = next(x for x in session.parsed[tid].rules if x.rule_id == rid)
+                    basis = list(dict.fromkeys(d.get("basis_fact_ids") or []))
+                    for fid in basis:
+                        try:
+                            f = session.fact_store.get(fid)
+                        except FactStoreError:
+                            raise FollowupError(404, "fact_not_found", "이 사례의 사실이 아닙니다.") from None
+                        if f.patient_id != pid:
+                            raise FollowupError(404, "fact_not_found", "이 사례의 사실이 아닙니다.")
+                    if matcher._meta(session.parsed[tid], rule).required_evidence == "clinical_record" and (
+                            not basis or not all(document_backed(session.fact_store.get(i)) for i in basis)):
+                        raise FollowupError(409, "basis_not_document_verified",
+                                            "진료 기록이 필요한 기준입니다. 판단 근거로 문서로 확인된 사실을 하나 이상 고르세요 "
+                                            "(문서로 확인되지 않은 사실은 근거로 쓸 수 없음).")
+                    d["basis_fact_ids"] = basis
+                made = []
+                for key, d in by_key.items():
+                    tid, rid = key.split(":", 1)
+                    try:
+                        j = auth.issue(trial_id=tid, rule_id=rid, decision=d["decision"], clinician_id=clinician_id,
+                                       rationale_code=d.get("rationale_code") or "",
+                                       basis_fact_ids=d["basis_fact_ids"])
+                    except ValueError:
+                        raise FollowupError(400, "bad_rationale_code", "rationale_code는 영문 소문자·숫자·_ 1~64자입니다.") from None
+                    made.append(j)
+                auth.judgments.extend(made)
+                with self.llm_scope(f"followup-{case_id[3:15]}-r{base + 1}"):
+                    session, reeval = self._reevaluate(session, req["target_criteria"], data["alias"], ops, sink,
+                                                       reprofile=False)
+                data.setdefault("trace", []).extend(reeval.pop("trace"))
+                self._set_status(req, "clinician_decided", by, "clinician_judged")
+                data.setdefault("judgments", []).extend(j.model_dump(mode="json") for j in made)
+                rec = self._record(data, session, ops, {"type": "clinician_judgment", "request_id": request_id,
+                                                        "judgment_ids": [j.judgment_id for j in made]},
+                                   prev_pairs=prev_pairs, prev_criteria=prev_criteria, reeval=reeval)
+                self._event(data, "clinician_judged", by, request_id=request_id,
+                            judgments=[{"judgment_id": j.judgment_id, "criterion": f"{j.trial_id}:{j.rule_id}",
+                                        "decision": j.decision, "fact_version": j.fact_version} for j in made])
+            return {"judgments": [j.model_dump(mode="json") for j in made], "request": req,
+                    "evaluation": rec.model_dump(mode="json"), "case": self._commit(data, base)}
+
+    def verification_summary(self, data: dict, session) -> dict:
+        """연구 담당자·Inspector용 (권한 범위 안에서 부름): 문서, 검증, 판단과 지금 인정 여부, 권한 방식."""
+        from ..fact_store import document_backed
+        cfg = self.verification_config()
+        auth = clinician_authority.current()
+        facts = session.fact_store.facts(session.case.patient_id)
+        return {"authority": {"mode": cfg.mode or "none", "active": cfg.synthetic and bool(data.get("synthetic")),
+                              "synthetic_only": True, "production_authority": False, "problems": cfg.problems()},
+                "documents": data.get("documents", []), "verifications": data.get("verifications", []),
+                "judgments": [{**j, "recognition": self._judgment_status(auth, j)} for j in data.get("judgments", [])],
+                "document_verified_facts": [f.fact_id for f in facts if document_backed(f)],
+                "verification_status_only_facts": [f.fact_id for f in facts if f.verification_status == "document_verified"
+                                                   and not document_backed(f)]}
+
+    def refresh_pairs(self, data: dict) -> dict:
+        """보기 직전에 쌍 상태를 지금 권한으로 다시 계산 (판정은 다시 하지 않음). 저장된 current.pairs는 그때의 권한 기준이라,
+        서명 비밀이 바뀌었거나 운영 모드로 바뀐 서버에서 문서·임상의 근거 확정이 그대로 보이지 않게 함.
+
+        문서·판단 기록이 없는 사례는 권한에 따라 달라질 것이 없으므로 저장값을 그대로 씀."""
+        if not (data.get("verifications") or data.get("judgments")):
+            return data
+        session = self._restore(data)
+        with self._scope(data, session):
+            _, co = self._cohort(session, data["alias"], codec.load_ops(data["ops"]))
+            live = self._pairs(co)
+        if live != data["current"]["pairs"]:
+            data = {**data, "current": {**data["current"], "pairs": live, "stored_pairs": data["current"]["pairs"],
+                                        "authority_changed": True}}
+        return data
+
+    def staff_verification(self, case_id: str) -> dict:
+        data = self._load(case_id)
+        session = self._restore(data)
+        with self._scope(data, session):
+            return self.verification_summary(data, session)
+
+    def audit_view(self, case_id: str) -> dict:
+        self._load(case_id)
+        return {"case_id": case_id, **self.audit.verify(case_id), "entries": self.audit.entries(case_id)}
 
     # ------------------------------------------------------------------ 보기
     def patient_requests(self, case_id: str) -> dict:
@@ -647,12 +1103,17 @@ class FollowupService:
         from .. import inspector
         data = self._load(case_id)
         session = self._restore(data)
-        rec = inspector.record_from_session(session, meta={"llm_backend": "recorded", "synthetic": bool(data["synthetic"])})
-        rec.result = data["current"]["view"]["result"]  # 화면과 같은 보류 적용 결과
-        rec.trace = list(data.get("trace", []))  # 평가마다의 matcher done 기록 -> 라운드별 판정 변화
-        view = inspector.build_view(rec)
-        view["followup"] = {"evaluations": data["evaluations"], "requests": data["requests"],
-                            "responses": [{k: v for k, v in x.items() if k != "answer_digest"} for x in data["responses"]]}
+        with self._scope(data, session):
+            session.matches = self._view(session).matches  # 보기용 복원본: 인정되지 않은 임상의 판정은 판단 대기로
+            rec = inspector.record_from_session(session, meta={"llm_backend": "recorded",
+                                                               "synthetic": bool(data["synthetic"])})
+            rec.result = data["current"]["view"]["result"]  # 화면과 같은 보류 적용 결과
+            rec.trace = list(data.get("trace", []))  # 평가마다의 matcher done 기록 -> 라운드별 판정 변화
+            view = inspector.build_view(rec)
+            view["followup"] = {"evaluations": data["evaluations"], "requests": data["requests"],
+                                "responses": [{k: v for k, v in x.items() if k != "answer_digest"}
+                                              for x in data["responses"]]}
+            view["verification"] = self.verification_summary(data, session)
         return view
 
     def staff_queue(self) -> dict:
@@ -661,9 +1122,10 @@ class FollowupService:
         for cid in self.store.case_ids():
             data = self.store.load(cid)
             session = self._restore(data)
-            view = SessionView.from_session(session)
-            view.matched_versions = {t: view.snapshot.version for t in session.matches}
-            states[data["alias"]] = build_state(view)
+            with self._scope(data, session):  # 사례마다 그 사례의 권한으로 (다른 사례의 증명·판단은 무효)
+                view = self._view(session)
+                view.matched_versions = {t: view.snapshot.version for t in session.matches}
+                states[data["alias"]] = build_state(view)
             ops[data["alias"]] = codec.load_ops(data["ops"])
             case_of[data["alias"]] = data
             sessions[data["alias"]] = session

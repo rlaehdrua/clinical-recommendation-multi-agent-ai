@@ -5,7 +5,11 @@
   (Path=/api/followup/cases/<case_id>). 서버는 SHA-256만 저장. 없는 사례·권한 없음은 같은 404.
 - 연구 담당자: X-CTREC-Staff-Key 헤더가 서버 설정 CTREC_STAFF_KEY와 같아야 함 (설정이 없으면 담당자 API 전체 503).
   X-CTREC-Staff-Id(영문·숫자 1~64자)는 기록용 이름. 계정 인증을 대신하지 않습니다.
-- 담당자는 환자 답변을 대신 입력할 수 없음: 응답 API는 환자 쿠키만 받고, 담당자 헤더가 붙은 응답 요청은 403.
+- 담당자는 환자 답변을 대신 입력할 수 없음: 응답 API는 환자 쿠키만 받고, 담당자·검증자·임상의 헤더가 붙은 응답 요청은 403.
+- 문서 검증자(X-CTREC-Verifier-Key/-Id)와 임상의(X-CTREC-Clinician-Key/-Id)는 연구 담당자와 다른 권한입니다.
+  지금 있는 권한은 합성 시험 전용(CTREC_VERIFICATION_MODE=synthetic, followup/verification.py)뿐이며 합성 사례에만 동작합니다.
+  설정이 없거나 운영 모드면 검증자·임상의 API는 503 (운영 의료기관 인증 연동 없음). 한 요청은 한 역할의 헤더만 가질 수 있음.
+  계약: docs/dev/document_clinician_api_contract.md
 - 상태를 바꾸는 POST는 X-CTREC-Request: 1 + 같은 출처(Origin)만 (access.check_state_changing, CSRF).
 - 실제 LLM 호출은 /api/runs와 같은 허가(paid_gate)·기록·예산(web_metering, web/budget)을 거침.
 
@@ -25,6 +29,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 
 from .. import web_metering
+from ..followup import verification
 from ..followup.service import FollowupError, FollowupService, TrialCatalog
 from ..followup.store import CaseStore
 from . import access, budget
@@ -36,6 +41,11 @@ CASE_COOKIE = "ctrec_case"
 STAFF_HEADER = "x-ctrec-staff-key"
 STAFF_ID_HEADER = "x-ctrec-staff-id"
 STAFF_ID = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
+VERIFIER_HEADER = "x-ctrec-verifier-key"
+VERIFIER_ID_HEADER = "x-ctrec-verifier-id"
+CLINICIAN_HEADER = "x-ctrec-clinician-key"
+CLINICIAN_ID_HEADER = "x-ctrec-clinician-id"
+ROLE_HEADERS = (STAFF_HEADER, VERIFIER_HEADER, CLINICIAN_HEADER)
 CASE_COOKIE_MAX_AGE = 30 * 24 * 3600
 MAX_TEXT_CHARS = 20000
 MAX_ANSWER_CHARS = 2000
@@ -95,10 +105,65 @@ def _staff_key() -> str:
 
 
 def _is_staff_request(request: Request) -> bool:
-    return bool(request.headers.get(STAFF_HEADER))
+    """연구 담당자·검증자·임상의 어느 역할 헤더든 붙어 있으면 (환자 답변 대리 입력 차단용)."""
+    return any(request.headers.get(h) for h in ROLE_HEADERS)
+
+
+def _single_role(request: Request, header: str) -> None:
+    """이 역할의 헤더와 다른 역할의 헤더를 함께 보내면 거절 (다른 역할 헤더만 있으면 키 확인에서 403)."""
+    if request.headers.get(header) and any(request.headers.get(h) for h in ROLE_HEADERS if h != header):
+        raise HTTPException(400, {"code": "multiple_roles", "message": "한 요청에는 한 역할의 권한 헤더만 보낼 수 있습니다."})
+
+
+_ROLE_NOT_READY = {
+    "verification_not_configured": "문서 검증·임상의 판단 권한이 설정되지 않았습니다. 운영 의료기관 인증 연동은 아직 없습니다.",
+    "production_authority_unavailable": "운영 검증 권한(의료기관 인증·권한 연동)은 구현되지 않았습니다.",
+}
+
+
+def _require_role(request: Request, header: str, id_header: str, key_attr: str, forbidden: str) -> str:
+    _single_role(request, header)
+    cfg = verification.VerificationConfig()
+    problems = cfg.problems()
+    if problems:
+        code = problems[0] if problems[0] in _ROLE_NOT_READY else "verification_misconfigured"
+        log.warning("verification role blocked: %s", problems)
+        raise HTTPException(503, {"code": code, "message": _ROLE_NOT_READY.get(code, "검증 권한 설정이 올바르지 않습니다.")})
+    if not verification.key_matches(request.headers.get(header), getattr(cfg, key_attr)):
+        raise HTTPException(403, {"code": forbidden, "message": "이 작업을 할 권한이 없습니다."})
+    actor = request.headers.get(id_header, "")
+    if not STAFF_ID.match(actor):
+        raise HTTPException(400, {"code": "bad_actor_id", "message": "식별자 헤더는 영문·숫자·._- 1~64자입니다."})
+    return actor
+
+
+def _deny_audit(case_id: str, action: str, e: HTTPException, request_id: str | None = None) -> None:
+    """권한 헤더로 거부된 완료 시도도 감사 기록에 (사례가 있을 때만: 사례 ID는 128비트 난수라 외부에서 기록을 늘릴 수 없음)."""
+    svc = service()
+    if svc.store.exists(case_id):
+        code = e.detail.get("code", "forbidden") if isinstance(e.detail, dict) else "forbidden"
+        svc.audit.denied(case_id, actor="unauthenticated", action=action, code=code, request_id=request_id)
+
+
+def _role_for(request: Request, require, case_id: str, action: str, request_id: str | None = None) -> str:
+    try:
+        return require(request)
+    except HTTPException as e:
+        if e.status_code in (400, 403):
+            _deny_audit(case_id, action, e, request_id)
+        raise
+
+
+def require_verifier(request: Request) -> str:
+    return _require_role(request, VERIFIER_HEADER, VERIFIER_ID_HEADER, "doc_key", "verifier_forbidden")
+
+
+def require_clinician(request: Request) -> str:
+    return _require_role(request, CLINICIAN_HEADER, CLINICIAN_ID_HEADER, "clinician_key", "clinician_forbidden")
 
 
 def require_staff(request: Request) -> str:
+    _single_role(request, STAFF_HEADER)
     key = _staff_key()
     if not key:
         raise HTTPException(503, {"code": "staff_access_not_configured",
@@ -177,9 +242,12 @@ def staff_case_view(data: dict) -> dict:
     return {"case_id": data["case_id"], "revision": data["revision"], "created_at": data["created_at"],
             "synthetic": data["synthetic"], "trial_ids": data["trial_ids"], "pairs": cur["pairs"],
             "pair_counts": _pair_counts(cur["pairs"]), "proposals": cur["proposals"], "held": cur["held"],
+            "authority_changed": bool(cur.get("authority_changed")),
             "requests": data["requests"],
             "responses": [{k: v for k, v in r.items() if k != "answer_digest"} for r in data["responses"]],
-            "evaluations": data["evaluations"], "events": data["events"], "view": cur["view"]}
+            "evaluations": data["evaluations"], "events": data["events"], "view": cur["view"],
+            "documents": data.get("documents", []), "verifications": data.get("verifications", []),
+            "judgments": data.get("judgments", [])}
 
 
 # ---------------------------------------------------------------------------
@@ -214,7 +282,9 @@ def create_case(body: CaseCreate, request: Request, response: Response) -> dict:
 
 @router.get("/cases/{case_id}")
 def get_case(case_id: str, request: Request) -> dict:
-    return patient_case_view(_patient_case(case_id, request))
+    data = _patient_case(case_id, request)
+    with _flow():
+        return patient_case_view(service().refresh_pairs(data))
 
 
 @router.get("/cases/{case_id}/requests")
@@ -228,8 +298,10 @@ def patient_requests(case_id: str, request: Request) -> dict:
 def respond(case_id: str, request_id: str, body: ResponseBody, request: Request) -> dict:
     access.check_state_changing(request)
     if _is_staff_request(request):
-        raise HTTPException(403, {"code": "staff_cannot_answer",
-                                  "message": "연구 담당자는 환자 답변을 대신 입력할 수 없습니다."})
+        e = HTTPException(403, {"code": "staff_cannot_answer",
+                                "message": "연구 담당자·검증자·임상의는 환자 답변을 대신 입력할 수 없습니다."})
+        _deny_audit(case_id, "patient_response", e, request_id)
+        raise e
     _patient_case(case_id, request)
     if not body.unknown and not (body.answer or "").strip():
         raise HTTPException(400, {"code": "empty_answer", "message": "답을 입력하거나 '모름'을 선택하세요."})
@@ -282,7 +354,7 @@ def staff_queue(request: Request) -> dict:
 def staff_case(case_id: str, request: Request) -> dict:
     require_staff(request)
     with _flow():
-        return staff_case_view(service()._load(case_id))
+        return staff_case_view(service().refresh_pairs(service()._load(case_id)))
 
 
 @router.post("/staff/cases/{case_id}/requests")
@@ -310,3 +382,152 @@ def staff_inspector(case_id: str, request: Request) -> dict:
     require_staff(request)
     with _flow():
         return service().inspector_view(case_id)
+
+
+# ---------------------------------------------------------------------------
+# 문서 등록 (연구 담당자), 문서 검증 (검증자), 임상의 판단 (임상의). 계약: docs/dev/document_clinician_api_contract.md
+# ---------------------------------------------------------------------------
+
+class DocumentCreate(BaseModel):
+    kind: str = Field(pattern=r"^[a-z_]{1,32}$")
+    media_type: str = Field(max_length=64)
+    content_base64: str = Field(min_length=1, max_length=(verification.MAX_DOCUMENT_BYTES * 4) // 3 + 8)
+    expected_revision: int | None = None
+
+
+class VerificationItem(BaseModel):
+    fact_id: str | None = Field(default=None, pattern=r"^F-[0-9a-f]{12}$")
+    field: str | None = Field(default=None, max_length=128)
+    value: bool | int | float | str | None = None
+    unit: str | None = Field(default=None, max_length=32)
+    observed_at: str | None = Field(default=None, max_length=10)
+
+
+class VerificationBody(BaseModel):
+    document_id: str = Field(pattern=r"^DOC-[0-9a-f]{16}$")
+    document_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    items: list[VerificationItem] = Field(min_length=1, max_length=20)
+    expected_revision: int | None = None
+
+
+class JudgmentDecision(BaseModel):
+    criterion: str = Field(pattern=r"^[A-Za-z0-9._-]{1,64}:[A-Za-z0-9._-]{1,32}$")
+    decision: str = Field(pattern=r"^(MET|NOT_MET)$")
+    rationale_code: str = Field(pattern=r"^[a-z0-9_]{1,64}$")
+    basis_fact_ids: list[str] = Field(default_factory=list, max_length=20)
+
+
+class JudgmentBody(BaseModel):
+    decisions: list[JudgmentDecision] = Field(min_length=1, max_length=20)
+    expected_revision: int | None = None
+
+
+@router.post("/staff/cases/{case_id}/documents", status_code=201)
+def staff_register_document(case_id: str, body: DocumentCreate, request: Request) -> dict:
+    access.check_state_changing(request)
+    sid = _role_for(request, require_staff, case_id, "register_document")
+    try:
+        content = verification.decode_document(body.content_base64)
+    except ValueError as e:
+        raise HTTPException(400, {"code": "bad_document", "message": str(e)}) from None
+    with _flow():
+        out = service().register_document(case_id, content=content, media_type=body.media_type, kind=body.kind,
+                                          staff_id=sid, expected_revision=body.expected_revision)
+    return {"document": out["document"], "case": staff_case_view(out["case"])}
+
+
+@router.get("/staff/cases/{case_id}/verification")
+def staff_verification(case_id: str, request: Request) -> dict:
+    require_staff(request)
+    with _flow():
+        return service().staff_verification(case_id)
+
+
+@router.get("/staff/cases/{case_id}/audit")
+def staff_audit(case_id: str, request: Request) -> dict:
+    require_staff(request)
+    with _flow():
+        return service().audit_view(case_id)
+
+
+def _open_queue(kind: str, status: str) -> dict:
+    svc = service()
+    items = []
+    for cid in svc.store.case_ids():
+        d = svc.store.load(cid)
+        for r in d["requests"]:
+            if r["kind"] == kind and r["status"] == status:
+                items.append({"case_id": cid, "synthetic": d["synthetic"], "request_id": r["request_id"],
+                              "info_key": r.get("info_key"), "target_criteria": r["target_criteria"],
+                              "reason_code": r["reason_code"], "created_at": r["created_at"]})
+    return {"items": items}
+
+
+@router.get("/verifier/queue")
+def verifier_queue(request: Request) -> dict:
+    require_verifier(request)
+    with _flow():
+        return _open_queue("document_review", "requires_document")
+
+
+@router.get("/verifier/cases/{case_id}")
+def verifier_case(case_id: str, request: Request) -> dict:
+    require_verifier(request)
+    with _flow():
+        return service().verifier_view(case_id)
+
+
+@router.get("/verifier/cases/{case_id}/documents/{document_id}/content")
+def verifier_document(case_id: str, document_id: str, request: Request) -> Response:
+    require_verifier(request)
+    with _flow():
+        content, doc = service().document_content(case_id, document_id)
+    return Response(content, media_type=doc["media_type"],
+                    headers={"Content-Disposition": f'attachment; filename="{document_id}"',
+                             "X-Content-Type-Options": "nosniff", "Cache-Control": "no-store",
+                             "X-Document-SHA256": doc["sha256"]})
+
+
+@router.post("/verifier/cases/{case_id}/requests/{request_id}/verification")
+def verifier_verify(case_id: str, request_id: str, body: VerificationBody, request: Request) -> dict:
+    access.check_state_changing(request)
+    actor = _role_for(request, require_verifier, case_id, "verify_document", request_id)
+    _llm_ready()
+    with _flow():
+        out = service().verify_document(case_id, request_id, verifier_id=actor, document_id=body.document_id,
+                                        document_sha256=body.document_sha256,
+                                        items=[i.model_dump(exclude_none=True) for i in body.items],
+                                        expected_revision=body.expected_revision)
+    case = out["case"]
+    return {"verification": out["verification"], "request": out["request"],
+            "transitions": out["evaluation"]["transitions"], "revision": case["revision"],
+            "pairs": case["current"]["pairs"]}
+
+
+@router.get("/clinician/queue")
+def clinician_queue(request: Request) -> dict:
+    require_clinician(request)
+    with _flow():
+        return _open_queue("clinician_review", "requires_clinician")
+
+
+@router.get("/clinician/cases/{case_id}")
+def clinician_case(case_id: str, request: Request) -> dict:
+    require_clinician(request)
+    with _flow():
+        return service().clinician_view(case_id)
+
+
+@router.post("/clinician/cases/{case_id}/requests/{request_id}/judgment")
+def clinician_judge(case_id: str, request_id: str, body: JudgmentBody, request: Request) -> dict:
+    access.check_state_changing(request)
+    actor = _role_for(request, require_clinician, case_id, "clinician_judgment", request_id)
+    _llm_ready()
+    with _flow():
+        out = service().clinician_judgment(case_id, request_id, clinician_id=actor,
+                                           decisions=[d.model_dump() for d in body.decisions],
+                                           expected_revision=body.expected_revision)
+    case = out["case"]
+    return {"judgments": out["judgments"], "request": out["request"],
+            "transitions": out["evaluation"]["transitions"], "revision": case["revision"],
+            "pairs": case["current"]["pairs"]}

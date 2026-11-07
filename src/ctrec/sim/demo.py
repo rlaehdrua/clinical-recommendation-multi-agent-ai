@@ -80,4 +80,14 @@ def cohort(salt: str = "sim-demo") -> SimCohort:
     return make_cohort("sim-demo-nsclc-6x3", REFERENCE_DATE, trials(), patients, salt)
 
 
-__all__ = ["cohort", "trials", "REFERENCE_DATE"]
+__all__ = ["cohort", "expert_review_trial", "trials", "REFERENCE_DATE"]
+
+
+def expert_review_trial() -> SimTrial:
+    """임상의 판단 기준이 있는 합성 시험 T-D (follow-up 문서·임상의 완료 경로 점검용). trials()·cohort()에는 넣지 않음 (WP6 해시 유지).
+
+    I2는 원문에 구체 기준이 없는 기준(underspecified=True): expert_boundary가 임상의 판단 없이는 확정하지 않음."""
+    life = Rule(rule_id="I2", kind="inclusion", text="Life expectancy of at least 12 weeks in the opinion of the investigator",
+                category="other", field=None, operator=None, value=None, unit=None, time_window_days=None,
+                structured_evaluable=False, underspecified=True, cohort=None)
+    return _trial("T-D", [AGE18, life], {})

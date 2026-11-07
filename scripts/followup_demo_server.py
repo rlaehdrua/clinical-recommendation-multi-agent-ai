@@ -5,6 +5,9 @@
 - 시험: 합성 NSCLC 기준표 3개 (ctrec.sim.demo: T-A, T-B, T-C). 구조화 기준(나이·ECOG·검사 수치)과 LLM 기준(EGFR) 하나.
 - 저장: --store (기본 outputs/followup-demo). 서버를 끄고 다시 켜도 사례·요청·응답이 이어집니다.
 - 연구 담당자 키: CTREC_STAFF_KEY (없으면 실행할 때마다 새로 만들어 화면에 출력).
+- --synthetic-verification: 합성 시험 전용 문서 검증자·임상의 권한 (CTREC_VERIFICATION_MODE=synthetic).
+  서명 비밀(CTREC_SYNTHETIC_SIGNING_SECRET)을 고정하지 않으면 재시작할 때마다 바뀌어 이전 증명·판단이 인정되지 않음.
+  계약: docs/dev/document_clinician_api_contract.md
 
 실행:
     python scripts/followup_demo_server.py --port 8010
@@ -36,7 +39,7 @@ def latest_mention_profiler(patient_id, raw_text, reference_date=None):
 
 
 def synthetic_catalog() -> TrialCatalog:
-    st = demo.trials()
+    st = [*demo.trials(), demo.expert_review_trial()]  # T-D: 임상의 판단 기준 (문서·임상의 완료 경로 시연)
     return TrialCatalog(name="sim-demo-nsclc", trials={t.parsed.trial_id: t.trial for t in st},
                         parsed={t.parsed.trial_id: t.parsed for t in st})
 
@@ -46,12 +49,21 @@ def main() -> None:
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8010)
     ap.add_argument("--store", type=Path, default=config.OUTPUT_DIR / "followup-demo")
+    ap.add_argument("--synthetic-verification", action="store_true",
+                    help="합성 시험 전용 문서 검증자·임상의 권한을 켬 (키가 환경 변수에 없으면 새로 만듦)")
     args = ap.parse_args()
     if args.host not in ("127.0.0.1", "::1", "localhost"):
         sys.exit("오프라인 데모 서버는 루프백 주소에서만 실행합니다.")
     if not os.getenv("CTREC_STAFF_KEY"):
         os.environ["CTREC_STAFF_KEY"] = secrets.token_urlsafe(16)
         print(f"CTREC_STAFF_KEY (이번 실행용): {os.environ['CTREC_STAFF_KEY']}")
+    if args.synthetic_verification:  # 합성 시험 전용 검증자·임상의 권한 (실제 운영 권한이 아님)
+        os.environ["CTREC_VERIFICATION_MODE"] = "synthetic"
+        for name in ("CTREC_SYNTHETIC_DOC_VERIFIER_KEY", "CTREC_SYNTHETIC_CLINICIAN_KEY", "CTREC_SYNTHETIC_SIGNING_SECRET"):
+            if not os.getenv(name):
+                os.environ[name] = secrets.token_urlsafe(24)
+                if name != "CTREC_SYNTHETIC_SIGNING_SECRET":
+                    print(f"{name} (이번 실행용): {os.environ[name]}")
     import uvicorn
 
     from ctrec.web import app as web
