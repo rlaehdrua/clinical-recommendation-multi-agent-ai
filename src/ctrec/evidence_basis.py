@@ -122,11 +122,15 @@ def reaggregate(match: TrialMatch, parsed: ParsedTrial, after: list[CriterionAss
     n_pass = sum(a.passes is True for a in assessments)
     n_fail = sum(a.passes is False for a in assessments)
     n_unknown = sum(a.passes is None for a in assessments)
-    return match.model_copy(update={
+    out = match.model_copy(update={
         "eligibility": eligibility, "assessments": assessments, "other_cohort_assessments": other,
         "matched_cohort": cohort, "cohort_results": cohort_results, "n_pass": n_pass, "n_fail": n_fail,
         "n_unknown": n_unknown, "evaluation_error": no_evidence,
         "summary": f"{eligibility}: 통과 {n_pass} / 불충족 {n_fail} / 판정불가 {n_unknown} ({note})"})
+    # 외부 상태도 다시 계산: model_copy는 TrialMatch의 match_status 채우기(검증기)를 다시 돌리지 않으므로, 그대로 두면
+    # 다시 집계한 판정(eligibility)과 이전 외부 상태가 함께 남음 (예: ELIGIBLE인데 POTENTIAL_MATCH '기록 확인 시 충족 가능')
+    from .status import external_status
+    return out.model_copy(update={"match_status": external_status(out)})
 
 
 def enforce(a: CriterionAssessment, rule: Rule, check=None) -> CriterionAssessment:

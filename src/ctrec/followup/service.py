@@ -1133,10 +1133,52 @@ class FollowupService:
         with self._scope(data, session):
             _, co = self._cohort(session, data["alias"], codec.load_ops(data["ops"]))
             live = self._pairs(co)
-        if live != data["current"]["pairs"]:
-            data = {**data, "current": {**data["current"], "pairs": live, "stored_pairs": data["current"]["pairs"],
-                                        "authority_changed": True}}
+            if live != data["current"]["pairs"]:
+                # 쌍 상태만 바꾸고 저장된 추천 화면을 그대로 두면 '쌍은 확인 대기인데 추천은 공개 기준 충족'이 됨 (단일 판정
+                # 상태 계약 위반, 환자 화면에도 보임). 같은 권한으로 판정 사본을 다시 막고 추천 화면을 다시 만듦 (LLM 없음)
+                view = self._regated_view(session)
+                data = {**data, "current": {**data["current"], "pairs": live, "view": view,
+                                            "stored_pairs": data["current"]["pairs"], "authority_changed": True}}
         return data
+
+    def _regated_view(self, session) -> dict:
+        """지금 권한으로 저장된 판정의 해제·판단을 다시 확인한 결과 화면. 반드시 그 사례의 _scope 안에서 부름.
+
+        - 문서 확인으로 해제(RELEASED_FLAG)된 자기 보고 판정: 지금 권한의 문서 확인(document_check)을 다시 통과해야 유지,
+          아니면 처음처럼 보류(evidence_basis.hold)
+        - 임상의 판정: 지금 권한이 인정해야 유지 (_view와 같은 unrecognized_to_unknown)
+        추천은 finalize와 같은 결정적 경로(conservative_view 보류 -> recommender._validate -> 보류 표시)로 다시 만들고, 저장된
+        추천의 근거 문장만 재사용함 (LLM을 다시 부르지 않음). 판정 상태·순서·그룹은 모두 다시 계산됨."""
+        from .. import conservative_view as boundary
+        from .. import evidence_basis
+        from ..agents import recommender
+        from ..schemas import RecommendationDraft
+        pid = session.case.patient_id
+        regated = {}
+        for tid, m in self._view(session).matches.items():
+            p = session.parsed.get(tid)
+            if p is None or m.eligibility == "NOT_EVALUATED":
+                regated[tid] = m
+                continue
+            rules = {r.rule_id: r for r in p.rules}
+            check = evidence_basis.document_check(session.fact_store, pid, p, session.reference_date)
+            allx = m.assessments + m.other_cohort_assessments
+            after = [evidence_basis.hold(a) if (evidence_basis.RELEASED_FLAG in a.validation_flags and a.passes is True
+                                                and a.rule_id in rules and not check(a, rules[a.rule_id])) else a
+                     for a in allx]
+            regated[tid] = (evidence_basis.reaggregate(m, p, after, "권한이 바뀌어 문서 확인 해제를 다시 보류")
+                            if any(x is not y for x, y in zip(after, allx)) else m)
+        session.matches = regated
+        if session.recommendation is not None:
+            old = session.recommendation.model_copy(deep=True)
+            holds = boundary.evaluate(session)[0]
+            matches = boundary.held_matches(session, holds)
+            draft = RecommendationDraft(patient_id=pid, ranked=old.ranked, excluded=old.excluded,
+                                        overall_comment=old.overall_comment or "")
+            evaluated = {t: session.trials[t] for t in session.matches}
+            session.recommendation = boundary.held_recommendation(
+                recommender._validate(draft, pid, matches, evaluated, session.profile, session.qa_log), session, holds)
+        return self._result_view(session)
 
     def staff_verification(self, case_id: str) -> dict:
         data = self._load(case_id)
