@@ -11,7 +11,7 @@ import json
 
 from . import config, conservative_view, llm
 from .agents.matcher import compact
-from .pipeline import Session
+from .pipeline import Session, _not_evaluated
 from .tools import ctgov
 
 SYSTEM = """당신은 인터랙티브 임상시험 추천 시스템의 '오케스트레이터 에이전트'입니다.
@@ -147,6 +147,14 @@ class Orchestrator:
     def _finalize_recommendation(self, _):
         if not self.s.matches:
             raise RuntimeError("평가된 시험이 없습니다. evaluate_trials를 먼저 호출하세요.")
+        # 평가하지 않은 후보도 결과에 남김 (조용히 빠지거나 '모두 불충족'으로 묶이지 않도록). 판정은 만들지 않음 (감사 F-02)
+        unevaluated = [t for t in self.s.candidate_ids() if t not in self.s.matches]
+        for tid in unevaluated:
+            self.s.matches[tid] = _not_evaluated(
+                self.s.case.patient_id, tid, "평가하지 않은 채 마무리됨: 오케스트레이터가 이 후보를 평가하기 전에 추천을 마무리함")
+        if unevaluated:
+            self.s.tracer.log("orchestrator", "unevaluated_at_finalize", trial_ids=unevaluated,
+                              message=f"미평가 후보 {len(unevaluated)}개를 NOT_EVALUATED로 기록")
         self.s.finalize()
         self.done = True
         rec = conservative_view.build(self.s).result["recommendation"]  # 모델이 쓰는 종료 문구도 표현 사본만 봄
