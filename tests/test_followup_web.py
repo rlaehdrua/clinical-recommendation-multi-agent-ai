@@ -53,6 +53,20 @@ def _routes() -> list[re.Pattern]:
     return out
 
 
+def _demo_routes() -> list[re.Pattern]:
+    """발표용 데모 서버(scripts/followup_demo_server.py --seed-demo --demo-staff)에만 붙는 경로 ('처음부터 다시').
+    화면은 GET /api/followup/demo가 없으면(운영 서버) 버튼을 숨김."""
+    import importlib.util
+
+    from fastapi import FastAPI
+    spec = importlib.util.spec_from_file_location("demo_server", Path(__file__).parents[1] / "scripts" / "followup_demo_server.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    app = FastAPI()
+    mod.install_reset(app, svc=None)
+    return [(r.methods, re.compile("^" + r.path + "$")) for r in app.router.routes if r.path.startswith("/api/followup/demo")]
+
+
 def _called_paths(src: str, prefix: str) -> set[str]:
     """화면 코드의 API 경로 (템플릿 변수는 값 하나로 바꿔 실제 경로 모양으로)."""
     paths = set()
@@ -67,8 +81,9 @@ def _called_paths(src: str, prefix: str) -> set[str]:
 
 
 def test_every_path_the_screens_call_exists():
-    routes = _routes()
+    routes = _routes() + _demo_routes()
     called = _called_paths(_js("followup.js"), "/api/followup/cases/X") | _called_paths(_js("staff.js"), "/api/followup/staff")
+    assert "/api/followup/demo/reset" in called  # 데모 경로도 검사 대상 (데모 서버에만 있음)
     assert called and any(p.startswith("/api/followup/verifier/") for p in called) and any(p.startswith("/api/followup/clinician/") for p in called)
     missing = [p for p in called if not any(rx.match(p) for _, rx in routes)]
     assert not missing, missing
