@@ -8,6 +8,10 @@ Matcher가 LLM에 넘기는 기준 중 생성기 슬롯 사전에 연결(Binding
 - 판정 결과는 Matcher의 LLM 응답 형식(LLMAssessment)으로 돌려주므로 Matcher의 근거 검사(인용이 원문에 있는가, 진료 기록이
   필요한 기준을 답변만으로 확정하지 않는가)를 그대로 거칩니다. 인용 = 그 슬롯 사실의 원문 줄.
 - 해석: "LLM이 완벽하게 읽었다면"의 상한입니다. 실제 LLM의 오판·누락은 반영하지 않습니다.
+- 성별 적용 대상 (0.2): 연결의 추가 조건이 성별(슬롯 sex)이고 그 조건만으로 결과가 정해지면(all의 불성립·any의 성립 =
+  환자가 기준의 대상 성별이 아님) '해당 없음'(applicable=false)으로, 근거는 구조화 필드 "sex: <값>"으로 답함.
+  Matcher는 임신·수유 기준에서만 이 근거를 인정함(evidence_directness.check_structured 예외) - 그 밖에는 Matcher가 보류.
+  성별 사실은 항목 이름이 슬롯 이름과 같은 범주형 사실(sex)로 읽음.
 """
 
 from __future__ import annotations
@@ -15,11 +19,15 @@ from __future__ import annotations
 import re
 
 from ..cohort.spec import USABLE, Binding, SlotSpec
-from ..cohort.truth import IndeterminateTruth, holds3
+from ..cohort.truth import IndeterminateTruth, _cond, holds3
 from ..engine.contracts import canonical_hash
 from ..schemas import Holds, LLMAssessment, Rule
 
-JUDGE_ID = "categorical_judge/0.1"
+JUDGE_ID = "categorical_judge/0.2"  # 판정 논리 버전 (평가기 ID에 들어감)
+# 코호트 해시(SimCohort.digest)에 들어가는 연결 내용 해시의 이름. 연결이 같으면 같은 해시 (고정 평가셋 manifest와 맞춤).
+# 판정 논리가 바뀌면 JUDGE_ID만 올림
+DIGEST_ID = "categorical_judge/0.1"
+SEX_SLOT = "sex"
 ENCODED = re.compile(r"^([a-z][a-z0-9_.]*(?: [a-z0-9_.]+)*)=(.+)$")  # "<슬롯>=<값>" (sim.from_generator 값 표기)
 
 
@@ -45,7 +53,7 @@ class CategoricalJudge:
         self.judged = 0  # 판정해 돌려준 기준 수 (unknown 제외)
 
     def digest(self) -> str:
-        return canonical_hash({"judge": JUDGE_ID, "include_draft": self.include_draft,
+        return canonical_hash({"judge": DIGEST_ID, "include_draft": self.include_draft,
                                "bindings": sorted((k, b.model_dump_json()) for k, b in self.bindings.items())})
 
     def values(self, facts) -> tuple[dict[str, float | str], dict[str, str]]:
@@ -59,6 +67,8 @@ class CategoricalJudge:
                 slot, v = m.group(1), m.group(2)
             elif f.field in self.field_slots:
                 slot = self.field_slots[f.field]
+            elif f.field == SEX_SLOT and SEX_SLOT in self.slots and self.slots[SEX_SLOT].kind == "categorical":
+                slot = SEX_SLOT  # 성별 사실 (값 male/female, 슬롯 표기 없이 저장됨)
             if slot is None:
                 continue
             vals.setdefault(slot, set()).add(v)
@@ -71,6 +81,12 @@ class CategoricalJudge:
         if b is None:
             return None
         values, quote = self.values(facts)
+        outside = self._outside_sex(b, values)
+        if outside is not None:
+            self.judged += 1
+            return LLMAssessment(rule_id=rule.rule_id, applicable=False, holds="unknown", evidence_type="explicit",
+                                 confidence="high", evidence=f"{SEX_SLOT}: {outside}",
+                                 reasoning="offline_categorical_judge:not_target_sex", missing_info=None)
         try:
             h: Holds = holds3(b, rule, values, self.slots, self.reference_date, check_fresh=True)
         except IndeterminateTruth:
@@ -84,6 +100,16 @@ class CategoricalJudge:
         return LLMAssessment(rule_id=rule.rule_id, applicable=True, holds=h, evidence_type="explicit",
                              confidence="high", evidence=lines[0] if lines else "근거 없음",
                              reasoning="offline_categorical_judge", missing_info=None)
+
+
+    @staticmethod
+    def _outside_sex(b: Binding, values) -> str | None:
+        """성별 추가 조건만으로 결과가 정해지면 그 성별 값 (환자가 대상 성별이 아님), 아니면 None."""
+        decisive = "no" if b.combine == "all" else "yes"
+        for c in b.also:
+            if c.slot == SEX_SLOT and SEX_SLOT in values and _cond(c, values) == decisive:
+                return str(values[SEX_SLOT])
+        return None
 
 
 __all__ = ["CategoricalJudge", "JUDGE_ID", "encode"]
