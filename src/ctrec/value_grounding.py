@@ -476,6 +476,117 @@ def _uncertain(body: str, lo: int, hi: int) -> bool:
     return ed.hedged(head) or ed.hedged(clause) or bool(_APPROX.search(head + " " + clause))
 
 
+# P0-B (불확실 값): 기록 구간에서도 근사값은 직접 측정 사실로 채택하지 않음. 표현은 임상 검수를 받지 않았습니다.
+_APPROX_EXTRA = re.compile(r"\bor\s+so\b|\d\s*-?ish\b|\broughly\b|\bapprox\b\.?|\bcirca\b|\bsomething\s+like\b|\bor\s+something\b|\bgive\s+or\s+take\b|\bmore\s+or\s+less\b|대충|어림", re.IGNORECASE)
+_APPROX_SIGN = re.compile(r"(?:^|[^\d\s~～])\s*[~～≈]\s*$|\bapprox\.\s*(?:\w+\s+){0,2}$|\bca\.\s*$", re.IGNORECASE)  # 값 바로 앞의 "~12", "≈12", "Approx. 64" (숫자 사이의 "~"는 범위)
+_APPROX_AFTER = re.compile(rf"\s*{_UNIT}\s*(?:내외|전후|안팎|가량|남짓|언저리)", re.IGNORECASE)  # 값(단위) 바로 뒤: "12 내외", "12 g/dL 전후" ("수술 전후"는 값 뒤가 아님)
+
+
+def _scope(body: str, lo: int, hi: int) -> tuple[str, str]:
+    """값의 절과 값 앞(값의 숫자 직전까지). 값의 절이 "that"으로 시작하면 앞 절의 동사에 딸린 내용이므로 문장 처음부터 봄."""
+    clause = ed._clause(body, lo, hi)
+    digit = re.search(r"\d", body[lo:hi])
+    head = body[:lo + digit.start()] if digit else body[:lo]
+    if re.match(r"\s*that\b", clause, re.IGNORECASE):
+        clause = body[_sentence_start(body, lo):lo] + clause
+    return clause, head
+
+
+def _sentence_start(body: str, lo: int) -> int:
+    start = max(body.rfind("\n", 0, lo) + 1, 0)
+    for m in ed._SENTENCE_BOUNDARY.finditer(body, 0, lo):
+        start = max(start, m.end())
+    return start
+
+
+def _approximate(body: str, lo: int, hi: int) -> bool:
+    """값을 적은 절에 추측·근사 표지가 있는가 (절 밖의 진술은 보지 않음)."""
+    clause, head = _scope(body, lo, hi)
+    return bool(ed.hedged(clause) or _APPROX.search(clause) or _APPROX_EXTRA.search(clause) or _APPROX_SIGN.search(head)
+                or _APPROX_AFTER.match(body, hi))
+
+
+# P0-B (택일 값): 값 바로 앞뒤가 다른 수치와의 택일·범위이면 어느 값인지 정해지지 않음. "12 or 12.5", "12~13", "67 또는 68세"
+# 참고 범위 "(ref 12-16)"의 수치는 값으로 연결되지 않고(_NOT_A_VALUE), 값 뒤 날짜 "12.0 g/dL ~ 2026-11-06"은 택일이 아님
+_ALT_WORD = r"\bor\b|또는|혹은|아니면|내지"
+_ALT_LINK = rf"\s*(?:세|살)?\s*(?:{_ALT_WORD}|\bto\b|이나|에서|인가|인지)\s*|\s*[~～]\s*"  # "68인가 69인가"
+_ALTERNATIVE_AFTER = re.compile(rf"(?:{_ALT_LINK}|[-–]|\s*{_UNIT}\s*(?:{_ALT_WORD})\s*)(?=\d)(?!\d{{4}}[-./])", re.IGNORECASE)
+_ALTERNATIVE_BEFORE = re.compile(rf"\d(?:\s*{_UNIT})?(?:{_ALT_LINK}|[-–])$", re.IGNORECASE)
+
+
+def _alternative(body: str, lo: int, hi: int) -> bool:
+    head = _scope(body, lo, hi)[1]
+    return bool(_ALTERNATIVE_AFTER.match(body, hi) or _ALTERNATIVE_BEFORE.search(head))
+
+
+# P0-B (전해 들은 값): 환자·가족·보호자 같은 비의료인이 전한 값, 화자가 적히지 않은 전언 어미("~래요", "~라고 들었어요").
+# 의료진(의사·간호사)이 전했다고 적힌 값은 임상 결정 CL-B1 전까지 지금 동작 그대로 둠: 문장에 의료진이 있으면 전언 어미·환자 진술 동사만으로는 보류하지 않음.
+# 나이·ECOG는 본인 진술이 자기 보고 허용 근거이므로 가족·보호자가 전한 경우만 봄. 표현은 임상 검수를 받지 않았습니다.
+_FAMILY_EN = (r"(?:family|relatives?|caregivers?|guardian|son|daughter|wife|husband|spouse|partner|mother|father|mom|mum|dad|"
+              r"sister|brother|friend|neighbou?r|niece|nephew|grand(?:son|daughter|mother|father|child))")
+_SELF_EN = r"(?:pt|patient)"
+_FAMILY_KO = r"(?:보호자|가족|엄마|아빠|어머니|어머님|아버지|아버님|남편|아내|와이프|배우자|아들|딸|며느리|사위|언니|오빠|누나|동생|친구|이웃|손자|손녀)"
+_SELF_KO = r"(?:환자|본인)"
+_RELAY_VERB = (r"(?:said|says|told|tells|mentioned|mentions|thinks|thought|heard|recalls?|recalled|remembers?|remembered|relayed|relays|"
+               r"reported|reports|states?|stated|claims?|claimed|believes?|believed)")
+_CLINICIAN = re.compile(r"\b(?:dr|doctors?|physicians?|oncologists?|nurses?|np|gp|surgeons?|residents?|attending|hematologists?|clinicians?|"
+                        r"providers?|pharmacists?|care\s+team|oncology\s+team)\b|의사|선생님|주치의|담당의|전공의|교수|간호사|약사|의료진|원장", re.IGNORECASE)
+
+
+def _lead(who_en: str, who_ko: str) -> str:
+    """값 앞(같은 문장, 앞 절 포함)의 전언 도입부: "Per family,", "Apparently", "보호자 말로는,", "엄마가 그러는데"."""
+    return (rf"\b(?:apparently|reportedly|allegedly|supposedly|purportedly|second-?hand)\b|"
+            rf"\b(?:per|according\s+to|as\s+(?:told|relayed|reported)\s+by)\s+(?:the\s+|her\s+|his\s+|my\s+|their\s+|our\s+)?{who_en}\b|"
+            rf"(?<![가-힣]){who_ko}(?:\s*\([^)]*\))?\s*(?:의\s*)?(?:말|말씀|얘기|이야기)(?:로는|으로는|에\s*따르면|에\s*의하면)|"
+            rf"(?<![가-힣]){who_ko}(?:\s*\([^)]*\))?\s*(?:이|가|께서)?\s*(?:그러는데|그러던데|그러더라|그랬는데|그러시는데|하는\s*말이)")
+
+
+_LEAD_FAMILY = re.compile(_lead(_FAMILY_EN, _FAMILY_KO) + rf"|\b{_FAMILY_EN}\s+(?:\w+\s+)?{_RELAY_VERB}\b", re.IGNORECASE)
+_LEAD_LAY = re.compile(_LEAD_FAMILY.pattern + "|" + _lead(_SELF_EN, _SELF_KO)
+                       + r"|\bI\s+(?:was\s+told|heard|have\s+heard)\b|\bheard\s+(?:that|it\s+was)\b|들은\s*(?:바로는|얘기로는|바에\s*따르면)"
+                       r"|\bfrom\s+(?:her|his|my|the\s+patient'?s)?\s*memory\b|기억(?:으로는?|하기로는?|상|에는)", re.IGNORECASE)  # 기억에 의존한 수치
+_SELF_REPORT = re.compile(rf"\b{_SELF_EN}\s+(?:\w+\s+)?{_RELAY_VERB}\b", re.IGNORECASE)  # "Patient states Hb 12", "Pt states her Hb was 12"
+_GAP_BREAK = re.compile(r",|\b(?:and|but|plus|with|while|also)\b|(?:\S+\s+){8}", re.IGNORECASE)  # "Patient reports fatigue and Hb 12": 동사의 대상은 증상
+_FAMILY_SUBJECT = re.compile(rf"(?<![가-힣]){_FAMILY_KO}(?:\s*\([^)]*\))?\s*(?:이|가|께서|는|은)(?![가-힣])", re.IGNORECASE)
+_QUOTED = re.compile(r"이?래요|이?래(?![가-힣])|이?라더라|이?라던데|이?랍니다|이?라네요|이?라구요|대요|다더라|다던데|답니다|다네요|"
+                     r"(?:라|다)\s*고\s*(?:전해\s*)?(?:했|함|하더|하셨|하시|하네|하던|하며|해요|합니다|들|전함|전했|말)|전해\s*들|들었|들음")  # 값 뒤의 전언 어미
+_TAIL_END = re.compile(r"[,;\n]|(?<=[.!?。])\s|\s(?:but|however)\s|(?:는데|지만|으나)(?=\s|$)", re.IGNORECASE)
+_HEAD_BREAK = re.compile(r";|\s(?:but|however|whereas|although|though)\s|(?:지만|으나|반면(?:에)?)(?=\s|,)", re.IGNORECASE)
+_TAIL_LINK = re.compile(r"(?:이고|이며|하며|하고|으며)(?=\s)|\b(?:and|but)\b", re.IGNORECASE)  # 값과 어미 사이의 다른 서술어: 그 서술어의 전언
+
+
+def _quoted_after(body: str, hi: int) -> bool:
+    end = _TAIL_END.search(body, hi)
+    tail = body[hi:end.start() if end else len(body)]
+    m = _QUOTED.search(tail)
+    return bool(m and not _TAIL_LINK.search(tail[:m.start()]))
+
+
+def _hearsay(field: str, body: str, lo: int, hi: int) -> bool:
+    """값이 비의료인의 전언이거나 화자가 적히지 않은 전언 어미로 끝나는가. 의료진이 전했다고 적힌 값은 지금 동작 그대로 (CL-B1)."""
+    start, end = _sentence_start(body, lo), len(_scope(body, lo, hi)[1])
+    for m in _HEAD_BREAK.finditer(body, start, end):
+        start = m.end()
+    head = body[start:end]  # 같은 문장의 값 앞. ";"·"but" 앞은 다른 진술: "Wife says she is 55, but the patient himself is 68"
+    if not field.startswith("lab:"):
+        return bool(_LEAD_FAMILY.search(head) or (_FAMILY_SUBJECT.search(head) and _quoted_after(body, hi)))
+    if _LEAD_LAY.search(head):
+        return True
+    if _CLINICIAN.search(ed._sentence(body, lo)):
+        return False
+    return _reaches(_SELF_REPORT, head) or _quoted_after(body, hi)
+
+
+def _reaches(verb: re.Pattern, head: str) -> bool:
+    """값 앞의 전하는 동사 가운데 하나라도 대상이 값인가 (동사와 값 사이에 다른 대상·접속이 없음). 맨 앞 동사만 보면 뒤의 진술을 놓침."""
+    return any(not _GAP_BREAK.search(head[m.end():]) for m in verb.finditer(head))
+
+
+def _record_uncertain(field: str, body: str, lo: int, hi: int) -> bool:
+    """P0-B: 확정된 직접 측정 사실로 쓸 수 없는 값인가 (근사·추측·택일·전언)."""
+    return field != "sex" and (_approximate(body, lo, hi) or _alternative(body, lo, hi) or _hearsay(field, body, lo, hi))
+
+
 def _usable_answers(source_text: str, qa) -> list[ed.Segment]:
     """사실을 말한 답변 줄. 모름·거부와 의사 참고용 문답의 답은 판정 근거가 아님."""
     from .question_contract import non_answer
@@ -524,10 +635,11 @@ def ground(field: str, value, source_text: str | None, *, key: str | None = None
     initial = normalize(field, evidence.split_source(source_text)[0])
     mentioned = _mentions(field, initial)
     current = {x for x, lo, hi in mentioned if not _past_mention(field, initial, lo, hi)}
-    in_record = any(_about_patient(field, initial, m.start(), m.end())
-                    and not ((current or field == "ecog") and _past_mention(field, initial, m.start(), m.end()))
-                    for m in pat.finditer(initial)) or (field == "age" and _from_birth_year(v, initial, reference_date))
-    stated, hedged = False, False
+    found = [m for m in pat.finditer(initial) if _about_patient(field, initial, m.start(), m.end())
+             and not ((current or field == "ecog") and _past_mention(field, initial, m.start(), m.end()))]
+    unsure = [m for m in found if _record_uncertain(field, initial, m.start(), m.end())]  # P0-B: 근사·추측 값은 보류 근거만
+    in_record = len(found) > len(unsure) or (field == "age" and _from_birth_year(v, initial, reference_date))
+    stated, hedged = False, bool(unsure)
     answered: set[str] = set()
     usable = _usable_answers(source_text, qa)
     for seg in usable:
@@ -535,7 +647,7 @@ def ground(field: str, value, source_text: str | None, *, key: str | None = None
         for m in pat.finditer(body):
             if not _about_patient(field, body, m.start(), m.end()):
                 continue
-            if _uncertain(body, m.start(), m.end()):
+            if _uncertain(body, m.start(), m.end()) or _record_uncertain(field, body, m.start(), m.end()):
                 hedged = True
             else:
                 stated = True
@@ -757,7 +869,7 @@ def ground_lab(lab: str, value, quote: str | None, source_text: str | None, *, k
                 continue  # 과거로 표시된 값은 현재 값의 근거가 아님 (현재 값이 없으면 보류)
             if h.seg.role == "record" and not any(float(x[2]) == float(value) and x[3] == "measured" for x in in_record):
                 continue  # 다음 줄의 무효 선언·복사 각주는 구간 안에서 보이지 않음: 기록 전체로 본 결과를 따름 (과거 값이면 보류)
-            if _uncertain(body, lo, hi) if h.seg.role == "answer" else ed.hedged(ed._clause(body, lo, hi)):
+            if (h.seg.role == "answer" and _uncertain(body, lo, hi)) or _record_uncertain(f"lab:{canon}", body, lo, hi):  # P0-B: 기록 구간도 근사·추측
                 hedged = True
             else:
                 return None
