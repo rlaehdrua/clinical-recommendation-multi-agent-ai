@@ -155,7 +155,13 @@ class Orchestrator:
         if unevaluated:
             self.s.tracer.log("orchestrator", "unevaluated_at_finalize", trial_ids=unevaluated,
                               message=f"미평가 후보 {len(unevaluated)}개를 NOT_EVALUATED로 기록")
-        self.s.finalize()
+        try:
+            self.s.finalize()
+        except Exception:
+            # 마무리가 실패하면 자리표시를 되돌림: 남아 있으면 안전장치가 그 후보를 '평가함'으로 보고 건너뜀 (감사 F-02)
+            for tid in unevaluated:
+                self.s.matches.pop(tid, None)
+            raise
         self.done = True
         rec = conservative_view.build(self.s).result["recommendation"]  # 모델이 쓰는 종료 문구도 표현 사본만 봄
         return {"recommended": [r["trial_id"] for r in rec["recommended"]],

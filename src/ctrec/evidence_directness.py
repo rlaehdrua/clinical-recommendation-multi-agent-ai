@@ -563,7 +563,7 @@ _CONDITION_GROUPS = {
     "hemophilia": re.compile(r"ha?emophilia|혈우병", re.I),
     "von_willebrand": re.compile(r"von\s+willebrand|\bvwd\b|폰\s*빌레브란트", re.I),
     # 이식은 고형 장기만 (조혈모세포·골수 이식 HSCT/BMT/stem cell은 넣지 않음: 장기 이식 기준과 다른 개념)
-    "organ_transplant": re.compile(r"(?:solid[\s-]+)?organ\s+(?:allo)?transplant\w*|solid[\s-]+organ|"
+    "organ_transplant": re.compile(r"(?:solid[\s-]+)?organ\s+(?:allo)?transplant\w*|"
                                    r"(?:고형\s*)?장기\s*이식", re.I),
     "kidney_transplant": re.compile(r"(?:renal|kidney)[\s-]+(?:allo)?(?:transplant|graft)\w*|신장\s*이식|신이식", re.I),
     "liver_transplant": re.compile(r"(?:liver|hepatic)[\s-]+(?:allo)?transplant\w*|(?<![가-힣])간\s*이식", re.I),
@@ -571,7 +571,7 @@ _CONDITION_GROUPS = {
     "lung_transplant": re.compile(r"lung[\s-]+(?:allo)?transplant\w*|(?<![가-힣])폐\s*이식", re.I),
     # 자가면역 하위 질환 (위 autoimmune 묶음이 상위). 전신·국소 치료 구분은 하지 않음 -> 국소 치료 건선도 보류됨 (CL-A1)
     "psoriasis": re.compile(r"psoria\w*|건선", re.I),
-    "inflammatory_bowel_disease": re.compile(r"crohn\w*|ulcerative\s+colitis|inflammatory\s+bowel|\bibd\b|크론|"
+    "inflammatory_bowel_disease": re.compile(r"crohn\w*|ulcerative\s+colitis|inflammatory\s+bowel|\bibd\b|(?<![가-힣])크론|"
                                              r"궤양성\s*대장염|염증성\s*장\s*질환", re.I),
     "multiple_sclerosis": re.compile(r"multiple\s+sclerosis|다발성\s*경화증", re.I),
 }
@@ -592,13 +592,16 @@ _OWN_DONOR = re.compile(r"\b(?:deceased|living|cadaveric)(?:[\s-]+(?:un)?related
 _SPECULATIVE_POSITIVE = re.compile(r"추정|의심|가능성|\b(?:probabl[ey]|possib\w*|suspect\w*|suspicio\w*|presum\w*|"
                                    r"likely|questionable|equivocal|cannot\s+(?:be\s+)?exclude[d]?|may\s+have|"
                                    r"might\s+have|could\s+be|consistent\s+with|compatible\s+with)\b", re.I)
-# 배제하지 못했다는 표현은 배제 진술이 아님 ("ILD cannot be excluded", "배제할 수 없음")
-_NOT_RULED_OUT = re.compile(r"\b(?:cannot|can't|could\s+not|not)\s+(?:be\s+)?(?:excluded|ruled\s+out)\b|"
+# 배제하지 못했다는 표현은 배제 진술이 아님 ("ILD cannot be excluded", "Cannot rule out ILD", "배제할 수 없음").
+# A-1: 상충 비교에서는 추측형 '있음'으로 읽음 (_conflict_polarity, _speculative_positive). 보류로만 이어짐
+_NOT_RULED_OUT = re.compile(r"\b(?:cannot|can't|could\s+not|not)\s+(?:be\s+)?(?:excluded|ruled\s+out|rule\s+out)\b|"
                             r"배제\s*(?:할\s*수\s*없|하지\s*못|못|되지\s*않|안\s*됨)", re.I)
 # 추측이 '없음' 쪽인 표현은 추측형 '있음'이 아님 ("ILD unlikely", "가능성 낮음")
 _SPECULATIVE_ABSENCE = re.compile(r"\b(?:unlikely|less\s+likely|not\s+likely|doubtful|improbable|not\s+suspect\w*)\b|"
                                   r"가능성\s*(?:은|이)?\s*(?:낮|적|희박|없)|의심\s*(?:되지|하지|은|이)?\s*(?:않|없|안)", re.I)
 # 상충 비교에서 빼는 절: 다른 사람(가족력 포함)의 진술, 계획·선별·감별 문구 (질환 언급이지만 환자의 '있음' 진술이 아님)
+# 주의(CL-A1 대기): "r/o X", "?X"는 임상 기록에서 의심을 뜻할 수 있으나, 임상 결정 전까지 '주장 아님'으로 둠.
+# "cannot/not rule out"은 _NOT_RULED_OUT을 지운 뒤 판별하므로 여기의 'rule out'에 걸리지 않음 (A-1)
 _CONFLICT_OTHER = re.compile(r"\b(?:father|mother|brother|sister|son|daughter|wife|husband|spouse|parent|sibling|uncle|aunt|"
                              r"cousin|grand\w*|family\s+history|fhx?|donor|roommate)\b|\b(?:his|her)\s+(?:wife|husband|"
                              r"father|mother)|가족력|아버지|어머니|부친|모친|형제|자매|남편|아내|배우자|아들|딸|할아버지|할머니|"
@@ -652,6 +655,8 @@ def _strip_label(clause: str) -> str:
 
 def _conflict_polarity(clause: str) -> str:
     """상충 비교용 극성: 배제 진술은 '없음', 그 밖에는 polarity와 같음."""
+    if _NOT_RULED_OUT.search(clause):
+        return "uncertain"  # A-1: "not ruled out", "배제할 수 없음"은 배제가 아님 (_RULED_OUT보다 먼저 봄)
     if _RULED_OUT.search(clause) and not hedged(clause):
         return "negative"
     return polarity(clause)
@@ -707,8 +712,8 @@ def _conflicts(units: list[_Evidence], segs: list[Segment], concept: Concept | N
                 continue
             if _CONFLICT_OTHER.search(_OWN_DONOR.sub(" ", c)) and not _CONFLICT_OTHER.search(text):
                 continue  # 다른 사람의 진술 (근거 절도 다른 사람에 관한 것이면 그대로 비교)
-            if _CONFLICT_NOT_CLAIM.search(c):
-                continue
+            if _CONFLICT_NOT_CLAIM.search(_NOT_RULED_OUT.sub(" ", c)):
+                continue  # A-1: "Cannot rule out ILD"의 'rule out'은 계획 문구가 아님
             p = "negative" if listed else _conflict_polarity(c)  # "No CHF, MI, or stroke": 앞의 부정이 목록 전체에 걸림
             if p == "uncertain" and _speculative_positive(c, ruled, text, objs, concept):
                 speculative = True
@@ -722,7 +727,7 @@ def _speculative_positive(clause: str, ruled: list[str], unit_text: str, objs: t
                           concept: Concept | None) -> bool:
     """추측형 '있음' 기록인가. 같은 문장에 그 질환(또는 질환을 밝히지 않은 검사)을 배제한 절이 있으면 아님
     ("Possible ILD on CXR, HRCT negative"). 다른 질환만 배제한 절("HBsAg negative")은 이 질환을 배제하지 않음."""
-    if not _SPECULATIVE_POSITIVE.search(clause) or _SPECULATIVE_ABSENCE.search(clause):
+    if not (_SPECULATIVE_POSITIVE.search(clause) or _NOT_RULED_OUT.search(clause)) or _SPECULATIVE_ABSENCE.search(clause):
         return False
     for r in ruled:
         if not _conditions(r) or _same_condition(unit_text, objs, r, concept):

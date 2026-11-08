@@ -119,3 +119,26 @@ def test_post_finalize_calls_get_error_tool_results():
     assert final[1]["is_error"] is True and "finalize_recommendation" in final[1]["content"]
     assert [e["tool"] for e in events if e["event"] == "tool_rejected"] == ["ask_clarifying_questions"]
     assert not [e for e in events if e["event"] == "tool_call" and e["tool"] == "ask_clarifying_questions"]
+
+
+def test_failed_finalize_rolls_back_placeholders_so_fallback_evaluates_them(monkeypatch):
+    """F-02 후속: finalize가 예외를 내면 NOT_EVALUATED 자리표시를 되돌려 안전장치가 그 후보를 평가함."""
+    real_finalize = pipeline.Session.finalize
+    calls = {"n": 0}
+
+    def flaky(self):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise RuntimeError("synthetic finalize failure")
+        real_finalize(self)
+
+    monkeypatch.setattr(pipeline.Session, "finalize", flaky)
+    s, fake = run([turn("profile_patient"), turn(("evaluate_trials", {"trial_ids": ["T-A"]})),
+                   turn("finalize_recommendation")])
+    assert fake.results[-1][0]["is_error"] is True  # 모델 쪽 마무리는 실패
+    assert calls["n"] == 2, "안전장치가 마무리해야 함"
+    assert set(s.candidate_ids()) <= set(s.matches)
+    for tid in ("T-B", "T-C"):
+        assert s.matches[tid].eligibility != "NOT_EVALUATED", tid  # 자리표시가 남아 평가가 빠지면 안 됨
+        assert s.matches[tid].assessments, tid
+    assert s.recommendation is not None
