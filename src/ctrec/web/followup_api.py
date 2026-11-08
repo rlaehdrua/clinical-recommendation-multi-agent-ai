@@ -35,7 +35,7 @@ from pydantic import BaseModel, Field
 
 from .. import web_metering
 from ..followup import verification
-from ..followup.service import FollowupError, FollowupService, TrialCatalog
+from ..followup.service import NO_PATH_REASONS, FollowupError, FollowupService, TrialCatalog
 from ..followup.store import CaseStore
 from . import access, budget
 
@@ -369,6 +369,12 @@ class StatusChange(BaseModel):
     status: str = Field(pattern=r"^(unreachable|document_unavailable|cancelled)$")
 
 
+def _open_state(r: dict) -> str:
+    if r["status"] == "requires_clinician" and r.get("reason_code") in NO_PATH_REASONS:
+        return "on_hold"
+    return r["status"]
+
+
 @router.get("/staff/session")
 def staff_session(request: Request) -> dict:
     """화면이 연결 방식을 고름: 발표용 데모면 키 없이 바로, 아니면 담당자 키 입력. 비밀값은 돌려주지 않음."""
@@ -390,9 +396,10 @@ def staff_cases(request: Request) -> dict:
                 "synthetic": d["synthetic"], "pair_counts": _pair_counts(d["current"]["pairs"]),
                 "open_requests": sum(1 for r in d["requests"] if r["status"] in ("pending", "requires_document",
                                                                                  "requires_clinician")),
-                # 열린 요청을 상태별로 (화면의 '지금 할 일' 안내용): 환자 답 대기 / 서류 대기 / 의사 판단 대기
-                "open_by_status": {s: n for s in ("pending", "requires_document", "requires_clinician")
-                                   if (n := sum(1 for r in d["requests"] if r["status"] == s))}}
+                # 열린 요청을 상태별로 (화면의 '지금 할 일' 안내용): 환자 답 대기 / 서류 대기 / 의사 판단 대기.
+                # 확인할 방법이 없어 멈춘 임상 검토(NO_PATH_REASONS)는 할 일이 아니라 on_hold로 따로 셈
+                "open_by_status": {s: n for s in ("pending", "requires_document", "requires_clinician", "on_hold")
+                                   if (n := sum(1 for r in d["requests"] if _open_state(r) == s))}}
 
     out, unreadable = svc.each_readable_case(one)
     return {"cases": out, "unreadable": unreadable}

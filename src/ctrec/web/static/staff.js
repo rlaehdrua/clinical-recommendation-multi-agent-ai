@@ -17,14 +17,14 @@ const S = { key: "", sid: "coordinator", demo: false, roles: [], caseId: null, d
 // 시험 하나의 결과 (engine.contracts.PairStatus 7가지) - 쉬운 말
 const PAIR = {
   CONFIRMED_ELIGIBLE: ["ok", "참여 가능 (확정)"], CONFIRMED_INELIGIBLE: ["bad", "참여 불가 (확정)"], VERIFICATION_PENDING: ["warn", "서류 확인 필요"],
-  INFO_MISSING: ["info", "정보가 더 필요"], EXPERT_REVIEW: ["violet", "의사 판단 필요"], BLOCKED_FAILURE: ["muted", "확인할 방법 없음"],
+  INFO_MISSING: ["info", "정보가 더 필요"], EXPERT_REVIEW: ["violet", "의사 판단 필요"], BLOCKED_FAILURE: ["muted", "추가 확인 경로 없음 · 보류"],
   NOT_EVALUATED: ["", "판단 보류"],
 };
 // 확정이 아닌 결과는 '미확정'을 함께 보여 줌 (서류·의사 확인 전에는 확정처럼 보이지 않게)
 const UNCONFIRMED = { VERIFICATION_PENDING: "미확정 · 서류 확인 전", EXPERT_REVIEW: "미확정 · 의사 판단 전",
-  INFO_MISSING: "미확정 · 정보가 더 필요", BLOCKED_FAILURE: "미확정 · 확인할 방법 없음", NOT_EVALUATED: "미확정 · 판단 근거 부족" };
+  INFO_MISSING: "미확정 · 정보가 더 필요", BLOCKED_FAILURE: "미확정 · 부적격 아님", NOT_EVALUATED: "미확정 · 판단 근거 부족" };
 const GAP = { missing: "정보 없음", stale: "검사가 오래됨", unverified: "서류 확인 필요", conflict: "정보가 서로 다름", physician_review: "의사 판단 필요",
-  exclusion_unverified: "안 맞는 이유를 서류로 확인", sources_exhausted: "확인할 방법 없음" };
+  exclusion_unverified: "안 맞는 이유를 서류로 확인", sources_exhausted: "추가 확인 경로 없음" };
 // 환자 화면에 보이는 표시 (app.js STATUS와 같은 뜻)
 const MATCH = { CRITERIA_MATCH: ["ok", "조건 맞음"], POTENTIAL_MATCH: ["warn", "서류 확인하면 가능"], NEEDS_REVIEW: ["warn", "의사 확인 필요"],
   INSUFFICIENT_INFORMATION: ["warn", "정보가 더 필요"], CRITERIA_MISMATCH: ["bad", "조건 안 맞음"], NOT_EVALUATED: ["warn", "아직 판단 안 됨"] };
@@ -36,6 +36,10 @@ const REQ = {
   superseded: ["muted", "다른 요청으로 바뀜"], cancelled: ["muted", "취소함"],
   document_verified: ["ok", "서류 확인 끝"], clinician_decided: ["ok", "의사 판단 끝"],
 };
+// 남은 정보원이 없어 시스템이 만든 임상 검토 (서버 followup.service.NO_PATH_REASONS와 같음): 의사 판단으로 끝낼 수 없고 쌍은 보류
+const NO_PATH = new Set(["item_sources_exhausted", "conflict_unresolved"]);
+const held = (r) => r.kind === "clinician_review" && r.status === "requires_clinician" && (NO_PATH.has(r.reason_code)
+  || !!((S.cdata && (S.cdata.requests || []).find(x => x.request_id === r.request_id && x.judgeable === false))));
 const DONE = new Set(["answered", "unknown", "unreachable", "document_unavailable", "superseded", "cancelled", "document_verified", "clinician_decided"]);
 // 담당자가 바꿀 수 있는 상태 (followup.models.STAFF_TRANSITIONS와 같음). 완료(답변·서류 확인·판단)는 없음
 const MOVES = { ask_patient: { pending: ["unreachable", "cancelled"] }, document_review: { requires_document: ["document_unavailable", "cancelled"] },
@@ -374,6 +378,11 @@ function requestBox(r, responses) {
   const moves = ((MOVES[r.kind] || {})[r.status]) || [];
   const resp = responses.find(x => x.response_id === r.response_id);
   const work = workArea(r);
+  if (held(r)) return `<div class="req held" data-rid="${h(r.request_id)}"><div class="row"><span class="badge muted">추가 확인 경로 없음 · 보류</span> <b>${h(itemName(r.info_key || ""))}</b>
+      <span class="hint">자동으로 만들어짐</span></div>
+    <p class="hint m0">${r.reason_code === "conflict_unresolved" ? "서로 다른 정보를 확인할 기록이 없어요." : "이 항목을 확인할 서류를 구할 수 없었어요."}
+      의사가 판단하는 조건(예: 기대 여명)이 아니라 값이 있어야 하는 조건이라, 이 시험은 <b>추가 확인 경로 없음 · 보류</b>으로 남아요 (참여 불가라는 뜻이 아니에요). 잘못 확정하지 않으려는 안전한 처리예요.
+      새 서류가 생기면 다시 요청하면 돼요.</p></div>`;
   return `<div class="req${DONE.has(r.status) ? " done" : ""}" data-rid="${h(r.request_id)}"><div class="row">${badge(REQ, r.status)} <b>${h(itemName(r.info_key || ""))}</b>
       <span class="hint">${h(KIND[r.kind] || r.kind)}${r.created_by === "system" ? " · 자동으로 만들어짐" : ""}</span></div>
     ${r.question && r.kind === "ask_patient" ? `<p class="q">환자에게 간 질문: ${h(r.question.question)}</p>` : ""}
@@ -486,7 +495,7 @@ function workArea(r) {
   if (r.kind === "clinician_review" && r.status === "requires_clinician" && S.cdata) {
     const cr = (S.cdata.requests || []).find(x => x.request_id === r.request_id);
     if (!cr) return "";
-    if (!cr.judgeable) return '<p class="hint m0">의사가 판단할 조건이 아니라서 여기서 끝낼 수 없어요 (취소하거나 그대로 두세요).</p>';
+    if (!cr.judgeable) return "";  // requestBox가 '추가 확인 경로 없음 · 보류'로 보여 줌
     const basis = (S.cdata.facts || []).filter(f => f.document_verified);
     return `<div class="work" data-work="judge" data-rid="${h(r.request_id)}">
       <p class="work-title clinician">의사 판단하기 <span class="badge demo">발표용 · 가상 권한</span></p>
@@ -563,7 +572,8 @@ function renderCase(keepOpen) {
   const d = S.data; if (!d) return;
   const open = keepOpen ? [...document.querySelectorAll("#st-case details[open]")].map(x => x.dataset.k) : [];
   q$("#st-case-h").textContent = `${who(d.case_id)}${d.synthetic ? " (가상 환자)" : ""}`;
-  const reqs = [...d.requests].reverse(), todo = reqs.filter(r => !DONE.has(r.status)), done = reqs.filter(r => DONE.has(r.status));
+  const reqs = [...d.requests].reverse(), todo = reqs.filter(r => !DONE.has(r.status) && !held(r)), stuck = reqs.filter(held),
+    done = reqs.filter(r => DONE.has(r.status));
   const props = shownProposals(d), requestable = props.filter(p => p.requestable && !p.request_id).length;
   const mine = S.questions.flatMap(g => g.patients.filter(p => p.case_id === d.case_id && !p.request_id && p.requestable));
   const mm = mine.reduce((n, p) => n + (p.minutes || 0), 0), ma = mine.reduce((n, p) => n + (p.minutes_alone || 0), 0);
@@ -573,6 +583,7 @@ function renderCase(keepOpen) {
     <div class="staff-sec"><h3>해야 할 일 ${h(todo.length)}개</h3>
       ${todo.length ? todo.map(r => requestBox(r, d.responses)).join("") : '<div class="empty">지금 이 환자에게 할 일이 없어요.</div>'}
       <span class="err" id="st-move-err" role="alert"></span></div>
+    ${stuck.length ? `<div class="staff-sec"><h3>추가 확인 경로가 없어 보류된 것 ${h(stuck.length)}개</h3>${stuck.map(r => requestBox(r, d.responses)).join("")}</div>` : ""}
     ${requestable ? `<div class="staff-sec"><h3>아직 안 보낸 요청 ${h(requestable)}개</h3>
       ${mine.length ? `<p class="hint m0">고른 요청을 한 번에 보내면 약 ${h(min(mm))}${ma > mm ? ` (하나씩 보내면 ${h(min(ma))})` : ""} 걸려요.</p>` : ""}
       <table class="list"><thead><tr><th></th><th>무엇을</th><th>어떻게</th><th>관련 시험</th><th>상태</th></tr></thead><tbody>${proposalRows(d)}</tbody></table>

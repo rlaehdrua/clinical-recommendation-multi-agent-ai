@@ -109,6 +109,29 @@ def test_patient_sees_what_the_team_is_checking_without_values(env):
     assert next(x for x in listed if x["case_id"] == cid)["open_by_status"]["requires_document"] == 1
 
 
+
+def test_exhausted_lab_review_is_shown_as_on_hold_not_waiting_for_a_clinician(env):
+    """서류를 모두 구할 수 없어 생긴 임상 검토(item_sources_exhausted)는 의사가 끝낼 수 없음 -> 할 일·'판단 중'이 아니라 on_hold."""
+    patient = h.browser()
+    cid = D.create(patient, ["T-A"])
+    c = D.staff_client()
+    D.make_requests(c, cid, D.proposal(D.staff_case(c, cid), "lab:platelets", "REQUEST_DOCUMENT")["proposal_id"])
+    for _ in range(6):
+        open_doc = [x for x in D.staff_case(c, cid)["requests"]
+                    if x["kind"] == "document_review" and x["status"] == "requires_document"]
+        if not open_doc:
+            break
+        c.post(f"/api/followup/staff/cases/{cid}/requests/{open_doc[0]['request_id']}/status", headers=D.STAFF,
+               json={"status": "document_unavailable"})
+    review = next(x for x in D.staff_case(c, cid)["requests"] if x["kind"] == "clinician_review")
+    assert review["reason_code"] == "item_sources_exhausted" and review["status"] == "requires_clinician"  # 저장 상태는 그대로
+    listed = c.get("/api/followup/staff/cases", headers=D.STAFF).json()["cases"]
+    counts = next(x for x in listed if x["case_id"] == cid)["open_by_status"]
+    assert counts.get("on_hold") == 1 and "requires_clinician" not in counts
+    work = patient.get(f"/api/followup/cases/{cid}/requests").json()["in_progress"]
+    assert {"kind": "clinician_review", "info_key": "lab:platelets", "status": "on_hold"} in work
+    assert not any(w["status"] == "requires_clinician" for w in work)
+
 def test_demo_server_keeps_the_original_examples_after_the_nsclc_demo_patients():
     import importlib.util
     spec = importlib.util.spec_from_file_location("demo_server", Path(__file__).parents[1] / "scripts" / "followup_demo_server.py")
