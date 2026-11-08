@@ -1,0 +1,1177 @@
+{
+ "pipeline": "offline_stub(value_grounding.ground*/evidence_directness.check)",
+ "commit": "60d7921",
+ "by_category": {
+  "holdout6_failure_cases|holdout6_conflict": {
+   "n": 15,
+   "match": 14,
+   "wrong_accept": 1,
+   "over_hold": 0,
+   "conflict_expected": 15,
+   "conflict_detected": 12,
+   "missing": 0
+  },
+  "holdout6_failure_cases|holdout6_hearsay": {
+   "n": 10,
+   "match": 10,
+   "wrong_accept": 0,
+   "over_hold": 0,
+   "conflict_expected": 0,
+   "conflict_detected": 0,
+   "missing": 0
+  },
+  "narrative_conflict_cases|conflict_doc_vs_self": {
+   "n": 4,
+   "match": 0,
+   "wrong_accept": 4,
+   "over_hold": 0,
+   "conflict_expected": 4,
+   "conflict_detected": 0,
+   "missing": 0
+  },
+  "narrative_conflict_cases|conflict_negation_reversed": {
+   "n": 8,
+   "match": 4,
+   "wrong_accept": 4,
+   "over_hold": 0,
+   "conflict_expected": 8,
+   "conflict_detected": 3,
+   "missing": 0
+  },
+  "narrative_conflict_cases|control_document": {
+   "n": 8,
+   "match": 8,
+   "wrong_accept": 0,
+   "over_hold": 0,
+   "conflict_expected": 0,
+   "conflict_detected": 0,
+   "missing": 0
+  },
+  "value_cases|conflict_doc_vs_self": {
+   "n": 4,
+   "match": 4,
+   "wrong_accept": 0,
+   "over_hold": 0,
+   "conflict_expected": 0,
+   "conflict_detected": 0,
+   "missing": 0
+  },
+  "value_cases|conflict_same_item": {
+   "n": 8,
+   "match": 1,
+   "wrong_accept": 7,
+   "over_hold": 0,
+   "conflict_expected": 0,
+   "conflict_detected": 0,
+   "missing": 0
+  },
+  "value_cases|conflict_timepoint_old": {
+   "n": 8,
+   "match": 4,
+   "wrong_accept": 4,
+   "over_hold": 0,
+   "conflict_expected": 0,
+   "conflict_detected": 0,
+   "missing": 0
+  },
+  "value_cases|control_dated_lab": {
+   "n": 12,
+   "match": 11,
+   "wrong_accept": 0,
+   "over_hold": 1,
+   "conflict_expected": 0,
+   "conflict_detected": 0,
+   "missing": 0
+  },
+  "value_cases|control_document": {
+   "n": 4,
+   "match": 3,
+   "wrong_accept": 0,
+   "over_hold": 1,
+   "conflict_expected": 0,
+   "conflict_detected": 0,
+   "missing": 0
+  },
+  "value_cases|control_self_certain": {
+   "n": 10,
+   "match": 9,
+   "wrong_accept": 0,
+   "over_hold": 1,
+   "conflict_expected": 0,
+   "conflict_detected": 0,
+   "missing": 0
+  },
+  "value_cases|control_timepoint_latest": {
+   "n": 4,
+   "match": 3,
+   "wrong_accept": 0,
+   "over_hold": 1,
+   "conflict_expected": 0,
+   "conflict_detected": 0,
+   "missing": 0
+  },
+  "value_cases|hearsay_clinician": {
+   "n": 8,
+   "match": 8,
+   "wrong_accept": 0,
+   "over_hold": 0,
+   "conflict_expected": 0,
+   "conflict_detected": 0,
+   "missing": 0
+  },
+  "value_cases|hearsay_family": {
+   "n": 8,
+   "match": 8,
+   "wrong_accept": 0,
+   "over_hold": 0,
+   "conflict_expected": 0,
+   "conflict_detected": 0,
+   "missing": 0
+  },
+  "value_cases|hearsay_memory": {
+   "n": 8,
+   "match": 8,
+   "wrong_accept": 0,
+   "over_hold": 0,
+   "conflict_expected": 0,
+   "conflict_detected": 0,
+   "missing": 0
+  },
+  "value_cases|hearsay_other_person": {
+   "n": 8,
+   "match": 6,
+   "wrong_accept": 2,
+   "over_hold": 0,
+   "conflict_expected": 0,
+   "conflict_detected": 0,
+   "missing": 0
+  }
+ },
+ "total": {
+  "n": 127,
+  "match": 101,
+  "wrong_accept": 22,
+  "over_hold": 4,
+  "conflict_expected": 27,
+  "conflict_detected": 15,
+  "missing": 0
+ },
+ "cases": [
+  {
+   "case_id": "V001",
+   "set": "value_cases",
+   "category": "conflict_same_item",
+   "expected": "hold",
+   "got": "accept",
+   "ok": false
+  },
+  {
+   "case_id": "V002",
+   "set": "value_cases",
+   "category": "conflict_same_item",
+   "expected": "hold",
+   "got": "accept",
+   "ok": false
+  },
+  {
+   "case_id": "V003",
+   "set": "value_cases",
+   "category": "conflict_same_item",
+   "expected": "hold",
+   "got": "accept",
+   "ok": false
+  },
+  {
+   "case_id": "V004",
+   "set": "value_cases",
+   "category": "conflict_same_item",
+   "expected": "hold",
+   "got": "accept",
+   "ok": false
+  },
+  {
+   "case_id": "V005",
+   "set": "value_cases",
+   "category": "conflict_same_item",
+   "expected": "hold",
+   "got": "accept",
+   "ok": false
+  },
+  {
+   "case_id": "V006",
+   "set": "value_cases",
+   "category": "conflict_same_item",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V007",
+   "set": "value_cases",
+   "category": "conflict_same_item",
+   "expected": "hold",
+   "got": "accept",
+   "ok": false
+  },
+  {
+   "case_id": "V008",
+   "set": "value_cases",
+   "category": "conflict_same_item",
+   "expected": "hold",
+   "got": "accept",
+   "ok": false
+  },
+  {
+   "case_id": "V009",
+   "set": "value_cases",
+   "category": "conflict_timepoint_old",
+   "expected": "hold",
+   "got": "accept",
+   "ok": false
+  },
+  {
+   "case_id": "V010",
+   "set": "value_cases",
+   "category": "conflict_timepoint_old",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V011",
+   "set": "value_cases",
+   "category": "conflict_timepoint_old",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V012",
+   "set": "value_cases",
+   "category": "conflict_timepoint_old",
+   "expected": "hold",
+   "got": "accept",
+   "ok": false
+  },
+  {
+   "case_id": "V013",
+   "set": "value_cases",
+   "category": "conflict_timepoint_old",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V014",
+   "set": "value_cases",
+   "category": "conflict_timepoint_old",
+   "expected": "hold",
+   "got": "accept",
+   "ok": false
+  },
+  {
+   "case_id": "V015",
+   "set": "value_cases",
+   "category": "conflict_timepoint_old",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V016",
+   "set": "value_cases",
+   "category": "conflict_timepoint_old",
+   "expected": "hold",
+   "got": "accept",
+   "ok": false
+  },
+  {
+   "case_id": "V017",
+   "set": "value_cases",
+   "category": "control_timepoint_latest",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "V018",
+   "set": "value_cases",
+   "category": "control_timepoint_latest",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "V019",
+   "set": "value_cases",
+   "category": "control_timepoint_latest",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "V020",
+   "set": "value_cases",
+   "category": "control_timepoint_latest",
+   "expected": "accept",
+   "got": "hold",
+   "ok": false
+  },
+  {
+   "case_id": "V021",
+   "set": "value_cases",
+   "category": "conflict_doc_vs_self",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V022",
+   "set": "value_cases",
+   "category": "conflict_doc_vs_self",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V023",
+   "set": "value_cases",
+   "category": "conflict_doc_vs_self",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V024",
+   "set": "value_cases",
+   "category": "conflict_doc_vs_self",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V025",
+   "set": "value_cases",
+   "category": "hearsay_clinician",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V026",
+   "set": "value_cases",
+   "category": "hearsay_clinician",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V027",
+   "set": "value_cases",
+   "category": "hearsay_clinician",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V028",
+   "set": "value_cases",
+   "category": "hearsay_clinician",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V029",
+   "set": "value_cases",
+   "category": "hearsay_clinician",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V030",
+   "set": "value_cases",
+   "category": "hearsay_clinician",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V031",
+   "set": "value_cases",
+   "category": "hearsay_clinician",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V032",
+   "set": "value_cases",
+   "category": "hearsay_clinician",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V033",
+   "set": "value_cases",
+   "category": "hearsay_family",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V034",
+   "set": "value_cases",
+   "category": "hearsay_family",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V035",
+   "set": "value_cases",
+   "category": "hearsay_family",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V036",
+   "set": "value_cases",
+   "category": "hearsay_family",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V037",
+   "set": "value_cases",
+   "category": "hearsay_family",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V038",
+   "set": "value_cases",
+   "category": "hearsay_family",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V039",
+   "set": "value_cases",
+   "category": "hearsay_family",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V040",
+   "set": "value_cases",
+   "category": "hearsay_family",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V041",
+   "set": "value_cases",
+   "category": "hearsay_memory",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V042",
+   "set": "value_cases",
+   "category": "hearsay_memory",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V043",
+   "set": "value_cases",
+   "category": "hearsay_memory",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V044",
+   "set": "value_cases",
+   "category": "hearsay_memory",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V045",
+   "set": "value_cases",
+   "category": "hearsay_memory",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V046",
+   "set": "value_cases",
+   "category": "hearsay_memory",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V047",
+   "set": "value_cases",
+   "category": "hearsay_memory",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V048",
+   "set": "value_cases",
+   "category": "hearsay_memory",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V049",
+   "set": "value_cases",
+   "category": "hearsay_other_person",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V050",
+   "set": "value_cases",
+   "category": "hearsay_other_person",
+   "expected": "hold",
+   "got": "accept",
+   "ok": false
+  },
+  {
+   "case_id": "V051",
+   "set": "value_cases",
+   "category": "hearsay_other_person",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V052",
+   "set": "value_cases",
+   "category": "hearsay_other_person",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V053",
+   "set": "value_cases",
+   "category": "hearsay_other_person",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V054",
+   "set": "value_cases",
+   "category": "hearsay_other_person",
+   "expected": "hold",
+   "got": "accept",
+   "ok": false
+  },
+  {
+   "case_id": "V055",
+   "set": "value_cases",
+   "category": "hearsay_other_person",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V056",
+   "set": "value_cases",
+   "category": "hearsay_other_person",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "V057",
+   "set": "value_cases",
+   "category": "control_self_certain",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "V058",
+   "set": "value_cases",
+   "category": "control_self_certain",
+   "expected": "accept",
+   "got": "hold",
+   "ok": false
+  },
+  {
+   "case_id": "V059",
+   "set": "value_cases",
+   "category": "control_self_certain",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "V060",
+   "set": "value_cases",
+   "category": "control_self_certain",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "V061",
+   "set": "value_cases",
+   "category": "control_self_certain",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "V062",
+   "set": "value_cases",
+   "category": "control_self_certain",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "V063",
+   "set": "value_cases",
+   "category": "control_self_certain",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "V064",
+   "set": "value_cases",
+   "category": "control_self_certain",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "V065",
+   "set": "value_cases",
+   "category": "control_self_certain",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "V066",
+   "set": "value_cases",
+   "category": "control_self_certain",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "V067",
+   "set": "value_cases",
+   "category": "control_dated_lab",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "V068",
+   "set": "value_cases",
+   "category": "control_dated_lab",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "V069",
+   "set": "value_cases",
+   "category": "control_dated_lab",
+   "expected": "accept",
+   "got": "hold",
+   "ok": false
+  },
+  {
+   "case_id": "V070",
+   "set": "value_cases",
+   "category": "control_dated_lab",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "V071",
+   "set": "value_cases",
+   "category": "control_dated_lab",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "V072",
+   "set": "value_cases",
+   "category": "control_dated_lab",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "V073",
+   "set": "value_cases",
+   "category": "control_dated_lab",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "V074",
+   "set": "value_cases",
+   "category": "control_dated_lab",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "V075",
+   "set": "value_cases",
+   "category": "control_dated_lab",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "V076",
+   "set": "value_cases",
+   "category": "control_dated_lab",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "V077",
+   "set": "value_cases",
+   "category": "control_dated_lab",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "V078",
+   "set": "value_cases",
+   "category": "control_dated_lab",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "V079",
+   "set": "value_cases",
+   "category": "control_document",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "V080",
+   "set": "value_cases",
+   "category": "control_document",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "V081",
+   "set": "value_cases",
+   "category": "control_document",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "V082",
+   "set": "value_cases",
+   "category": "control_document",
+   "expected": "accept",
+   "got": "hold",
+   "ok": false
+  },
+  {
+   "case_id": "N001",
+   "set": "narrative_conflict_cases",
+   "category": "conflict_negation_reversed",
+   "expected": "conflict",
+   "got": "conflict",
+   "ok": true
+  },
+  {
+   "case_id": "N002",
+   "set": "narrative_conflict_cases",
+   "category": "conflict_negation_reversed",
+   "expected": "conflict",
+   "got": "conflict",
+   "ok": true
+  },
+  {
+   "case_id": "N003",
+   "set": "narrative_conflict_cases",
+   "category": "conflict_negation_reversed",
+   "expected": "conflict",
+   "got": "accept",
+   "ok": false
+  },
+  {
+   "case_id": "N004",
+   "set": "narrative_conflict_cases",
+   "category": "conflict_negation_reversed",
+   "expected": "conflict",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "N005",
+   "set": "narrative_conflict_cases",
+   "category": "conflict_negation_reversed",
+   "expected": "conflict",
+   "got": "conflict",
+   "ok": true
+  },
+  {
+   "case_id": "N006",
+   "set": "narrative_conflict_cases",
+   "category": "conflict_negation_reversed",
+   "expected": "conflict",
+   "got": "accept",
+   "ok": false
+  },
+  {
+   "case_id": "N007",
+   "set": "narrative_conflict_cases",
+   "category": "conflict_negation_reversed",
+   "expected": "conflict",
+   "got": "accept",
+   "ok": false
+  },
+  {
+   "case_id": "N008",
+   "set": "narrative_conflict_cases",
+   "category": "conflict_negation_reversed",
+   "expected": "conflict",
+   "got": "accept",
+   "ok": false
+  },
+  {
+   "case_id": "N009",
+   "set": "narrative_conflict_cases",
+   "category": "conflict_doc_vs_self",
+   "expected": "conflict",
+   "got": "accept",
+   "ok": false
+  },
+  {
+   "case_id": "N010",
+   "set": "narrative_conflict_cases",
+   "category": "conflict_doc_vs_self",
+   "expected": "conflict",
+   "got": "accept",
+   "ok": false
+  },
+  {
+   "case_id": "N011",
+   "set": "narrative_conflict_cases",
+   "category": "conflict_doc_vs_self",
+   "expected": "conflict",
+   "got": "accept",
+   "ok": false
+  },
+  {
+   "case_id": "N012",
+   "set": "narrative_conflict_cases",
+   "category": "conflict_doc_vs_self",
+   "expected": "conflict",
+   "got": "accept",
+   "ok": false
+  },
+  {
+   "case_id": "N013",
+   "set": "narrative_conflict_cases",
+   "category": "control_document",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "N014",
+   "set": "narrative_conflict_cases",
+   "category": "control_document",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "N015",
+   "set": "narrative_conflict_cases",
+   "category": "control_document",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "N016",
+   "set": "narrative_conflict_cases",
+   "category": "control_document",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "N017",
+   "set": "narrative_conflict_cases",
+   "category": "control_document",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "N018",
+   "set": "narrative_conflict_cases",
+   "category": "control_document",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "N019",
+   "set": "narrative_conflict_cases",
+   "category": "control_document",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "N020",
+   "set": "narrative_conflict_cases",
+   "category": "control_document",
+   "expected": "accept",
+   "got": "accept",
+   "ok": true
+  },
+  {
+   "case_id": "H6H01",
+   "set": "holdout6_failure_cases",
+   "category": "holdout6_hearsay",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "H6H02",
+   "set": "holdout6_failure_cases",
+   "category": "holdout6_hearsay",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "H6H03",
+   "set": "holdout6_failure_cases",
+   "category": "holdout6_hearsay",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "H6H04",
+   "set": "holdout6_failure_cases",
+   "category": "holdout6_hearsay",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "H6H05",
+   "set": "holdout6_failure_cases",
+   "category": "holdout6_hearsay",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "H6H06",
+   "set": "holdout6_failure_cases",
+   "category": "holdout6_hearsay",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "H6H07",
+   "set": "holdout6_failure_cases",
+   "category": "holdout6_hearsay",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "H6H08",
+   "set": "holdout6_failure_cases",
+   "category": "holdout6_hearsay",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "H6H09",
+   "set": "holdout6_failure_cases",
+   "category": "holdout6_hearsay",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "H6H10",
+   "set": "holdout6_failure_cases",
+   "category": "holdout6_hearsay",
+   "expected": "hold",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "H6C01",
+   "set": "holdout6_failure_cases",
+   "category": "holdout6_conflict",
+   "expected": "conflict",
+   "got": "conflict",
+   "ok": true
+  },
+  {
+   "case_id": "H6C02",
+   "set": "holdout6_failure_cases",
+   "category": "holdout6_conflict",
+   "expected": "conflict",
+   "got": "conflict",
+   "ok": true
+  },
+  {
+   "case_id": "H6C03",
+   "set": "holdout6_failure_cases",
+   "category": "holdout6_conflict",
+   "expected": "conflict",
+   "got": "conflict",
+   "ok": true
+  },
+  {
+   "case_id": "H6C04",
+   "set": "holdout6_failure_cases",
+   "category": "holdout6_conflict",
+   "expected": "conflict",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "H6C05",
+   "set": "holdout6_failure_cases",
+   "category": "holdout6_conflict",
+   "expected": "conflict",
+   "got": "conflict",
+   "ok": true
+  },
+  {
+   "case_id": "H6C06",
+   "set": "holdout6_failure_cases",
+   "category": "holdout6_conflict",
+   "expected": "conflict",
+   "got": "hold",
+   "ok": true
+  },
+  {
+   "case_id": "H6C07",
+   "set": "holdout6_failure_cases",
+   "category": "holdout6_conflict",
+   "expected": "conflict",
+   "got": "accept",
+   "ok": false
+  },
+  {
+   "case_id": "H6C08",
+   "set": "holdout6_failure_cases",
+   "category": "holdout6_conflict",
+   "expected": "conflict",
+   "got": "conflict",
+   "ok": true
+  },
+  {
+   "case_id": "H6C09",
+   "set": "holdout6_failure_cases",
+   "category": "holdout6_conflict",
+   "expected": "conflict",
+   "got": "conflict",
+   "ok": true
+  },
+  {
+   "case_id": "H6C10",
+   "set": "holdout6_failure_cases",
+   "category": "holdout6_conflict",
+   "expected": "conflict",
+   "got": "conflict",
+   "ok": true
+  },
+  {
+   "case_id": "H6C11",
+   "set": "holdout6_failure_cases",
+   "category": "holdout6_conflict",
+   "expected": "conflict",
+   "got": "conflict",
+   "ok": true
+  },
+  {
+   "case_id": "H6C12",
+   "set": "holdout6_failure_cases",
+   "category": "holdout6_conflict",
+   "expected": "conflict",
+   "got": "conflict",
+   "ok": true
+  },
+  {
+   "case_id": "H6C13",
+   "set": "holdout6_failure_cases",
+   "category": "holdout6_conflict",
+   "expected": "conflict",
+   "got": "conflict",
+   "ok": true
+  },
+  {
+   "case_id": "H6C14",
+   "set": "holdout6_failure_cases",
+   "category": "holdout6_conflict",
+   "expected": "conflict",
+   "got": "conflict",
+   "ok": true
+  },
+  {
+   "case_id": "H6C15",
+   "set": "holdout6_failure_cases",
+   "category": "holdout6_conflict",
+   "expected": "conflict",
+   "got": "conflict",
+   "ok": true
+  }
+ ]
+}
