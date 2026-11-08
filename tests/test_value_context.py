@@ -178,9 +178,16 @@ def test_value_as_subject_is_not_a_result(text):
 
 
 @pytest.mark.parametrize("text", ["Hb 12 g/dL는 정상 범위입니다", "혈색소 12 가 오늘 측정값", "Hb 12 g/dL이고 안정적", "Hb 12 g/dL입니다", "Hb is 12 g/dL", "Hb 12 g/dL is normal", "Hgb 12 was drawn this morning",
-                                  "재채혈한 Hb 12 g/dL 가 유효값", "혈색소 12 라고 들었어요"])
+                                  "재채혈한 Hb 12 g/dL 가 유효값"])
 def test_value_as_subject_with_an_affirming_predicate_stays(text):
     assert lab(text) is None
+
+
+def test_relayed_value_with_an_affirming_predicate_is_held():
+    """기대값 변경 (P0-B 전해 들은 값, 11_CODE_REVIEW B-2): 이전에는 위 목록에서 채택으로 고정했지만
+    "~라고 들었어요"는 측정 결과가 아니라 전해 들은 수치이고 전한 사람이 의료진으로 적혀 있지 않으므로 확정된 직접 사실로 쓰지 않음
+    (tests/test_p0_hearsay_values.py). 의료진이 전한 값의 채택 여부는 임상 결정 CL-B1로 남김."""
+    assert lab("혈색소 12 라고 들었어요") == vg.HEDGED
 
 
 @pytest.mark.parametrize("text", ["If she improves, Hgb 12 next visit", "만약 호전되면, Hb 12 g/dL 도달", "Assuming no bleed, Hb 12 g/dL; 추적 필요"])

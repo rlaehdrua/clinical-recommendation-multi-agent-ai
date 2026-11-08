@@ -15,7 +15,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from test_p0_session_grounding import AGE, ECOG, HB, HB_HIGH, RECORD, SELF_OK, confirmed, hb, held, prof, run  # noqa: E402,F401
+from test_p0_session_grounding import AGE, ECOG, HB, HB_HIGH, Q_HB, RECORD, SELF_OK, confirmed, hb, held, prof, run  # noqa: E402,F401
 
 from ctrec import value_grounding as vg  # noqa: E402
 from ctrec.schemas import RuleMeta  # noqa: E402
@@ -93,6 +93,101 @@ def test_alternative_age_or_ecog_in_the_record_is_held(field, value, text, statu
 
 def test_alternative_age_does_not_confirm_eligible(run):
     held(run("폐암 환자. Self-reported age 67 or 68.", [AGE], prof(age=67)))
+
+
+# ----------------------------------------------------------------------------- 전해 들은 값 (비의료인·화자 없음)
+@pytest.mark.parametrize("field,value,text,status", [
+    ("hemoglobin", 12, "혈색소 12라고 들었어요", H),
+    ("hemoglobin", 12, "혈색소 12래요", H),
+    ("hemoglobin", 12, "혈색소가 12이래요", H),
+    ("hemoglobin", 12, "혈색소 12라더라고요", H),
+    ("hemoglobin", 12, "혈색소 12 된대요", H),
+    ("hemoglobin", 12, "혈색소 12였다고 했어요", H),
+    ("hemoglobin", 12, "혈색소 12였다고 하더라고요", H),
+    ("hemoglobin", 12, "보호자 말로는, 혈색소 12", H),  # 도입부가 앞 절
+    ("hemoglobin", 12, "엄마가 그러는데 혈색소 12", H),
+    ("platelets", 120, "다른 병원에서 혈소판 120이라고 들었다고 함", H),
+    ("platelets", 120, "환자 말로는 다른 병원에서 혈소판 120", H),
+    ("platelets", 120, "보호자 말로는 혈소판 120", U),  # 기존: 다른 사람의 값으로 봄
+    ("platelets", 120, "본인 기억으로 혈소판 120", H),
+    ("hemoglobin", 12, "Per family, Hb 12 g/dL.", H),
+    ("hemoglobin", 12, "My wife said my Hb was 12.", U),
+    ("hemoglobin", 12, "Apparently Hb 12 g/dL.", H),
+    ("hemoglobin", 12, "Hb reportedly 12 g/dL.", H),
+    ("hemoglobin", 12, "Patient states Hb 12 g/dL.", H),
+    ("hemoglobin", 12, "Pt states her Hb was 12.", H),
+    ("hemoglobin", 10, "Patient says Hb was 10 at the outside clinic.", H),
+    ("hemoglobin", 12, "Per patient, Hb 12.", H),
+    ("hemoglobin", 12, "I was told my Hb is 12.", H),
+    ("hemoglobin", 10, "Pt thinks her hemoglobin was 'around 10'", H),
+    ("platelets", 140, "My oncologist mentioned, I believe, that my platelets were 140.", H),  # 추측 표지가 "that" 절의 앞 절
+])
+def test_relayed_lab_value_is_held(field, value, text, status):
+    assert lab(field, value, text) == status, text
+
+
+@pytest.mark.parametrize("text", [
+    "Patient reports fatigue and Hb 12.0 g/dL today.",  # 전하는 동사의 대상은 증상 (리뷰 B-3)
+    "환자 피곤하다고 하며 혈색소 12.0 g/dL.",
+    "환자가 피곤하다고 함. 혈색소 12.0 g/dL.",
+    "혈색소 12.0 g/dL이고 피곤하다고 함.",
+    "Patient says she feels well; Hb 12.0 g/dL today.",
+    "Hgb 12.0 g/dL today; patient says she feels tired.",
+    "Wife says he is tired, but Hb 12.0 g/dL today.",
+    "Family at bedside; Hb 12.0 g/dL today.",
+    "Results reported: Hb 12.0 g/dL.",
+    "Hb 12.0 g/dL as reported by the central lab.",
+])
+def test_reporting_verb_on_something_else_does_not_hold_the_lab(text):
+    assert lab("hemoglobin", 12, text, "g/dL") is None, text
+
+
+@pytest.mark.parametrize("text", [
+    "The nurse called; Hb 12.0 g/dL.", "의사 선생님이 혈색소 12래요", "Dr. Kim said Hb 12.0 g/dL.", "Her GP told her the Hb was 10.",
+])
+def test_clinician_relayed_lab_is_left_as_before(text):
+    """의료진이 전한 값은 임상 결정 CL-B1 전까지 이 변경으로 바꾸지 않음 (지금 동작: 채택). 결정되면 이 고정값을 갱신."""
+    value = 10 if "was 10" in text else 12
+    assert lab("hemoglobin", value, text) is None, text
+
+
+@pytest.mark.parametrize("field,value,text,status", [
+    ("age", 72, "보호자(아들)가 환자 나이를 72세라고 전함.", H),
+    ("age", 72, "Son says she is 72 years old.", H),
+])
+def test_age_relayed_by_family_or_unsure_is_held(field, value, text, status):
+    assert vg.ground(field, value, text) == status, text
+
+
+@pytest.mark.parametrize("text", ["Patient says she is 67 years old.", "67세래요",
+                                  "Wife says she is 55, but the patient himself is 67 years old per registration."])
+def test_age_said_by_the_patient_is_still_a_self_report(text):
+    assert vg.ground("age", 67, text) is None, text
+
+
+@pytest.mark.parametrize("text", ["Pt thinks her hemoglobin was 'around 10' at the other hospital.", "혈색소 10이라고 들었어요."])
+def test_relayed_lab_does_not_confirm_eligible_on_self_report_rule(run, text):
+    o = run(f"폐암 환자. {text}", [HB], prof(labs=[hb(10.0, text)]), meta=SELF_OK)
+    held(o)
+    assert o.a.evidence_directness == "hedged" and text in o.a.evidence
+    assert [x.source_quote for x in o.session.profile.labs] == [text]  # 원문 인용은 사실에 그대로 남음
+
+
+@pytest.mark.parametrize("text", ["Pt thinks her hemoglobin was 'around 10' at the other hospital.", "혈색소 10이라고 들었어요."])
+def test_relayed_lab_does_not_rule_out_on_a_record_rule(run, text):
+    """진료 기록 선언 입력이어도 전해 들은 값으로 부적격을 내지 않음."""
+    o = run(f"폐암 환자. {text}", [HB_HIGH], prof(labs=[hb(10.0, text)]), meta=RECORD, input_source="clinical_record")
+    assert o.match.eligibility != "INELIGIBLE"
+
+
+def test_relayed_lab_in_an_answer_is_held(run):
+    o = run("폐암 환자.", [HB], prof(), prof(labs=[hb(12.0, "혈색소 12래요")]), "혈색소 12래요", meta=SELF_OK, question=Q_HB, target="T1:I3")
+    held(o)
+    assert o.a.evidence_directness == "hedged"
+
+
+def test_plain_lab_in_an_answer_still_confirms(run):
+    confirmed(run("폐암 환자.", [HB], prof(), prof(labs=[hb()]), "Hb 12 g/dL", meta=SELF_OK, question=Q_HB, target="T1:I3"))
 
 
 # ----------------------------------------------------------------------------- 정상 값 (대조)

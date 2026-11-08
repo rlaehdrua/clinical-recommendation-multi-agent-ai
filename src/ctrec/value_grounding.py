@@ -519,9 +519,68 @@ def _alternative(body: str, lo: int, hi: int) -> bool:
     return bool(_ALTERNATIVE_AFTER.match(body, hi) or _ALTERNATIVE_BEFORE.search(head))
 
 
+# P0-B (전해 들은 값): 환자·가족·보호자 같은 비의료인이 전한 값, 화자가 적히지 않은 전언 어미("~래요", "~라고 들었어요").
+# 의료진(의사·간호사)이 전했다고 적힌 값은 임상 결정 CL-B1 전까지 지금 동작 그대로 둠: 문장에 의료진이 있으면 전언 어미·환자 진술 동사만으로는 보류하지 않음.
+# 나이·ECOG는 본인 진술이 자기 보고 허용 근거이므로 가족·보호자가 전한 경우만 봄. 표현은 임상 검수를 받지 않았습니다.
+_FAMILY_EN = (r"(?:family|relatives?|caregivers?|guardian|son|daughter|wife|husband|spouse|partner|mother|father|mom|mum|dad|"
+              r"sister|brother|friend|neighbou?r|niece|nephew|grand(?:son|daughter|mother|father|child))")
+_SELF_EN = r"(?:pt|patient)"
+_FAMILY_KO = r"(?:보호자|가족|엄마|아빠|어머니|어머님|아버지|아버님|남편|아내|와이프|배우자|아들|딸|며느리|사위|언니|오빠|누나|동생|친구|이웃|손자|손녀)"
+_SELF_KO = r"(?:환자|본인)"
+_RELAY_VERB = (r"(?:said|says|told|tells|mentioned|mentions|thinks|thought|heard|recalls?|recalled|remembers?|remembered|relayed|relays|"
+               r"reported|reports|states?|stated|claims?|claimed|believes?|believed)")
+_CLINICIAN = re.compile(r"\b(?:dr|doctors?|physicians?|oncologists?|nurses?|np|gp|surgeons?|residents?|attending|hematologists?|clinicians?|"
+                        r"providers?|pharmacists?|care\s+team|oncology\s+team)\b|의사|선생님|주치의|담당의|전공의|교수|간호사|약사|의료진|원장", re.IGNORECASE)
+
+
+def _lead(who_en: str, who_ko: str) -> str:
+    """값 앞(같은 문장, 앞 절 포함)의 전언 도입부: "Per family,", "Apparently", "보호자 말로는,", "엄마가 그러는데"."""
+    return (rf"\b(?:apparently|reportedly|allegedly|supposedly|purportedly|second-?hand)\b|"
+            rf"\b(?:per|according\s+to|as\s+(?:told|relayed|reported)\s+by)\s+(?:the\s+|her\s+|his\s+|my\s+|their\s+|our\s+)?{who_en}\b|"
+            rf"(?<![가-힣]){who_ko}(?:\s*\([^)]*\))?\s*(?:의\s*)?(?:말|말씀|얘기|이야기)(?:로는|으로는|에\s*따르면|에\s*의하면)|"
+            rf"(?<![가-힣]){who_ko}(?:\s*\([^)]*\))?\s*(?:이|가|께서)?\s*(?:그러는데|그러던데|그러더라|그랬는데|그러시는데|하는\s*말이)")
+
+
+_LEAD_FAMILY = re.compile(_lead(_FAMILY_EN, _FAMILY_KO) + rf"|\b{_FAMILY_EN}\s+(?:\w+\s+)?{_RELAY_VERB}\b", re.IGNORECASE)
+_LEAD_LAY = re.compile(_LEAD_FAMILY.pattern + "|" + _lead(_SELF_EN, _SELF_KO)
+                       + r"|\bI\s+(?:was\s+told|heard|have\s+heard)\b|\bheard\s+(?:that|it\s+was)\b|들은\s*(?:바로는|얘기로는|바에\s*따르면)"
+                       r"|\bfrom\s+(?:her|his|my|the\s+patient'?s)?\s*memory\b|기억(?:으로는?|하기로는?|상|에는)", re.IGNORECASE)  # 기억에 의존한 수치
+_SELF_REPORT = re.compile(rf"\b{_SELF_EN}\s+(?:\w+\s+)?{_RELAY_VERB}\b(?P<gap>[^.;\n]*)$", re.IGNORECASE)  # "Patient states Hb 12", "Pt states her Hb was 12"
+_GAP_BREAK = re.compile(r",|\b(?:and|but|plus|with|while|also)\b|(?:\S+\s+){8}", re.IGNORECASE)  # "Patient reports fatigue and Hb 12": 동사의 대상은 증상
+_FAMILY_SUBJECT = re.compile(rf"(?<![가-힣]){_FAMILY_KO}(?:\s*\([^)]*\))?\s*(?:이|가|께서|는|은)(?![가-힣])", re.IGNORECASE)
+_QUOTED = re.compile(r"이?래요|이?래(?![가-힣])|이?라더라|이?라던데|이?랍니다|이?라네요|이?라구요|대요|다더라|다던데|답니다|다네요|"
+                     r"(?:라|다)\s*고\s*(?:전해\s*)?(?:했|함|하더|하셨|하시|하네|하던|하며|해요|합니다|들|전함|전했|말)|전해\s*들|들었|들음")  # 값 뒤의 전언 어미
+_TAIL_END = re.compile(r"[,;\n]|(?<=[.!?。])\s|\s(?:but|however)\s|(?:는데|지만|으나)(?=\s|$)", re.IGNORECASE)
+_HEAD_BREAK = re.compile(r";|\s(?:but|however|whereas|although|though)\s|(?:지만|으나|반면(?:에)?)(?=\s|,)", re.IGNORECASE)
+_TAIL_LINK = re.compile(r"(?:이고|이며|하며|하고|으며)(?=\s)|\b(?:and|but)\b", re.IGNORECASE)  # 값과 어미 사이의 다른 서술어: 그 서술어의 전언
+
+
+def _quoted_after(body: str, hi: int) -> bool:
+    end = _TAIL_END.search(body, hi)
+    tail = body[hi:end.start() if end else len(body)]
+    m = _QUOTED.search(tail)
+    return bool(m and not _TAIL_LINK.search(tail[:m.start()]))
+
+
+def _hearsay(field: str, body: str, lo: int, hi: int) -> bool:
+    """값이 비의료인의 전언이거나 화자가 적히지 않은 전언 어미로 끝나는가. 의료진이 전했다고 적힌 값은 지금 동작 그대로 (CL-B1)."""
+    start, end = _sentence_start(body, lo), len(_scope(body, lo, hi)[1])
+    for m in _HEAD_BREAK.finditer(body, start, end):
+        start = m.end()
+    head = body[start:end]  # 같은 문장의 값 앞. ";"·"but" 앞은 다른 진술: "Wife says she is 55, but the patient himself is 68"
+    if not field.startswith("lab:"):
+        return bool(_LEAD_FAMILY.search(head) or (_FAMILY_SUBJECT.search(head) and _quoted_after(body, hi)))
+    if _LEAD_LAY.search(head):
+        return True
+    if _CLINICIAN.search(ed._sentence(body, lo)):
+        return False
+    m = _SELF_REPORT.search(head)
+    return bool(m and not _GAP_BREAK.search(m.group("gap"))) or _quoted_after(body, hi)
+
+
 def _record_uncertain(field: str, body: str, lo: int, hi: int) -> bool:
-    """P0-B: 확정된 직접 측정 사실로 쓸 수 없는 값인가 (근사·추측·택일)."""
-    return field != "sex" and (_approximate(body, lo, hi) or _alternative(body, lo, hi))
+    """P0-B: 확정된 직접 측정 사실로 쓸 수 없는 값인가 (근사·추측·택일·전언)."""
+    return field != "sex" and (_approximate(body, lo, hi) or _alternative(body, lo, hi) or _hearsay(field, body, lo, hi))
 
 
 def _usable_answers(source_text: str, qa) -> list[ed.Segment]:
