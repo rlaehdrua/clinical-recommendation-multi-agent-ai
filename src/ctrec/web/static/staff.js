@@ -144,12 +144,42 @@ async function trySession() {
   try { await loadAll(); } catch (e) { q$("#st-login").hidden = false; setConn("연결 실패", "bad"); q$("#st-login-hint").textContent = e.message; return true; }
   q$("#st-work").hidden = false;
   clearInterval(S.timer); S.timer = setInterval(poll, POLL_MS);
+  showReset();
   // 발표용 데모: 핵심은 연구진 화면 -> 연구 담당자를 앞에, 환자 화면은 시연용으로 (주소가 / 이고 환자 사례를 진행 중이 아닐 때 연구진 화면부터)
   const nav = q$("#roles"), sb = nav.querySelector('[data-role="staff"]'), pb = nav.querySelector('[data-role="patient"]');
   nav.insertBefore(sb, pb); pb.textContent = "환자 신청 (시연용)";
   let resume = false; try { resume = !!localStorage.getItem("ctrec-followup-case"); } catch (e) { /* 저장소 없음 */ }
   if (location.pathname === "/" && !location.hash && !resume) setRole("staff", true);
   return true;
+}
+// ------------------------------------------------------------ 발표용 '처음부터 다시' (데모 서버 --seed-demo --demo-staff에만 있는 경로)
+async function showReset() {
+  let d = null; try { const r = await fetch("/api/followup/demo", { headers: headers() }); if (r.ok) d = await r.json(); } catch (e) { d = null; }
+  q$("#st-reset").hidden = !(d && d.reset);
+}
+function resetMsg(t) { const m = q$("#st-reset-msg"); m.textContent = t || ""; m.hidden = !t; }
+// 확인 창(confirm) 대신 두 번 누르기: 첫 번째는 안내만, 8초 안에 한 번 더 누르면 실행
+async function resetDemo() {
+  const b = q$("#st-reset");
+  if (!b.dataset.armed) {
+    b.dataset.armed = "1"; b.textContent = "한 번 더 누르면 처음부터";
+    resetMsg("지금까지 보낸 질문·서류 확인·의사 판단이 모두 화면에서 사라지고, 가상 환자 6명이 처음 상태로 다시 들어와요. 지금 기록은 지우지 않고 서버의 보관 폴더로 옮겨 둬요.");
+    clearTimeout(S.resetTimer); S.resetTimer = setTimeout(() => { delete b.dataset.armed; b.textContent = "처음부터 다시"; resetMsg(""); }, 8000);
+    return;
+  }
+  clearTimeout(S.resetTimer); delete b.dataset.armed;
+  b.disabled = true; b.textContent = "다시 준비하는 중…"; S.busy = true;
+  resetMsg("가상 환자를 처음 상태로 다시 넣고 있어요 (10초쯤 걸려요).");
+  try {
+    const r = await fetch("/api/followup/demo/reset", { method: "POST", headers: headers({ "Content-Type": "application/json", "X-CTREC-Request": "1" }), body: "{}" });
+    let d = null; try { d = await r.json(); } catch (e) { d = null; }
+    if (!r.ok) throw new Error((d && d.detail && (d.detail.message || d.detail)) || `요청 실패 (${r.status})`);
+    try { localStorage.removeItem("ctrec-followup-case"); } catch (e) { /* 저장소 없음 */ }  // 환자 탭에서 이어 보던 사례도 보관됨
+    S.caseId = null; S.data = null; S.vdata = S.cdata = null; q$("#st-case").innerHTML = `<div class="empty">환자를 고르면 시험별 결과와 해야 할 일이 나와요.</div>`;
+    S.busy = false; await loadAll();
+    resetMsg(`처음 상태로 돌아왔어요. 가상 환자 ${d.seeded}명 · 질문을 새로 골라 보세요.`);
+  } catch (e) { resetMsg(`다시 시작하지 못했어요: ${e.message}`); }
+  finally { S.busy = false; b.disabled = false; b.textContent = "처음부터 다시"; }
 }
 function logout() {
   try { sessionStorage.removeItem(KEY); } catch (e) { /* 저장소 없음 */ }
@@ -738,6 +768,7 @@ async function init() {
   document.querySelectorAll("#roles button").forEach(b => b.addEventListener("click", () => setRole(b.dataset.role, true)));
   q$("#st-login-form").addEventListener("submit", (e) => { e.preventDefault(); connect(q$("#st-key").value, q$("#st-id").value.trim()); });
   q$("#st-logout").addEventListener("click", logout);
+  q$("#st-reset").addEventListener("click", resetDemo);
   q$("#st-reload").addEventListener("click", async () => { try { await loadAll(); if (S.caseId) await refreshCase(); } catch (e) { setConn(e.message, "bad"); } });
   q$("#st-tab-q").addEventListener("click", () => tab("q")); q$("#st-tab-c").addEventListener("click", () => tab("c")); q$("#st-tab-u").addEventListener("click", () => tab("u"));
   q$("#page-staff").addEventListener("input", (e) => {
