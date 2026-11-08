@@ -146,7 +146,7 @@ async function trySession() {
   clearInterval(S.timer); S.timer = setInterval(poll, POLL_MS);
   // 발표용 데모: 핵심은 연구진 화면 -> 연구 담당자를 앞에, 환자 화면은 시연용으로 (주소가 / 이고 환자 사례를 진행 중이 아닐 때 연구진 화면부터)
   const nav = q$("#roles"), sb = nav.querySelector('[data-role="staff"]'), pb = nav.querySelector('[data-role="patient"]');
-  nav.insertBefore(sb, pb); pb.textContent = "환자 화면 (시연용)";
+  nav.insertBefore(sb, pb); pb.textContent = "환자 신청 (시연용)";
   let resume = false; try { resume = !!localStorage.getItem("ctrec-followup-case"); } catch (e) { /* 저장소 없음 */ }
   if (location.pathname === "/" && !location.hash && !resume) setRole("staff", true);
   return true;
@@ -222,16 +222,16 @@ function renderSummary(s, list) {
   const maxM = ((s.c_curve || []).slice(-1)[0] || {}).minutes || 0;
   if (S.budget == null || S.budget > maxM) S.budget = Math.round(maxM / 2);
   q$("#st-summary").innerHTML = `
-    <p class="lead m0">TRIALOG는 <b>다음에 확인할 질문을 고르고</b>, <b>같은 서류로 묶어</b> 연구 코디네이터의 시간을 줄여요.</p>
+    <p class="lead m0">TRIALOG는 신청한 환자 전체를 보고 <b>다음에 확인할 질문을 고르고</b>, <b>환자마다 같은 서류로 확인할 것을 묶어</b> 여러 시험의 판정에 필요한 연락을 줄여요.</p>
     ${rem.length ? `<div class="hero-nums" aria-label="남은 확인 ${h(rem.length)}건의 예상 시간">
       <div class="num"><span>하나씩 따로 하면</span><b>${h(min(remAlone))}</b></div>
       <div class="arrow" aria-hidden="true">→</div>
-      <div class="num accent"><span>같은 서류끼리 묶어 추천 순서로</span><b>${h(min(remMin))}</b></div>
+      <div class="num accent"><span>환자마다 같은 서류로 묶으면</span><b>${h(min(remMin))}</b></div>
       <div class="num ok"><span>줄어드는 시간</span><b>${h(min(saved))}</b><em>${h(pct)}% 절약</em></div></div>`
       : sentAlone > s.spent_minutes ? `<div class="hero-nums" aria-label="보낸 요청의 예상 시간">
       <div class="num"><span>보낸 요청을 하나씩 했다면</span><b>${h(min(sentAlone))}</b></div>
       <div class="arrow" aria-hidden="true">→</div>
-      <div class="num accent"><span>같은 서류끼리 묶어 보낸 시간</span><b>${h(min(s.spent_minutes))}</b></div>
+      <div class="num accent"><span>환자마다 같은 서류로 묶어 보낸 시간</span><b>${h(min(s.spent_minutes))}</b></div>
       <div class="num ok"><span>줄어든 시간</span><b>${h(min(sentAlone - s.spent_minutes))}</b><em>${h(Math.round(100 * (sentAlone - s.spent_minutes) / sentAlone))}% 절약</em></div></div>
       <p class="m0">보낼 질문을 모두 보냈어요.</p>`
       : `<p class="m0">보낼 질문을 모두 보냈어요. 지금까지 보낸 요청의 예상 시간 ${h(min(s.spent_minutes))}.</p>`}
@@ -288,7 +288,7 @@ function qcard(c, i) {
       <p class="qname">${h(cardTitle(c))} ${open ? '<span class="badge ok">보냄</span>' : ""}</p>
       ${c.route === "document_review" ? `<p class="m0 qc-items">${c.items.map(g => h(itemName(g.info_key))).join(" · ")}</p>` : ""}
       <dl class="qc-facts">
-        <div><dt>누구에게</dt><dd>환자 ${h(c.patients.length)}명${!open && c.sent.length ? ` <span class="hint">(이미 보낸 ${h(c.sent.length)}건 제외)</span>` : ""}</dd></div>
+        <div><dt>누구에게</dt><dd>환자 ${h(c.patients.length)}명${c.route === "document_review" ? ' <span class="hint">· 환자마다 서류 한 장</span>' : ""}${!open && c.sent.length ? ` <span class="hint">(이미 보낸 ${h(c.sent.length)}건 제외)</span>` : ""}</dd></div>
         <div><dt>왜</dt><dd>${gain == null ? "계산 중…" : gain ? `<b class="good">결과가 나올 수 있는 시험 +${h(gain)}개</b> <span class="hint">(최대)</span>` : `관련 시험 ${h(c.related)}개 <span class="hint">(다른 확인과 함께 하면 결과가 나와요)</span>`}</dd></div>
         <div><dt>시간</dt><dd>${!e ? "계산 중…" : open ? `보낸 요청 ${h(c.sent.length)}건` : saved ? `<b>${h(min(e.minutes))}</b> <span class="hint">하나씩 하면 ${h(min(e.minutes_alone))}</span> <b class="good">${h(min(saved))} 절약</b>` : `<b>${h(min(e.minutes))}</b>`}</dd></div>
       </dl>
