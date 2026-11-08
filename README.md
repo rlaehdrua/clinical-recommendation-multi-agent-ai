@@ -736,6 +736,7 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 | 2 | `GET /api/followup/demo`, `POST /api/followup/demo/reset`: `--seed-demo --demo-staff`로 켠 데모 서버의 앱에만 붙임. 담당자 권한 + 상태 변경 POST 확인(CSRF). 운영 앱(`web.app` 기본 경로)에는 없음 | 같음 |
 | 3 | 담당자 화면 '연구진 확인 작업' 제목 옆 "처음부터 다시" 버튼: 데모 경로가 있을 때만 보임. 확인 창 대신 8초 안에 두 번 누르기, 끝나면 환자 탭에서 이어 보던 사례 기억도 지움 | `web/static/staff.js`, `web/static/index.html` |
 | 4 | 테스트 2건: 옮긴 뒤 같은 6명이 revision 1로 다시 들어오고 옛 기록이 보관 폴더에 그대로 있음, 권한·CSRF 없이 거부 / 기본 앱에는 경로 없음 | `tests/test_demo_seed.py` |
+| 5 | 화면이 부르는 경로 검사에 데모 서버 전용 경로를 포함 (데모 서버에 실제로 붙는지 확인) | `tests/test_followup_web.py` |
 
 확인: 브라우저에서 모든 확인을 끝낸 상태(참여 가능 35 · 불가 7)에서 버튼을 두 번 눌러 → 약 7초 뒤 남은 확인 32건 · 402분 → 276분 첫 화면으로 돌아옴.
 
