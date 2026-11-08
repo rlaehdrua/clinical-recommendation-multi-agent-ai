@@ -167,7 +167,7 @@
     <h2 id="result-h" class="sr-only" tabindex="-1">추천 결과 <span class="usage" id="usage"></span></h2>
     <div class="stack">
       <section class="panel" id="fu-panel" aria-labelledby="fu-h" hidden>
-        <h2 id="fu-h" tabindex="-1"><span>연구진 요청</span> <button class="btn ghost sm" id="fu-refresh" type="button">새 요청 확인</button></h2>
+        <h2 id="fu-h" tabindex="-1"><span>연구진의 질문과 확인 상황</span> <button class="btn ghost sm" id="fu-refresh" type="button">새로 확인</button></h2>
         <div class="body stack" id="fu-body"></div>
       </section>
       <div id="final"><div class="empty">분석이 끝나면 결과가 표시됩니다.</div></div>
@@ -191,7 +191,7 @@
 <!-- 7. 연구 담당자 (같은 페이지의 '연구 담당자' 탭, /staff로 바로 열림). 데이터: /api/followup/staff/* - 담당자 키 필요 -->
 <main id="page-staff" hidden>
   <div class="stack">
-  <details class="note warn" role="note"><summary><b>연구 담당자 화면</b> · 판정은 서버 규칙이 정하고, 역할마다 입력할 수 있는 것이 다릅니다</summary>
+  <details class="note warn" role="note"><summary><b>연구 담당자 화면</b> · 순서: ① 요청 보내기 → ② 서류 확인 → ③ 의사 판단 → 결과 확정</summary>
     <p class="m0 mt8">환자 답변은 환자만 입력합니다. 서류 검증 완료는 문서 검증자, 의료진 판단은 임상의 권한으로만 입력합니다.
     지금 있는 검증 권한은 합성 시험 전용이고 실제 의료기관 인증이 없어, 운영 모드에서는 완료 입력이 막혀 판정이 보류로 남습니다.
     발표용 데모 서버에서는 한 화면에서 세 역할을 차례로 보여 줄 수 있습니다(이 컴퓨터에서만, 합성 데이터).</p></details>
@@ -209,20 +209,20 @@
 
   <div class="stack" id="st-work" hidden>
     <section class="panel" id="st-time" aria-labelledby="st-time-h">
-      <h2 id="st-time-h"><span>코디네이터 작업 시간</span> <button class="btn ghost sm" id="st-reload" type="button">새로고침</button></h2>
+      <h2 id="st-time-h"><span>한눈에 보기</span> <button class="btn ghost sm" id="st-reload" type="button">새로고침</button></h2>
       <div class="body stack" id="st-summary"></div>
     </section>
     <div class="tabs" role="tablist" aria-label="담당자 보기">
-      <button id="st-tab-q" role="tab" aria-selected="true" aria-controls="st-questions" type="button">질문별</button>
-      <button id="st-tab-c" role="tab" aria-selected="false" aria-controls="st-cases-view" type="button">환자별</button>
-      <button id="st-tab-u" role="tab" aria-selected="false" aria-controls="st-queue-view" type="button">확인 대기열</button>
+      <button id="st-tab-q" role="tab" aria-selected="true" aria-controls="st-questions" type="button">① 요청 보내기</button>
+      <button id="st-tab-c" role="tab" aria-selected="false" aria-controls="st-cases-view" type="button">② 서류·판단 처리 (환자별)</button>
+      <button id="st-tab-u" role="tab" aria-selected="false" aria-controls="st-queue-view" type="button">전체 순서</button>
     </div>
     <section class="panel" id="st-questions" role="tabpanel" aria-labelledby="st-tab-q"><div class="body stack" id="st-qlist"></div></section>
     <div class="staff-grid" id="st-cases-view" role="tabpanel" aria-labelledby="st-tab-c" hidden>
       <section class="panel" aria-label="사례 목록"><div class="body" id="st-cases"></div></section>
       <section class="panel" aria-labelledby="st-case-h">
-        <h2 id="st-case-h" tabindex="-1">사례를 고르세요</h2>
-        <div class="body stack" id="st-case"><div class="empty">왼쪽에서 사례를 고르면 판정·제안·요청 이력이 보입니다.</div></div>
+        <h2 id="st-case-h" tabindex="-1">왼쪽에서 환자를 고르세요</h2>
+        <div class="body stack" id="st-case"><div class="empty">환자를 고르면 시험별 결과와 해야 할 일이 나와요.</div></div>
       </section>
     </div>
     <section class="panel" id="st-queue-view" role="tabpanel" aria-labelledby="st-tab-u" hidden><div class="body" id="st-queue"></div></section>

@@ -344,6 +344,9 @@ details.dev > summary { font-size: 14px; color: var(--faint); }
 #fu-panel .body { padding: 8px 20px 20px; }
 .fu-req { background: var(--panel-2); border-radius: 14px; padding: 12px 14px; }
 .fu-req.done { background: var(--panel-3); }
+.fu-work { background: var(--panel-2); border-radius: 14px; padding: 12px 14px; }
+.fu-work ul { margin: 8px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.inline-check.big { font-size: 16px; padding: 6px 4px; }
 .fu-q { margin: 0 0 8px; font-weight: 600; color: var(--text); line-height: 1.5; }
 .fu-input { width: 100%; box-sizing: border-box; font: inherit; font-size: 15px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--text); }
 input.fu-input[type="number"], input.fu-input[type="date"] { width: auto; min-width: 160px; }

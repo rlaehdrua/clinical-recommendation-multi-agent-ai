@@ -91,3 +91,29 @@ def test_insight_shows_the_cost_of_asking_one_by_one(env):
     labs = [q for q in qs if q["info_key"].startswith("lab:")]
     assert labs and {q["source_id"] for q in labs} == {"lab_report"}
     assert sum(q["minutes_alone"] for q in labs) > sum(q["minutes"] for q in labs)  # 같은 결과지로 묶으면 연락 비용이 한 번
+
+
+def test_patient_sees_what_the_team_is_checking_without_values(env):
+    patient = h.browser()
+    cid = D.create(patient, ["T-A", "T-D"])
+    c = D.staff_client()
+    case = D.staff_case(c, cid)
+    D.make_requests(c, cid, D.proposal(case, "lab:absolute neutrophil count", "REQUEST_DOCUMENT")["proposal_id"])
+    d = patient.get(f"/api/followup/cases/{cid}/requests").json()
+    work = d["in_progress"]
+    assert {"kind": "document_review", "info_key": "lab:absolute neutrophil count", "status": "requires_document"} in work
+    assert any(w["kind"] == "clinician_review" for w in work)  # T-D 의사 판단 (서버가 자동으로 만든 요청)
+    assert all(set(w) == {"kind", "info_key", "status"} for w in work)  # 값·문서·판단 내용은 환자에게 보내지 않음
+    assert all("info_key" in r for r in d["requests"])
+    listed = c.get("/api/followup/staff/cases", headers=D.STAFF).json()["cases"]
+    assert next(x for x in listed if x["case_id"] == cid)["open_by_status"]["requires_document"] == 1
+
+
+def test_demo_server_keeps_the_original_examples_after_the_nsclc_demo_patients():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("demo_server", Path(__file__).parents[1] / "scripts" / "followup_demo_server.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    mod._ORIGINAL_PATIENTS = lambda: [{"patient_id": "S001"}]
+    ids = [p["patient_id"] for p in mod.demo_patients()]
+    assert ids[:4] == ["DEMO-NSCLC-1", "DEMO-NSCLC-2", "DEMO-NSCLC-3", "DEMO-NSCLC-4"] and ids[4:] == ["S001"]
