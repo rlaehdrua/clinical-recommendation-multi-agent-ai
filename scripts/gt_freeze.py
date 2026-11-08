@@ -78,6 +78,8 @@ def main(argv=None) -> int:
     v.add_argument("--reason", required=True)
     v.add_argument("--measurement", type=Path)
     v.add_argument("--engine-commit")
+    v.add_argument("--external", type=Path)
+    v.add_argument("--repo-root", type=Path)
     a = ap.parse_args(argv)
     if a.cmd == "freeze":
         bases = [a.gt_root] + ([a.external] if a.external else [])
@@ -98,7 +100,8 @@ def main(argv=None) -> int:
         print(f"wrote {path}: {a.version}, 파일 {len(m['files'])}개, status=sealed")
         return 0
     try:
-        m = fz.advance(a.gt_root, a.to, reason=a.reason, measurement=a.measurement, engine_commit=a.engine_commit)
+        m = fz.advance(a.gt_root, a.to, reason=a.reason, measurement=a.measurement, engine_commit=a.engine_commit,
+                       external=a.external, repo_root=a.repo_root)
     except ValueError as e:
         print(f"거부: {e}")
         return 1

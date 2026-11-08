@@ -47,7 +47,7 @@ python -c "import ctrec; print(ctrec.__file__)"   # 이 작업 트리의 src/ctr
 
 | 단계 | 누가 | 명령·산출물 |
 |---|---|---|
-| 0. 사전 등록 | GT 책임자 + 엔지니어 | 지표 정의(`scripts/gt_lib/metrics.py`, `stats.py`)와 합격 기준(D 3절)을 세트 공개 **전에** 커밋. 동결 시 두 파일의 해시가 `metric_definitions`에 기록되고, 측정 뒤 바뀌면 `gt_verify.py`가 경고 |
+| 0. 사전 등록 | GT 책임자 + 엔지니어 | 지표 정의(`scripts/gt_lib/metrics.py`, `stats.py`)와 합격 기준(D 3절)을 세트 공개 **전에** 커밋. 동결 시 평가 결과를 바꿀 수 있는 코드(`metrics.py`, `stats.py`, `models.py`, `labelio.py`, `freeze.py`, `scripts/gt_eval.py`, `scripts/gt_engine_adapter.py`)의 해시가 `metric_definitions`에 기록되고, 동결 뒤 바뀌면 `gt_verify.py`가 문제로 보고하며 그 뒤 결과는 공식이 아님 |
 | 1. 규약 승인 | 임상의 (CL-1, CL-2, CL-9) | `gt/protocol/annotation_protocol_v1.md` (승인본), 상충 질환 묶음표, 쌍 집계 규칙. `templates/labeler_instructions_v1_DRAFT.md`는 초안 |
 | 2. 사례 작성 | 엔진 A·B·C 작업에 참여하지 않은 작성자 | `templates/*_cases.template.json` 형식의 사례 파일. 세트 1-6의 작성 프롬프트·범주 목록을 쓰지 않음. 원문은 **저장소 밖** 보관 |
 | 3. 누출 검사 | 엔지니어 | 아래 3절. 사례 파일을 세트 형식으로 조립한 뒤에도 다시 실행 |
@@ -61,7 +61,7 @@ python -c "import ctrec; print(ctrec.__file__)"   # 이 작업 트리의 src/ctr
 | 11. 1회 측정 | 엔지니어 | A·B·C 코드를 고정한 커밋에서: `python scripts/gt_engine_adapter.py <보관소>/g_u/set7.json --out gt/results/gt-v1.0/<sha>/engine.json --engine-commit <sha>` → `python scripts/gt_eval.py --gt <보관소>/g_u/set7.json --engine gt/results/gt-v1.0/<sha>/engine.json [--baseline <전 커밋 출력>] --frozen gt --official --out gt/results/gt-v1.0/<sha>/report.json` → `python scripts/gt_freeze.py advance --gt-root gt --to measured_once --reason "1회 측정" --measurement gt/results/gt-v1.0/<sha>/report.json --engine-commit <sha>` |
 | 12. 강등 | GT 책임자 | 결과를 보고 코드를 고치면 즉시 `python scripts/gt_freeze.py advance --gt-root gt --to regression --reason "..."`. 그 뒤 세트는 회귀 세트(EN-12, A·B 병합 뒤 `tests/data/` 쪽으로)이며 독립 평가로 인용하지 않음. 새 독립 평가는 새 세트·새 버전 |
 
-상태는 `sealed → measured_once → regression` 순서로만 바뀝니다. 같은 버전 재동결은 거부되고, 새 버전을 동결하면 이전 목록은 `gt/frozen_history/`로 옮겨집니다. `gt_eval.py`의 공식 결과 조건은 4.1절에 있습니다. 조건 하나라도 못 맞추면 결과에 "탐색적"을 붙이고, `--official`을 주면 거부합니다.
+상태는 `sealed → measured_once → regression` 순서로만 바뀝니다. `advance`는 먼저 `verify()`를 실행하고, 문제가 있으면 상태를 바꾸지 않습니다(외부 보관이면 `--external` 필요). 같은 버전 재동결은 거부되고, 새 버전을 동결하면 이전 목록은 `gt/frozen_history/`로 옮겨집니다. `gt_eval.py`의 공식 결과 조건은 4.1절에 있습니다. 조건 하나라도 못 맞추면 결과에 "탐색적"을 붙이고, `--official`을 주면 거부합니다.
 
 ## 3. 누출 검사
 
@@ -71,7 +71,7 @@ python scripts/gt_leak_check.py <보관소>/g_u/set7.json [--extra-corpus 추가
 
 거부 사유:
 
-1. `text_overlap`: 사례 원문(`text`, G-C는 `criterion_text`)이 다음과 정규화(NFKC·소문자·구두점·공백) 후 같거나, 한쪽이 다른 쪽에 포함(25자 이상)되거나, 토큰 Jaccard ≥ 0.8, 또는 짧은 쪽 토큰 8개 이상에서 포함률 ≥ 0.9.
+1. `text_overlap`: 사례 원문(`text`, G-C는 `criterion_text`)이 다음과 정규화(NFKC·소문자·구두점·공백) 후 같거나, 한쪽이 다른 쪽에 포함(25자 이상)되거나, 토큰 Jaccard ≥ 0.8, 또는 짧은 쪽 토큰 8개 이상에서 포함률 ≥ 0.9. 한글이 든 조각은 공백을 모두 지운 형태로도 비교합니다(완전 일치 8자 이상, 포함 관계 15자 이상). 그래서 "간질성 폐질환" → "간질성폐질환" 같은 띄어쓰기 변형도 거부됩니다.
    비교 대상: `docs/dev/*.json`(held-out 4·5·6 포함), `tests/data/**/*.json`(회귀 세트 1-3·dev), `eval/**/*.json`, `tests/**/*.py`의 문자열 상수. GT 도구 자신의 가짜 데이터는 비교 대상에서 빼고 FIXTURE 표시로 따로 거부합니다.
 2. `engine_field`: 엔진 출력 키(`directness`, `match_status`, `validation_flags`, `engine_*` 등)나 엔진 쌍 상태 값(`CONFIRMED_ELIGIBLE` 등)이 항목 어디에든 있음. 메모·사유·출처 설명 같은 자유 텍스트 **안에** 든 엔진 상태 문자열도 잡습니다(`confirmed_eligible`, `EngineStatus=...`, `PairStatus.X`, `MatchStatus.ELIGIBLE`, `VERIFICATION_PENDING`, `ExpertReview`, `likely_eligible`, `match_status` 등, `leak.ENGINE_TEXT_PATTERNS`). GT 어휘 `ELIGIBLE`/`INELIGIBLE` 단독과 띄어 쓴 일반 영어("expert review")는 잡지 않습니다.
 3. `no_blinding`: 세트에 블라인딩 증명이 없음.

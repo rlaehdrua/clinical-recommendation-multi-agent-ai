@@ -72,6 +72,10 @@ CONTAIN_T = 0.9
 CONTAIN_MIN_TOKENS = 8
 MAX_DF_FOR_INDEX = 400
 
+# 한국어 띄어쓰기 변형 (D-4): 한글이 든 조각은 공백을 모두 지운 형태로도 비교합니다.
+_HANGUL = re.compile(r"[가-힣]")
+MIN_COMPACT_EXACT_CHARS = 8    # 공백 제거 후 완전 일치를 보는 최소 글자 수
+MIN_COMPACT_SUBSTR_CHARS = 15  # 공백 제거 후 포함 관계를 보는 짧은 쪽 최소 글자 수
 _TOKEN = re.compile(r"\w+", re.UNICODE)
 _SPLIT = re.compile(r"(?<=[.!?。])\s+|\n+|\s/\s|;\s")
 
@@ -108,6 +112,8 @@ class Corpus:
     _segs: list[tuple[int, str, frozenset]] = field(default_factory=list)
     _exact: dict = field(default_factory=dict)
     _index: dict = field(default_factory=lambda: defaultdict(list))
+    _compact: list[tuple[int, str]] = field(default_factory=list)
+    _compact_exact: dict = field(default_factory=dict)
 
     def add(self, source: str, text: str):
         if not isinstance(text, str) or len(text.strip()) < 15:
@@ -115,6 +121,11 @@ class Corpus:
         idx = len(self.entries)
         self.entries.append(CorpusEntry(source, text))
         for seg in segments(text):
+            if _HANGUL.search(seg):
+                c = seg.replace(" ", "")
+                if len(c) >= MIN_COMPACT_EXACT_CHARS:
+                    self._compact.append((idx, c))
+                    self._compact_exact.setdefault(c, idx)
             toks = frozenset(seg.split())
             if len(toks) < 3:
                 continue
@@ -133,9 +144,26 @@ class Corpus:
         need = max(2, len(toks) // 3)
         return [sid for sid, k in c.items() if k >= need]
 
+    def _match_compact(self, seg: str, hits: dict):
+        """한글 조각: 공백을 지운 뒤 완전 일치 또는 (짧은 쪽 15자 이상) 포함."""
+        c = seg.replace(" ", "")
+        if len(c) < MIN_COMPACT_EXACT_CHARS:
+            return
+        eidx = self._compact_exact.get(c)
+        if eidx is not None:
+            hits.setdefault(eidx, ("exact_after_hangul_spacing", 1.0, seg))
+            return
+        for eidx, cc in self._compact:
+            if eidx in hits or min(len(c), len(cc)) < MIN_COMPACT_SUBSTR_CHARS:
+                continue
+            if cc in c or c in cc:
+                hits[eidx] = ("substring_after_hangul_spacing", 1.0, seg)
+
     def match(self, text: str) -> list[dict]:
         hits = {}
         for seg in segments(text):
+            if _HANGUL.search(seg):
+                self._match_compact(seg, hits)
             toks = frozenset(seg.split())
             if seg in self._exact:
                 sid = self._exact[seg]

@@ -331,3 +331,57 @@ def test_d3_freeze_cli_refuses_empty_set(tmp_path):
     assert gt_freeze.main(["freeze", "--gt-root", str(g), "--version", "FIXTURE_ONLY-v0",
                            "--reference-date", "2026-11-07", "--allow-fixture"]) == 1
     assert not (g / "FROZEN_GT.json").exists()
+
+
+# --------------------------------------------------------------------------- D-4
+
+HELD_KO = "간질성 폐질환 병력 없음. 흉부 CT상 간질성 폐질환 의심 소견 있음."
+
+
+def test_d4_korean_spacing_variant_is_a_leak():
+    from gt_lib.leak import Corpus
+    c = Corpus()
+    c.add("FIXTURE_ONLY_corpus", HELD_KO)
+    assert c.match(HELD_KO)
+    assert c.match(HELD_KO.replace("간질성 폐질환", "간질성폐질환"))          # 띄어쓰기 제거
+    assert c.match(HELD_KO.replace("흉부 CT상", "흉부CT 상"))              # 띄어쓰기 위치 이동
+    # 복사한 문장을 새 문장 안에 넣고 띄어쓰기만 바꿈
+    assert c.match("새로 쓴 문장입니다. " + HELD_KO.replace("의심 소견", "의심소견") + " 추가 문장도 있습니다.")
+    # 관계없는 한국어 문장은 통과
+    assert c.match("환자는 어제 산책을 했고 오늘은 식사를 잘 했습니다.") == []
+
+
+def _repo_copy(tmp_path: Path) -> Path:
+    rr = tmp_path / "repo"
+    for rel in fz.METRIC_DEFINITION_FILES:
+        (rr / rel).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(ROOT / rel, rr / rel)
+    return rr
+
+
+@pytest.mark.parametrize("rel", ["scripts/gt_eval.py", "scripts/gt_engine_adapter.py", "scripts/gt_lib/labelio.py",
+                                 "scripts/gt_lib/models.py", "scripts/gt_lib/metrics.py", "scripts/gt_lib/stats.py"])
+def test_d4_evaluation_code_is_hashed_and_changes_detected(tmp_path, rel):
+    rr = _repo_copy(tmp_path)
+    g = tmp_path / "gt"
+    (g / "g_u").mkdir(parents=True)
+    shutil.copy(FX_U, g / "g_u" / "FIXTURE_ONLY_g_u.json")
+    m = fz.build_manifest(g, gt_version="FIXTURE_ONLY-v0", reference_date="2026-11-07", repo_root=rr)
+    fz.write_manifest(g, m)
+    assert rel in m["metric_definitions"]
+    assert fz.verify(g, repo_root=rr) == []
+    (rr / rel).write_text((rr / rel).read_text(encoding="utf-8") + "\n# changed after freeze\n", encoding="utf-8")
+    assert any(rel in p for p in fz.verify(g, repo_root=rr))
+
+
+def test_d4_advance_runs_verify_first(tmp_path):
+    import gt_freeze
+    g = _frozen_root(tmp_path)
+    p = g / "g_u" / "FIXTURE_ONLY_g_u.json"
+    p.write_bytes(p.read_bytes().replace(b"FIXTURE_ONLY", b"FIXTURE_ONLY", 1) + b" ")  # 한 바이트 변조
+    rep = tmp_path / "report.json"
+    rep.write_text("{}", encoding="utf-8")
+    with pytest.raises(ValueError):
+        fz.advance(g, "measured_once", reason="FIXTURE", measurement=rep, engine_commit="abc")
+    assert gt_freeze.main(["advance", "--gt-root", str(g), "--to", "regression", "--reason", "x"]) == 1
+    assert json.loads((g / fz.FROZEN_NAME).read_text(encoding="utf-8"))["status"] == "sealed"

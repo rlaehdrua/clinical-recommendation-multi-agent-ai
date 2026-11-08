@@ -23,7 +23,11 @@ STATUSES = ("sealed", "measured_once", "regression")
 HASHED_DIRS = ("g_u", "g_c", "g_p", "labels", "protocol", "schema")
 HASHED_FILES = ("adjudication_log.csv", "agreement.json", "preregistration_v1.md")
 SET_DIRS = ("g_u", "g_c", "g_p")
-METRIC_DEFINITION_FILES = ("scripts/gt_lib/metrics.py", "scripts/gt_lib/stats.py")
+# 평가 결과를 바꿀 수 있는 코드. 동결 뒤 바뀌면 verify()가 문제로 보고하고, 그 뒤 결과는 공식이 아님.
+# (키 이름은 이전 매니페스트와 맞추려고 metric_definitions를 그대로 씀)
+METRIC_DEFINITION_FILES = ("scripts/gt_lib/metrics.py", "scripts/gt_lib/stats.py", "scripts/gt_lib/models.py",
+                           "scripts/gt_lib/labelio.py", "scripts/gt_lib/freeze.py", "scripts/gt_eval.py",
+                           "scripts/gt_engine_adapter.py")
 
 
 def sha256_file(path: Path) -> str:
@@ -147,7 +151,7 @@ def verify(gt_root: Path, *, external: Path | None = None, repo_root: Path | Non
     for rel, digest in m.get("metric_definitions", {}).items():
         p = repo_root / rel
         if not p.is_file() or sha256_file(p) != digest:
-            problems.append(f"지표 정의 {rel}: 동결 뒤 바뀜 (측정 결과는 '탐색적'으로 표시해야 함)")
+            problems.append(f"지표 정의·평가 코드 {rel}: 동결 뒤 바뀜 (측정 결과는 '탐색적'으로 표시해야 함)")
     for rel, digest in m.get("trial_store", {}).items():
         p = Path(rel) if Path(rel).is_absolute() else repo_root / rel
         if not p.is_file() or sha256_file(p) != digest:
@@ -183,8 +187,11 @@ def official_blockers(gt_digest: str, gt_root: Path, *, external: Path | None = 
 
 
 def advance(gt_root: Path, to: str, *, reason: str, measurement: Path | None = None,
-            engine_commit: str | None = None) -> dict:
-    """상태를 앞으로만 옮김. measured_once에는 측정 결과 파일이 필요."""
+            engine_commit: str | None = None, external: Path | None = None, repo_root: Path | None = None) -> dict:
+    """상태를 앞으로만 옮김. measured_once에는 측정 결과 파일이 필요. 먼저 verify()가 깨끗해야 합니다."""
+    problems = verify(gt_root, external=external, repo_root=repo_root)
+    if problems:
+        raise ValueError(f"동결 확인 실패 {len(problems)}건이라 상태를 바꾸지 않습니다: {problems[:5]}")
     path = gt_root / FROZEN_NAME
     m = json.loads(path.read_text(encoding="utf-8"))
     cur = m["status"]
