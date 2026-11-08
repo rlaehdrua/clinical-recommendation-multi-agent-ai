@@ -99,6 +99,10 @@
 - NCT06216301 지역 조건: 현재 엔진에서 20세 거짓 부적격 2케이스
   - 출처: branch `data/p0-eval-cases` `tests/data/p0_3_region_cases.json`
 - 기존 P0 실패 집합 미해결: 상충 수용 6 / 15, 전해 들은 값 오채택 3 / 10
-  - 출처: branch `data/p0-eval-cases` `data/eval/p0_fact_cases/results_4f81460.json`
-- 새 사례: 같은 항목 다른 값 5 / 5 채택
+  - 출처: branch `data/p0-eval-cases` `data/eval/p0_fact_cases/results/4f81460_score.md`
+- 새 사례: 같은 항목 다른 값 7 / 8 오채택 (전체 127건 중 오채택 36, 과잉 보류 4)
   - 출처: 같음
+- 검사 수치 기준 미포함, NCT05255302 추가는 후속 과제
+  - 현재 6개 시험 원문에 검사 기준값이 없어 검사 수치 기준 0건
+  - NCT05255302는 재파싱 없이 추가하려면 수동 보정 2건이 필요해 이번 범위에서 제외 (재파싱 안 함)
+  - 출처: `data/nsclc/eval/inputs/lab_reference.json`
