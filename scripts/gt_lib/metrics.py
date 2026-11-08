@@ -131,6 +131,8 @@ def _coverage_blockers(gt: GTSet, res: dict[str, dict], what: str) -> list[str]:
     missing = sorted(ids - set(res))
     extra = sorted(set(res) - ids)
     out = []
+    if not ids:
+        out.append("GT 세트에 항목이 없음 (빈 세트는 공식 결과가 될 수 없음)")
     if missing:
         out.append(f"{what}이 GT 항목 {len(missing)}/{len(ids)}건을 덮지 않음 (커버리지 100% 아님): {missing[:10]}")
     if extra:

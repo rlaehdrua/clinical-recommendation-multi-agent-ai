@@ -385,3 +385,13 @@ def test_d4_advance_runs_verify_first(tmp_path):
         fz.advance(g, "measured_once", reason="FIXTURE", measurement=rep, engine_commit="abc")
     assert gt_freeze.main(["advance", "--gt-root", str(g), "--to", "regression", "--reason", "x"]) == 1
     assert json.loads((g / fz.FROZEN_NAME).read_text(encoding="utf-8"))["status"] == "sealed"
+
+
+def test_empty_gt_set_is_never_official():
+    from gt_lib.metrics import evaluate
+    from gt_lib.models import GTSet
+    d = _raw_u()
+    d["items"] = []
+    gt = GTSet.model_validate(d)
+    rep = evaluate(gt, _eng(gt, {}))
+    assert rep["official_blockers"]
