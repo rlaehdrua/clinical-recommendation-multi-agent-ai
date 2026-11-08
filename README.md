@@ -739,6 +739,7 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 | 5 | 화면이 부르는 경로 검사에 데모 서버 전용 경로를 포함 (데모 서버에 실제로 붙는지 확인) | `tests/test_followup_web.py` |
 
 확인: 브라우저에서 모든 확인을 끝낸 상태(참여 가능 35 · 불가 7)에서 버튼을 두 번 눌러 → 약 7초 뒤 남은 확인 32건 · 402분 → 276분 첫 화면으로 돌아옴.
+4a9ddb9(P1-3·P1-4) 위에서는 첫 화면이 남은 확인 38건 · 414분 → 288분(126분, 30%, 가정 비용) · 결과가 나올 수 있는 시험 최대 36개이며, 초기화 API로 같은 첫 화면이 다시 나옴.
 
 ### 2026-11-08 — 선우 최종 통합본(`integration/phase1-final` b1d2a7f)에 프런트 연결 (동겸)
 
