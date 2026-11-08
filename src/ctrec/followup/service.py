@@ -76,6 +76,17 @@ log = logging.getLogger(__name__)
 FOLLOWUP_BUDGET = DEFAULT_BUDGET.model_copy(update={"clinician_minutes": DEFAULT_BUDGET.coordinator_minutes})
 
 
+def intake_alias(ordinal: int) -> str:
+    """사례 별칭 = "PA-" + 접수 순번(16진 6자리) + 난수 16진 10자리 (engine.contracts.ALIAS_PATTERN 그대로).
+
+    정책은 우선순위가 같은 행동을 별칭 순서로 고릅니다 (LegacyAdapterPolicy.order_key, 환자별 최소 배정의 순회 순서).
+    별칭 전체가 난수이면 같은 입력·같은 설정에서도 실행마다 대기열 순서와 예산 배분이 바뀌고, 그 순서에 따라 판정까지
+    달라졌습니다 (재현 감사 F-2: 합성 E2E에서 SYN-02 T-A·T-C가 CONFIRMED_INELIGIBLE / BLOCKED_FAILURE로 갈림).
+    앞자리를 접수 순번으로 두어 동점을 접수 순서(followup_insight의 created 순서와 같은 기준)로 풉니다. 뒷자리 난수는
+    그대로라 동시에 접수된 사례끼리도 별칭이 겹치지 않습니다 (그 경우의 순서만 정해지지 않음)."""
+    return f"PA-{min(max(ordinal, 0), 0xFFFFFF):06x}{secrets.token_hex(5)}"
+
+
 # Inspector 보기의 구분: 현재 판정(지금 권한 기준으로 다시 계산) vs 과거 평가 기록(그 평가 당시 권한의 판정, 고쳐 쓰지 않음)
 INSPECTOR_CURRENT_KEYS = ("overview", "trials", "recommendation", "decision", "screening", "gaps", "verification")
 INSPECTOR_HISTORY_KEYS = ("steps", "history", "timeline", "changes", "fact_changes", "unlinked_question_rounds", "followup")
@@ -497,7 +508,7 @@ class FollowupService:
         sink: list[dict] = []
         session = self._new_session(case, ids, sink)
         data = {"format": FORMAT, "case_id": case_id, "created_at": _now(), "revision": 0,
-                "patient_token_digest": patient_token_digest, "alias": "PA-" + secrets.token_hex(8),
+                "patient_token_digest": patient_token_digest, "alias": intake_alias(len(self.store.case_ids())),
                 "catalog": self.catalog.name, "synthetic": synthetic, "trial_ids": ids,
                 "requests": [], "responses": [], "evaluations": [], "events": [], "trace": sink,
                 "documents": [], "verifications": [], "judgments": []}
