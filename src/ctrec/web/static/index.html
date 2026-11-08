@@ -191,7 +191,7 @@
 <!-- 7. 연구 담당자 (같은 페이지의 '연구 담당자' 탭, /staff로 바로 열림). 데이터: /api/followup/staff/* - 담당자 키 필요 -->
 <main id="page-staff" hidden>
   <div class="stack">
-  <details class="note warn" role="note"><summary><b>연구 담당자 화면</b> · 순서: ① 요청 보내기 → ② 서류 확인 → ③ 의사 판단 → 결과 확정</summary>
+  <details class="note warn" role="note"><summary><b>연구 담당자 화면</b> · 순서: ① 질문 고르기 → ② 서류 확인 → ③ 의사 판단 → 결과 확정</summary>
     <p class="m0 mt8">환자 답변은 환자만 입력합니다. 서류 검증 완료는 문서 검증자, 의료진 판단은 임상의 권한으로만 입력합니다.
     지금 있는 검증 권한은 합성 시험 전용이고 실제 의료기관 인증이 없어, 운영 모드에서는 완료 입력이 막혀 판정이 보류로 남습니다.
     발표용 데모 서버에서는 한 화면에서 세 역할을 차례로 보여 줄 수 있습니다(이 컴퓨터에서만, 합성 데이터).</p></details>
@@ -209,15 +209,16 @@
 
   <div class="stack" id="st-work" hidden>
     <section class="panel" id="st-time" aria-labelledby="st-time-h">
-      <h2 id="st-time-h"><span>한눈에 보기</span> <button class="btn ghost sm" id="st-reload" type="button">새로고침</button></h2>
+      <h2 id="st-time-h"><span>연구진 확인 작업</span> <button class="btn ghost sm" id="st-reload" type="button">새로고침</button></h2>
       <div class="body stack" id="st-summary"></div>
     </section>
     <div class="tabs" role="tablist" aria-label="담당자 보기">
-      <button id="st-tab-q" role="tab" aria-selected="true" aria-controls="st-questions" type="button">① 요청 보내기</button>
-      <button id="st-tab-c" role="tab" aria-selected="false" aria-controls="st-cases-view" type="button">② 서류·판단 처리 (환자별)</button>
-      <button id="st-tab-u" role="tab" aria-selected="false" aria-controls="st-queue-view" type="button">전체 순서</button>
+      <button id="st-tab-q" role="tab" aria-selected="true" aria-controls="st-questions" type="button">① 질문 고르기</button>
+      <button id="st-tab-c" role="tab" aria-selected="false" aria-controls="st-cases-view" type="button">② 받은 서류·판단 처리</button>
+      <button id="st-tab-u" role="tab" aria-selected="false" aria-controls="st-queue-view" type="button" hidden>전체 순서</button>
     </div>
-    <section class="panel" id="st-questions" role="tabpanel" aria-labelledby="st-tab-q"><div class="body stack" id="st-qlist"></div></section>
+    <section class="panel" id="st-questions" role="tabpanel" aria-labelledby="st-tab-q"><div class="body stack" id="st-qlist"></div>
+      <div class="pickbar" id="st-pickbar" role="region" aria-label="고른 질문" aria-live="polite"></div></section>
     <div class="staff-grid" id="st-cases-view" role="tabpanel" aria-labelledby="st-tab-c" hidden>
       <section class="panel" aria-label="사례 목록"><div class="body" id="st-cases"></div></section>
       <section class="panel" aria-labelledby="st-case-h">

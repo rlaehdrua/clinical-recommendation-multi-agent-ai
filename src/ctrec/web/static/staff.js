@@ -12,6 +12,7 @@ const h = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&": "&amp;", "<":
 const KEY = "ctrec-staff-key", SID = "ctrec-staff-id";
 const POLL_MS = 10000;
 const S = { key: "", sid: "coordinator", demo: false, roles: [], caseId: null, data: null, vdata: null, cdata: null, timer: null, busy: false,
+  pick: new Set(), pickInit: false, est: { groups: {}, picked: null }, cards: [], openCards: new Set(), budget: null,
   view: "q", labels: {}, questions: [], cases: [], titles: {} };
 
 // 시험 하나의 결과 (engine.contracts.PairStatus 7가지) - 쉬운 말
@@ -139,6 +140,11 @@ async function trySession() {
   try { await loadAll(); } catch (e) { q$("#st-login").hidden = false; setConn("연결 실패", "bad"); q$("#st-login-hint").textContent = e.message; return true; }
   q$("#st-work").hidden = false;
   clearInterval(S.timer); S.timer = setInterval(poll, POLL_MS);
+  // 발표용 데모: 핵심은 연구진 화면 -> 연구 담당자를 앞에, 환자 화면은 시연용으로 (주소가 / 이고 환자 사례를 진행 중이 아닐 때 연구진 화면부터)
+  const nav = q$("#roles"), sb = nav.querySelector('[data-role="staff"]'), pb = nav.querySelector('[data-role="patient"]');
+  nav.insertBefore(sb, pb); pb.textContent = "환자 화면 (시연용)";
+  let resume = false; try { resume = !!localStorage.getItem("ctrec-followup-case"); } catch (e) { /* 저장소 없음 */ }
+  if (location.pathname === "/" && !location.hash && !resume) setRole("staff", true);
   return true;
 }
 function logout() {
@@ -158,8 +164,10 @@ async function loadAll() {
   S.labels = Object.fromEntries(list.map((c, i) => [c.case_id, `환자 ${i + 1}`]));  // 들어온 순서 번호 (화면 표시용)
   S.questions = ins.questions.filter(g => g.route !== "clinician_review");  // 의사 판단 요청은 서버가 자동으로 만듦
   S.cases = list;
+  S.insight = ins.summary;
   renderSummary(ins.summary, list);
   renderQuestions();
+  estimate(true);
   // 읽지 못한 사례(손상된 사례 파일)는 목록에서 빠지므로 조용히 사라지지 않게 개수를 알림 (감사 F-17)
   const unreadable = new Set([cases, queue, ins].flatMap(x => (x && x.unreadable) || []));
   renderCases(list, unreadable.size);
@@ -170,121 +178,161 @@ async function poll() {
   try { await loadAll(); if (S.caseId) await refreshCase(); } catch (e) { /* 다음 주기에 다시 */ }
 }
 
-// ------------------------------------------------------------ 한눈에 보기 + 지금 할 일
-function curveSvg(curve, total) {
+// ------------------------------------------------------------ 한눈에 보기: 묶어서 추천 순서로 하면 시간이 얼마나 줄어드는가
+// 화면 원칙 (11-08 동겸, 연구진 탭이 핵심): ① 어떤 질문을 할지 ② 그 질문을 고르면 얼마나 줄어드는지를 먼저 보여 줌.
+// 모든 분은 엔진 카탈로그의 가정 비용(실측 아님), 시험 수는 답이 모두 온다고 볼 때의 상한. 화면은 숫자를 만들지 않고 서버 값만 씀.
+function curveSvg(curve, total, at) {
   const pts = (curve || []).filter(p => p.minutes != null); if (!pts.length || !total) return "";
   const W = 320, H = 96, P = 6, maxM = pts[pts.length - 1].minutes || 1;
-  const x = m => P + (W - 2 * P) * m / maxM, y = n => H - P - (H - 2 * P) * n / total;
+  const x = m => P + (W - 2 * P) * Math.min(m, maxM) / maxM, y = n => H - P - (H - 2 * P) * n / total;
   let d = `M${x(0)},${y(0)}`, prev = 0;
   for (const p of pts) { d += ` L${x(p.minutes)},${y(prev)} L${x(p.minutes)},${y(p.decided_pairs)}`; prev = p.decided_pairs; }
-  const first = pts.find(p => p.decided_pairs > 0);
-  return `<svg class="curve" viewBox="0 0 ${W} ${H}" role="img" aria-label="추천 순서대로 확인할 때 걸리는 시간에 따라 결과가 나오는 시험 수">
+  const n = at == null ? null : reachAt(curve, at);
+  return `<svg class="curve" viewBox="0 0 ${W} ${H}" role="img" aria-label="추천 순서대로 확인할 때 쓰는 시간(가로)에 따라 결과가 나올 수 있는 시험 수(세로)">
     <line x1="${P}" y1="${H - P}" x2="${W - P}" y2="${H - P}" class="axis"/><path d="${d}" class="line"/>
-    ${first ? `<circle cx="${x(first.minutes)}" cy="${y(first.decided_pairs)}" r="3.5" class="dot"/>` : ""}</svg>`;
+    ${n == null ? "" : `<line x1="${x(at)}" y1="${P}" x2="${x(at)}" y2="${H - P}" class="mark"/><circle cx="${x(at)}" cy="${y(n)}" r="4" class="dot"/>`}</svg>`;
 }
+const reachAt = (curve, m) => (curve || []).reduce((n, p) => p.minutes <= m + 1e-9 ? Math.max(n, p.decided_pairs) : n, 0);
 function nextStep(list, unsent) {
   const sum = (k) => list.reduce((n, c) => n + ((c.open_by_status || {})[k] || 0), 0);
   const doc = sum("requires_document"), doc2 = sum("requires_clinician"), ans = sum("pending");
-  if (!list.length) return { text: "환자 탭에서 환자 정보를 넣고 '연구진 확인 요청하기'를 누르면 여기에 환자가 생겨요.", go: null };
-  if (unsent) return { text: `① 요청 보내기: 아직 안 보낸 요청이 ${unsent}건 있어요. 같은 서류끼리 한 번에 보내면 시간이 줄어요.`, go: "q", label: "요청 보내러 가기" };
-  if (doc) return { text: `② 서류 확인: 받아야 할 서류가 ${doc}건 있어요. 환자를 고르면 가상 서류 값이 미리 채워져 있어요. 확인하고 '서류 확인 끝'만 누르세요.`, go: "c", label: "서류 확인하러 가기" };
+  if (!list.length) return { text: "환자 화면에서 환자 정보를 넣고 '연구진 확인 요청하기'를 누르면 여기에 환자가 생겨요.", go: null };
+  if (unsent) return { text: `① 질문 고르기: 아래 추천 질문을 고르고 '고른 질문 보내기'를 누르세요.`, go: null };
+  if (doc) return { text: `② 서류 확인: 받아야 할 서류가 ${doc}건 있어요. 가상 서류 값이 미리 채워져 있으니 '서류 확인 끝'만 누르세요.`, go: "c", label: "서류 확인하러 가기" };
   if (doc2) return { text: `③ 의사 판단: 의사가 판단할 조건이 ${doc2}건 있어요. 서류 확인을 먼저 끝내면 판단할 수 있어요.`, go: "c", label: "의사 판단하러 가기" };
-  if (ans) return { text: `환자가 질문 ${ans}개에 답하기를 기다리고 있어요. 환자 탭에서 답하면 결과가 바로 바뀌어요.`, go: null };
+  if (ans) return { text: `환자가 질문 ${ans}개에 답하기를 기다리고 있어요. 환자 화면에서 답하면 결과가 바로 바뀌어요.`, go: null };
   return { text: "지금 할 일이 없어요. 모든 확인이 끝났거나, 더 확인할 방법이 없는 시험만 남았어요.", go: null };
 }
 function renderSummary(s, list) {
   const rem = S.questions.flatMap(g => g.patients.filter(p => !p.request_id && p.requestable));
   const step = nextStep(list, rem.length);
-  if (!s || !s.cases) {
-    q$("#st-summary").innerHTML = `<div class="next-step"><b>지금 할 일</b><p class="m0">${h(step.text)}</p></div>`; return;
-  }
+  const stepHtml = `<div class="next-step" role="status"><b>지금 할 일</b><p class="m0">${h(step.text)}</p>
+    ${step.go ? `<button class="btn sm" type="button" data-go="${h(step.go)}">${h(step.label)}</button>` : ""}</div>`;
+  if (!s || !s.cases) { q$("#st-summary").innerHTML = stepHtml; return; }
   const pc = (k) => list.reduce((n, c) => n + ((c.pair_counts || {})[k] || 0), 0);
   const all = list.reduce((n, c) => n + Object.values(c.pair_counts || {}).reduce((a, b) => a + b, 0), 0);
   const remMin = rem.reduce((n, p) => n + (p.minutes || 0), 0), remAlone = rem.reduce((n, p) => n + (p.minutes_alone || 0), 0);
   const saved = Math.max(0, remAlone - remMin), pct = remAlone ? Math.round(100 * saved / remAlone) : 0;
-  const first = (s.c_curve || []).find(p => p.decided_pairs > 0);
+  const open = list.reduce((n, c) => n + (c.open_requests || 0), 0);
+  const sentAlone = S.questions.flatMap(g => g.patients.filter(p => p.request_id)).reduce((n, p) => n + (p.minutes_alone || 0), 0);
+  const maxM = ((s.c_curve || []).slice(-1)[0] || {}).minutes || 0;
+  if (S.budget == null || S.budget > maxM) S.budget = Math.round(maxM / 2);
   q$("#st-summary").innerHTML = `
-    <div class="next-step" role="status"><b>지금 할 일</b><p class="m0">${h(step.text)}</p>
-      ${step.go ? `<button class="btn sm" type="button" data-go="${h(step.go)}">${h(step.label)}</button>` : ""}</div>
-    <div class="tiles">
-      <div class="tile ok"><div class="k">결과가 나온 시험</div><div class="v">참여 가능 ${h(pc("CONFIRMED_ELIGIBLE"))}개</div>
-        <div class="s">참여 불가 ${h(pc("CONFIRMED_INELIGIBLE"))}개 · 확인할 시험 전체 ${h(all)}개</div></div>
-      <div class="tile"><div class="k">진행 중인 환자</div><div class="v">${h(s.cases)}명</div>
-        <div class="s">보낸 요청 중 끝나지 않은 것 ${h(list.reduce((n, c) => n + (c.open_requests || 0), 0))}건</div></div>
-      <div class="tile info"><div class="k">아직 안 보낸 요청</div><div class="v">${h(rem.length)}건</div>
-        <div class="s">${rem.length ? `같은 서류끼리 한 번에 하면 <b>${h(min(remMin))}</b>${saved ? ` · 하나씩 하면 ${h(min(remAlone))} (<b>${h(min(saved))} 절약, ${h(pct)}%</b>)` : ""}` : "모두 보냈어요"}</div></div>
-      <div class="tile"><div class="k">곧 결과가 나올 수 있는 시험</div><div class="v">${h(s.decidable_pairs)}개</div>
-        <div class="s">${!first ? "지금은 없음" : first.minutes > 0 ? `추천 순서대로 하면 약 ${h(min(first.minutes))} 뒤부터` : "보낸 요청의 답이 오면"}</div></div></div>
-    ${rem.length ? `<div class="curve-wrap">${curveSvg(s.c_curve, s.decidable_pairs)}
-      <p class="hint m0">추천 순서대로 확인하면, 시간이 갈수록(→) 결과가 나오는 시험이 늘어나요(↑).</p></div>` : ""}
-    <p class="hint m0">※ '분'은 일의 양을 비교하려고 미리 정한 <b>예상 시간</b>이에요. 실제로 잰 시간이 아니에요.${S.demo ? " · 발표용 데모 (가상 환자·가상 시험, 이 컴퓨터에서만 키 없이 열림)" : ""}</p>`;
+    <p class="lead m0">TRIALOG는 <b>다음에 확인할 질문을 고르고</b>, <b>같은 서류로 묶어</b> 연구 코디네이터의 시간을 줄여요.</p>
+    ${rem.length ? `<div class="hero-nums" aria-label="남은 확인 ${h(rem.length)}건의 예상 시간">
+      <div class="num"><span>하나씩 따로 하면</span><b>${h(min(remAlone))}</b></div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="num accent"><span>같은 서류끼리 묶어 추천 순서로</span><b>${h(min(remMin))}</b></div>
+      <div class="num ok"><span>줄어드는 시간</span><b>${h(min(saved))}</b><em>${h(pct)}% 절약</em></div></div>`
+      : sentAlone > s.spent_minutes ? `<div class="hero-nums" aria-label="보낸 요청의 예상 시간">
+      <div class="num"><span>보낸 요청을 하나씩 했다면</span><b>${h(min(sentAlone))}</b></div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="num accent"><span>같은 서류끼리 묶어 보낸 시간</span><b>${h(min(s.spent_minutes))}</b></div>
+      <div class="num ok"><span>줄어든 시간</span><b>${h(min(sentAlone - s.spent_minutes))}</b><em>${h(Math.round(100 * (sentAlone - s.spent_minutes) / sentAlone))}% 절약</em></div></div>
+      <p class="m0">보낼 질문을 모두 보냈어요.</p>`
+      : `<p class="m0">보낼 질문을 모두 보냈어요. 지금까지 보낸 요청의 예상 시간 ${h(min(s.spent_minutes))}.</p>`}
+    <p class="hint m0">환자 ${h(s.cases)}명 · 남은 확인 ${h(rem.length)}건 · 진행 중인 요청 ${h(open)}건 · 결과: 참여 가능(확정) ${h(pc("CONFIRMED_ELIGIBLE"))} · 참여 불가(확정) ${h(pc("CONFIRMED_INELIGIBLE"))} / 전체 ${h(all)}개 시험
+      <br>※ '분'은 일의 양을 비교하려고 미리 정한 <b>예상 시간(가정)</b>이에요. 실제로 잰 시간이 아니에요.${S.demo ? " · 발표용 데모 (가상 환자·가상 시험)" : ""}</p>
+    ${stepHtml}
+    ${maxM > 0 && s.decidable_pairs ? `<details class="budget"${S.budgetOpen ? " open" : ""}><summary><b>이 시간이면?</b> <span class="hint">추천 순서대로 확인할 때 결과가 나올 수 있는 시험 (상한 · 예산 제한은 적용하지 않음)</span></summary>
+      <div class="curve-wrap mt8"><div>${curveSvg(s.c_curve, s.decidable_pairs, S.budget)}
+        <input type="range" id="st-budget" min="0" max="${h(Math.ceil(maxM))}" step="1" value="${h(S.budget)}" aria-label="쓸 시간 (분)"></div>
+        <p class="m0" id="st-budget-out">${budgetText(s, S.budget)}</p></div></details>` : ""}`;
+}
+function budgetText(s, m) {
+  return `<b>${h(min(m))}</b> 쓰면 결과가 나올 수 있는 시험 <b>최대 ${h(reachAt(s.c_curve, m))}개</b> <span class="hint">/ 모두 하면 ${h(s.decidable_pairs)}개</span>`;
 }
 
-// ------------------------------------------------------------ ① 요청 보내기 (확인 항목별)
-// 같은 서류(예: 피 검사 결과지)끼리 묶어서: 한 번 받아서 여러 항목을 함께 확인하니 연락·서류 비용을 한 번만 씀
-function sendLabel(g) {
-  const todo = g.patients.filter(p => !p.request_id && p.requestable).length, sent = g.patients.filter(p => p.request_id).length;
-  if (!todo) return { todo, text: sent ? `${g.patients.length}명 모두 보냄` : "보낼 수 없음" };
-  return { todo, text: sent ? `남은 ${todo}명에게 보내기 (${sent}명은 이미 보냄)` : `${todo}명에게 보내기` };
+// ------------------------------------------------------------ ① 질문 고르기 (질문 = 연락 한 번: 서류 한 장 또는 환자에게 묻는 항목 하나)
+// 같은 서류(예: 피 검사 결과지)로 확인하는 항목은 한 질문으로 묶음: 한 번 받아서 여러 항목을 함께 확인하니 연락·서류 비용을 한 번만 씀
+const cardKey = (g) => g.route === "document_review" ? `doc|${g.source_id || g.info_key}` : `${g.route}|${g.info_key}`;
+function buildCards() {
+  const cards = [];
+  for (const g of [...S.questions].sort((a, b) => a.best_rank - b.best_rank)) {
+    const k = cardKey(g);
+    let c = cards.find(x => x.key === k);
+    if (!c) cards.push(c = { key: k, route: g.route, source_id: g.source_id, rank: g.best_rank, items: [] });
+    c.items.push(g);
+  }
+  for (const c of cards) {
+    const ps = c.items.flatMap(g => g.patients.map(p => ({ ...p, info_key: g.info_key })));
+    c.picks = ps.filter(p => !p.request_id && p.requestable).map(p => ({ case_id: p.case_id, proposal_id: p.proposal_id }));
+    c.sent = ps.filter(p => p.request_id);
+    const todo = ps.filter(p => !p.request_id && p.requestable), scope = todo.length ? todo : ps;  // 보낼 것이 있으면 아직 안 보낸 환자만 셈
+    c.patients = [...new Set(scope.map(p => p.case_id))];
+    const pairs = new Set(scope.flatMap(p => p.related_trials.map(t => `${p.case_id}|${t}`)));
+    c.related = pairs.size;
+    c.recordAfter = c.items.reduce((n, g) => n + (g.n_record_after_pairs || 0), 0);
+    c.rows = ps;
+  }
+  return cards;
 }
-function qcard(g, open, single) {
-  const lab = sendLabel(g);
-  const key = `${g.route}|${g.info_key}`;
-  const saved = Math.max(0, (g.minutes_alone || 0) - (g.minutes || 0));
-  return `<div class="qcard" data-key="${h(key)}">
-    <div class="qhead"><div><p class="qname">${h(itemName(g.info_key))} <span class="badge">${h(KIND[g.route] || g.route)}</span></p>
-      ${g.route === "ask_patient" ? '<p class="hint m0">환자 화면에 질문으로 나가요. 환자가 답하면 결과가 바로 다시 계산돼요.</p>' : ""}</div>
-      <button class="btn ${single ? "" : "soft "}sm" type="button" data-qbatch="1"${lab.todo ? "" : " disabled"}>${h(single || !lab.todo ? lab.text : "이것만 " + lab.text)}</button></div>
-    <div class="qstats">
-      <div><b>${h(g.n_patients)}명</b><span>필요한 환자</span></div>
-      <div><b>${h(g.n_related_pairs)}개</b><span>관련된 시험</span></div>
-      <div class="${g.n_newly_decided_in_order ? "good" : ""}"><b>${h(g.n_newly_decided_in_order)}개</b><span>이걸 확인하면 결과가 나오는 시험</span></div>
-      <div class="${saved ? "good" : ""}"><b>${h(min(g.minutes))}</b><span>${saved ? `예상 시간 (따로 하면 ${h(min(g.minutes_alone))})` : "예상 시간"}</span></div>
-    </div>
-    ${g.n_record_after_pairs ? `<p class="hint m0">환자가 답해도 서류 확인이 한 번 더 필요한 시험 ${h(g.n_record_after_pairs)}개</p>` : ""}
-    <details${open.includes(key) ? " open" : ""}><summary class="hint">환자별로 보기 (${h(g.patients.length)}명)</summary><table class="list mt8"><thead><tr><th>환자</th><th>관련된 시험</th><th>예상 시간</th><th>상태</th></tr></thead><tbody>
-      ${g.patients.map(p => `<tr><td><button class="link" type="button" data-case="${h(p.case_id)}">${h(who(p.case_id))}</button></td>
-        <td class="mono">${h(p.related_trials.join(", ") || "-")}</td>
-        <td>${h(min(p.minutes))}${p.minutes_alone > p.minutes ? ` <span class="hint">(따로 ${h(min(p.minutes_alone))})</span>` : ""}</td>
-        <td>${p.request_status ? badge(REQ, p.request_status) : p.requestable ? '<span class="hint">아직 안 보냄</span>' : '<span class="hint">보낼 수 없음</span>'}</td></tr>`).join("")}
-    </tbody></table></details></div>`;
+function cardTitle(c) {
+  if (c.route === "document_review") return `${SOURCE[c.source_id] || "서류"} 요청`;
+  if (c.route === "ask_patient") return `환자에게 질문 · ${itemName(c.items[0].info_key)}`;
+  return `${KIND[c.route] || c.route} · ${itemName(c.items[0].info_key)}`;
+}
+function qcard(c, i) {
+  const e = (S.est.groups || {})[c.key];
+  const on = S.pick.has(c.key), open = !c.picks.length;
+  const saved = e ? Math.max(0, e.minutes_alone - e.minutes) : 0;
+  const gain = e ? Math.max(0, e.decidable_pairs - e.decidable_pairs_before) : null;
+  return `<div class="qc${on ? " on" : ""}${open ? " sent" : ""}" data-key="${h(c.key)}">
+    <label class="qc-pick"><input type="checkbox" data-pick="${h(c.key)}"${on ? " checked" : ""}${open ? " disabled" : ""} aria-label="${h(cardTitle(c))} 고르기">
+      <span class="qc-rank" title="추천 순서">${h(i + 1)}</span></label>
+    <div class="qc-body">
+      <p class="qname">${h(cardTitle(c))} ${open ? '<span class="badge ok">보냄</span>' : ""}</p>
+      ${c.route === "document_review" ? `<p class="m0 qc-items">${c.items.map(g => h(itemName(g.info_key))).join(" · ")}</p>` : ""}
+      <dl class="qc-facts">
+        <div><dt>누구에게</dt><dd>환자 ${h(c.patients.length)}명${!open && c.sent.length ? ` <span class="hint">(이미 보낸 ${h(c.sent.length)}건 제외)</span>` : ""}</dd></div>
+        <div><dt>왜</dt><dd>${gain == null ? "계산 중…" : gain ? `<b class="good">결과가 나올 수 있는 시험 +${h(gain)}개</b> <span class="hint">(최대)</span>` : `관련 시험 ${h(c.related)}개 <span class="hint">(다른 확인과 함께 하면 결과가 나와요)</span>`}</dd></div>
+        <div><dt>시간</dt><dd>${!e ? "계산 중…" : open ? `보낸 요청 ${h(c.sent.length)}건` : saved ? `<b>${h(min(e.minutes))}</b> <span class="hint">하나씩 하면 ${h(min(e.minutes_alone))}</span> <b class="good">${h(min(saved))} 절약</b>` : `<b>${h(min(e.minutes))}</b>`}</dd></div>
+      </dl>
+      ${c.recordAfter ? `<p class="hint m0">환자가 답해도 서류 확인이 한 번 더 필요한 시험 ${h(c.recordAfter)}개</p>` : ""}
+      <details${S.openCards.has(c.key) ? " open" : ""} data-k="${h(c.key)}"><summary class="hint">환자별로 보기</summary><table class="list mt8"><thead><tr><th>환자</th><th>항목</th><th>관련 시험</th><th>상태</th></tr></thead><tbody>
+        ${c.rows.map(p => `<tr><td><button class="link" type="button" data-case="${h(p.case_id)}">${h(who(p.case_id))}</button></td><td>${h(itemName(p.info_key))}</td>
+          <td class="mono">${h(p.related_trials.join(", ") || "-")}</td>
+          <td>${p.request_status ? badge(REQ, p.request_status) : p.requestable ? '<span class="hint">아직 안 보냄</span>' : '<span class="hint">보낼 수 없음</span>'}</td></tr>`).join("")}
+      </tbody></table></details></div></div>`;
 }
 function renderQuestions() {
-  const qs = S.questions;
-  if (!qs.length) { q$("#st-qlist").innerHTML = '<div class="empty">지금 보낼 요청이 없어요.</div>'; return; }
-  const sort = q$("#st-qsort") ? q$("#st-qsort").value : "rank";
-  const open = [...document.querySelectorAll("#st-qlist details[open]")].map(d => d.closest(".qcard") && d.closest(".qcard").dataset.key);
-  const rows = [...qs].sort(sort === "near" ? (a, b) => (b.n_newly_decided_in_order - a.n_newly_decided_in_order) || (b.n_next_pairs - a.n_next_pairs) || (a.minutes - b.minutes) || (a.best_rank - b.best_rank)
-    : sort === "reach" ? (a, b) => (b.n_patients - a.n_patients) || (b.n_related_pairs - a.n_related_pairs) || (a.best_rank - b.best_rank)
-    : (a, b) => a.best_rank - b.best_rank);
-  const sent = rows.filter(g => g.patients.every(p => p.request_id));
-  const groups = [];  // 정렬 순서를 지키며 같은 서류끼리 (모두 보낸 것은 아래 '보낸 요청'으로)
-  for (const g of rows.filter(g => !sent.includes(g))) {
-    const src = g.route === "document_review" ? g.source_id || g.info_key : `${g.route}|${g.info_key}`;
-    let grp = groups.find(x => x.src === src); if (!grp) groups.push(grp = { src, items: [] }); grp.items.push(g);
-  }
-  q$("#st-qlist").innerHTML = `<div class="row"><label class="field">순서
-      <select id="st-qsort"><option value="rank"${sort === "rank" ? " selected" : ""}>추천 순서</option>
-        <option value="near"${sort === "near" ? " selected" : ""}>결과가 빨리 나오는 순</option><option value="reach"${sort === "reach" ? " selected" : ""}>필요한 환자 많은 순</option></select></label>
-      <span class="err" id="st-qerr" role="alert"></span></div>
-    ${groups.map(grp => {
-      const many = grp.items.length > 1, g0 = grp.items[0];
-      const cards = grp.items.map(g => qcard(g, open, !many)).join("");
-      if (!many) return `<div class="qgroup single"><p class="qsrc">${h(SOURCE[g0.source_id] || KIND[g0.route] || "")}</p>${cards}</div>`;
-      const m = grp.items.reduce((n, g) => n + (g.minutes || 0), 0), alone = grp.items.reduce((n, g) => n + (g.minutes_alone || 0), 0);
-      const pats = new Set(grp.items.flatMap(g => g.patients.map(p => p.case_id)));
-      const todo = grp.items.reduce((n, g) => n + g.patients.filter(p => !p.request_id && p.requestable).length, 0);
-      const sentN = grp.items.reduce((n, g) => n + g.patients.filter(p => p.request_id).length, 0);
-      return `<div class="qgroup" data-src="${h(grp.src)}"><div class="qghead"><div>
-          <p class="qname">${h(SOURCE[grp.src] || grp.src)} 한 장으로 ${h(grp.items.length)}가지를 한 번에 확인</p>
-          <p class="hint m0">${grp.items.map(g => h(itemName(g.info_key))).join(" · ")} — 환자 ${h(pats.size)}명</p></div>
-          <div class="qsave"><b>${h(min(m))}</b><span>한 번에 할 때${alone > m ? ` · 하나씩 하면 ${h(min(alone))}, <b>${h(min(alone - m))} 절약</b>` : ""}</span></div>
-          <button class="btn sm" type="button" data-gbatch="1"${todo ? "" : " disabled"}>${todo ? `한 번에 보내기 (${h(todo)}건)${sentN ? ` · ${h(sentN)}건은 이미 보냄` : ""}` : "모두 보냄"}</button></div>
-        <div class="stack">${cards}</div></div>`;
-    }).join("") || '<div class="empty">보낼 요청을 모두 보냈어요. 이제 ② 서류·판단 처리에서 서류를 확인하세요.</div>'}
-    ${sent.length ? `<details class="sent"><summary class="hint">이미 보낸 요청 ${h(sent.length)}가지</summary><ul class="m0">
-      ${sent.map(g => `<li>${h(itemName(g.info_key))} · ${g.patients.map(p => `${h(who(p.case_id))} ${badge(REQ, p.request_status)}`).join(" ")}</li>`).join("")}</ul></details>` : ""}
-    <p class="hint m0">의사가 판단할 조건은 필요할 때 자동으로 요청이 만들어져요 (② 서류·판단 처리에서 처리).</p>`;
+  S.openCards = new Set([...document.querySelectorAll("#st-qlist details[data-k][open]")].map(d => d.dataset.k));
+  const cards = S.cards = buildCards();
+  const todo = cards.filter(c => c.picks.length), sent = cards.filter(c => !c.picks.length);
+  for (const k of [...S.pick]) if (!todo.some(c => c.key === k)) S.pick.delete(k);
+  if (!S.pickInit && todo.length) { todo.slice(0, 3).forEach(c => S.pick.add(c.key)); S.pickInit = true; }  // 처음엔 추천 3개를 골라 둠
+  if (!cards.length) { q$("#st-qlist").innerHTML = '<div class="empty">지금 보낼 질문이 없어요.</div>'; renderPickBar(); return; }
+  const top = todo.slice(0, 3), rest = todo.slice(3);
+  q$("#st-qlist").innerHTML = `
+    <div class="row qc-head"><p class="m0"><b>추천 질문</b> <span class="hint">추천 순서(Cohort C) · 예산 제한은 적용하지 않음</span></p>
+      <span class="row"><button class="btn ghost sm" type="button" data-pick-top="1">추천 3개 고르기</button><button class="btn ghost sm" type="button" data-pick-none="1">모두 해제</button></span></div>
+    ${top.map((c, i) => qcard(c, i)).join("") || '<div class="empty">보낼 질문을 모두 보냈어요. 이제 ② 받은 서류·판단 처리에서 서류를 확인하세요.</div>'}
+    ${rest.length ? `<details class="qc-more"${S.moreOpen ? " open" : ""}><summary>나머지 질문 ${h(rest.length)}개 보기</summary><div class="stack mt8">${rest.map((c, i) => qcard(c, i + 3)).join("")}</div></details>` : ""}
+    ${sent.length ? `<details class="qc-more"><summary class="hint">이미 보낸 질문 ${h(sent.length)}개</summary><div class="stack mt8">${sent.map((c, i) => qcard(c, todo.length + i)).join("")}</div></details>` : ""}
+    <p class="hint m0">의사가 판단할 조건은 필요할 때 자동으로 요청이 만들어져요 (② 받은 서류·판단 처리에서 처리).</p>`;
+  renderPickBar();
+}
+function pickedList() { return S.cards.filter(c => S.pick.has(c.key)).flatMap(c => c.picks); }
+function renderPickBar() {
+  const bar = q$("#st-pickbar"); if (!bar) return;
+  const n = S.cards ? S.cards.filter(c => S.pick.has(c.key)).length : 0, e = S.est.picked;
+  if (!n) { bar.innerHTML = `<p class="m0 hint">질문을 고르면 함께 보낼 때의 예상 시간이 여기에 나와요.</p>${S.sendMsg ? `<span class="err ok-msg" role="status">${h(S.sendMsg)}</span>` : ""}`; return; }
+  const saved = e ? Math.max(0, e.minutes_alone - e.minutes) : 0, gain = e ? Math.max(0, e.decidable_pairs - e.decidable_pairs_before) : 0;
+  bar.innerHTML = `<div class="pick-sum"><b>고른 질문 ${h(n)}개</b>
+      ${e ? `<span>함께 보내면 <b>${h(min(e.minutes))}</b></span>${saved ? `<span class="hint">하나씩 하면 ${h(min(e.minutes_alone))}</span><span class="good"><b>${h(min(saved))} 절약</b></span>` : ""}
+      <span>결과가 나올 수 있는 시험 <b>+${h(gain)}개</b> <span class="hint">(최대)</span></span>` : '<span class="hint">계산 중…</span>'}</div>
+    <button class="btn" type="button" data-send-picked="1">고른 질문 보내기 (${h(pickedList().length)}건)</button>
+    <span class="err" id="st-qerr" role="alert">${h(S.sendMsg || "")}</span>`;
+}
+let estSeq = 0;
+async function estimate(withGroups) {
+  const seq = ++estSeq, cards = S.cards || [];
+  const body = { picks: pickedList(), groups: withGroups ? cards.map(c => c.picks.length ? c.picks : []) : [] };
+  let out; try { out = await api("/insight/estimate", body); } catch (e) { return; }
+  if (seq !== estSeq && !withGroups) return;  // 고르기를 빨리 바꾸면 마지막 결과만
+  S.est.picked = out;
+  if (withGroups) { S.est.groups = {}; cards.forEach((c, i) => { if (c.picks.length) S.est.groups[c.key] = out.groups[i]; }); renderQuestions(); }
+  else renderPickBar();
 }
 async function sendProposals(list, label) {  // list: [{case_id, proposal_id}] - 환자마다 한 번에 보냄 (같은 연락으로 묶임)
   const byCase = {};
@@ -294,21 +342,14 @@ async function sendProposals(list, label) {  // list: [{case_id, proposal_id}] -
     try { const out = await api(`/cases/${encodeURIComponent(cid)}/requests`, { proposal_ids: ids }); ok += out.created.length; }
     catch (e) { fails.push(`${who(cid)}: ${e.message}`); }
   }
-  S.busy = false;
+  S.busy = false; S.pickInit = true;
+  S.sendMsg = `${label} 요청 ${ok}건을 보냈어요.` + (fails.length ? ` 못 보낸 것 ${fails.length}건 - ${fails.join(" / ")}` : "");
   await loadAll().catch(() => {}); if (S.caseId) await refreshCase();
-  q$("#st-qerr").textContent = `${label} 요청 ${ok}건을 보냈어요.` + (fails.length ? ` 못 보낸 것 ${fails.length}건 - ${fails.join(" / ")}` : "");
 }
-function sendBatch(card) {
-  const [route, key] = card.dataset.key.split("|");
-  const g = S.questions.find(x => x.route === route && x.info_key === key); if (!g) return;
-  card.querySelector("[data-qbatch]").disabled = true;
-  return sendProposals(g.patients.filter(p => !p.request_id && p.requestable), itemName(key));
-}
-function sendGroup(box) {
-  const src = box.dataset.src;
-  const items = S.questions.filter(g => g.route === "document_review" && (g.source_id || g.info_key) === src);
-  box.querySelector("[data-gbatch]").disabled = true;
-  return sendProposals(items.flatMap(g => g.patients.filter(p => !p.request_id && p.requestable)), SOURCE[src] || src);
+function sendPicked(btn) {
+  const list = pickedList(); if (!list.length) return;
+  btn.disabled = true; S.pick.clear();
+  return sendProposals(list, "고른 질문");
 }
 
 // ------------------------------------------------------------ ② 서류·판단 처리 (환자별)
@@ -661,7 +702,14 @@ async function init() {
   q$("#st-logout").addEventListener("click", logout);
   q$("#st-reload").addEventListener("click", async () => { try { await loadAll(); if (S.caseId) await refreshCase(); } catch (e) { setConn(e.message, "bad"); } });
   q$("#st-tab-q").addEventListener("click", () => tab("q")); q$("#st-tab-c").addEventListener("click", () => tab("c")); q$("#st-tab-u").addEventListener("click", () => tab("u"));
-  q$("#page-staff").addEventListener("change", (e) => { if (e.target.id === "st-qsort") renderQuestions();
+  q$("#page-staff").addEventListener("input", (e) => {
+    if (e.target.id === "st-budget") { S.budget = Number(e.target.value); q$("#st-budget-out").innerHTML = budgetText(S.insight, S.budget);
+      e.target.previousElementSibling.outerHTML = curveSvg(S.insight.c_curve, S.insight.decidable_pairs, S.budget); } });
+  q$("#page-staff").addEventListener("toggle", (e) => { if (e.target.matches && e.target.matches("details.budget")) S.budgetOpen = e.target.open;
+    if (e.target.matches && e.target.matches("details.qc-more") && !e.target.querySelector(".sent")) S.moreOpen = e.target.open; }, true);
+  q$("#page-staff").addEventListener("change", (e) => {
+    if (e.target.matches("[data-pick]")) { const k = e.target.dataset.pick; if (e.target.checked) S.pick.add(k); else S.pick.delete(k);
+      S.pickInit = true; S.sendMsg = ""; e.target.closest(".qc").classList.toggle("on", e.target.checked); renderPickBar(); estimate(false); }
     if (e.target.matches('.work [data-f="meet"]')) refillDoc(e.target.closest(".work"), e.target.value === "1");
     if (e.target.matches('.work .vrow input, .work [data-fact]')) refillDoc(e.target.closest(".work"), null); });
   q$("#page-staff").addEventListener("input", (e) => { if (e.target.matches('.work textarea[data-f="text"]')) e.target.dataset.edited = "1"; });
@@ -672,8 +720,9 @@ async function init() {
       if (v === "c" && !S.caseId) { const c = S.cases.find(x => { const o = x.open_by_status || {}; return o.requires_document || o.requires_clinician; }); if (c) openCase(c.case_id, true); }
       return; }
     const qs = e.target.closest("[data-qsend]"); if (qs) { queueSend(qs); return; }
-    const qb = e.target.closest("[data-qbatch]"); if (qb) { sendBatch(qb.closest(".qcard")); return; }
-    const gb = e.target.closest("[data-gbatch]"); if (gb) { sendGroup(gb.closest(".qgroup")); return; }
+    if (e.target.closest("[data-send-picked]")) { sendPicked(e.target.closest("[data-send-picked]")); return; }
+    if (e.target.closest("[data-pick-top]")) { S.pick = new Set(S.cards.filter(c => c.picks.length).slice(0, 3).map(c => c.key)); S.pickInit = true; renderQuestions(); estimate(false); return; }
+    if (e.target.closest("[data-pick-none]")) { S.pick.clear(); S.pickInit = true; renderQuestions(); estimate(false); return; }
     const c = e.target.closest("[data-case]"); if (c) { openCase(c.dataset.case, true); return; }
     if (e.target.closest("#st-send")) { sendRequests(); return; }
     if (e.target.closest("#st-insp")) { inspector(); return; }

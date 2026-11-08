@@ -113,7 +113,8 @@ def _minutes_to(curve: list[dict], n: int) -> float | None:
     return next((p["minutes"] for p in curve if p["decided_pairs"] >= n), None)
 
 
-def insight(svc: FollowupService) -> dict:
+def _prepare(svc: FollowupService) -> dict | None:
+    """insight·estimate 공통: 열린 사례 전체를 한 코호트로 복원하고, 공통 계획(Cohort C)의 확인 항목을 추천 순서로."""
     states, ops, case_of, requested, prop_of, req_of = {}, {}, {}, [], {}, {}
     gate = {"unproven": set(), "no_basis": {}}  # V4-B1: 사례마다 따로 모아 성공한 사례만 합침 (F-17 격리)
 
@@ -145,7 +146,7 @@ def insight(svc: FollowupService) -> dict:
         prop_of[alias], req_of[alias] = props, reqs
         requested += data["requests"]  # staff_queue와 같은 요청 기록 (공통 엔진 루프가 청구·반복 억제)
     if not states:
-        return {"questions": [], "summary": {"cases": 0}, "unreadable": unreadable}
+        return {"states": {}, "unreadable": unreadable}
     co = CohortState.from_decision_states({a: s["ds"] for a, s in states.items()}, ops=ops)
     pol = svc.policy_factory()
     plan = svc._plan(co, requested, gate)
@@ -167,6 +168,17 @@ def insight(svc: FollowupService) -> dict:
                       "request_id": req[0] if req else None, "request_status": req[1] if req else None})
     in_flight = [Action.model_validate(r["action"]) for r in requested
                  if r["status"] in OPEN_STATUSES and r.get("action")]
+    return {"states": states, "unreadable": unreadable, "items": items, "in_flight": in_flight, "pol": pol,
+            "created": created, "requested": requested}
+
+
+def insight(svc: FollowupService) -> dict:
+    prep = _prepare(svc)
+    unreadable = prep["unreadable"]
+    if not prep["states"]:
+        return {"questions": [], "summary": {"cases": 0}, "unreadable": unreadable}
+    states, items, in_flight, pol = prep["states"], prep["items"], prep["in_flight"], prep["pol"]
+    created, requested = prep["created"], prep["requested"]
     c_curve = _curve(items, states, pol.catalog, in_flight)
     p_items = sorted(items, key=lambda x: (created.index(x["alias"]), x["rank"]))
     p_curve = _curve(p_items, states, pol.catalog, in_flight)
@@ -216,4 +228,57 @@ def insight(svc: FollowupService) -> dict:
         "note": "판정 가능 수는 답이 나온다고 볼 때의 상한, 분은 엔진 카탈로그의 가정 비용"}}
 
 
-__all__ = ["insight"]
+def _asked(entries) -> dict[str, tuple[set, set]]:
+    asked: dict[str, tuple[set, set]] = {}
+    for alias, route, key in entries:
+        ask, doc = asked.setdefault(alias, (set(), set()))
+        (ask if route == "ask_patient" else doc).add(key)
+    return asked
+
+
+def _estimate_one(prep: dict, svc: FollowupService, picks: list[tuple[str, str]]) -> dict:
+    want = set(picks)
+    states, pol = prep["states"], prep["pol"]
+    chosen = [x for x in prep["items"] if (x["case_id"], x["proposal_id"]) in want and not x["request_id"] and x["requestable"]]
+    found = {(x["case_id"], x["proposal_id"]) for x in chosen}
+    ledger = EffortLedger(FOLLOWUP_BUDGET, pol.catalog)
+    for a in prep["in_flight"]:
+        ledger.charge(a)
+    minutes = sum(ledger.charge(x["action"])[0].coordinator_minutes for x in chosen)
+    before = []
+    for a in prep["in_flight"]:
+        route = svc._route(a)
+        if route and a.info_key and a.patient_alias in states:
+            before.append((a.patient_alias, route[0], a.info_key))
+    after = before + [(x["alias"], x["route"], x["info_key"]) for x in chosen]
+
+    def decided(entries):
+        asked = _asked(entries)
+        return sum(len(_decided_pairs(states, a, *asked[a])) for a in asked)
+
+    return {"picked": len(chosen), "minutes": round(minutes, 1),
+            "minutes_alone": round(sum(_alone(x["action"], pol.catalog) for x in chosen), 1),
+            "decidable_pairs": decided(after), "decidable_pairs_before": decided(before),
+            "unknown": sorted(f"{c}:{p}" for c, p in want - found)}
+
+
+def estimate(svc: FollowupService, picks: list[tuple[str, str]],
+             groups: list[list[tuple[str, str]]] | None = None) -> dict:
+    """고른 확인들(사례 id, 제안 id)을 함께 보낼 때의 가정 비용: insight와 같은 원장·같은 추천 순서.
+
+    - minutes: 이미 보낸 요청을 먼저 청구한 원장에 고른 확인을 추천 순서대로 청구한 추가 비용 (같은 환자·같은 정보원은 한 번)
+    - minutes_alone: 고른 확인을 하나씩 따로 요청할 때의 합
+    - decidable_pairs / decidable_pairs_before: 이미 보낸 요청 + 고른 확인의 답이 모두 온다고 볼 때 판정이 정해질 수 있는 쌍
+      (상한) / 고르기 전 (이미 보낸 요청만)
+    - groups: 같은 계산을 묶음마다 따로 (화면의 질문 카드별 값, 한 번 복원으로)
+    판정은 바꾸지 않고, 고르지 않은 확인·이미 보낸 확인·보낼 수 없는 제안은 세지 않음."""
+    prep = _prepare(svc)
+    note = "분은 엔진 카탈로그의 가정 비용, 판정 가능 수는 답이 모두 온다고 볼 때의 상한"
+    if not prep["states"]:
+        empty = {"picked": 0, "minutes": 0.0, "minutes_alone": 0.0, "decidable_pairs": 0, "decidable_pairs_before": 0}
+        return {**empty, "unknown": sorted(f"{c}:{p}" for c, p in set(picks)),
+                "groups": [{**empty, "unknown": []} for _ in (groups or [])], "note": note}
+    return {**_estimate_one(prep, svc, picks), "groups": [_estimate_one(prep, svc, g) for g in (groups or [])], "note": note}
+
+
+__all__ = ["estimate", "insight"]
