@@ -1,0 +1,47 @@
+{
+ "cohort_id": "nsclc-eval-v1-r00@a549da3b1171fd52+map6c43912c",
+ "budget_minutes": 6000.0,
+ "seed": 1,
+ "horizon": 80,
+ "runs": {
+  "full_dcvc": {
+   "status_final": {
+    "CONFIRMED_ELIGIBLE": 0,
+    "CONFIRMED_INELIGIBLE": 124,
+    "VERIFICATION_PENDING": 5,
+    "INFO_MISSING": 91,
+    "EXPERT_REVIEW": 20,
+    "BLOCKED_FAILURE": 0,
+    "NOT_EVALUATED": 0
+   },
+   "actions": null,
+   "audit": "rule_gt_circular",
+   "runner_rule_gt_kind": "rule_gt_circular",
+   "independent_gt": {
+    "gt_kind": "independent_rule_gt_reduced_scope",
+    "gt_version": "nsclc_rule_gt/1",
+    "pairs": 240,
+    "gt_confirmed_eligible": 0,
+    "gt_pending_expert_eligible": 23,
+    "gt_ineligible": 130,
+    "gt_not_evaluated": 87,
+    "expert_ready_with_gt_pending": 20,
+    "confirmed_eligible_with_gt_confirmed": 0,
+    "eligible_resolved_with_gt": 20,
+    "confirmed_eligible_gt_not_confirmed": 0,
+    "confirmed_ineligible_gt_not_ineligible": 0,
+    "expert_review_gt_ineligible": 0,
+    "confirmed_ineligible_with_gt_ineligible": 124,
+    "cells": {
+     "CONFIRMED_INELIGIBLE|INELIGIBLE": 124,
+     "EXPERT_REVIEW|PENDING_EXPERT_ELIGIBLE": 20,
+     "INFO_MISSING|INELIGIBLE": 2,
+     "INFO_MISSING|NOT_EVALUATED": 87,
+     "INFO_MISSING|PENDING_EXPERT_ELIGIBLE": 2,
+     "VERIFICATION_PENDING|INELIGIBLE": 4,
+     "VERIFICATION_PENDING|PENDING_EXPERT_ELIGIBLE": 1
+    }
+   }
+  }
+ }
+}

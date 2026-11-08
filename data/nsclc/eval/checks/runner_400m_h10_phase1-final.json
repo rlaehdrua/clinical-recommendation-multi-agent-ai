@@ -1,0 +1,81 @@
+{
+ "cohort_id": "nsclc-eval-v1-r00@a549da3b1171fd52+map6c43912c",
+ "budget_minutes": 400.0,
+ "seed": 1,
+ "horizon": 10,
+ "runs": {
+  "no_action": {
+   "status_final": {
+    "CONFIRMED_ELIGIBLE": 0,
+    "CONFIRMED_INELIGIBLE": 0,
+    "VERIFICATION_PENDING": 75,
+    "INFO_MISSING": 165,
+    "EXPERT_REVIEW": 0,
+    "BLOCKED_FAILURE": 0,
+    "NOT_EVALUATED": 0
+   },
+   "actions": null,
+   "audit": "rule_gt_circular",
+   "runner_rule_gt_kind": "rule_gt_circular",
+   "independent_gt": {
+    "gt_kind": "independent_rule_gt_reduced_scope",
+    "gt_version": "nsclc_rule_gt/1",
+    "pairs": 240,
+    "gt_confirmed_eligible": 0,
+    "gt_pending_expert_eligible": 23,
+    "gt_ineligible": 130,
+    "gt_not_evaluated": 87,
+    "expert_ready_with_gt_pending": 0,
+    "confirmed_eligible_with_gt_confirmed": 0,
+    "eligible_resolved_with_gt": 0,
+    "confirmed_eligible_gt_not_confirmed": 0,
+    "confirmed_ineligible_gt_not_ineligible": 0,
+    "expert_review_gt_ineligible": 0,
+    "confirmed_ineligible_with_gt_ineligible": 0,
+    "cells": {
+     "INFO_MISSING|INELIGIBLE": 55,
+     "INFO_MISSING|NOT_EVALUATED": 87,
+     "INFO_MISSING|PENDING_EXPERT_ELIGIBLE": 23,
+     "VERIFICATION_PENDING|INELIGIBLE": 75
+    }
+   }
+  },
+  "full_dcvc": {
+   "status_final": {
+    "CONFIRMED_ELIGIBLE": 0,
+    "CONFIRMED_INELIGIBLE": 47,
+    "VERIFICATION_PENDING": 28,
+    "INFO_MISSING": 165,
+    "EXPERT_REVIEW": 0,
+    "BLOCKED_FAILURE": 0,
+    "NOT_EVALUATED": 0
+   },
+   "actions": null,
+   "audit": "rule_gt_circular",
+   "runner_rule_gt_kind": "rule_gt_circular",
+   "independent_gt": {
+    "gt_kind": "independent_rule_gt_reduced_scope",
+    "gt_version": "nsclc_rule_gt/1",
+    "pairs": 240,
+    "gt_confirmed_eligible": 0,
+    "gt_pending_expert_eligible": 23,
+    "gt_ineligible": 130,
+    "gt_not_evaluated": 87,
+    "expert_ready_with_gt_pending": 0,
+    "confirmed_eligible_with_gt_confirmed": 0,
+    "eligible_resolved_with_gt": 0,
+    "confirmed_eligible_gt_not_confirmed": 0,
+    "confirmed_ineligible_gt_not_ineligible": 0,
+    "expert_review_gt_ineligible": 0,
+    "confirmed_ineligible_with_gt_ineligible": 47,
+    "cells": {
+     "CONFIRMED_INELIGIBLE|INELIGIBLE": 47,
+     "INFO_MISSING|INELIGIBLE": 55,
+     "INFO_MISSING|NOT_EVALUATED": 87,
+     "INFO_MISSING|PENDING_EXPERT_ELIGIBLE": 23,
+     "VERIFICATION_PENDING|INELIGIBLE": 28
+    }
+   }
+  }
+ }
+}
