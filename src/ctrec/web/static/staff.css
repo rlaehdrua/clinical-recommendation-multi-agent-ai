@@ -26,3 +26,30 @@ pre.raw { max-height: 360px; overflow: auto; background: var(--panel-2); border-
 .qstats span { font-size: 12px; color: var(--muted); }
 .qstats .good b { color: var(--ok); }
 #st-login-form input, #st-qsort { font: inherit; font-size: 15px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--text); }
+/* 코디네이터 시간 곡선 (추천 순서 누적 판정) */
+.curve-wrap { display: grid; grid-template-columns: minmax(200px, 340px) 1fr; gap: 14px; align-items: center; }
+.curve { width: 100%; height: auto; background: var(--panel-2); border-radius: 12px; }
+.curve .axis { stroke: var(--line); stroke-width: 1; }
+.curve .line { fill: none; stroke: var(--ok); stroke-width: 2.5; stroke-linejoin: round; }
+.curve .dot { fill: var(--ok); }
+.tile .s b { color: var(--ok); }
+/* 같은 정보원 묶음 */
+.qgroup { border: 1px solid var(--line); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.qgroup.single { border: 0; padding: 0; gap: 4px; }
+.qsrc { margin: 0; font-size: 12px; color: var(--muted); }
+.qghead { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
+.qsave { display: flex; flex-direction: column; background: var(--ok-soft); border-radius: 10px; padding: 6px 12px; }
+.qsave b { font-size: 18px; color: var(--ok); font-variant-numeric: tabular-nums; }
+.qsave span { font-size: 12px; color: var(--muted); } .qsave span b { font-size: 12px; }
+/* 사례 안 서류 등록·검증·판단 */
+.work { border-left: 3px solid var(--accent); background: var(--panel); border-radius: 10px; padding: 10px 12px; margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.work[data-work="judge"] { border-left-color: var(--violet); }
+.role-tag { margin: 4px 0 0; font-weight: 700; font-size: 13px; color: var(--accent); }
+.role-tag.verifier { color: var(--warn, #b26b00); } .role-tag.clinician { color: var(--violet); }
+.work textarea { width: 100%; font: inherit; font-size: 13px; border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; background: var(--panel-2); color: var(--text); }
+.work input:not([type=checkbox]):not([type=radio]), .work select { font: inherit; font-size: 14px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--text); }
+.work .crit { margin: 0; padding-left: 18px; font-size: 13px; color: var(--muted); }
+.vrow { align-items: center; gap: 8px; }
+.crit-judge { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+@media (max-width: 720px) { .curve-wrap { grid-template-columns: 1fr; } }
+#page-staff details.note > summary { display: block; cursor: pointer; }

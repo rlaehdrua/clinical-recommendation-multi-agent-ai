@@ -7,6 +7,9 @@
   X-CTREC-Staff-Id(영문·숫자 1~64자)는 기록용 이름. 계정 인증을 대신하지 않습니다.
   발표용 데모 예외(DEMO_STAFF): 오프라인 데모 서버(scripts/followup_demo_server.py --demo-staff)만 켤 수 있고(환경 변수로는
   켤 수 없음), 켜져 있어도 루프백 접속에만 키 없이 담당자 권한을 줌. 데모 서버 자체가 루프백 전용·합성 데이터만 씀.
+  같은 예외로 발표자가 한 화면에서 검증자·임상의 역할도 보여 줄 수 있음: X-CTREC-Demo-Role: verifier|clinician 헤더
+  (키 대신, 한 요청에 한 역할). 합성 검증 모드(CTREC_VERIFICATION_MODE=synthetic)가 켜져 있어야 하고, 기록 이름은
+  demo-verifier·demo-clinician으로 고정해 감사 기록에서 발표용 입력임이 보임.
 - 담당자는 환자 답변을 대신 입력할 수 없음: 응답 API는 환자 쿠키만 받고, 담당자·검증자·임상의 헤더가 붙은 응답 요청은 403.
 - 문서 검증자(X-CTREC-Verifier-Key/-Id)와 임상의(X-CTREC-Clinician-Key/-Id)는 연구 담당자와 다른 권한입니다.
   지금 있는 권한은 합성 시험 전용(CTREC_VERIFICATION_MODE=synthetic, followup/verification.py)뿐이며 합성 사례에만 동작합니다.
@@ -47,7 +50,8 @@ VERIFIER_HEADER = "x-ctrec-verifier-key"
 VERIFIER_ID_HEADER = "x-ctrec-verifier-id"
 CLINICIAN_HEADER = "x-ctrec-clinician-key"
 CLINICIAN_ID_HEADER = "x-ctrec-clinician-id"
-ROLE_HEADERS = (STAFF_HEADER, VERIFIER_HEADER, CLINICIAN_HEADER)
+DEMO_ROLE_HEADER = "x-ctrec-demo-role"
+ROLE_HEADERS = (STAFF_HEADER, VERIFIER_HEADER, CLINICIAN_HEADER, DEMO_ROLE_HEADER)
 CASE_COOKIE_MAX_AGE = 30 * 24 * 3600
 MAX_TEXT_CHARS = 20000
 MAX_ANSWER_CHARS = 2000
@@ -134,6 +138,9 @@ def _require_role(request: Request, header: str, id_header: str, key_attr: str, 
         code = problems[0] if problems[0] in _ROLE_NOT_READY else "verification_misconfigured"
         log.warning("verification role blocked: %s", problems)
         raise HTTPException(503, {"code": code, "message": _ROLE_NOT_READY.get(code, "검증 권한 설정이 올바르지 않습니다.")})
+    role = DEMO_ROLES.get(header)
+    if role and demo_staff(request) and request.headers.get(DEMO_ROLE_HEADER) == role:
+        return f"demo-{role}"
     if not verification.key_matches(request.headers.get(header), getattr(cfg, key_attr)):
         raise HTTPException(403, {"code": forbidden, "message": "이 작업을 할 권한이 없습니다."})
     actor = request.headers.get(id_header, "")
@@ -159,6 +166,9 @@ def _role_for(request: Request, require, case_id: str, action: str, request_id: 
         raise
 
 
+DEMO_ROLES = {VERIFIER_HEADER: "verifier", CLINICIAN_HEADER: "clinician"}
+
+
 def require_verifier(request: Request) -> str:
     return _require_role(request, VERIFIER_HEADER, VERIFIER_ID_HEADER, "doc_key", "verifier_forbidden")
 
@@ -174,7 +184,7 @@ def demo_staff(request: Request) -> bool:
 
 def require_staff(request: Request) -> str:
     _single_role(request, STAFF_HEADER)
-    if demo_staff(request):
+    if demo_staff(request) and not request.headers.get(DEMO_ROLE_HEADER):
         sid = request.headers.get(STAFF_ID_HEADER, DEMO_STAFF_ID)
         return sid if STAFF_ID.match(sid) else DEMO_STAFF_ID
     key = _staff_key()
@@ -363,7 +373,8 @@ class StatusChange(BaseModel):
 def staff_session(request: Request) -> dict:
     """화면이 연결 방식을 고름: 발표용 데모면 키 없이 바로, 아니면 담당자 키 입력. 비밀값은 돌려주지 않음."""
     if demo_staff(request):
-        return {"mode": "demo", "staff_id": DEMO_STAFF_ID}
+        roles = [] if verification.VerificationConfig().problems() else ["verifier", "clinician"]
+        return {"mode": "demo", "staff_id": DEMO_STAFF_ID, "demo_roles": roles}
     return {"mode": "key", "configured": bool(_staff_key())}
 
 
