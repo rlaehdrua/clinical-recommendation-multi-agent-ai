@@ -174,23 +174,56 @@ def _window_hold(rule: Rule, lab: LabValue, status: str, days: int | None) -> Cr
     return a.model_copy(update={"confidence": "low", "missing_info": need, "validation_flags": ["lab_window_" + status]})
 
 
-def _latest(labs: list[LabValue]) -> LabValue | None:
-    """가장 최근 검사값. 값이 하나면 그대로, 여러 개면 모든 날짜를 해석할 수 있을 때만 최신값.
+def _date_span(s: str | None) -> tuple[date, date] | None:
+    """날짜 표기가 가리킬 수 있는 구간 [처음, 끝]. 일 단위는 그날, 월·연 단위는 그달·그해 전체 (1일·말일을 가정하지 않음)."""
+    d = _parse_date(s)
+    if d is None:
+        return None
+    if _exact_date(s) is not None:
+        return d, d
+    if len(s.strip()) == 4:  # YYYY
+        return d, date(d.year, 12, 31)
+    nxt = date(d.year + (d.month == 12), d.month % 12 + 1, 1)  # YYYY-MM
+    return d, date.fromordinal(nxt.toordinal() - 1)
 
-    (날짜 문자열을 그대로 정렬하면 'Aug 2026' 같은 표기에서 엉뚱한 값을 고를 수 있음)
+
+def _latest(labs: list[LabValue]) -> LabValue | None:
+    """가장 최근 검사값. 값이 하나면 그대로, 여러 개면 모든 날짜를 해석할 수 있고 한 값이 나머지보다 확실히 뒤일 때만 최신값.
+
+    (날짜 문자열을 그대로 정렬하면 'Aug 2026' 같은 표기에서 엉뚱한 값을 고를 수 있음.
+    월·연 단위 날짜는 그 기간 전체로 보므로, 구간이 겹치면 어느 쪽이 나중인지 정하지 않음 - 감사 F-04)
     """
     if len(labs) == 1:
         return labs[0]
     if len({lab.value for lab in labs}) == 1:
         return labs[0]  # 값이 모두 같으면 어느 것을 골라도 같은 판정
-    dated = [(_parse_date(lab.date), lab) for lab in labs]
-    if any(d is None for d, _ in dated):
+    spans = [_date_span(lab.date) for lab in labs]
+    if any(s is None for s in spans):
         return None
-    dates = [d for d, _ in dated]
-    latest = max(dates)
-    if dates.count(latest) > 1:
-        return None  # 같은 날짜에 다른 값 -> 확정 불가
-    return next(lab for d, lab in dated if d == latest)
+    for i, (start, _) in enumerate(spans):
+        if all(start > end for j, (_, end) in enumerate(spans) if j != i):
+            return labs[i]
+    return None  # 같은 날짜에 다른 값, 또는 월·연 단위라 순서를 정할 수 없음 -> 확정 불가
+
+
+def _possible_latest(labs: list[LabValue]) -> list[LabValue] | None:
+    """_latest가 고르지 못했을 때, 월·연 단위 날짜 때문에 순서가 갈리는 경우에만 최신일 수 있는 값들.
+
+    모든 날짜가 일 단위이거나(같은 날 다른 값) 해석할 수 없는 날짜가 있으면 None (기존대로 LLM에 위임)."""
+    spans = [_date_span(lab.date) for lab in labs]
+    if any(s is None for s in spans) or all(_exact_date(lab.date) is not None for lab in labs):
+        return None
+    return [lab for i, lab in enumerate(labs)
+            if all(spans[i][1] >= start for j, (start, _) in enumerate(spans) if j != i)]
+
+
+def _latest_hold(rule: Rule, labs: list[LabValue]) -> CriterionAssessment:
+    """최신 검사값을 날짜로 정할 수 없고, 최신일 수 있는 값마다 판정이 갈림: 판정하지 않음 (LLM에도 넘기지 않음 - 날짜를 추정하지 않게)."""
+    shown = "; ".join(f"{lab.name} {lab.value:g} {lab.unit or ''} ({lab.date}) - \"{lab.source_quote}\"" for lab in labs)
+    a = _result(rule, "unknown", shown,
+                "[최신값 미확정] 월·연 단위 날짜라 어느 검사가 가장 최근인지 정할 수 없고, 값에 따라 판정이 달라짐")
+    return a.model_copy(update={"confidence": "low", "missing_info": "각 검사의 검사일(연·월·일)",
+                                "validation_flags": ["lab_latest_ambiguous"]})
 
 
 SEX_KO = {"male": "남성", "female": "여성"}
@@ -278,8 +311,53 @@ def _evaluate_age(rule: Rule, patient: PatientProfile) -> CriterionAssessment | 
                    f"{shown} = {lo:.0f}~{hi:.0f}일, 기준 {target:g} {rule_unit} = {t:.0f}일 → {_ko(at_lo)}")
 
 
+# 국가·지역 한정 기준 (P0-C, NCT06216301 "≥22 years of age in the USA" / "≥18 years of age outside of the USA").
+# 파싱 IR(Rule)에는 국가 범위를 담을 필드가 없고 환자 프로필에도 참여 국가가 없으므로, 기준 원문(rule.text)에
+# 국가 한정 표현이 있으면 결정론적으로 알아봅니다. 보수적으로 좁게 잡습니다:
+#   - "in / outside (of) / within (the) <국가>", "for patients in <국가>", "non-US / ex-US", "<국가> sites/centers/..."
+#   - 약어(US, USA, U.S., UK, EU, EEA)는 대소문자를 구분 ("in us" 같은 일반 단어를 잡지 않음)
+#   - 국가 이름 뒤에 글자가 이어지면 적중하지 않음 ("European Respiratory Society", "Japanese" 등)
+_COUNTRY_NAME = (r"(?:U\.S\.A\.?|U\.S\.|USA|US|UK|EU|EEA"
+                 r"|(?i:united\s+states(?:\s+of\s+america)?|united\s+kingdom|european\s+union|europe|mainland\s+china"
+                 r"|china|south\s+korea|korea|japan|taiwan|canada|australia|india|germany|france|italy|spain|brazil"
+                 r"|mexico|israel|singapore|hong\s+kong))(?![A-Za-z])")
+_COUNTRY_SCOPE = re.compile(
+    r"(?i:\b(?:in|outside(?:\s+of)?|within|for\s+(?:patients|participants|subjects)\s+in)\s+(?:the\s+)?)" + _COUNTRY_NAME
+    + r"|(?i:\b(?:non|ex)-?)(?:U\.S\.|USA|US)(?![A-Za-z])"
+    + r"|\b" + _COUNTRY_NAME + r"\s+(?i:sites?|centers?|centres?|institutions?|participants|patients|subjects)\b")
+
+
+def country_scope(text: str | None) -> str | None:
+    """기준 원문이 국가·지역에 한정된 기준인가. 한정 표현(원문 그대로)을 반환하고, 없으면 None."""
+    m = _COUNTRY_SCOPE.search(text or "")
+    return m.group(0) if m else None
+
+
+def _country_hold(rule: Rule, a: CriterionAssessment, scope: str) -> CriterionAssessment:
+    """국가 한정 기준의 불충족은 확정하지 않음 (한쪽 보류, 옵션 B′).
+
+    환자의 참여 국가를 모르므로(프로필에 국가 필드 없음) 이 기준이 환자에게 적용되는지 알 수 없습니다.
+    - 통과(passes True)는 그대로 둡니다: 그 나라 환자이면 충족, 아니면 '해당 없음 = 통과'라 어느 쪽이든 통과.
+    - 불충족은 holds unknown으로 보류합니다. None을 돌려주지 않으므로 LLM에 넘어가 나라를 짐작하지 않습니다."""
+    return a.model_copy(update={
+        "holds": "unknown", "passes": None, "confidence": "low",
+        "missing_info": f"참여(등록) 기관 국가 - 원문의 국가 조건 '{scope}'이 이 환자에게 적용되는지 확인 필요",
+        "validation_flags": [*a.validation_flags, "country_scope_unknown"],
+        "reasoning": f"[국가 조건: 원문 '{scope}' - 환자 참여 국가 미상이라 불충족을 확정하지 않음] {a.reasoning}"})
+
+
 def evaluate(rule: Rule, patient: PatientProfile, reference_date: str | None = None) -> CriterionAssessment | None:
-    """reference_date: 판정 기준일(YYYY-MM-DD). 기간 조건이 붙은 검사 기준에만 씀. 없으면 config.reference_date()."""
+    """reference_date: 판정 기준일(YYYY-MM-DD). 기간 조건이 붙은 검사 기준에만 씀. 없으면 config.reference_date().
+
+    국가 한정 기준(country_scope)은 통과만 확정하고 불충족은 보류합니다(_country_hold)."""
+    a = _evaluate_structured(rule, patient, reference_date)
+    if a is None or a.passes is not False:
+        return a
+    scope = country_scope(rule.text)
+    return a if scope is None else _country_hold(rule, a, scope)
+
+
+def _evaluate_structured(rule: Rule, patient: PatientProfile, reference_date: str | None) -> CriterionAssessment | None:
     if not rule.structured_evaluable or not rule.field or not rule.operator:
         return None
     field = _norm(rule.field)
@@ -317,7 +395,18 @@ def evaluate(rule: Rule, patient: PatientProfile, reference_date: str | None = N
             return None
         lab = _latest(candidates)
         if lab is None:
-            return None  # 같은 검사가 여러 번인데 최신 값을 날짜로 확정할 수 없음 -> LLM에 위임
+            possible = _possible_latest(candidates)
+            if possible is None:
+                return None  # 같은 검사가 여러 번인데 최신 값을 날짜로 확정할 수 없음 -> LLM에 위임
+            # 월·연 단위 날짜라 순서가 갈림: 최신일 수 있는 값이 모두 같은 판정일 때만 판정, 아니면 보류 (감사 F-04)
+            if _nonstandard_count_rule_unit(want, rule.unit):
+                return None
+            scaled = [_same_scale(x.value, x.unit, rule.unit, want) for x in possible]
+            if any(sc is None for sc in scaled):
+                return None
+            if rule.time_window_days or len({_compare(sc[0], rule.operator, target) for sc in scaled}) != 1:
+                return _latest_hold(rule, possible)
+            lab = possible[0]
         window_note = ""
         if rule.time_window_days:
             # 기간 조건 (M-2): 검사일을 날짜로 계산. 확인하지 못하면 판정하지 않고 LLM에도 넘기지 않음 (날짜 추정 금지)

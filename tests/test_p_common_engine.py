@@ -370,8 +370,6 @@ def test_nsclc_pilot_never_confirms_eligible_offline():
         assert r["system_confirmed_eligible"] == 0  # LLM 기준이 오프라인에서 판정 불가 -> 확정 적격이 나오면 결함
 
 
-@pytest.mark.xfail(strict=True, reason="NCT06216301 I1 '미국에서 22세 이상'이 무조건 나이 기준으로 파싱됨 - 한국 20세 "
-                                       "환자가 확정 부적격이 됨 (N4·R3에서 보고된 결함, 파서·국가 조건 미해결)")
 def test_nsclc_us_only_age_rule_does_not_confirm_ineligible():
     sc = nsclc_pilot.suite_cohort()
     r = runner.run(runner.build_spec("p-us", "full_dcvc", sc.cohort, C.EffortBudget(

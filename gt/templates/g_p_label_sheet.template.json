@@ -1,0 +1,29 @@
+[
+ {
+  "_template": "TEMPLATE: 실제 사례·라벨이 아닙니다. <...> 칸을 채워 새 파일로 저장하세요. 이 파일 자체는 GT가 아닙니다",
+  "item_id": "<P-0001>",
+  "input": "<사례 파일의 input 그대로 (gt_assemble.py sheet가 채움)>",
+  "labeler_id": "<L-A>",
+  "labeled_at": "<ISO 8601 시각>",
+  "confidence": "<1|2|3>",
+  "needs_expert": "<true|false>",
+  "needs_expert_reason": "<사유>",
+  "note": "<메모>",
+  "label": {
+   "criteria": [
+    {
+     "criterion_id": "<rule_id>",
+     "status": "<MET|NOT_MET|UNKNOWN_FROM_RECORD|NEEDS_CLINICIAN>",
+     "evidence_spans": [
+      {
+       "start": "<문자 오프셋>",
+       "end": "<문자 오프셋>"
+      }
+     ]
+    }
+   ],
+   "pair_status": "<ELIGIBLE|INELIGIBLE|NOT_DETERMINABLE|NEEDS_CLINICIAN (승인된 집계 규칙으로 계산)>",
+   "aggregation_rule_version": "<CL-9 승인 규칙 버전>"
+  }
+ }
+]

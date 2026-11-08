@@ -1,0 +1,342 @@
+{
+ "schema_version": "gt-schema/1",
+ "set_id": "FIXTURE_ONLY_g_p",
+ "gt_version": "FIXTURE_ONLY-v0",
+ "layer": "G-P",
+ "fixture_only": true,
+ "description": "FIXTURE_ONLY: 도구 테스트용 가짜 세트. 독립 GT가 아니며 정확도 근거로 쓰지 않음",
+ "blinding": {
+  "attested_by": "FIXTURE_ATTESTER",
+  "attested_at": "2026-11-08T00:00:00+00:00",
+  "labelers_saw_engine_output": false,
+  "adjudicator_saw_engine_output": false,
+  "authors_saw_engine_dictionaries": false,
+  "engine_fields_absent": true,
+  "storage": "tests/data/gt_fixture (FIXTURE_ONLY)",
+  "statement": "FIXTURE_ONLY: 도구 테스트용 가짜 증명입니다. 실제 블라인딩 증명이 아닙니다."
+ },
+ "protocol_ref": null,
+ "items": [
+  {
+   "item_id": "FX-P-001",
+   "layer": "G-P",
+   "input": {
+    "patient_id": "FIXTURE_PATIENT_FX-P-001",
+    "record_ref": {
+     "path": "FIXTURE_ONLY/record.txt",
+     "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "trial_id": "FIXTURE_TRIAL_X",
+    "parsed_store_ref": null,
+    "institution_country": null,
+    "grid": null
+   },
+   "source": {
+    "origin": "fixture",
+    "detail": "FIXTURE_ONLY: 도구 테스트용 가짜 문장. GT 아님",
+    "author_id": "FIXTURE_AUTHOR",
+    "author_independent_of_engine_work": true,
+    "created_at": "2026-11-08T00:00:00+00:00",
+    "not_derived_from_existing_sets": true
+   },
+   "annotations": [
+    {
+     "labeler_id": "FIXTURE_LABELER_A",
+     "labeled_at": "2026-11-08T00:00:00+00:00",
+     "confidence": 3,
+     "evidence_spans": [],
+     "note": "SENTINEL_LABEL_NOTE_7f3a",
+     "label": {
+      "criteria": [
+       {
+        "criterion_id": "FX-I1",
+        "status": "MET",
+        "evidence_spans": []
+       }
+      ],
+      "pair_status": "ELIGIBLE",
+      "aggregation_rule_version": "FIXTURE_ONLY_rule_v0"
+     }
+    },
+    {
+     "labeler_id": "FIXTURE_LABELER_B",
+     "labeled_at": "2026-11-08T00:00:00+00:00",
+     "confidence": 3,
+     "evidence_spans": [],
+     "note": "SENTINEL_LABEL_NOTE_7f3a",
+     "label": {
+      "criteria": [
+       {
+        "criterion_id": "FX-I1",
+        "status": "MET",
+        "evidence_spans": []
+       }
+      ],
+      "pair_status": "ELIGIBLE",
+      "aggregation_rule_version": "FIXTURE_ONLY_rule_v0"
+     }
+    }
+   ],
+   "needs_expert": {
+    "flag": false,
+    "reason": null
+   },
+   "adjudication": {
+    "status": "agreed"
+   },
+   "final": {
+    "criteria": [
+     {
+      "criterion_id": "FX-I1",
+      "status": "MET",
+      "evidence_spans": []
+     }
+    ],
+    "pair_status": "ELIGIBLE",
+    "aggregation_rule_version": "FIXTURE_ONLY_rule_v0"
+   }
+  },
+  {
+   "item_id": "FX-P-002",
+   "layer": "G-P",
+   "input": {
+    "patient_id": "FIXTURE_PATIENT_FX-P-002",
+    "record_ref": {
+     "path": "FIXTURE_ONLY/record.txt",
+     "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "trial_id": "FIXTURE_TRIAL_X",
+    "parsed_store_ref": null,
+    "institution_country": null,
+    "grid": null
+   },
+   "source": {
+    "origin": "fixture",
+    "detail": "FIXTURE_ONLY: 도구 테스트용 가짜 문장. GT 아님",
+    "author_id": "FIXTURE_AUTHOR",
+    "author_independent_of_engine_work": true,
+    "created_at": "2026-11-08T00:00:00+00:00",
+    "not_derived_from_existing_sets": true
+   },
+   "annotations": [
+    {
+     "labeler_id": "FIXTURE_LABELER_A",
+     "labeled_at": "2026-11-08T00:00:00+00:00",
+     "confidence": 3,
+     "evidence_spans": [],
+     "note": "SENTINEL_LABEL_NOTE_7f3a",
+     "label": {
+      "criteria": [
+       {
+        "criterion_id": "FX-I1",
+        "status": "NOT_MET",
+        "evidence_spans": []
+       }
+      ],
+      "pair_status": "INELIGIBLE",
+      "aggregation_rule_version": "FIXTURE_ONLY_rule_v0"
+     }
+    },
+    {
+     "labeler_id": "FIXTURE_LABELER_B",
+     "labeled_at": "2026-11-08T00:00:00+00:00",
+     "confidence": 3,
+     "evidence_spans": [],
+     "note": "SENTINEL_LABEL_NOTE_7f3a",
+     "label": {
+      "criteria": [
+       {
+        "criterion_id": "FX-I1",
+        "status": "NOT_MET",
+        "evidence_spans": []
+       }
+      ],
+      "pair_status": "INELIGIBLE",
+      "aggregation_rule_version": "FIXTURE_ONLY_rule_v0"
+     }
+    }
+   ],
+   "needs_expert": {
+    "flag": false,
+    "reason": null
+   },
+   "adjudication": {
+    "status": "agreed"
+   },
+   "final": {
+    "criteria": [
+     {
+      "criterion_id": "FX-I1",
+      "status": "NOT_MET",
+      "evidence_spans": []
+     }
+    ],
+    "pair_status": "INELIGIBLE",
+    "aggregation_rule_version": "FIXTURE_ONLY_rule_v0"
+   }
+  },
+  {
+   "item_id": "FX-P-003",
+   "layer": "G-P",
+   "input": {
+    "patient_id": "FIXTURE_PATIENT_FX-P-003",
+    "record_ref": {
+     "path": "FIXTURE_ONLY/record.txt",
+     "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "trial_id": "FIXTURE_TRIAL_X",
+    "parsed_store_ref": null,
+    "institution_country": null,
+    "grid": {
+     "gc_item_id": "FX-C-001",
+     "criterion_id": "FX-I1",
+     "country_cell": "unknown",
+     "age_band": "between"
+    }
+   },
+   "source": {
+    "origin": "fixture",
+    "detail": "FIXTURE_ONLY: 도구 테스트용 가짜 문장. GT 아님",
+    "author_id": "FIXTURE_AUTHOR",
+    "author_independent_of_engine_work": true,
+    "created_at": "2026-11-08T00:00:00+00:00",
+    "not_derived_from_existing_sets": true
+   },
+   "annotations": [
+    {
+     "labeler_id": "FIXTURE_LABELER_A",
+     "labeled_at": "2026-11-08T00:00:00+00:00",
+     "confidence": 3,
+     "evidence_spans": [],
+     "note": "SENTINEL_LABEL_NOTE_7f3a",
+     "label": {
+      "criteria": [
+       {
+        "criterion_id": "FX-I1",
+        "status": "UNKNOWN_FROM_RECORD",
+        "evidence_spans": []
+       }
+      ],
+      "pair_status": "NOT_DETERMINABLE",
+      "aggregation_rule_version": "FIXTURE_ONLY_rule_v0"
+     }
+    },
+    {
+     "labeler_id": "FIXTURE_LABELER_B",
+     "labeled_at": "2026-11-08T00:00:00+00:00",
+     "confidence": 3,
+     "evidence_spans": [],
+     "note": "SENTINEL_LABEL_NOTE_7f3a",
+     "label": {
+      "criteria": [
+       {
+        "criterion_id": "FX-I1",
+        "status": "UNKNOWN_FROM_RECORD",
+        "evidence_spans": []
+       }
+      ],
+      "pair_status": "NOT_DETERMINABLE",
+      "aggregation_rule_version": "FIXTURE_ONLY_rule_v0"
+     }
+    }
+   ],
+   "needs_expert": {
+    "flag": false,
+    "reason": null
+   },
+   "adjudication": {
+    "status": "agreed"
+   },
+   "final": {
+    "criteria": [
+     {
+      "criterion_id": "FX-I1",
+      "status": "UNKNOWN_FROM_RECORD",
+      "evidence_spans": []
+     }
+    ],
+    "pair_status": "NOT_DETERMINABLE",
+    "aggregation_rule_version": "FIXTURE_ONLY_rule_v0"
+   }
+  },
+  {
+   "item_id": "FX-P-004",
+   "layer": "G-P",
+   "input": {
+    "patient_id": "FIXTURE_PATIENT_FX-P-004",
+    "record_ref": {
+     "path": "FIXTURE_ONLY/record.txt",
+     "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "trial_id": "FIXTURE_TRIAL_X",
+    "parsed_store_ref": null,
+    "institution_country": null,
+    "grid": null
+   },
+   "source": {
+    "origin": "fixture",
+    "detail": "FIXTURE_ONLY: 도구 테스트용 가짜 문장. GT 아님",
+    "author_id": "FIXTURE_AUTHOR",
+    "author_independent_of_engine_work": true,
+    "created_at": "2026-11-08T00:00:00+00:00",
+    "not_derived_from_existing_sets": true
+   },
+   "annotations": [
+    {
+     "labeler_id": "FIXTURE_LABELER_A",
+     "labeled_at": "2026-11-08T00:00:00+00:00",
+     "confidence": 3,
+     "evidence_spans": [],
+     "note": "SENTINEL_LABEL_NOTE_7f3a",
+     "label": {
+      "criteria": [
+       {
+        "criterion_id": "FX-I1",
+        "status": "NEEDS_CLINICIAN",
+        "evidence_spans": []
+       }
+      ],
+      "pair_status": "NEEDS_CLINICIAN",
+      "aggregation_rule_version": "FIXTURE_ONLY_rule_v0"
+     }
+    },
+    {
+     "labeler_id": "FIXTURE_LABELER_B",
+     "labeled_at": "2026-11-08T00:00:00+00:00",
+     "confidence": 3,
+     "evidence_spans": [],
+     "note": "SENTINEL_LABEL_NOTE_7f3a",
+     "label": {
+      "criteria": [
+       {
+        "criterion_id": "FX-I1",
+        "status": "NEEDS_CLINICIAN",
+        "evidence_spans": []
+       }
+      ],
+      "pair_status": "NEEDS_CLINICIAN",
+      "aggregation_rule_version": "FIXTURE_ONLY_rule_v0"
+     }
+    }
+   ],
+   "needs_expert": {
+    "flag": false,
+    "reason": null
+   },
+   "adjudication": {
+    "status": "agreed"
+   },
+   "final": {
+    "criteria": [
+     {
+      "criterion_id": "FX-I1",
+      "status": "NEEDS_CLINICIAN",
+      "evidence_spans": []
+     }
+    ],
+    "pair_status": "NEEDS_CLINICIAN",
+    "aggregation_rule_version": "FIXTURE_ONLY_rule_v0"
+   }
+  }
+ ]
+}

@@ -1,0 +1,2 @@
+log_id,item_id,layer,trigger,labels_summary,adjudicator_id,adjudicated_at,status,final_label_json,reason,needs_expert,needs_expert_reason
+<ADJ-0001>,<U-0001>,<G-U|G-C|G-P>,<disagreement;low_confidence;needs_expert>,<gt_agreement.py가 채움>,<ADJ-1 (라벨러와 다른 사람)>,<ISO 8601>,<adjudicated|ambiguous>,<최종 라벨 JSON (ambiguous면 빈칸)>,<결정 사유>,<true|false>,<사유>

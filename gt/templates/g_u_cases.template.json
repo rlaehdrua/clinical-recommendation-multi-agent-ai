@@ -1,0 +1,28 @@
+{
+ "_template": "TEMPLATE: 실제 사례·라벨이 아닙니다. <...> 칸을 채워 새 파일로 저장하세요. 이 파일 자체는 GT가 아닙니다",
+ "layer": "G-U",
+ "items": [
+  {
+   "item_id": "<U-0001>",
+   "input": {
+    "kind": "<conflict|value>",
+    "text": "<원문 전체>",
+    "criterion": "<기준 문장 (conflict)>",
+    "quote": "<원문 안의 인용 (conflict)>",
+    "holds": "<yes|no>",
+    "field": "<검사·필드 이름 (value)>",
+    "value": "<값 (value)>",
+    "unit": "<단위>",
+    "reference_date": "<YYYY-MM-DD>"
+   },
+   "source": {
+    "origin": "<clinician_synthetic|separated_llm_draft_reviewed|deidentified_real|provided_example|ctgov_protocol>",
+    "detail": "<사례가 어디서 왔는지: 작성자, 방법, 원 문서>",
+    "author_id": "<작성자 ID>",
+    "author_independent_of_engine_work": "<true|false>",
+    "created_at": "<ISO 8601 시각>",
+    "not_derived_from_existing_sets": "<true|false: held-out 1-6·회귀·테스트 문장에서 가져오지 않았음>"
+   }
+  }
+ ]
+}
