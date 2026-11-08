@@ -63,3 +63,4 @@ pre.raw { max-height: 360px; overflow: auto; background: var(--panel-2); border-
 .steps-ko li > select { margin-left: 6px; }
 .req.done { opacity: .75; }
 details.staff-sec > summary { cursor: pointer; padding: 4px 0; }
+.doc-text { white-space: pre-wrap; font-size: 13px; max-height: 320px; overflow: auto; background: var(--panel-2); border-radius: 10px; padding: 10px 12px; }

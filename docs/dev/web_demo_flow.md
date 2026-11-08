@@ -51,6 +51,13 @@
 - 완료 API 계약: [document_clinician_api_contract.md](document_clinician_api_contract.md). **합성 시험 전용**(`CTREC_VERIFICATION_MODE=synthetic`, 데모 서버 `--synthetic-verification`)이고 운영 설정에서는 503입니다. 운영 권한 연결 전에는 실제 서류 검증·의료진 판단으로 쓰지 않습니다.
 - 담당자는 환자 답변을 입력할 수 없음: 화면에 경로가 없고, 서버도 담당자 헤더가 붙은 응답 요청을 403으로 거절.
 
+## 4-1. 끝까지 자동 실행 (11-08)
+
+`python scripts/run_e2e_synthetic.py --mode llm --env-file .env --url http://127.0.0.1:8011`을 데모 서버에 돌리면, 합성 환자 6명의 입력부터 결과 확정까지 사람 손 없이 진행됩니다.
+- LLM이 맡는 것: 환자 소개글 작성, 가상 서류 작성, 서류 읽기. 값은 합성 정답에서만 옵니다.
+- 끝난 뒤 담당자 탭에서 결과를 그대로 볼 수 있습니다. '확인에 쓴 서류 보기'로 LLM이 쓴 서류 원문도 볼 수 있습니다.
+- 결과 파일: `outputs/e2e/<시각>/report.json`
+
 ## 5. 실제 브라우저 검증 (Chrome, 2026-11-07)
 
 환자 3명 → 초기 판정 → 담당자 대기열(16건, 환자 3명 섞임)에서 요청 4건 + 사례 화면에서 2건 → 환자 1·3 답변, 환자 2 '모르겠어요' →
