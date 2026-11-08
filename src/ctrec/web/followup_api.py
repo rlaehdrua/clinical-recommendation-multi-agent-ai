@@ -484,6 +484,8 @@ class JudgmentDecision(BaseModel):
 
 class JudgmentBody(BaseModel):
     decisions: list[JudgmentDecision] = Field(min_length=1, max_length=20)
+    # 필수 (감사 F-03): 빠지면 서비스가 428 revision_required. 모델에서는 선택으로 두어 역할 검사(403)가 먼저 되고
+    # 화면이 분기할 고정 code를 돌려줌 (FastAPI 422 대신)
     expected_revision: int | None = None
 
 

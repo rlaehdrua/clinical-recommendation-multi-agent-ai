@@ -1109,13 +1109,19 @@ class FollowupService:
                      "basis_fact_ids": ["F-..."]}]. 근거 사실은 이 환자의 사실이어야 하고, 진료 기록이 필요한 기준
         (matcher._meta의 required_evidence=clinical_record)이면 하나 이상이며 모두 지금 문서로 확인된 사실이어야 함:
         임상의 판단이 문서 확인 요건을 대신하지 않음.
-        판단은 그때의 사실에 묶여, 이후 사실이 바뀌면 인정되지 않고 기준은 다시 판단 대기로 돌아감."""
+        판단은 그때의 사실에 묶여, 이후 사실이 바뀌면 인정되지 않고 기준은 다시 판단 대기로 돌아감.
+
+        expected_revision(임상의가 본 화면의 revision)은 필수 (감사 F-03): 없으면 화면을 본 뒤 들어온 사실에 판단이 묶여
+        임상의가 보지 못한 사실로 확정될 수 있음. 없으면 428 revision_required, 다르면 409 stale_revision."""
         by = f"clinician:{clinician_id}"
         with self.store.lock(case_id), self._audited(case_id, by, "clinician_judgment", request_id):
             data = self._load(case_id)
             base = data["revision"]
             self._require_authority(data, by, "clinician_judgment", request_id)
-            if expected_revision is not None and expected_revision != base:
+            if expected_revision is None:
+                raise FollowupError(428, "revision_required",
+                                    "판단한 화면의 revision(expected_revision)이 필요합니다. 화면을 새로 고친 뒤 다시 제출하세요.")
+            if expected_revision != base:
                 raise FollowupError(409, "stale_revision", "다른 변경이 먼저 저장되었습니다. 화면을 새로 고치세요.")
             req = next((r for r in data["requests"] if r["request_id"] == request_id), None)
             if req is None:

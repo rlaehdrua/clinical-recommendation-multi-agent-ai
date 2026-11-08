@@ -174,6 +174,8 @@ EXPERT_REVIEW 기준 ─► 서버가 clinician_review 생성
                 "basis_fact_ids": ["F-c3ab962c169e"]}],
  "expected_revision": 9}
 ```
+- `expected_revision`은 **필수**입니다 (감사 F-03): 임상의가 본 `GET /clinician/cases/{case_id}`의 `revision`.
+  없으면 `428 revision_required`, 그 사이 사실·요청이 바뀌었으면 `409 stale_revision`입니다 (보지 못한 사실에 판단이 묶이지 않게).
 - 요청의 **모든** 대상 기준을 한 번씩 판단해야 합니다. 빠지거나 넘치면 `409 judgment_incomplete`입니다.
 - `decision`은 기준 문장이 성립하는가입니다(`MET`/`NOT_MET`). 제외 기준이면 `MET`이 불충족(부적격 쪽)이 됩니다.
 - `rationale_code`: 영문 소문자·숫자·`_` 1~64자입니다. 자유 서술 칸은 두지 않았습니다(§8).
@@ -237,6 +239,7 @@ EXPERT_REVIEW 기준 ─► 서버가 clinician_review 생성
 | `bad_actor_id` | 400 | 식별자 헤더 형식 |
 | `staff_cannot_answer` | 403 | 환자 답변 대리 입력 |
 | `stale_revision` | 409 | `expected_revision`이 현재 개정 번호와 다름 |
+| `revision_required` | 428 | 임상의 판단에 `expected_revision`이 없음 (F-03) |
 | `request_not_found` / `document_not_found` / `fact_not_found` | 404 | |
 | `not_document_review` / `not_clinician_review` | 409 | 요청 종류가 다름 |
 | `conflict_not_closed_by_document` | 409 | 충돌 확인을 문서 검증으로 닫으려 함 |

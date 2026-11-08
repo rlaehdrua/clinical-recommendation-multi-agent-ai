@@ -128,8 +128,10 @@ def verify(client, cid, rid, doc, items, headers=VERIFIER, expect=200, sha=None)
 
 
 def judge(client, cid, rid, decisions, headers=CLINICIAN, expect=200):
+    # F-03: 판단은 임상의가 본 화면의 revision과 함께 제출 (제출 직전에 화면을 다시 봄)
+    seen = client.get(f"/api/followup/clinician/cases/{cid}", headers=CLINICIAN).json().get("revision")
     r = client.post(f"/api/followup/clinician/cases/{cid}/requests/{rid}/judgment", headers=headers,
-                    json={"decisions": decisions})
+                    json={"decisions": decisions, "expected_revision": seen})
     assert r.status_code == expect, r.text
     return r.json()
 

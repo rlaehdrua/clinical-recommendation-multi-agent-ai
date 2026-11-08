@@ -185,7 +185,7 @@ def main() -> None:
           "T-D:I2 review is judgeable")
     out = call("clinician", "POST", f"/api/followup/clinician/cases/{cid}/requests/{clin_req['request_id']}/judgment",
                {"decisions": [{"criterion": "T-D:I2", "decision": "MET", "rationale_code": "life_expectancy_adequate",
-                               "basis_fact_ids": [ecog_fact]}]}, 200)
+                               "basis_fact_ids": [ecog_fact]}], "expected_revision": cview["revision"]}, 200)
     check(out["pairs"]["T-D"]["status"] == CE, "T-D CONFIRMED_ELIGIBLE after clinician judgment")
     before = call("staff", "GET", f"/api/followup/staff/cases/{cid}", expect=200)
     insp = call("staff", "GET", f"/api/followup/staff/cases/{cid}/inspector", expect=200)
