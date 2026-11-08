@@ -807,8 +807,17 @@ function todoBox(m, d, all) {
   return `<div class="todo"><b>다음에 할 일</b><ul class="tl">${(all ? lines : lines.slice(0, 3)).map(([t, n, c]) =>
     `<li class="${c}"><span>${esc(t)}</span><b>${n === "" ? "" : esc(n) + "개"}</b></li>`).join("")}</ul></div>`;
 }
+// 모집이 끝난 시험은 조건 비교 결과와 상관없이 최종 상태가 '현재 참여 불가' (서버 recommender.OPEN_STATUSES와 같은 기준)
+const OPEN_RECRUIT = new Set(["RECRUITING", "NOT_YET_RECRUITING", "UNKNOWN"]);
+function isClosed(info) { return !!(info && info.overall_status) && !OPEN_RECRUIT.has(info.overall_status); }
+const CLOSED_DESC = "모집이 끝나 지금은 참여할 수 없어요 · 조건 비교는 참고용";
+function statusDesc(status, info) { return isClosed(info) ? CLOSED_DESC : (STATUS[status] || [])[2] || ""; }
 function badges(tid, status, info) {
-  return `<div class="badges">${status ? matchBadge(status) : ""}${statusBadge(info.overall_status)}${demoBadge(tid)}</div>`;
+  // 최종 상태(참여 불가)를 하나만 색으로 보이고, 조건 비교 결과는 회색 참고 배지로 낮춤 (충족·불가가 동시에 보이지 않게)
+  const match = !status ? "" : isClosed(info)
+    ? `<span class="badge">참고 · ${esc((STATUS[status] || INTERIM[status] || ["검토 중"])[0])}</span>` : matchBadge(status);
+  const final = isClosed(info) ? '<span class="badge bad">현재 참여 불가</span>' : "";
+  return `<div class="badges">${final}${statusBadge(info.overall_status)}${match}${demoBadge(tid)}</div>`;
 }
 function trialLink(tid, info) {
   const url = safeTrialUrl(info.url);
@@ -867,7 +876,7 @@ function resultCard(tid, status, extra) {
   const ttl = koTitle(tid, info.title || "");
   return `<article class="rec${extra && extra.top ? " top" : ""}">${badges(tid, status, info)}
     <div><h3 class="rtitle">${extra && extra.rank ? `<span class="rank" aria-label="표시 순서 ${esc(extra.rank)}">${esc(extra.rank)}.</span> ` : ""}${esc(ttl)}</h3>${origLine(ttl, info.title)}
-      <p class="rmeta mt4">${esc(tid)} · ${esc((STATUS[status] || [])[2] || "")}</p></div>
+      <p class="rmeta mt4">${esc(tid)} · ${esc(statusDesc(status, info))}</p></div>
     ${extra && extra.note ? `<p class="hint m0">${esc(extra.note)}</p>` : ""}
     ${condStat(m, d)}${card ? compareBlock(card) : ""}${todoBox(m, d, false)}
     <div class="actions"><button class="btn ghost" type="button" data-detail="${esc(tid)}">자세히 보기</button></div></article>`;
@@ -952,7 +961,7 @@ function renderDetail(tid) {
   const status = r.match_status || (m && m.match_status) || null, ttl = koTitle(tid, info.title || "");
   const said = Object.fromEntries(((d && d.record_checks) || []).map(x => [x.rule_id, x.said]));
   let html = `<div class="dhead"><div class="dmeta">${badges(tid, status, info)}</div><h2 id="detail-h" tabindex="-1">${esc(ttl)}</h2>${origLine(ttl, info.title)}
-    <p class="hint m0">${esc(tid)} · ${esc((STATUS[status] || [])[2] || "")}</p>${trialLink(tid, info)}</div>`;
+    <p class="hint m0">${esc(tid)} · ${esc(statusDesc(status, info))}</p>${trialLink(tid, info)}</div>`;
   if (card && compareBlock(card)) html += `<section class="sec">${compareBlock(card)}</section>`;
   if (r.key_matches || r.key_concerns || r.next_steps) html += `<section class="sec"><h3>AI가 정리한 내용</h3>
     <div class="two">${aiList("맞는 점", r.key_matches, "good")}${aiList("확인할 점", r.key_concerns, "check")}</div>${aiList("다음 단계 제안", r.next_steps)}</section>`;
@@ -985,7 +994,7 @@ function renderSummary() {
     const tid = r.trial_id, info = R.trials[tid] || {}, m = R.matches[tid], d = R.dOf(tid), g = grouped(m, d);
     const items = (k) => g[k].length ? `<tr><th scope="row">${esc(GROUP_UI[k][0])} (${g[k].length})</th><td><ul class="checks">${g[k].map(a => `<li>${esc(critLabel(a))}</li>`).join("")}</ul></td></tr>` : "";
     const url = safeTrialUrl(info.url);
-    return `<section class="sec"><h3>${esc(koTitle(tid, info.title || ""))}</h3><p class="hint m0">${esc(tid)} · ${esc((STATUS[r.match_status] || [])[0] || "")} · ${esc(recruitText(info.overall_status))}${trialMeta(tid).synthetic ? " · 가상 시험(실제 모집 아님)" : ""}${url ? ` · ${esc(url)}` : ""}</p>
+    return `<section class="sec"><h3>${esc(koTitle(tid, info.title || ""))}</h3><p class="hint m0">${esc(tid)} · ${isClosed(info) ? `현재 참여 불가 · ${esc(recruitText(info.overall_status))} · 참고: ${esc((STATUS[r.match_status] || [])[0] || "")}` : `${esc((STATUS[r.match_status] || [])[0] || "")} · ${esc(recruitText(info.overall_status))}`}${trialMeta(tid).synthetic ? " · 가상 시험(실제 모집 아님)" : ""}${url ? ` · ${esc(url)}` : ""}</p>
       <table class="sumtable"><caption class="sr-only">조건 확인 요약</caption><tr><th scope="row">확인됨</th><td>${g.met.length}개</td></tr>
         ${["record_check", "missing", "physician_review", "not_met", "unclassified", "procedural"].map(items).join("")}</table></section>`;
   };
