@@ -334,13 +334,71 @@ class GTSet(Strict):
         return self
 
 
-def freeze_problems(s: GTSet, *, allow_fixture: bool = False) -> list[str]:
-    """동결 전에 갖춰야 할 조건 (스키마 검증과 별도). 비어 있으면 동결 가능."""
+LABEL_CLASSES = {"G-U": UtteranceLabel, "G-C": CriterionLabel, "G-P": PairLabel}
+
+
+def _label_json(label) -> str:
+    return label.model_dump_json()
+
+
+def _check_log(r, rows: dict[str, dict]) -> list[str]:
+    """판정 항목의 log_ref를 adjudication_log.csv 행과 대조."""
+    adj = r.adjudication
+    ref = adj.log_ref
+    if adj.status == "adjudicated" and not ref:
+        return [f"{r.item_id}: adjudicated인데 log_ref(adjudication_log.csv의 log_id)가 없습니다"]
+    if not ref:
+        return []
+    row = rows.get(ref)
+    if row is None:
+        return [f"{r.item_id}: log_ref {ref}가 adjudication_log.csv에 없습니다"]
+    out = []
+    if (row.get("item_id") or "").strip() != r.item_id:
+        out.append(f"{r.item_id}: log_ref {ref}의 기록은 다른 항목({row.get('item_id')})입니다")
+    status = (row.get("status") or "").strip()
+    if adj.status == "adjudicated" or status:
+        if status != adj.status:
+            out.append(f"{r.item_id}: 판정 기록 {ref}의 status({status or '빈칸'})가 항목({adj.status})과 다릅니다")
+    row_adj = (row.get("adjudicator_id") or "").strip()
+    if row_adj and adj.adjudicator_id and row_adj != adj.adjudicator_id:
+        out.append(f"{r.item_id}: 판정 기록 {ref}의 판정자({row_adj})가 항목({adj.adjudicator_id})과 다릅니다")
+    if adj.status == "adjudicated":
+        try:
+            logged = LABEL_CLASSES[r.layer].model_validate_json(row.get("final_label_json") or "")
+        except Exception as e:  # pydantic ValidationError, JSON 오류
+            out.append(f"{r.item_id}: 판정 기록 {ref}의 final_label_json을 읽을 수 없습니다 ({type(e).__name__})")
+        else:
+            if _label_json(logged) != _label_json(r.final):
+                out.append(f"{r.item_id}: final 라벨이 판정 기록 {ref}의 최종 결정과 다릅니다")
+    return out
+
+
+def freeze_problems(s: GTSet, *, allow_fixture: bool = False,
+                    adjudication_log: list[dict] | None = None) -> list[str]:
+    """동결 전에 갖춰야 할 조건 (스키마 검증과 별도). 비어 있으면 동결 가능.
+
+    adjudication_log: adjudication_log.csv 행 목록 (labelio.read_csv). adjudicated 항목이 있으면 필요하고,
+    각 항목의 log_ref 행이 같은 item_id·status·최종 라벨을 가져야 합니다. ambiguous 항목의 log_ref는
+    기록이 주어졌을 때 존재·item_id·status(칸이 있으면)를 확인합니다.
+    """
     p = []
     if s.fixture_only and not allow_fixture:
         p.append(f"{s.set_id}: fixture_only 세트는 GT로 동결할 수 없습니다")
     if s.blinding is None:
         p.append(f"{s.set_id}: 블라인딩 증명(blinding)이 없습니다")
+    if not s.items:
+        p.append(f"{s.set_id}: 항목이 없습니다 (빈 세트는 동결할 수 없음)")
+    rows = None
+    if adjudication_log is not None:
+        rows = {}
+        for row in adjudication_log:
+            lid = (row.get("log_id") or "").strip()
+            if lid in rows:
+                p.append(f"adjudication_log.csv: log_id {lid} 중복")
+            rows[lid] = row
+    adjudicated = [r.item_id for r in s.items if r.adjudication.status == "adjudicated"]
+    if rows is None and adjudicated:
+        p.append(f"{s.set_id}: adjudicated 항목 {adjudicated[:10]}의 log_ref를 대조할 adjudication_log를 받지 않았습니다")
     for r in s.items:
         labelers = {a.labeler_id for a in r.annotations}
         if len(labelers) < 2:
@@ -353,6 +411,10 @@ def freeze_problems(s: GTSet, *, allow_fixture: bool = False) -> list[str]:
                 p.append(f"{r.item_id}: 라벨이 다른데 status=agreed (판정자 결정 필요)")
             if any(a.confidence < 3 for a in r.annotations):
                 p.append(f"{r.item_id}: 확신도 3 미만인데 status=agreed (판정자 결정 필요)")
+            if len(finals) == 1 and r.final is not None and _label_json(r.final) not in finals:
+                p.append(f"{r.item_id}: final 라벨이 합의한 라벨러 라벨과 다릅니다 (status=agreed)")
+        if rows is not None and r.adjudication.status in ("adjudicated", "ambiguous"):
+            p += _check_log(r, rows)
         if not r.source.author_independent_of_engine_work and r.source.origin != "fixture":
             p.append(f"{r.item_id}: 작성자가 엔진 작업과 독립이 아닙니다")
         if not r.source.not_derived_from_existing_sets and r.source.origin != "fixture":

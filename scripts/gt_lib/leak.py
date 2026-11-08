@@ -50,6 +50,18 @@ ENGINE_VALUES = {
     "CONFIRMED_ELIGIBLE", "CONFIRMED_INELIGIBLE", "VERIFICATION_PENDING", "INFO_MISSING", "EXPERT_REVIEW",
     "BLOCKED_FAILURE", "NOT_EVALUATED",
 }
+# 자유 텍스트(메모·사유·출처 설명 등) 안의 엔진 상태 문자열 (D-3). 값 전체가 같을 때만 보던 검사를 보강합니다.
+# GT 어휘(ELIGIBLE, INELIGIBLE 단독)와 띄어 쓴 일반 영어("expert review", "not evaluated")는 잡지 않습니다.
+ENGINE_TEXT_PATTERNS = [
+    re.compile(r"confirmed[_\s-]?(?:in)?eligible", re.I),                    # CONFIRMED_ELIGIBLE, confirmed eligible
+    re.compile(r"confirmed[_-]unverified", re.I),
+    re.compile(r"(?:verification[_-]?pending|info[_-]?missing|expert[_-]?review|blocked[_-]?failure|"
+               r"not[_-]?evaluated)", re.I),                               # VERIFICATION_PENDING, ExpertReview
+    re.compile(r"likely[_-](?:in)?eligible|\bneeds_review\b", re.I),        # Session match_status 값
+    re.compile(r"(?:engine|match|matcher)[_-]?(?:status|verdict|output|result)", re.I),  # EngineStatus, match_status
+    re.compile(r"\bPairStatus\b"),                                         # 엔진 enum 클래스 이름
+    re.compile(r"\b[A-Z][A-Za-z]*(?:Status|Verdict)\.[A-Z][A-Z_]+"),       # MatchStatus.ELIGIBLE 같은 enum 표기
+]
 
 MIN_SEG_TOKENS = 5        # 유사도(겹침) 비교 대상 조각의 최소 토큰 수
 MIN_EXACT_SEG_TOKENS = 4  # 정규화 후 완전 일치를 보는 조각의 최소 토큰 수 (짧은 상투 문장 오탐 방지)
@@ -224,8 +236,15 @@ def _engine_fields(obj, path="") -> list[str]:
     elif isinstance(obj, list):
         for i, v in enumerate(obj):
             found += _engine_fields(v, f"{path}[{i}]")
-    elif isinstance(obj, str) and obj.strip() in ENGINE_VALUES:
-        found.append(f"{path}={obj.strip()}")
+    elif isinstance(obj, str):
+        if obj.strip() in ENGINE_VALUES:
+            found.append(f"{path}={obj.strip()}")
+        else:
+            for pat in ENGINE_TEXT_PATTERNS:
+                m = pat.search(obj)
+                if m:
+                    found.append(f"{path}~{m.group(0)}")
+                    break
     return found
 
 

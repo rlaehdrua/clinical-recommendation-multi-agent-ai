@@ -196,3 +196,138 @@ def test_d2_pair_and_criterion_records_validated():
     gc = GTSet.model_validate(json.loads((FX / "FIXTURE_ONLY_g_c.json").read_text(encoding="utf-8")))
     with pytest.raises(ValueError):
         evaluate(gc, _eng(gc, {r.item_id: {"scope_represented": "yes"} for r in gc.items}))
+
+
+# --------------------------------------------------------------------------- D-3
+
+def _raw_u():
+    return json.loads(FX_U.read_text(encoding="utf-8"))
+
+
+def _fp(d, **kw):
+    from gt_lib.models import GTSet, freeze_problems
+    return freeze_problems(GTSet.model_validate(d), allow_fixture=True, **kw)
+
+
+def _adjudicate(d, idx=1, log_id="FIXTURE-ADJ-0009"):
+    """항목 idx를 adjudicated로 바꾸고 맞는 판정 기록 행을 돌려줌 (FIXTURE_ONLY 값)."""
+    it = d["items"][idx]
+    it["adjudication"] = {"status": "adjudicated", "adjudicator_id": "FIXTURE_ADJ",
+                          "adjudicated_at": "2026-11-08T00:00:00+00:00", "reason": "FIXTURE_ONLY",
+                          "log_ref": log_id}
+    return {"log_id": log_id, "item_id": it["item_id"], "layer": "G-U", "status": "adjudicated",
+            "adjudicator_id": "FIXTURE_ADJ", "final_label_json": json.dumps(it["final"])}
+
+
+AMB_ROW = {"log_id": "FIXTURE-ADJ-0001", "item_id": "FX-U-005", "status": "ambiguous"}
+
+
+def test_d3_agreed_final_must_equal_annotations():
+    d = _raw_u()
+    assert _fp(d) == []
+    it = d["items"][2]  # 두 라벨러 모두 같은 라벨, final만 다르게
+    it["final"]["category"] = "FIXTURE_ONLY_flipped_category"
+    assert any("FX-U-003" in p and "final" in p for p in _fp(d))
+    d = _raw_u()
+    d["items"][0]["final"]["concept_cluster"] = "FIXTURE_other_cluster"
+    assert any("FX-U-001" in p and "final" in p for p in _fp(d))
+
+
+def test_d3_adjudicated_requires_matching_log_row():
+    d = _raw_u()
+    row = _adjudicate(d)
+    assert _fp(d, adjudication_log=[row, AMB_ROW]) == []
+    # 판정 기록을 주지 않음
+    assert any("FX-U-002" in p and "adjudication_log" in p for p in _fp(d))
+    # log_ref가 기록에 없음
+    assert any("FX-U-002" in p for p in _fp(d, adjudication_log=[AMB_ROW]))
+    # 기록의 최종 라벨이 final과 다름
+    bad = dict(row, final_label_json=json.dumps(dict(d["items"][1]["final"], category="FIXTURE_ONLY_x")))
+    assert any("FX-U-002" in p for p in _fp(d, adjudication_log=[bad, AMB_ROW]))
+    # 기록 행이 다른 항목을 가리킴
+    assert any("FX-U-002" in p for p in _fp(d, adjudication_log=[dict(row, item_id="FX-U-001"), AMB_ROW]))
+    # 기록 status가 adjudicated가 아님
+    assert any("FX-U-002" in p for p in _fp(d, adjudication_log=[dict(row, status="ambiguous"), AMB_ROW]))
+    # log_ref 없음
+    d["items"][1]["adjudication"]["log_ref"] = None
+    assert any("FX-U-002" in p and "log_ref" in p for p in _fp(d, adjudication_log=[row, AMB_ROW]))
+
+
+def test_d3_ambiguous_log_ref_must_exist_when_log_given():
+    d = _raw_u()
+    assert _fp(d, adjudication_log=[AMB_ROW]) == []
+    assert any("FX-U-005" in p for p in _fp(d, adjudication_log=[]))
+
+
+def test_d3_empty_set_does_not_freeze():
+    d = _raw_u()
+    d["items"] = []
+    assert any("항목" in p and "없" in p for p in _fp(d))
+
+
+@pytest.mark.parametrize("where,text", [
+    ("source.detail", "engine said: confirmed_eligible"),
+    ("annotation.note", "EngineStatus=CONFIRMED_ELIGIBLE copied"),
+    ("annotation.note", "looked like PairStatus.CONFIRMED_INELIGIBLE"),
+    ("adjudication.reason", "Matcher returned MatchStatus.ELIGIBLE"),
+    ("final.category", "FIXTURE_ONLY_ VERIFICATION_PENDING _case"),
+    ("source.detail", "copied from engine_status column"),
+    ("annotation.note", "engine output was likely_eligible"),
+    ("description", "set mirrors ExpertReview queue"),
+])
+def test_d3_engine_status_strings_in_free_text_are_leaks(where, text):
+    from gt_lib.leak import Corpus, check_set
+    d = _raw_u()
+    it = d["items"][0]
+    if where == "source.detail":
+        it["source"]["detail"] = text
+    elif where == "annotation.note":
+        it["annotations"][0]["note"] = text
+    elif where == "adjudication.reason":
+        it = d["items"][4]
+        it["adjudication"]["reason"] = text
+    elif where == "final.category":
+        it["final"]["category"] = text
+    else:
+        d["description"] = text
+    hits = [r for r in check_set(d, Corpus(), allow_fixture=True) if r["kind"] == "engine_field"]
+    assert hits, text
+
+
+def test_d3_gt_vocabulary_and_plain_words_are_not_engine_leaks():
+    from gt_lib.leak import Corpus, check_set
+    d = _raw_u()
+    d["items"][0]["annotations"][0]["note"] = ("Labeller thinks the patient is ELIGIBLE / INELIGIBLE depends on "
+                                               "the document; needs expert review; not evaluated by labeller B")
+    assert [r for r in check_set(d, Corpus(), allow_fixture=True) if r["kind"] == "engine_field"] == []
+
+
+def test_d3_freeze_cli_checks_adjudication_log(tmp_path):
+    import gt_freeze
+    from gt_lib.labelio import ADJ_COLS, write_csv
+    g = tmp_path / "gt"
+    (g / "g_u").mkdir(parents=True)
+    d = _raw_u()
+    row = _adjudicate(d)
+    (g / "g_u" / "FIXTURE_ONLY_g_u.json").write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+    freeze = lambda v: gt_freeze.main(["freeze", "--gt-root", str(g), "--version", v,  # noqa: E731
+                                       "--reference-date", "2026-11-07", "--allow-fixture"])
+    assert freeze("FIXTURE_ONLY-v0") == 1  # 판정 기록 없음
+    bad = dict(row, final_label_json=json.dumps(dict(d["items"][1]["final"], category="FIXTURE_ONLY_x")))
+    write_csv(g / "adjudication_log.csv", ADJ_COLS, [bad, AMB_ROW])
+    assert freeze("FIXTURE_ONLY-v0") == 1  # 기록의 최종 라벨이 final과 다름
+    assert not (g / "FROZEN_GT.json").exists()
+    write_csv(g / "adjudication_log.csv", ADJ_COLS, [row, AMB_ROW])
+    assert freeze("FIXTURE_ONLY-v0") == 0
+
+
+def test_d3_freeze_cli_refuses_empty_set(tmp_path):
+    import gt_freeze
+    g = tmp_path / "gt"
+    (g / "g_u").mkdir(parents=True)
+    d = _raw_u()
+    d["items"] = []
+    (g / "g_u" / "FIXTURE_ONLY_g_u.json").write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+    assert gt_freeze.main(["freeze", "--gt-root", str(g), "--version", "FIXTURE_ONLY-v0",
+                           "--reference-date", "2026-11-07", "--allow-fixture"]) == 1
+    assert not (g / "FROZEN_GT.json").exists()

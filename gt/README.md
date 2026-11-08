@@ -55,7 +55,7 @@ python -c "import ctrec; print(ctrec.__file__)"   # 이 작업 트리의 src/ctr
 | 5. 이중 라벨 | 라벨러 A, B (CL-3, CL-8) | 서로 독립, 엔진 출력 비공개. 라벨러 안내 따름 |
 | 6. 일치도 | 엔지니어 | `python scripts/gt_agreement.py --layer G-U --a sheet_L-A.csv --b sheet_L-B.csv --out agreement.json --queue adjudication_queue.csv`. 목표 kappa ≥ 0.7. 0.6 미만 필드는 규약을 고친 뒤 재라벨. 같은 라벨러 ID가 두 시트에 있으면 거부 |
 | 7. 판정 | 판정자 (라벨러와 다른 상급 임상의, CL-4) | `adjudication_queue.csv`(불일치·확신도 3 미만·needs_expert)를 `adjudication_log.csv`로 채움. `status`=adjudicated(최종 라벨 JSON) 또는 ambiguous(판정 불가, 주 분모 제외) |
-| 8. 조립·검증 | 엔지니어 | `python scripts/gt_assemble.py build --cases cases.json --meta set_meta.json --labels sheet_L-A.csv sheet_L-B.csv --adjudication adjudication_log.csv --out <보관소>/g_u/set7.json` 다음 `python scripts/gt_validate.py <보관소>/g_u/set7.json --freezable` |
+| 8. 조립·검증 | 엔지니어 | `python scripts/gt_assemble.py build --cases cases.json --meta set_meta.json --labels sheet_L-A.csv sheet_L-B.csv --adjudication adjudication_log.csv --out <보관소>/g_u/set7.json` 다음 `python scripts/gt_validate.py <보관소>/g_u/set7.json --freezable --adjudication-log adjudication_log.csv`. 동결 조건: 빈 세트 금지, agreed 항목의 `final`은 라벨러들이 합의한 라벨과 같아야 함, adjudicated 항목은 `log_ref`가 판정 기록의 `log_id`로 있고 그 행의 `item_id`·`status`·판정자·`final_label_json`이 항목과 같아야 함 (기록 없이는 거부). `gt_freeze.py`는 gt 루트·보관소의 `adjudication_log.csv`를 읽어 같은 대조를 함 |
 | 9. 동결 | GT 책임자 | `python scripts/gt_freeze.py freeze --gt-root gt --external <보관소> --version gt-v1.0 --reference-date 2026-11-07 --trial-store data/parsed/FROZEN.json --labelers L-A L-B --adjudicator ADJ-1`. 스키마·동결 조건·누출 검사 중 하나라도 실패하면 쓰지 않음. 저장소에는 `gt/FROZEN_GT.json`(해시)만 커밋 |
 | 10. 확인 | 누구나 | `python scripts/gt_verify.py --gt-root gt --external <보관소>` (보관소가 없으면 외부 파일은 "확인 불가"로 표시) |
 | 11. 1회 측정 | 엔지니어 | A·B·C 코드를 고정한 커밋에서: `python scripts/gt_engine_adapter.py <보관소>/g_u/set7.json --out gt/results/gt-v1.0/<sha>/engine.json --engine-commit <sha>` → `python scripts/gt_eval.py --gt <보관소>/g_u/set7.json --engine gt/results/gt-v1.0/<sha>/engine.json [--baseline <전 커밋 출력>] --frozen gt --official --out gt/results/gt-v1.0/<sha>/report.json` → `python scripts/gt_freeze.py advance --gt-root gt --to measured_once --reason "1회 측정" --measurement gt/results/gt-v1.0/<sha>/report.json --engine-commit <sha>` |
@@ -73,7 +73,7 @@ python scripts/gt_leak_check.py <보관소>/g_u/set7.json [--extra-corpus 추가
 
 1. `text_overlap`: 사례 원문(`text`, G-C는 `criterion_text`)이 다음과 정규화(NFKC·소문자·구두점·공백) 후 같거나, 한쪽이 다른 쪽에 포함(25자 이상)되거나, 토큰 Jaccard ≥ 0.8, 또는 짧은 쪽 토큰 8개 이상에서 포함률 ≥ 0.9.
    비교 대상: `docs/dev/*.json`(held-out 4·5·6 포함), `tests/data/**/*.json`(회귀 세트 1-3·dev), `eval/**/*.json`, `tests/**/*.py`의 문자열 상수. GT 도구 자신의 가짜 데이터는 비교 대상에서 빼고 FIXTURE 표시로 따로 거부합니다.
-2. `engine_field`: 엔진 출력 키(`directness`, `match_status`, `validation_flags`, `engine_*` 등)나 엔진 쌍 상태 값(`CONFIRMED_ELIGIBLE` 등)이 항목 어디에든 있음.
+2. `engine_field`: 엔진 출력 키(`directness`, `match_status`, `validation_flags`, `engine_*` 등)나 엔진 쌍 상태 값(`CONFIRMED_ELIGIBLE` 등)이 항목 어디에든 있음. 메모·사유·출처 설명 같은 자유 텍스트 **안에** 든 엔진 상태 문자열도 잡습니다(`confirmed_eligible`, `EngineStatus=...`, `PairStatus.X`, `MatchStatus.ELIGIBLE`, `VERIFICATION_PENDING`, `ExpertReview`, `likely_eligible`, `match_status` 등, `leak.ENGINE_TEXT_PATTERNS`). GT 어휘 `ELIGIBLE`/`INELIGIBLE` 단독과 띄어 쓴 일반 영어("expert review")는 잡지 않습니다.
 3. `no_blinding`: 세트에 블라인딩 증명이 없음.
 4. `fixture`: FIXTURE_ONLY 세트·문장 (`--allow-fixture`는 도구 테스트 전용).
 

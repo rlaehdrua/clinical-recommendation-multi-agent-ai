@@ -12,6 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from gt_lib.labelio import read_csv  # noqa: E402
 from gt_lib.models import export_json_schemas, freeze_problems, load_set  # noqa: E402
 
 
@@ -19,6 +20,8 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("sets", nargs="*", type=Path)
     ap.add_argument("--freezable", action="store_true", help="동결 조건(라벨러 2명, 판정 완료, 블라인딩)까지 확인")
+    ap.add_argument("--adjudication-log", type=Path,
+                    help="--freezable에서 adjudicated·ambiguous 항목의 log_ref를 대조할 adjudication_log.csv")
     ap.add_argument("--allow-fixture", action="store_true", help="FIXTURE_ONLY 세트 허용 (도구 테스트 전용)")
     ap.add_argument("--export-schema", type=Path, metavar="DIR")
     a = ap.parse_args(argv)
@@ -28,6 +31,7 @@ def main(argv=None) -> int:
             (a.export_schema / name).write_text(json.dumps(schema, ensure_ascii=False, indent=1) + "\n",
                                                 encoding="utf-8")
             print(f"wrote {a.export_schema / name}")
+    adj_log = read_csv(a.adjudication_log) if a.adjudication_log else None
     bad = 0
     for p in a.sets:
         try:
@@ -36,7 +40,7 @@ def main(argv=None) -> int:
             print(f"FAIL {p}: {e}")
             bad += 1
             continue
-        probs = freeze_problems(s, allow_fixture=a.allow_fixture) if a.freezable else []
+        probs = freeze_problems(s, allow_fixture=a.allow_fixture, adjudication_log=adj_log) if a.freezable else []
         if probs:
             bad += 1
             print(f"FAIL {p}: 동결 조건 {len(probs)}건")
