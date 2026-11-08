@@ -2,7 +2,9 @@
 
 - LLM: question_eval.OfflineEnvironment (실제 API 클라이언트·호출 차단, 규칙 기반 대역). 환자 정보 대역은 같은 항목이
   여러 번 나오면 가장 나중 언급을 씀 (확인 답변을 반영하는 실제 추출 흉내).
-- 시험: 합성 NSCLC 기준표 3개 (ctrec.sim.demo: T-A, T-B, T-C). 구조화 기준(나이·ECOG·검사 수치)과 LLM 기준(EGFR) 하나.
+- 시험: 합성 NSCLC 기준표 4개 (ctrec.sim.demo: T-A, T-B, T-C + expert_review_trial의 T-D). 구조화 기준(나이·ECOG·
+  검사 수치), LLM 기준(T-B의 EGFR) 하나, 임상의 판단 기준(T-D) 하나.
+- 예시 사례: 합성 NSCLC 환자 4명(DEMO-NSCLC-1~4) 뒤에 원래 예시 사례 목록.
 - 저장: --store (기본 outputs/followup-demo). 서버를 끄고 다시 켜도 사례·요청·응답이 이어집니다.
 - 연구 담당자 키: CTREC_STAFF_KEY (없으면 실행할 때마다 새로 만들어 화면에 출력).
 - --synthetic-verification: 합성 시험 전용 문서 검증자·임상의 권한 (CTREC_VERIFICATION_MODE=synthetic).

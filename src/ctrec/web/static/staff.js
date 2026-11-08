@@ -681,10 +681,10 @@ async function inspector() {
     <details><summary class="hint">과거 평가 기록 원본 JSON</summary><pre class="raw">${h(JSON.stringify(part(scope.history), null, 1).slice(0, 200000))}</pre></details></section>`;
 }
 
-// ------------------------------------------------------------ 확인 대기열 = 화면의 '전체 순서' (모든 환자의 확인을 추천 순서대로, Cohort C)
+// ------------------------------------------------------------ 확인 대기열 = 화면의 '전체 순서' (모든 환자의 확인을 추천 순서대로, 예산 제약 미적용)
 function renderQueue(queue) {
   const all = queue.items || [], items = all.filter(x => x.route && x.route !== "clinician_review" || x.request_status);
-  q$("#st-queue").innerHTML = items.length ? `<p class="hint m0">환자 ${h(queue.cases)}명의 확인을 한 줄로 세운 추천 순서예요. 위에서부터 하면 같은 시간에 결과가 가장 많이 나와요 (안전 때문에 꼭 필요한 확인이 맨 먼저).</p>
+  q$("#st-queue").innerHTML = items.length ? `<p class="hint m0">환자 ${h(queue.cases)}명의 확인을 한 줄로 세운 추천 순서예요 (예산 제약 미적용). 안전 때문에 꼭 필요한 확인이 맨 먼저이고, 그다음은 남은 조건 수와 예상 시간(가정 비용)으로 정한 순서예요. 시간이 가장 적게 든다는 보장은 아니에요.</p>
     <span class="err" id="st-queue-err" role="alert"></span><table class="list"><thead><tr><th>순서</th><th>환자</th><th>확인할 것</th><th>상태</th></tr></thead><tbody>
     ${items.map((x, i) => `<tr><td>${h(i + 1)}</td><td><button class="link" type="button" data-case="${h(x.case_id)}">${h(who(x.case_id))}</button></td>
       <td>${h(itemName(x.info_key || ""))} <span class="hint">· ${h(ACTION[x.action_type] || KIND[x.route] || x.action_type)}</span>${x.safety_required ? ' <span class="badge bad">안전 때문에 꼭 필요</span>' : ""}</td>

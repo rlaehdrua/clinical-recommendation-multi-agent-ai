@@ -88,7 +88,9 @@
 | `POST /api/followup/staff/cases/{case_id}/requests` | `{"proposal_ids": [str](1~50), "expected_revision": int?}` | 지금 제안에서 골라 요청 생성. 모두 검사한 뒤 만들고, 일부만 만들지 않음 |
 | `POST /api/followup/staff/cases/{case_id}/requests/{request_id}/status` | `{"status": "unreachable"\|"document_unavailable"\|"cancelled"}` | 허용된 전이만 (§2) |
 | `GET /api/followup/staff/cases/{case_id}/inspector` | - | Inspector 보기 (`inspector.build_view`) + `followup`(평가·요청·응답 기록) |
-| `GET /api/followup/staff/queue` | - | 모든 사례를 한 코호트로 본 DCV+C 순서 (Cohort C 대기열) |
+| `GET /api/followup/staff/queue` | - | 모든 사례를 한 코호트로 본 DCV+C 순서 (Cohort C 대기열, 추천 순서(예산 제약 미적용)) |
+
+> 예산: follow-up 계획은 `FOLLOWUP_BUDGET`(코디네이터 100000분, `web/engine_runner.DEFAULT_BUDGET` + 같은 값의 임상의 분)을 씁니다. 선택이 예산에서 잘리지 않게 하는 값이라 Cohort C의 예산 배분은 웹 순서·선택에 영향을 주지 않습니다. `rank`는 안전 필수 행동 → (남은 필수 기준 기반 구조 점수 / 가정 비용) 순서이며, 코디네이터 시간을 예산 안에서 최적 배분한 결과가 아닙니다 (03 D10).
 
 `proposals[*]`의 필드: `proposal_id`, `rank`(1부터, C 순서), `action_type`, `route`(`ask_patient`/`document_review`/
 `conflict_resolution`/`clinician_review`, 기록용 행동이면 null), `source_id`, `info_key`, `target_criteria`, `target_trials`,

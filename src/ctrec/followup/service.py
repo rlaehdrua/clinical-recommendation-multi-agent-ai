@@ -1401,7 +1401,11 @@ class FollowupService:
         return out, bad
 
     def staff_queue(self) -> dict:
-        """모든 열린 사례를 한 코호트로 보고 DCV+C가 고른 순서 (Cohort C 우선순위). 판정은 바꾸지 않음."""
+        """모든 열린 사례를 한 코호트로 보고 DCV+C(full_dcvc)가 고른 추천 순서(예산 제약 미적용). 판정은 바꾸지 않음.
+
+        FOLLOWUP_BUDGET(코디네이터 100000분)은 선택이 예산에서 잘리지 않게 하는 값이라, Cohort C의 예산 배분은 여기서
+        결과에 영향을 주지 않음: 순서는 안전 필수 행동 먼저, 그다음 (남은 필수 기준 기반 구조 점수 / 가정 비용) 순.
+        코디네이터 시간을 예산 안에서 배분·최적화한다는 뜻이 아님 (03 D10, 예산 효과는 WP6 시뮬레이터에서만 봄)."""
         states, ops, case_of, requested, sessions, req_of = {}, {}, {}, [], {}, {}
         gate = {"unproven": set(), "no_basis": {}}  # V4-B1: 사례마다 따로 모아 성공한 사례만 합침 (F-17 격리)
 
