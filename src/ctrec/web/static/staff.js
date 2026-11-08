@@ -265,10 +265,9 @@ function renderSummary(s, list) {
       <div class="num ok"><span>줄어든 시간</span><b>${h(min(sentAlone - s.spent_minutes))}</b><em>${h(Math.round(100 * (sentAlone - s.spent_minutes) / sentAlone))}% 절약 · 가정된 활동시간 기준</em></div></div>
       <p class="m0">보낼 질문을 모두 보냈어요.</p>`
       : `<p class="m0">보낼 질문을 모두 보냈어요. 지금까지 보낸 요청의 예상 시간 ${h(min(s.spent_minutes))}.</p>`}
-    <p class="hint m0">환자 ${h(s.cases)}명 · 남은 확인 ${h(rem.length)}건 · 진행 중인 요청 ${h(open)}건 · 결과: 참여 가능(확정) ${h(pc("CONFIRMED_ELIGIBLE"))} · 참여 불가(확정) ${h(pc("CONFIRMED_INELIGIBLE"))} / 전체 ${h(all)}개 시험
-      <br>※ '분'은 일의 양을 비교하려고 미리 정한 <b>예상 시간(가정)</b>이에요. 실제로 잰 시간이 아니에요.${S.demo ? " · 발표용 데모 (가상 환자·가상 시험)" : ""}</p>
+    <p class="hint m0">환자 ${h(s.cases)}명 · 남은 확인 ${h(rem.length)}건 · 진행 중인 요청 ${h(open)}건 · 결과: 참여 가능(확정) ${h(pc("CONFIRMED_ELIGIBLE"))} · 참여 불가(확정) ${h(pc("CONFIRMED_INELIGIBLE"))} / 전체 ${h(all)}개 시험${S.demo ? " · 발표용 데모 (가상 환자·가상 시험)" : ""}</p>
     ${stepHtml}
-    ${maxM > 0 && s.decidable_pairs ? `<details class="budget"${S.budgetOpen ? " open" : ""}><summary><b>이 시간이면?</b> <span class="hint">추천 순서대로 확인할 때 결과가 나올 수 있는 시험 (상한 · 예산 제한은 적용하지 않음)</span></summary>
+    ${maxM > 0 && s.decidable_pairs ? `<details class="budget"${S.budgetOpen ? " open" : ""}><summary><b>이 시간이면?</b> <span class="hint">추천 순서대로 확인할 때 결과가 나올 수 있는 시험</span></summary>
       <div class="curve-wrap mt8"><div>${curveSvg(s.c_curve, s.decidable_pairs, S.budget)}
         <input type="range" id="st-budget" min="0" max="${h(Math.ceil(maxM))}" step="1" value="${h(S.budget)}" aria-label="쓸 시간 (분)"></div>
         <p class="m0" id="st-budget-out">${budgetText(s, S.budget)}</p></div></details>` : ""}`;
@@ -338,7 +337,7 @@ function renderQuestions() {
   if (!cards.length) { q$("#st-qlist").innerHTML = '<div class="empty">지금 보낼 질문이 없어요.</div>'; renderPickBar(); return; }
   const top = todo.slice(0, 3), rest = todo.slice(3);
   q$("#st-qlist").innerHTML = `
-    <div class="row qc-head"><p class="m0"><b>추천 질문</b> <span class="hint">추천 순서(Cohort C) · 예산 제한은 적용하지 않음</span></p>
+    <div class="row qc-head"><p class="m0"><b>추천 질문</b></p>
       <span class="row"><button class="btn ghost sm" type="button" data-pick-top="1">추천 3개 고르기</button><button class="btn ghost sm" type="button" data-pick-none="1">모두 해제</button></span></div>
     ${top.map((c, i) => qcard(c, i)).join("") || '<div class="empty">보낼 질문을 모두 보냈어요. 이제 ② 받은 서류·판단 처리에서 서류를 확인하세요.</div>'}
     ${rest.length ? `<details class="qc-more"${S.moreOpen ? " open" : ""}><summary>나머지 질문 ${h(rest.length)}개 보기</summary><div class="stack mt8">${rest.map((c, i) => qcard(c, i + 3)).join("")}</div></details>` : ""}
@@ -353,7 +352,7 @@ function renderPickBar() {
   if (!n) { bar.innerHTML = `<p class="m0 hint">질문을 고르면 함께 보낼 때의 예상 시간이 여기에 나와요.</p>${S.sendMsg ? `<span class="err ok-msg" role="status">${h(S.sendMsg)}</span>` : ""}`; return; }
   const saved = e ? Math.max(0, e.minutes_alone - e.minutes) : 0, gain = e ? Math.max(0, e.decidable_pairs - e.decidable_pairs_before) : 0;
   bar.innerHTML = `<div class="pick-sum"><b>고른 질문 ${h(n)}개</b>
-      ${e ? `<span>함께 보내면 <b>${h(min(e.minutes))}</b></span>${saved ? `<span class="hint">하나씩 하면 ${h(min(e.minutes_alone))}</span><span class="good"><b>${h(min(saved))} 절약</b> <span class="hint">(가정된 활동시간 기준)</span></span>` : ""}
+      ${e ? `<span>함께 보내면 <b>${h(min(e.minutes))}</b></span>${saved ? `<span class="hint">하나씩 하면 ${h(min(e.minutes_alone))}</span><span class="good"><b>${h(min(saved))} 절약</b></span>` : ""}
       <span>결과가 나올 수 있는 시험 <b>+${h(gain)}개</b> <span class="hint">(최대)</span></span>` : '<span class="hint">계산 중…</span>'}</div>
     <button class="btn" type="button" data-send-picked="1">고른 질문 보내기 (${h(pickedList().length)}건)</button>
     <span class="err" id="st-qerr" role="alert">${h(S.sendMsg || "")}</span>`;
@@ -741,7 +740,7 @@ async function inspector() {
 // ------------------------------------------------------------ 확인 대기열 = 화면의 '전체 순서' (모든 환자의 확인을 추천 순서대로, 예산 제약 미적용)
 function renderQueue(queue) {
   const all = queue.items || [], items = all.filter(x => x.route && x.route !== "clinician_review" || x.request_status);
-  q$("#st-queue").innerHTML = items.length ? `<p class="hint m0">환자 ${h(queue.cases)}명의 확인을 한 줄로 세운 추천 순서예요 (예산 제약 미적용). 안전 때문에 꼭 필요한 확인이 맨 먼저이고, 그다음은 남은 조건 수와 예상 시간(가정 비용)으로 정한 순서예요. 시간이 가장 적게 든다는 보장은 아니에요.</p>
+  q$("#st-queue").innerHTML = items.length ? `<p class="hint m0">환자 ${h(queue.cases)}명의 확인을 한 줄로 세운 추천 순서예요. 안전 때문에 꼭 필요한 확인이 맨 먼저예요.</p>
     <span class="err" id="st-queue-err" role="alert"></span><table class="list"><thead><tr><th>순서</th><th>환자</th><th>확인할 것</th><th>상태</th></tr></thead><tbody>
     ${items.map((x, i) => `<tr><td>${h(i + 1)}</td><td><button class="link" type="button" data-case="${h(x.case_id)}">${h(who(x.case_id))}</button></td>
       <td>${h(itemName(x.info_key || ""))} <span class="hint">· ${h(ACTION[x.action_type] || KIND[x.route] || x.action_type)}</span>${x.safety_required ? ' <span class="badge bad">안전 때문에 꼭 필요</span>' : ""}</td>
