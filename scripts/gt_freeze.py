@@ -18,12 +18,25 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from gt_lib import freeze as fz  # noqa: E402
+from gt_lib.labelio import read_csv  # noqa: E402
 from gt_lib.leak import build_corpus, check_set  # noqa: E402
 from gt_lib.models import GTSet, freeze_problems  # noqa: E402
 
 
+def read_adjudication_log(bases) -> list[dict] | None:
+    """gt 루트 또는 외부 보관소의 adjudication_log.csv 행 (둘 다 없으면 None)."""
+    rows = None
+    for base in bases:
+        p = base / "adjudication_log.csv"
+        if p.is_file():
+            rows = (rows or []) + read_csv(p)
+    return rows
+
+
 def check_sets(bases, allow_fixture: bool, extra_corpus, repo_root=None) -> list[str]:
     problems, corpus = [], None
+    adj_log = read_adjudication_log(bases)
+    n_sets = 0
     for base in bases:
         for d in fz.SET_DIRS:
             for p in sorted((base / d).glob("*.json")) if (base / d).is_dir() else []:
@@ -33,10 +46,14 @@ def check_sets(bases, allow_fixture: bool, extra_corpus, repo_root=None) -> list
                 except Exception as e:
                     problems.append(f"{p}: 스키마 실패 {e}")
                     continue
-                problems += [f"{p}: {x}" for x in freeze_problems(s, allow_fixture=allow_fixture)]
+                n_sets += 1
+                problems += [f"{p}: {x}" for x in freeze_problems(s, allow_fixture=allow_fixture,
+                                                                   adjudication_log=adj_log)]
                 corpus = corpus or build_corpus(repo_root, extra_corpus)
                 problems += [f"{p}: 누출 [{r['kind']}] {r['item_id']}" for r in
                              check_set(raw, corpus, allow_fixture=allow_fixture)]
+    if n_sets == 0:
+        problems.append("동결할 GT 세트(g_u/, g_c/, g_p/의 *.json)가 없습니다")
     return problems
 
 
@@ -61,6 +78,8 @@ def main(argv=None) -> int:
     v.add_argument("--reason", required=True)
     v.add_argument("--measurement", type=Path)
     v.add_argument("--engine-commit")
+    v.add_argument("--external", type=Path)
+    v.add_argument("--repo-root", type=Path)
     a = ap.parse_args(argv)
     if a.cmd == "freeze":
         bases = [a.gt_root] + ([a.external] if a.external else [])
@@ -81,7 +100,8 @@ def main(argv=None) -> int:
         print(f"wrote {path}: {a.version}, 파일 {len(m['files'])}개, status=sealed")
         return 0
     try:
-        m = fz.advance(a.gt_root, a.to, reason=a.reason, measurement=a.measurement, engine_commit=a.engine_commit)
+        m = fz.advance(a.gt_root, a.to, reason=a.reason, measurement=a.measurement, engine_commit=a.engine_commit,
+                       external=a.external, repo_root=a.repo_root)
     except ValueError as e:
         print(f"거부: {e}")
         return 1

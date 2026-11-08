@@ -5,11 +5,15 @@
 - 거짓 확정 적격·거짓 확정 부적격·미해결·과잉 보류를 따로 셉니다.
 - LLM이 필요한 지표(A7, B6 등)는 '미측정'으로 표시합니다.
 - 엔진 출력의 gt_set_sha256이 GT 파일 해시와 다르면 거부합니다.
-- --frozen을 주면 FROZEN_GT.json 확인을 먼저 하고, 실패하거나 상태가 sealed가 아니면 결과를 '탐색적'으로 표시합니다.
+- 공식 결과(report["official"]=True)는 --frozen 매니페스트가 verify()를 통과하고, 상태가 sealed이고,
+  --gt 파일의 sha256이 매니페스트 세트 파일 목록에 있고, 엔진 출력이 GT 항목을 모두 덮을 때만입니다.
+  하나라도 어기면 결과를 '탐색적'으로 표시합니다 (official_blockers에 사유).
+- --official을 주면 위 조건을 못 맞출 때 보고서를 쓰지 않고 종료 코드 1로 거부합니다.
+  --official 없이 실행하면 기존처럼 탐색적 결과를 계산합니다 (종료 코드 0).
 
 사용:
   python scripts/gt_eval.py --gt gt/g_u/set7.json --engine out_after.json [--baseline out_before.json]
-      [--frozen gt] [--out report.json]
+      [--frozen gt [--external D:/gt_private] --official] [--out report.json]
 """
 import argparse
 import hashlib
@@ -36,7 +40,10 @@ def _fmt(m: dict) -> str:
     return s
 
 
-def run(gt_path: Path, engine_path: Path, baseline_path: Path | None = None, frozen: Path | None = None) -> dict:
+def run(gt_path: Path, engine_path: Path, baseline_path: Path | None = None, frozen: Path | None = None,
+        external: Path | None = None, repo_root: Path | None = None) -> dict:
+    """report["official"]은 다음이 모두 참일 때만 True: --frozen 매니페스트가 verify()를 통과, 상태 sealed,
+    --gt 파일 sha256이 매니페스트의 세트 파일로 등록, 엔진 출력이 GT 항목을 100% 덮음 (metrics.evaluate)."""
     data = gt_path.read_bytes()
     gt = GTSet.model_validate_json(data)
     engine = json.loads(engine_path.read_text(encoding="utf-8"))
@@ -48,16 +55,17 @@ def run(gt_path: Path, engine_path: Path, baseline_path: Path | None = None, fro
         raise ValueError("기준선 출력의 gt_set_sha256이 GT 파일과 다릅니다")
     report = evaluate(gt, engine, baseline)
     report["gt_set_sha256"] = digest
+    blockers = list(report.get("official_blockers", []))
     if frozen is not None:
-        problems = fz.verify(frozen)
-        status = None
-        if (frozen / fz.FROZEN_NAME).exists():
-            status = json.loads((frozen / fz.FROZEN_NAME).read_text(encoding="utf-8")).get("status")
-        report["frozen"] = {"problems": problems, "status": status}
-        if problems or status != "sealed":
-            report["exploratory"] = "동결 확인 실패 또는 이미 측정·강등된 세트: 결과는 탐색적"
+        fb, info = fz.official_blockers(digest, frozen, external=external, repo_root=repo_root)
+        report["frozen"] = info
+        blockers += fb
     else:
-        report["exploratory"] = "동결 확인 없이 계산 (--frozen 없음): 결과는 탐색적"
+        blockers.append("동결 확인 없이 계산 (--frozen 없음)")
+    report["official_blockers"] = blockers
+    report["official"] = not blockers
+    if blockers:
+        report["exploratory"] = "결과는 탐색적 (공식 결과 아님): " + "; ".join(blockers)
     return report
 
 
@@ -86,12 +94,24 @@ def main(argv=None) -> int:
     ap.add_argument("--engine", required=True, type=Path)
     ap.add_argument("--baseline", type=Path)
     ap.add_argument("--frozen", type=Path, help="FROZEN_GT.json이 있는 gt 폴더")
+    ap.add_argument("--external", type=Path, help="동결 시 외부 보관소 (storage=external 파일 확인)")
+    ap.add_argument("--repo-root", type=Path, help="지표 정의 해시를 확인할 저장소 루트 (기본: 이 저장소)")
+    ap.add_argument("--official", action="store_true",
+                    help="공식 결과 요청. 공식 조건(동결 확인·sealed·GT 파일 등록·커버리지 100%)을 하나라도 "
+                         "못 맞추면 보고서를 쓰지 않고 종료 코드 1")
     ap.add_argument("--out", type=Path)
     a = ap.parse_args(argv)
     try:
-        rep = run(a.gt, a.engine, a.baseline, a.frozen)
+        rep = run(a.gt, a.engine, a.baseline, a.frozen, a.external, a.repo_root)
     except ValueError as e:
         print(f"거부: {e}")
+        return 1
+    if a.official and not rep["official"]:
+        print("거부: 공식 결과 조건을 만족하지 않습니다")
+        for b in rep["official_blockers"]:
+            print("   -", b)
+        for p in (rep.get("frozen") or {}).get("problems", []):
+            print("     *", p)
         return 1
     print_report(rep)
     if a.out:

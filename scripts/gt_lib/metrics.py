@@ -72,19 +72,72 @@ def _zero(o):
     return o["numerator"] == 0
 
 
-def _split(gt: GTSet, engine: dict):
-    res = {it["item_id"]: it for it in engine.get("items", [])}
+def _check_result(r, e, what: str):
+    """엔진 결과 한 건의 형식. 기본값으로 메우지 않고 틀리면 ValueError (D-2)."""
+    iid = r.item_id
+    if not isinstance(e, dict):
+        raise ValueError(f"{what} {iid}: result가 객체가 아닙니다 ({type(e).__name__})")
+    if r.layer == "G-U":
+        if r.input.kind == "conflict":
+            if not isinstance(e.get("directness"), str) or not e["directness"]:
+                raise ValueError(f"{what} {iid}: conflict 항목에 문자열 directness가 없습니다 ({e.get('directness')!r})")
+        elif not isinstance(e.get("accepted"), bool):
+            raise ValueError(f"{what} {iid}: value 항목의 accepted가 true/false가 아닙니다 ({e.get('accepted', '<없음>')!r})")
+    elif r.layer == "G-P":
+        if e.get("pair_status") not in PAIR_STATUSES:
+            raise ValueError(f"{what} {iid}: 알 수 없는 엔진 pair_status {e.get('pair_status', '<없음>')!r}")
+        dc = e.get("deciding_criteria")
+        if dc is not None and not (isinstance(dc, list) and all(isinstance(x, str) for x in dc)):
+            raise ValueError(f"{what} {iid}: deciding_criteria는 문자열 목록 또는 null이어야 합니다")
+    elif "scope_represented" in e and not isinstance(e["scope_represented"], bool):
+        raise ValueError(f"{what} {iid}: scope_represented가 true/false가 아닙니다")
+
+
+def _results(gt: GTSet, out: dict, what: str) -> dict[str, dict]:
+    """엔진 출력 items -> {item_id: result}. 구조가 틀린 항목·중복·형식이 틀린 결과는 ValueError."""
+    items = out.get("items")
+    if not isinstance(items, list):
+        raise ValueError(f"{what}: items가 목록이 아닙니다")
+    res = {}
+    for i, it in enumerate(items):
+        if not isinstance(it, dict) or not isinstance(it.get("item_id"), str) or "result" not in it:
+            raise ValueError(f"{what}: items[{i}]에 item_id(문자열)와 result가 필요합니다")
+        if it["item_id"] in res:
+            raise ValueError(f"{what}: item_id {it['item_id']} 중복")
+        res[it["item_id"]] = it["result"]
+    for r in gt.items:
+        if r.item_id in res:
+            _check_result(r, res[r.item_id], what)
+    return res
+
+
+def _split(gt: GTSet, res: dict[str, dict]):
     labelled, ambiguous, missing = [], [], []
     for r in gt.items:
         e = res.get(r.item_id)
-        if e is None:
+        if r.item_id not in res:
             missing.append(r.item_id)
         elif r.adjudication.status == "ambiguous":
-            ambiguous.append((r, e["result"]))
+            ambiguous.append((r, e))
         elif r.final is not None:
-            labelled.append((r, e["result"]))
+            labelled.append((r, e))
     extra = sorted(set(res) - {r.item_id for r in gt.items})
     return labelled, ambiguous, missing, extra
+
+
+def _coverage_blockers(gt: GTSet, res: dict[str, dict], what: str) -> list[str]:
+    """공식 결과를 막는 커버리지 문제. 빠진 항목을 분모에서 조용히 빼지 않도록 공식 결과 자체를 막습니다."""
+    ids = {r.item_id for r in gt.items}
+    missing = sorted(ids - set(res))
+    extra = sorted(set(res) - ids)
+    out = []
+    if not ids:
+        out.append("GT 세트에 항목이 없음 (빈 세트는 공식 결과가 될 수 없음)")
+    if missing:
+        out.append(f"{what}이 GT 항목 {len(missing)}/{len(ids)}건을 덮지 않음 (커버리지 100% 아님): {missing[:10]}")
+    if extra:
+        out.append(f"{what}에 GT에 없는 항목 {len(extra)}건: {extra[:10]}")
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -296,18 +349,26 @@ def evaluate(gt: GTSet, engine: dict, baseline: dict | None = None) -> dict:
         raise ValueError(f"엔진 출력 형식이 {ENGINE_FORMAT}이 아닙니다")
     if engine.get("gt_set_id") != gt.set_id:
         raise ValueError(f"엔진 출력의 gt_set_id({engine.get('gt_set_id')})가 GT({gt.set_id})와 다릅니다")
-    labelled, amb, missing, extra = _split(gt, engine)
+    res = _results(gt, engine, "엔진 출력")
+    labelled, amb, missing, extra = _split(gt, res)
+    blockers = _coverage_blockers(gt, res, "엔진 출력")
     base_res = None
     if baseline is not None:
+        if baseline.get("format") != ENGINE_FORMAT:
+            raise ValueError(f"기준선 출력 형식이 {ENGINE_FORMAT}이 아닙니다")
         if baseline.get("gt_set_id") != gt.set_id:
             raise ValueError("기준선 출력의 gt_set_id가 GT와 다릅니다")
-        base_res = {it["item_id"]: it["result"] for it in baseline.get("items", [])}
+        base_res = _results(gt, baseline, "기준선 출력")
+        blockers += _coverage_blockers(gt, base_res, "기준선 출력")
     report = {
         "gt_set_id": gt.set_id, "gt_version": gt.gt_version, "layer": gt.layer, "fixture_only": gt.fixture_only,
         "level": engine.get("level"), "engine": engine.get("engine"),
         "coverage": {"gt_items": len(gt.items), "labelled": len(labelled), "ambiguous": len(amb),
                      "pending_or_unlabelled": len(gt.items) - len(labelled) - len(amb) - len(missing),
-                     "missing_engine_output": missing, "extra_engine_items": extra},
+                     "missing_engine_output": missing, "extra_engine_items": extra,
+                     "complete": not missing and not extra},
+        # 비어 있지 않으면 공식 결과가 될 수 없음 (gt_eval.run이 동결 조건과 합쳐 official을 정함)
+        "official_blockers": blockers,
         "not_measured": dict(NOT_MEASURED),
     }
     if gt.fixture_only:

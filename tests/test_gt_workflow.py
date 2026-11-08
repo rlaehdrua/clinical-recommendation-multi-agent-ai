@@ -86,7 +86,9 @@ def test_full_flow_kappa_queue_adjudication_assembly(tmp_path):
     s = load_set(out)
     r2 = next(r for r in s.items if r.item_id == "FX-U-002")
     assert r2.adjudication.status == "adjudicated" and r2.final.decision == "accept"
-    assert freeze_problems(s, allow_fixture=True) == []
+    # D-3: 판정 항목은 판정 기록과 대조해야 동결 가능 (기록 없이는 거부)
+    assert any("adjudication_log" in p for p in freeze_problems(s, allow_fixture=True))
+    assert freeze_problems(s, allow_fixture=True, adjudication_log=read_csv(log)) == []
 
 
 def test_same_labeler_in_both_sheets_refused(tmp_path):

@@ -50,6 +50,18 @@ ENGINE_VALUES = {
     "CONFIRMED_ELIGIBLE", "CONFIRMED_INELIGIBLE", "VERIFICATION_PENDING", "INFO_MISSING", "EXPERT_REVIEW",
     "BLOCKED_FAILURE", "NOT_EVALUATED",
 }
+# 자유 텍스트(메모·사유·출처 설명 등) 안의 엔진 상태 문자열 (D-3). 값 전체가 같을 때만 보던 검사를 보강합니다.
+# GT 어휘(ELIGIBLE, INELIGIBLE 단독)와 띄어 쓴 일반 영어("expert review", "not evaluated")는 잡지 않습니다.
+ENGINE_TEXT_PATTERNS = [
+    re.compile(r"confirmed[_\s-]?(?:in)?eligible", re.I),                    # CONFIRMED_ELIGIBLE, confirmed eligible
+    re.compile(r"confirmed[_-]unverified", re.I),
+    re.compile(r"(?:verification[_-]?pending|info[_-]?missing|expert[_-]?review|blocked[_-]?failure|"
+               r"not[_-]?evaluated)", re.I),                               # VERIFICATION_PENDING, ExpertReview
+    re.compile(r"likely[_-](?:in)?eligible|\bneeds_review\b", re.I),        # Session match_status 값
+    re.compile(r"(?:engine|match|matcher)[_-]?(?:status|verdict|output|result)", re.I),  # EngineStatus, match_status
+    re.compile(r"\bPairStatus\b"),                                         # 엔진 enum 클래스 이름
+    re.compile(r"\b[A-Z][A-Za-z]*(?:Status|Verdict)\.[A-Z][A-Z_]+"),       # MatchStatus.ELIGIBLE 같은 enum 표기
+]
 
 MIN_SEG_TOKENS = 5        # 유사도(겹침) 비교 대상 조각의 최소 토큰 수
 MIN_EXACT_SEG_TOKENS = 4  # 정규화 후 완전 일치를 보는 조각의 최소 토큰 수 (짧은 상투 문장 오탐 방지)
@@ -60,6 +72,10 @@ CONTAIN_T = 0.9
 CONTAIN_MIN_TOKENS = 8
 MAX_DF_FOR_INDEX = 400
 
+# 한국어 띄어쓰기 변형 (D-4): 한글이 든 조각은 공백을 모두 지운 형태로도 비교합니다.
+_HANGUL = re.compile(r"[가-힣]")
+MIN_COMPACT_EXACT_CHARS = 8    # 공백 제거 후 완전 일치를 보는 최소 글자 수
+MIN_COMPACT_SUBSTR_CHARS = 15  # 공백 제거 후 포함 관계를 보는 짧은 쪽 최소 글자 수
 _TOKEN = re.compile(r"\w+", re.UNICODE)
 _SPLIT = re.compile(r"(?<=[.!?。])\s+|\n+|\s/\s|;\s")
 
@@ -96,6 +112,8 @@ class Corpus:
     _segs: list[tuple[int, str, frozenset]] = field(default_factory=list)
     _exact: dict = field(default_factory=dict)
     _index: dict = field(default_factory=lambda: defaultdict(list))
+    _compact: list[tuple[int, str]] = field(default_factory=list)
+    _compact_exact: dict = field(default_factory=dict)
 
     def add(self, source: str, text: str):
         if not isinstance(text, str) or len(text.strip()) < 15:
@@ -103,6 +121,11 @@ class Corpus:
         idx = len(self.entries)
         self.entries.append(CorpusEntry(source, text))
         for seg in segments(text):
+            if _HANGUL.search(seg):
+                c = seg.replace(" ", "")
+                if len(c) >= MIN_COMPACT_EXACT_CHARS:
+                    self._compact.append((idx, c))
+                    self._compact_exact.setdefault(c, idx)
             toks = frozenset(seg.split())
             if len(toks) < 3:
                 continue
@@ -121,9 +144,26 @@ class Corpus:
         need = max(2, len(toks) // 3)
         return [sid for sid, k in c.items() if k >= need]
 
+    def _match_compact(self, seg: str, hits: dict):
+        """한글 조각: 공백을 지운 뒤 완전 일치 또는 (짧은 쪽 15자 이상) 포함."""
+        c = seg.replace(" ", "")
+        if len(c) < MIN_COMPACT_EXACT_CHARS:
+            return
+        eidx = self._compact_exact.get(c)
+        if eidx is not None:
+            hits.setdefault(eidx, ("exact_after_hangul_spacing", 1.0, seg))
+            return
+        for eidx, cc in self._compact:
+            if eidx in hits or min(len(c), len(cc)) < MIN_COMPACT_SUBSTR_CHARS:
+                continue
+            if cc in c or c in cc:
+                hits[eidx] = ("substring_after_hangul_spacing", 1.0, seg)
+
     def match(self, text: str) -> list[dict]:
         hits = {}
         for seg in segments(text):
+            if _HANGUL.search(seg):
+                self._match_compact(seg, hits)
             toks = frozenset(seg.split())
             if seg in self._exact:
                 sid = self._exact[seg]
@@ -224,8 +264,15 @@ def _engine_fields(obj, path="") -> list[str]:
     elif isinstance(obj, list):
         for i, v in enumerate(obj):
             found += _engine_fields(v, f"{path}[{i}]")
-    elif isinstance(obj, str) and obj.strip() in ENGINE_VALUES:
-        found.append(f"{path}={obj.strip()}")
+    elif isinstance(obj, str):
+        if obj.strip() in ENGINE_VALUES:
+            found.append(f"{path}={obj.strip()}")
+        else:
+            for pat in ENGINE_TEXT_PATTERNS:
+                m = pat.search(obj)
+                if m:
+                    found.append(f"{path}~{m.group(0)}")
+                    break
     return found
 
 

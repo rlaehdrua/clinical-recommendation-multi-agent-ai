@@ -47,7 +47,7 @@ python -c "import ctrec; print(ctrec.__file__)"   # 이 작업 트리의 src/ctr
 
 | 단계 | 누가 | 명령·산출물 |
 |---|---|---|
-| 0. 사전 등록 | GT 책임자 + 엔지니어 | 지표 정의(`scripts/gt_lib/metrics.py`, `stats.py`)와 합격 기준(D 3절)을 세트 공개 **전에** 커밋. 동결 시 두 파일의 해시가 `metric_definitions`에 기록되고, 측정 뒤 바뀌면 `gt_verify.py`가 경고 |
+| 0. 사전 등록 | GT 책임자 + 엔지니어 | 지표 정의(`scripts/gt_lib/metrics.py`, `stats.py`)와 합격 기준(D 3절)을 세트 공개 **전에** 커밋. 동결 시 평가 결과를 바꿀 수 있는 코드(`metrics.py`, `stats.py`, `models.py`, `labelio.py`, `freeze.py`, `scripts/gt_eval.py`, `scripts/gt_engine_adapter.py`)의 해시가 `metric_definitions`에 기록되고, 동결 뒤 바뀌면 `gt_verify.py`가 문제로 보고하며 그 뒤 결과는 공식이 아님 |
 | 1. 규약 승인 | 임상의 (CL-1, CL-2, CL-9) | `gt/protocol/annotation_protocol_v1.md` (승인본), 상충 질환 묶음표, 쌍 집계 규칙. `templates/labeler_instructions_v1_DRAFT.md`는 초안 |
 | 2. 사례 작성 | 엔진 A·B·C 작업에 참여하지 않은 작성자 | `templates/*_cases.template.json` 형식의 사례 파일. 세트 1-6의 작성 프롬프트·범주 목록을 쓰지 않음. 원문은 **저장소 밖** 보관 |
 | 3. 누출 검사 | 엔지니어 | 아래 3절. 사례 파일을 세트 형식으로 조립한 뒤에도 다시 실행 |
@@ -55,13 +55,13 @@ python -c "import ctrec; print(ctrec.__file__)"   # 이 작업 트리의 src/ctr
 | 5. 이중 라벨 | 라벨러 A, B (CL-3, CL-8) | 서로 독립, 엔진 출력 비공개. 라벨러 안내 따름 |
 | 6. 일치도 | 엔지니어 | `python scripts/gt_agreement.py --layer G-U --a sheet_L-A.csv --b sheet_L-B.csv --out agreement.json --queue adjudication_queue.csv`. 목표 kappa ≥ 0.7. 0.6 미만 필드는 규약을 고친 뒤 재라벨. 같은 라벨러 ID가 두 시트에 있으면 거부 |
 | 7. 판정 | 판정자 (라벨러와 다른 상급 임상의, CL-4) | `adjudication_queue.csv`(불일치·확신도 3 미만·needs_expert)를 `adjudication_log.csv`로 채움. `status`=adjudicated(최종 라벨 JSON) 또는 ambiguous(판정 불가, 주 분모 제외) |
-| 8. 조립·검증 | 엔지니어 | `python scripts/gt_assemble.py build --cases cases.json --meta set_meta.json --labels sheet_L-A.csv sheet_L-B.csv --adjudication adjudication_log.csv --out <보관소>/g_u/set7.json` 다음 `python scripts/gt_validate.py <보관소>/g_u/set7.json --freezable` |
+| 8. 조립·검증 | 엔지니어 | `python scripts/gt_assemble.py build --cases cases.json --meta set_meta.json --labels sheet_L-A.csv sheet_L-B.csv --adjudication adjudication_log.csv --out <보관소>/g_u/set7.json` 다음 `python scripts/gt_validate.py <보관소>/g_u/set7.json --freezable --adjudication-log adjudication_log.csv`. 동결 조건: 빈 세트 금지, agreed 항목의 `final`은 라벨러들이 합의한 라벨과 같아야 함, adjudicated 항목은 `log_ref`가 판정 기록의 `log_id`로 있고 그 행의 `item_id`·`status`·판정자·`final_label_json`이 항목과 같아야 함 (기록 없이는 거부). `gt_freeze.py`는 gt 루트·보관소의 `adjudication_log.csv`를 읽어 같은 대조를 함 |
 | 9. 동결 | GT 책임자 | `python scripts/gt_freeze.py freeze --gt-root gt --external <보관소> --version gt-v1.0 --reference-date 2026-11-07 --trial-store data/parsed/FROZEN.json --labelers L-A L-B --adjudicator ADJ-1`. 스키마·동결 조건·누출 검사 중 하나라도 실패하면 쓰지 않음. 저장소에는 `gt/FROZEN_GT.json`(해시)만 커밋 |
 | 10. 확인 | 누구나 | `python scripts/gt_verify.py --gt-root gt --external <보관소>` (보관소가 없으면 외부 파일은 "확인 불가"로 표시) |
-| 11. 1회 측정 | 엔지니어 | A·B·C 코드를 고정한 커밋에서: `python scripts/gt_engine_adapter.py <보관소>/g_u/set7.json --out gt/results/gt-v1.0/<sha>/engine.json --engine-commit <sha>` → `python scripts/gt_eval.py --gt <보관소>/g_u/set7.json --engine gt/results/gt-v1.0/<sha>/engine.json [--baseline <전 커밋 출력>] --frozen gt --out gt/results/gt-v1.0/<sha>/report.json` → `python scripts/gt_freeze.py advance --gt-root gt --to measured_once --reason "1회 측정" --measurement gt/results/gt-v1.0/<sha>/report.json --engine-commit <sha>` |
+| 11. 1회 측정 | 엔지니어 | A·B·C 코드를 고정한 커밋에서: `python scripts/gt_engine_adapter.py <보관소>/g_u/set7.json --out gt/results/gt-v1.0/<sha>/engine.json --engine-commit <sha>` → `python scripts/gt_eval.py --gt <보관소>/g_u/set7.json --engine gt/results/gt-v1.0/<sha>/engine.json [--baseline <전 커밋 출력>] --frozen gt --official --out gt/results/gt-v1.0/<sha>/report.json` → `python scripts/gt_freeze.py advance --gt-root gt --to measured_once --reason "1회 측정" --measurement gt/results/gt-v1.0/<sha>/report.json --engine-commit <sha>` |
 | 12. 강등 | GT 책임자 | 결과를 보고 코드를 고치면 즉시 `python scripts/gt_freeze.py advance --gt-root gt --to regression --reason "..."`. 그 뒤 세트는 회귀 세트(EN-12, A·B 병합 뒤 `tests/data/` 쪽으로)이며 독립 평가로 인용하지 않음. 새 독립 평가는 새 세트·새 버전 |
 
-상태는 `sealed → measured_once → regression` 순서로만 바뀝니다. 같은 버전 재동결은 거부되고, 새 버전을 동결하면 이전 목록은 `gt/frozen_history/`로 옮겨집니다. `gt_eval.py`는 `--frozen` 없이 실행하거나 동결 확인이 실패하거나 상태가 `sealed`가 아니면 결과에 "탐색적"을 붙입니다.
+상태는 `sealed → measured_once → regression` 순서로만 바뀝니다. `advance`는 먼저 `verify()`를 실행하고, 문제가 있으면 상태를 바꾸지 않습니다(외부 보관이면 `--external` 필요). 같은 버전 재동결은 거부되고, 새 버전을 동결하면 이전 목록은 `gt/frozen_history/`로 옮겨집니다. `gt_eval.py`의 공식 결과 조건은 4.1절에 있습니다. 조건 하나라도 못 맞추면 결과에 "탐색적"을 붙이고, `--official`을 주면 거부합니다.
 
 ## 3. 누출 검사
 
@@ -71,9 +71,9 @@ python scripts/gt_leak_check.py <보관소>/g_u/set7.json [--extra-corpus 추가
 
 거부 사유:
 
-1. `text_overlap`: 사례 원문(`text`, G-C는 `criterion_text`)이 다음과 정규화(NFKC·소문자·구두점·공백) 후 같거나, 한쪽이 다른 쪽에 포함(25자 이상)되거나, 토큰 Jaccard ≥ 0.8, 또는 짧은 쪽 토큰 8개 이상에서 포함률 ≥ 0.9.
+1. `text_overlap`: 사례 원문(`text`, G-C는 `criterion_text`)이 다음과 정규화(NFKC·소문자·구두점·공백) 후 같거나, 한쪽이 다른 쪽에 포함(25자 이상)되거나, 토큰 Jaccard ≥ 0.8, 또는 짧은 쪽 토큰 8개 이상에서 포함률 ≥ 0.9. 한글이 든 조각은 공백을 모두 지운 형태로도 비교합니다(완전 일치 8자 이상, 포함 관계 15자 이상). 그래서 "간질성 폐질환" → "간질성폐질환" 같은 띄어쓰기 변형도 거부됩니다.
    비교 대상: `docs/dev/*.json`(held-out 4·5·6 포함), `tests/data/**/*.json`(회귀 세트 1-3·dev), `eval/**/*.json`, `tests/**/*.py`의 문자열 상수. GT 도구 자신의 가짜 데이터는 비교 대상에서 빼고 FIXTURE 표시로 따로 거부합니다.
-2. `engine_field`: 엔진 출력 키(`directness`, `match_status`, `validation_flags`, `engine_*` 등)나 엔진 쌍 상태 값(`CONFIRMED_ELIGIBLE` 등)이 항목 어디에든 있음.
+2. `engine_field`: 엔진 출력 키(`directness`, `match_status`, `validation_flags`, `engine_*` 등)나 엔진 쌍 상태 값(`CONFIRMED_ELIGIBLE` 등)이 항목 어디에든 있음. 메모·사유·출처 설명 같은 자유 텍스트 **안에** 든 엔진 상태 문자열도 잡습니다(`confirmed_eligible`, `EngineStatus=...`, `PairStatus.X`, `MatchStatus.ELIGIBLE`, `VERIFICATION_PENDING`, `ExpertReview`, `likely_eligible`, `match_status` 등, `leak.ENGINE_TEXT_PATTERNS`). GT 어휘 `ELIGIBLE`/`INELIGIBLE` 단독과 띄어 쓴 일반 영어("expert review")는 잡지 않습니다.
 3. `no_blinding`: 세트에 블라인딩 증명이 없음.
 4. `fixture`: FIXTURE_ONLY 세트·문장 (`--allow-fixture`는 도구 테스트 전용).
 
@@ -100,7 +100,22 @@ python scripts/gt_leak_check.py <보관소>/g_u/set7.json [--extra-corpus 추가
 
 `gt_eval.py`는 `gt_set_sha256`이 GT 파일과 다르면 거부합니다.
 
-### 4.1 계산하는 지표
+### 4.1 공식 결과와 탐색적 결과
+
+`report["official"]`이 `true`인 것은 다음을 **모두** 만족할 때뿐입니다. 하나라도 어기면 `official_blockers`에 사유가 남고 `exploratory`가 붙습니다.
+
+1. `--frozen gt`를 주었고 `FROZEN_GT.json`이 `verify()`를 통과함 (외부 보관이면 `--external`도 필요)
+2. 상태가 `sealed` (측정 뒤·강등 뒤에는 공식 결과 없음)
+3. `--gt` 파일의 sha256이 매니페스트의 세트 파일(`g_u/`, `g_c/`, `g_p/`) 해시로 등록되어 있음. 동결 루트가 깨끗해도 다른 파일·변조본을 넣으면 공식이 아님
+4. 엔진 출력(그리고 `--baseline`이 있으면 기준선)이 GT 항목을 **100%** 덮고, GT에 없는 항목이 없음
+
+`--official`을 주면 조건을 못 맞출 때 보고서를 쓰지 않고 종료 코드 1로 끝납니다. 1회 측정(2절 11단계)에는 `--official`을 씁니다. `--official` 없이 실행하면 예전처럼 탐색적 결과를 계산하고 종료 코드 0입니다.
+
+**빠진 항목 처리 (D-2):** 빠진 항목을 "최악의 경우"로 채우지 않고 **공식 결과 자체를 거부**하는 쪽을 택했습니다. 최악의 경우는 지표마다 다르고(A1에서는 확정 경로, A5에서는 보류가 최악), 대체값을 만들어 넣으면 엔진이 내지 않은 결과가 보고서에 섞입니다. 따라서 커버리지가 100%가 아니면 공식 수치가 없고, 탐색적 계산에서도 빠진 항목은 `coverage.missing_engine_output`에 남고 분모에서는 빠집니다(탐색적 수치를 공식 수치처럼 인용하면 안 됨). 거짓 확정 항목을 출력에서 빼서 E1=0을 만드는 방식은 이렇게 막힙니다.
+
+**형식이 틀린 엔진 기록은 오류입니다:** value 항목의 `accepted`가 없거나 true/false가 아님, conflict 항목에 문자열 `directness`가 없음, `pair_status`가 알려진 값이 아님, `deciding_criteria`가 문자열 목록이 아님, `scope_represented`가 true/false가 아님, `result`가 객체가 아님, `item_id` 없음·중복. 예전처럼 `accepted`가 없으면 보류로 세는 기본값은 없습니다. 기준선 출력도 같은 검사를 받습니다.
+
+### 4.2 계산하는 지표
 
 | 지표 | 계산 | 비고 |
 |---|---|---|
@@ -114,7 +129,7 @@ python scripts/gt_leak_check.py <보관소>/g_u/set7.json [--extra-corpus 추가
 
 모든 비율은 분자·분모·Wilson 95%·정확 95%를 냅니다. 분모 0은 **"추정 불가"**이고 합격으로 치지 않습니다. 분모가 D 2.8의 최소 n보다 작으면 합격 판정을 하지 않습니다(`d_criterion_met = null`). AMBIGUOUS 항목은 주 분모에서 빼고, 그 항목에서 엔진이 확정한 수를 따로 냅니다.
 
-### 4.2 측정하지 않는 지표 (보고서에 "미측정"으로 표시)
+### 4.3 측정하지 않는 지표 (보고서에 "미측정"으로 표시)
 
 | 지표 | 이유 |
 |---|---|
