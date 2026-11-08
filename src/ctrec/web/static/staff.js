@@ -186,7 +186,7 @@ function nextStep(list, unsent) {
   const doc = sum("requires_document"), doc2 = sum("requires_clinician"), ans = sum("pending");
   if (!list.length) return { text: "환자 탭에서 환자 정보를 넣고 '연구진 확인 요청하기'를 누르면 여기에 환자가 생겨요.", go: null };
   if (unsent) return { text: `① 요청 보내기: 아직 안 보낸 요청이 ${unsent}건 있어요. 같은 서류끼리 한 번에 보내면 시간이 줄어요.`, go: "q", label: "요청 보내러 가기" };
-  if (doc) return { text: `② 서류 확인: 받아야 할 서류가 ${doc}건 있어요. 환자를 골라 서류 내용을 넣고 '서류 확인 끝'을 누르세요.`, go: "c", label: "서류 확인하러 가기" };
+  if (doc) return { text: `② 서류 확인: 받아야 할 서류가 ${doc}건 있어요. 환자를 고르면 가상 서류 값이 미리 채워져 있어요. 확인하고 '서류 확인 끝'만 누르세요.`, go: "c", label: "서류 확인하러 가기" };
   if (doc2) return { text: `③ 의사 판단: 의사가 판단할 조건이 ${doc2}건 있어요. 서류 확인을 먼저 끝내면 판단할 수 있어요.`, go: "c", label: "의사 판단하러 가기" };
   if (ans) return { text: `환자가 질문 ${ans}개에 답하기를 기다리고 있어요. 환자 탭에서 답하면 결과가 바로 바뀌어요.`, go: null };
   return { text: "지금 할 일이 없어요. 모든 확인이 끝났거나, 더 확인할 방법이 없는 시험만 남았어요.", go: null };
@@ -399,8 +399,54 @@ async function showDoc(box) {
 // 서류 확인 (담당자가 서류를 올리고, 서류 확인 담당이 값을 확인) -> 의사 판단. 판정은 서버가 다시 계산(화면은 결과만 보여 줌)
 const unitOf = (text) => { const m = String(text || "").match(/[<>=≥≤]+\s*[\d.]+\s*([^\s,;)]+)/); return m && !/^(years?|세)$/i.test(m[1]) ? m[1] : ""; };
 const daysAgo = (n) => { const d = new Date(Date.now() - n * 864e5); return d.toISOString().slice(0, 10); };
-function docTemplate(vr) {
-  return `[가상 서류 · 발표용] ${SOURCE[vr.source_id] || "진료 기록"}\n확인할 것: ${(vr.allowed_fields || []).map(itemName).join(", ")}\n결과: `;
+// 발표용 가상 서류 값: 요청한 조건 문장에서 기준값을 읽어, 조건에 맞는(또는 안 맞는) 값을 미리 채움.
+// 화면은 값만 채우고 판정은 서버가 서류 확인 뒤 다시 계산함. 가상 사례(합성 검증 모드)에서만 이 화면이 열림.
+const GENE = /EGFR|ALK|ROS1|KRAS|BRAF|MET|RET|HER2|PD-L1/i;
+const LAB_RE = { "absolute neutrophil count": /\bANC\b|neutrophil/i, "white blood cell count": /\bWBC\b|white blood/i, platelets: /platelet/i };
+const escRe = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function critFor(vr, fd) {
+  const cs = vr.criteria || [];
+  const re = fd.startsWith("lab:") ? (LAB_RE[fd.slice(4).toLowerCase()] || new RegExp(escRe(fd.slice(4)), "i"))
+    : fd.startsWith("biomarker") ? (fd.includes(":") ? new RegExp(escRe(fd.slice(10)), "i") : new RegExp(GENE.source + "|mutation|biomarker", "i"))
+    : { age: /\bage\b|years? (old|of age)/i, ecog: /ecog|performance/i, sex: /\b(fe)?male\b|\bsex\b|wom[ae]n|\bmen\b/i }[fd];
+  return (re && cs.find(c => re.test(c.text || ""))) || (cs.length === 1 ? cs[0] : null);
+}
+const round = (x) => x >= 10 ? Math.round(x) : Math.round(x * 10) / 10;
+function demoValue(fd, c, meet) {
+  const t = String((c && c.text) || ""), ok = c && c.kind === "exclusion" ? !meet : meet;
+  if (fd.startsWith("biomarker")) {
+    const g = ((t.match(GENE) || [fd.slice(10) || "EGFR"])[0]).toUpperCase();
+    return ok ? (g === "EGFR" ? "EGFR exon 19 deletion" : `${g} positive`) : `${g} negative`;
+  }
+  if (fd === "sex") { const f = /female|wom[ae]n/i.test(t); return ok === f ? "female" : "male"; }
+  const m = t.match(/(>=|<=|≥|≤|>|<)\s*(\d+(?:\.\d+)?)/), r = t.match(/(\d+(?:\.\d+)?)\s*[-–~]\s*(\d+(?:\.\d+)?)/);
+  const whole = fd === "age" || fd === "ecog";
+  if (m) {
+    const v = Number(m[2]), up = /[>≥]/.test(m[1]);
+    if (fd === "ecog") return up ? (ok ? v : v - 1) : (ok ? v : v + 1);
+    if (fd === "age") return up ? (ok ? Math.max(v + 5, 60) : Math.max(v - 3, 0)) : (ok ? Math.min(v - 10, 60) : v + 5);
+    const x = up === ok ? v * 1.2 : v * 0.8;
+    return whole ? Math.round(x) : round(x);
+  }
+  if (r) return ok ? Number(r[2]) : Number(r[2]) + 1;  // 예: ECOG 0-1
+  return "";
+}
+function docRows(box) {
+  const said = [...box.querySelectorAll("[data-fact]:checked")].map(i => `- ${i.dataset.label}: ${i.dataset.value}`);
+  return said.concat([...box.querySelectorAll(".vrow")].map(row => {
+    const v = row.querySelector('[data-f="value"]').value.trim(), u = row.querySelector('[data-f="unit"]').value.trim();
+    const d = row.querySelector('[data-f="date"]').value;
+    return v ? `- ${row.dataset.label}: ${v}${u ? " " + u : ""}${d ? ` (검사일 ${d})` : ""}` : "";
+  })).filter(Boolean);
+}
+function docTemplate(vr, rows) {
+  return `[가상 서류 · 발표용] ${SOURCE[vr.source_id] || "진료 기록"}\n확인할 것: ${(vr.allowed_fields || []).map(itemName).join(", ")}\n결과:${rows && rows.length ? "\n" + rows.join("\n") : " "}`;
+}
+// '조건에 맞게/안 맞게'를 바꾸면 값과 서류 내용을 다시 채움 (서류 내용을 손으로 고쳤으면 그대로 둠)
+function refillDoc(box, meet) {
+  const vr = (S.vdata.requests || []).find(x => x.request_id === box.dataset.rid); if (!vr) return;
+  if (meet !== null) for (const row of box.querySelectorAll(".vrow")) row.querySelector('[data-f="value"]').value = demoValue(row.dataset.field, critFor(vr, row.dataset.field), meet);
+  const ta = box.querySelector('[data-f="text"]'); if (ta && !ta.dataset.edited) ta.value = docTemplate(vr, docRows(box));
 }
 // 기록할 항목: 서버가 받는 사실 항목. 유전자 검사는 사실 항목이 'biomarker' 하나(값에 변이 이름)라 'biomarker:EGFR' 같은 키는 뺌
 function recordFields(vr) {
@@ -415,17 +461,23 @@ function workArea(r) {
     const docs = S.vdata.documents || [];
     const facts = (vr.facts || []).filter(f => !f.document_verified);
     const fields = recordFields(vr).filter(fd => !facts.some(f => f.field === fd));
+    const label = (fd) => itemName(fd.includes(":") ? fd : (fd === "biomarker" || !vr.info_key ? fd : vr.info_key));
+    const unitFor = (fd) => { const c = critFor(vr, fd); return c ? unitOf(c.text) : ""; };
+    const factText = (f) => `${f.value}${f.unit ? " " + f.unit : ""}`;
+    const rows = facts.map(f => `- ${itemName(f.field)}: ${factText(f)}`).concat(fields.map(fd => { const v = demoValue(fd, critFor(vr, fd), true), u = unitFor(fd);
+      return v === "" ? "" : `- ${label(fd)}: ${v}${u ? " " + u : ""} (검사일 ${daysAgo(3)})`; })).filter(Boolean);
     return `<div class="work" data-work="doc" data-rid="${h(r.request_id)}">
       <p class="work-title">서류 확인하기 <span class="badge demo">발표용 · 가상 권한</span></p>
       <ol class="steps-ko">
         <li><b>받은 서류</b> <span class="hint">(${h(SOURCE[vr.source_id] || "진료 기록")})</span>
           ${docs.length ? `<select data-f="doc"><option value="">새 서류 (아래 내용)</option>${docs.map((d, i) => `<option value="${h(d.document_id)}"${i === docs.length - 1 ? " selected" : ""}>이미 올린 서류 ${i + 1} · ${when(d.registered_at)}</option>`).join("")}</select>` : ""}
-          <details><summary class="hint">서류 내용 보기·고치기 (가상 서류가 미리 채워져 있어요)</summary><textarea data-f="text" rows="3">${h(docTemplate(vr))}</textarea></details></li>
+          <details><summary class="hint">서류 내용 보기·고치기 (가상 서류가 미리 채워져 있어요)</summary><textarea data-f="text" rows="${3 + rows.length}">${h(docTemplate(vr, rows))}</textarea></details></li>
         <li><b>서류에 적힌 값</b> <span class="hint">이 조건을 확인해요: ${(vr.criteria || []).map(c => h(c.text)).join(" / ")}</span>
-          ${facts.map(f => `<label class="inline-check"><input type="checkbox" data-fact="${h(f.fact_id)}" checked> 환자가 말한 <b>${h(f.value)}${f.unit ? " " + h(f.unit) : ""}</b>이(가) 서류와 같아요</label>`).join("")}
-          ${fields.map(fd => `<div class="row vrow" data-field="${h(fd)}"><span>${h(itemName(fd.includes(":") ? fd : vr.info_key))}</span>
-            <input data-f="value" placeholder="값" size="10" aria-label="${h(itemName(fd.includes(":") ? fd : vr.info_key))} 값">
-            <input data-f="unit" value="${h(unitOf((vr.criteria || [])[0] && vr.criteria[0].text))}" placeholder="단위" size="8" aria-label="단위">
+          ${facts.map(f => `<label class="inline-check"><input type="checkbox" data-fact="${h(f.fact_id)}" data-label="${h(itemName(f.field))}" data-value="${h(factText(f))}" checked> 환자가 말한 <b>${h(f.value)}${f.unit ? " " + h(f.unit) : ""}</b>이(가) 서류와 같아요</label>`).join("")}
+          ${fields.length ? `<label class="hint inline-check">가상 서류 값 <select data-f="meet" aria-label="가상 서류 값" style="width:auto;display:inline-block"><option value="1">조건에 맞게</option><option value="0">조건에 안 맞게</option></select> (발표용으로 미리 채운 값, 고칠 수 있어요)</label>` : ""}
+          ${fields.map(fd => `<div class="row vrow" data-field="${h(fd)}" data-label="${h(label(fd))}"><span>${h(label(fd))}</span>
+            <input data-f="value" value="${h(demoValue(fd, critFor(vr, fd), true))}" placeholder="값" size="10" aria-label="${h(label(fd))} 값">
+            <input data-f="unit" value="${h(unitFor(fd))}" placeholder="단위" size="8" aria-label="단위">
             <input data-f="date" type="date" value="${h(daysAgo(3))}" aria-label="검사한 날"></div>`).join("")}</li>
         <li><button class="btn sm" type="button" data-act="verify">서류 확인 끝</button> <span class="hint">누르면 결과가 다시 계산돼요</span>
           <span class="err" data-f="msg" role="alert"></span></li></ol></div>`;
@@ -467,14 +519,15 @@ async function doWork(btn) {
         const unit = row.querySelector('[data-f="unit"]').value.trim(), date = row.querySelector('[data-f="date"]').value;
         if (unit) it.unit = unit; if (date) it.observed_at = date; items.push(it);
       }
-      if (!items.length) throw new Error("서류에 적힌 값을 넣어 주세요.");
+      if (!items.length) throw new Error("서류에 적힌 값이 비어 있어요. 값을 하나 이상 채워 주세요.");
       // 서류: 고른 것이 없으면 이 칸의 내용으로 새로 올림 (담당자 권한), 그다음 서류 확인 담당 권한으로 확인
       const sel = box.querySelector('[data-f="doc"]');
       let doc = sel && sel.value ? S.vdata.documents.find(d => d.document_id === sel.value) : null;
       if (!doc) {
-        const vr = (S.vdata.requests || []).find(x => x.request_id === box.dataset.rid) || {};
+        const vr = (S.vdata.requests || []).find(x => x.request_id === box.dataset.rid) || {}, ta = box.querySelector('[data-f="text"]');
+        const text = ta.dataset.edited ? ta.value : docTemplate(vr, docRows(box));  // 손으로 안 고쳤으면 지금 칸의 값으로 서류를 씀
         doc = (await api(`/cases/${cid}/documents`, { kind: DOC_KIND[vr.source_id] || "clinical_note", media_type: "text/plain",
-          content_base64: b64(box.querySelector('[data-f="text"]').value) })).document;
+          content_base64: b64(text) })).document;
         S.vdata = await roleApi("verifier", `/verifier/cases/${cid}`);
       }
       const out = await roleApi("verifier", `/verifier/cases/${cid}/requests/${rid}/verification`,
@@ -607,7 +660,10 @@ async function init() {
   q$("#st-logout").addEventListener("click", logout);
   q$("#st-reload").addEventListener("click", async () => { try { await loadAll(); if (S.caseId) await refreshCase(); } catch (e) { setConn(e.message, "bad"); } });
   q$("#st-tab-q").addEventListener("click", () => tab("q")); q$("#st-tab-c").addEventListener("click", () => tab("c")); q$("#st-tab-u").addEventListener("click", () => tab("u"));
-  q$("#page-staff").addEventListener("change", (e) => { if (e.target.id === "st-qsort") renderQuestions(); });
+  q$("#page-staff").addEventListener("change", (e) => { if (e.target.id === "st-qsort") renderQuestions();
+    if (e.target.matches('.work [data-f="meet"]')) refillDoc(e.target.closest(".work"), e.target.value === "1");
+    if (e.target.matches('.work .vrow input, .work [data-fact]')) refillDoc(e.target.closest(".work"), null); });
+  q$("#page-staff").addEventListener("input", (e) => { if (e.target.matches('.work textarea[data-f="text"]')) e.target.dataset.edited = "1"; });
   q$("#page-staff").addEventListener("toggle", (e) => { if (e.target.matches && e.target.matches(".doc-view") && e.target.open) showDoc(e.target); }, true);
   q$("#page-staff").addEventListener("click", (e) => {
     const go = e.target.closest("[data-go]");
