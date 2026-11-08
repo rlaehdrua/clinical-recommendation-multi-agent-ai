@@ -1,0 +1,301 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT06928389",
+ "trial_hash": "699a518660451ca4",
+ "model": "claude-sonnet-5",
+ "compiled_at": "2026-11-03T11:47:51+00:00",
+ "parsed": {
+  "trial_id": "NCT06928389",
+  "title": "Ivonescimab in Combination With Docetaxel in Advanced Non-Small Cell Lung Cancer",
+  "target_population": "PD-(L)1 inhibitor-based therapy 이후 진행된 국소 진행성 또는 전이성 비소세포폐암(NSCLC) 성인 환자",
+  "intervention_summary": "Ivonescimab + docetaxel vs Placebo + docetaxel (Phase 3, randomized, double-blind)",
+  "key_conditions": [
+   "Non-Small Cell Lung Cancer"
+  ],
+  "cohorts": [],
+  "rules": [
+   {
+    "rule_id": "I1",
+    "kind": "inclusion",
+    "text": "Be able and willing to provide written informed consent and to comply with all requirements of study participation (including all study procedures).",
+    "category": "consent_or_logistics",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I2",
+    "kind": "inclusion",
+    "text": "Age ≥ 18 years old at the time of randomization.",
+    "category": "demographic",
+    "field": "age",
+    "operator": ">=",
+    "value": "18",
+    "unit": "years",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I3",
+    "kind": "inclusion",
+    "text": "Age ≤ 75 years old at the time of randomization.",
+    "category": "demographic",
+    "field": "age",
+    "operator": "<=",
+    "value": "75",
+    "unit": "years",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I4",
+    "kind": "inclusion",
+    "text": "Eastern Cooperative Oncology Group (ECOG) performance status of 0 or 1.",
+    "category": "performance_status",
+    "field": "ecog",
+    "operator": "<=",
+    "value": "1",
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I5",
+    "kind": "inclusion",
+    "text": "Expected life expectancy of at least 3 months.",
+    "category": "other",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   },
+   {
+    "rule_id": "I8",
+    "kind": "inclusion",
+    "text": "Previously received systemic platinum-based chemotherapy.",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I9",
+    "kind": "inclusion",
+    "text": "Previously received PD-1/L1 inhibitors.",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E1",
+    "kind": "exclusion",
+    "text": "Histologic or cytopathologic evidence of the presence of small cell lung carcinoma.",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E5",
+    "kind": "exclusion",
+    "text": "Previous treatment with docetaxel.",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E8",
+    "kind": "exclusion",
+    "text": "History of myocarditis.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   },
+   {
+    "rule_id": "E9",
+    "kind": "exclusion",
+    "text": "History of cardiomyopathy.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   },
+   {
+    "rule_id": "E10",
+    "kind": "exclusion",
+    "text": "History of malignant arrhythmia.",
+    "category": "comorbidity",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   }
+  ],
+  "parsing_notes": "구조화 연령/성별 필드는 본문 기준과 동일하여 I2,I3에 반영함. 'Previously received systemic platinum-based chemotherapy and PD-1/L1 inhibitors'는 두 개의 개별 치료이력 조건(I8,I9)으로 분리함. 'myocarditis, cardiomyopathy, and malignant arrhythmia'는 각각 별도 병력 조건(E8~E10)으로 분리함. 'Adequate organ function'은 구체적 수치가 제시되지 않아 underspecified=true로 표시함. ECOG 0 또는 1은 in 연산자로 두 값을 모두 포함.\n[코드 정규화] I4: ecog in 0,1 -> ecog <= 1"
+ },
+ "rule_meta": {
+  "I1": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I2": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I3": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I4": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I5": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": "vague_suspected",
+   "added_by_validator": false
+  },
+  "I8": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I9": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E1": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E5": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E8": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E9": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E10": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  }
+ },
+ "eval_derivation": {
+  "scope": "nsclc_reduced_v1",
+  "derived_from": "data/nsclc/parsed/NCT06928389.json",
+  "derived_from_sha256": "2fcb13e0d9521569c31e9c534c7e2b6fb8cc780d431652350b40aad51a393351",
+  "review": "data/nsclc/review/criteria_verification.csv",
+  "kept": [
+   "I1",
+   "I2",
+   "I3",
+   "I4",
+   "I5",
+   "I8",
+   "I9",
+   "E1",
+   "E5",
+   "E8",
+   "E9",
+   "E10"
+  ],
+  "removed_out_of_scope": [
+   "I6",
+   "I7",
+   "I10",
+   "I11",
+   "E2",
+   "E3",
+   "E4",
+   "E6",
+   "E7"
+  ],
+  "kept_out_of_scope_for_or_path": [],
+  "underspecified_set_for_expert": [
+   "I5",
+   "E8",
+   "E9",
+   "E10"
+  ],
+  "note": "축소 범위 평가용 사본. 원본 파싱본은 바꾸지 않음. 범위 밖 기준을 뺐으므로 이 저장소로 낸 '적격'은 전체 프로토콜 적격이 아님"
+ }
+}

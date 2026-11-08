@@ -617,6 +617,18 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 브라우저 확인(Chrome, 합성 환자 3명): 묶음 요청 → 서류 등록 → 검증자 확인(ECOG 확인, 혈소판·ANC·혈색소 기록) → T-A·T-C 정보 부족 → 적격 확정, 임상의 판단 → T-D 의료진 검토 → 적격 확정, 환자 화면 추천 3건 갱신. 분은 측정한 업무 시간이 아니라 가정 비용입니다.
 
 백엔드 확인 필요(선우): 환자가 말하지 않은 ECOG를 서류 값으로 기록(record)하면 근거 출처가 unknown으로 남아 기준이 계속 미검증이고 같은 ECOG 서류 요청이 다시 제안됨(환자 답변 값 확인(confirm)은 정상). EGFR 요청의 `allowed_fields`에 `biomarker:EGFR`이 있지만 그 항목으로 기록하면 409 `field_out_of_scope`(화면은 `biomarker`로 보냄).
+### 2026-11-08 — WP6 runner가 NSCLC 평가셋과 독립 규칙 GT를 바로 쓰도록 (#43 후속, 동겸)
+
+배경: 서연의 #43(NSCLC 평가셋·독립 규칙 GT)이 동겸에게 요청한 것 중 ① runner CLI가 시험을 `data/parsed`에서만 읽어 평가셋을 못 씀 ② 독립 GT를 주 지표에 넣는 방식입니다. 판단 슬롯 사본 교체와 결정 5 테스트 기대값은 서연의 `feat/nsclc-eval-gt-decision5-patches`에 들어 있어 그 위에 쌓았습니다(동겸이 `test_recovery_stress` 16·24를 쌍 단위로 다시 확인: 막힌 쌍은 전부 NCT07087314, 환자를 고정하면 변화 0). ②는 `run(..., labels=)`로 정했습니다. 실행 뒤 `cohort.gt.score()`로만 채점하면 합계 한 줄만 나오고, 환자별 결과(부트스트랩 단위)·비교표·짝지은 차이에는 순환 GT가 그대로 남기 때문입니다. `score()`는 교차 확인용으로 남깁니다.
+
+| # | 변경 | 파일 |
+|---|---|---|
+| 1 | 판단 슬롯 사본 일치 테스트를 "같은 객체"로 (결정 5 두 슬롯 포함 확인) | `tests/test_sim_expert_metric.py` |
+| 2 | `runner.run(labels=, gt_kind=)`·`compare(labels=, gt_kind=)`: 외부 GT로 주 지표·환자별 결과·비교표를 채점. 쌍 키가 코호트 쌍과 정확히 같지 않거나 모르는 라벨이면 거절(`gt_labels_mismatch`). manifest에 GT 종류와 해시. 기본(없음)은 지금과 같은 순환 규칙 GT, 행동·기록·result_hash에는 영향 없음 | `src/ctrec/sim/runner.py`, `src/ctrec/sim/metrics.py` |
+| 3 | CLI: 생성기 설정의 `parsed_store`에서 기준을 읽고 `--trials-dir`로 시험 정보, `--gt pair_gt.csv`로 독립 GT 채점. 출력 끝에 정답 라벨 종류 표시 | `src/ctrec/sim/__main__.py` |
+| 4 | 테스트 3건 추가 (외부 GT 채점·기록, 쌍 불일치 거절, CSV 읽기) | `tests/test_sim_expert_metric.py` |
+
+NSCLC 평가셋 실행: `python -m ctrec.sim --generator data/nsclc/eval/inputs/generator_config.json --scenario nsclc-eval-v1 --map data/nsclc/eval/inputs/source_map.json --trials-dir data/nsclc/trials --gt data/nsclc/eval/pair_gt.csv`
 
 ### 2026-11-07 — P: 웹·WP6 공통 엔진 루프, 코호트 실행기, 근거 경로 DCV, 기준선·ablation 실험
 

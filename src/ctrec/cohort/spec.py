@@ -22,9 +22,13 @@ LAB_AGE = "lab_age_days"  # 환자의 마지막 혈액검사가 며칠 전인지
 # - 접두어 judge.* : 현황판 web/cohort_board.EXPERT_SLOT_PREFIX와 같은 값 (tests/test_cohort_generator.py에서 일치 검사)
 # - EXPERT_SLOTS   : NSCLC 슬롯 후보표(data/nsclc/cohort/slot_candidates.csv)에서 adjudication_candidate=expert인 슬롯
 #                    (2026-11-07 결정: judge.* 접두어 ∪ 이 6개). 임상 검수로 바뀌면 여기만 고칩니다.
+# - EXPERT_SLOTS_EXTRA: 후보표 밖에서 팀이 판단 기준으로 편입한 슬롯 (2026-11-07 팀 결정 5, 신증후군 슬롯).
+#                    최종 확정은 임상 검수자 (임상 검수 미완료)
 EXPERT_SLOT_PREFIX = "judge."
-EXPERT_SLOTS = frozenset({"dx.disease_setting", "tx.recent_radiotherapy", "cm.cardiac", "other.tumor_tissue",
-                          "judge.life_expectancy", "judge.investigator_unsuitable"})
+EXPERT_SLOTS_CSV = frozenset({"dx.disease_setting", "tx.recent_radiotherapy", "cm.cardiac", "other.tumor_tissue",
+                              "judge.life_expectancy", "judge.investigator_unsuitable"})
+EXPERT_SLOTS_EXTRA = frozenset({"cm.serious_organ_disease", "cm.immune_onc"})
+EXPERT_SLOTS = EXPERT_SLOTS_CSV | EXPERT_SLOTS_EXTRA
 
 
 def is_expert_slot(slot: str | None) -> bool:
@@ -224,6 +228,8 @@ class GeneratorConfig(BaseModel):
     source_catalog: str
     budgets_min: list[int] = Field(default_factory=lambda: [30, 60, 120, 240])
     max_resample: int = 20
+    # 컴파일된 기준을 읽을 시험 저장소 (없으면 data/parsed). 예: 평가용 축소 저장소 data/nsclc/eval/trial_store
+    parsed_store: str | None = None
     clusters: dict[str, Cluster]
     scenarios: list[Scenario]
 

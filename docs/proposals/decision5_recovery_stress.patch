@@ -1,0 +1,23 @@
+From: 서연 (생성기 담당) - 테스트 기대값 수정 제안 (적용하지 않음, 테스트 담당자 승인 필요)
+Subject: [제안] 팀 결정 5 이후 신증후군 기본 데이터의 BLOCKED_FAILURE 기대 수 갱신
+
+왜: feat/nsclc-eval-gt에서 spec.EXPERT_SLOTS에 cm.serious_organ_disease·cm.immune_onc를 넣으면(팀 결정 5)
+NCT06125405 E11·NCT06530004 E5가 판단 기준(EXPERT_REVIEW 경로)이 되어 최종 BLOCKED_FAILURE 수가 default 19 -> 16,
+patient_unreachable 21 -> 24로 바뀝니다. 같은 테스트의 다른 검사(stranded == [], 기록·실제 차단 일치)는 통과합니다.
+결정 5 슬롯을 비우면 원래 값(19·21)으로 통과함을 확인했습니다.
+적용: git apply docs/proposals/decision5_recovery_stress.patch
+---
+diff --git a/tests/test_recovery_stress.py b/tests/test_recovery_stress.py
+index 7782a2d..92f7385 100644
+--- a/tests/test_recovery_stress.py
++++ b/tests/test_recovery_stress.py
+@@ -31,7 +31,8 @@ SCENARIOS = {"default": None, "patient_unreachable": {**DEFAULT_RESPONSES, "pati
+ # - 두 시나리오 모두 1쌍(NCT07087314)이 BLOCKED -> CONFIRMED_INELIGIBLE: 기간 안 혈소판 I8이 규칙 엔진으로 불충족. 시뮬레이터
+ #   GT 라벨도 ineligible (확정 부적격 전체가 라벨과 일치, 확정 적격 0)
+ # - 아래 불변식(소진 쌍이 BLOCKED 아닌 채 남지 않음, 기록 없는 BLOCKED 0, 실행 가능한 행동이 남은 BLOCKED 0)은 M 전후 모두 성립
+-EXPECTED_BLOCKED = {"default": 19, "patient_unreachable": 21}
++# 팀 결정 5(11-07): 신증후군 cm.serious_organ_disease·cm.immune_onc가 판단 기준이 되어 BLOCKED 수가 바뀜 (19·21 -> 16·24)
++EXPECTED_BLOCKED = {"default": 16, "patient_unreachable": 24}
+ 
+ 
+ @pytest.fixture(scope="module")

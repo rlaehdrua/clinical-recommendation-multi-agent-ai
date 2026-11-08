@@ -1,0 +1,9 @@
+﻿trial_id,parsed,criteria,in_scope,data_verified,mismatch,ambiguous,expert,region_condition,cohorts,clinical_review,note
+NCT04892953,"파싱 미완료 - API 크레딧, 분할 파서 반영됨",,,,,,,미검증,,미완료,평가셋 제외. 원문에 검사 수치 기준(ANC·빌리루빈·CrCl·Hb)이 있는 두 시험
+NCT05255302,"파싱 미완료 - API 크레딧, 분할 파서 반영됨",,,,,,,미검증,,미완료,평가셋 제외. 원문에 검사 수치 기준(ANC·빌리루빈·CrCl·Hb)이 있는 두 시험
+NCT06216301,파싱 완료,28,14,14,1,3,2,있음,,미완료,
+NCT06928389,파싱 완료,21,11,11,0,0,4,없음,,미완료,
+NCT07027514,파싱 완료,36,15,15,0,1,4,없음,Cohort A|Cohort B,미완료,
+NCT07098338,파싱 완료,36,10,10,0,3,4,없음,Sub-study 1|Sub-study 2|Sub-study 3,미완료,
+NCT07416058,파싱 완료,28,15,15,0,4,3,없음,,미완료,
+NCT07680790,파싱 완료,11,7,7,0,0,2,없음,,미완료,

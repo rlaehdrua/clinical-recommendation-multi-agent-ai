@@ -37,15 +37,8 @@ from .cohort import SimCohort, SimFact, SimTrial, make_cohort
 from .judge import CategoricalJudge, encode
 
 NUMERIC_RAW = frozenset({"age", "ecog"})
-# 임상의 판단 슬롯: #22의 cohort.spec.EXPERT_SLOT_PREFIX·EXPERT_SLOTS와 같은 값 (병합 뒤 그쪽 함수로 교체, 테스트가 일치 확인).
-# 결정 5(cm.serious_organ_disease·cm.immune_onc 추가)는 임상 검수 확인 대기
-EXPERT_SLOT_PREFIX = "judge."
-EXPERT_SLOTS = frozenset({"dx.disease_setting", "tx.recent_radiotherapy", "cm.cardiac", "other.tumor_tissue",
-                          "judge.life_expectancy", "judge.investigator_unsuitable"})
-
-
-def is_expert_slot(slot: str | None) -> bool:
-    return bool(slot) and (slot.startswith(EXPERT_SLOT_PREFIX) or slot in EXPERT_SLOTS)
+# 임상의 판단 슬롯: 생성기 정의(cohort.spec.is_expert_slot) 하나만 씀 - 팀 결정 5(11-07) 슬롯 포함, 임상 검수 미완료
+from ..cohort.spec import EXPERT_SLOT_PREFIX, EXPERT_SLOTS, is_expert_slot  # noqa: E402,F401
 
 
 def mark_expert(trials: list[SimTrial], expert_rules: frozenset[str]) -> list[SimTrial]:

@@ -1,0 +1,3672 @@
+{
+ "note": "합성 환자 (실제 환자 아님). true_values는 정답 값(oracle) - 정책에 주지 말 것",
+ "cohort_id": "nsclc-eval-v1-r00",
+ "patients": [
+  {
+   "patient_id": "P001",
+   "sim_alias": "PA-6f4704bf385029a5",
+   "candidate_trials": [
+    "NCT06928389",
+    "NCT07027514",
+    "NCT07416058"
+   ],
+   "public_known": {
+    "age": 66.0,
+    "ecog": 1.0,
+    "med.anticoagulant": "none",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_pd1_pdl1": "durvalumab_consolidation"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "cm.organ_transplant",
+    "dx.histology",
+    "dx.stage",
+    "lab.tsh_normal",
+    "tx.prior_il12",
+    "tx.prior_platinum"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "cm.organ_transplant": "document_only",
+    "dx.histology": "document_only",
+    "dx.stage": "document_only",
+    "lab.tsh_normal": "lab_report_only",
+    "tx.prior_il12": "patient_may_answer",
+    "tx.prior_platinum": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 66.0,
+    "ecog": 1.0,
+    "med.anticoagulant": "none",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_pd1_pdl1": "durvalumab_consolidation",
+    "bm.driver_alteration": "nrg1",
+    "cm.organ_transplant": "no",
+    "dx.histology": "adenocarcinoma",
+    "dx.stage": "IIIA",
+    "lab.tsh_normal": "yes",
+    "tx.prior_il12": "no",
+    "tx.prior_platinum": "yes"
+   }
+  },
+  {
+   "patient_id": "P002",
+   "sim_alias": "PA-b15675584595ab89",
+   "candidate_trials": [
+    "NCT06928389",
+    "NCT07027514",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 57.0,
+    "cm.organ_transplant": "no",
+    "med.anticoagulant": "none",
+    "repro.pregnant_or_breastfeeding": "yes",
+    "sex": "male",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1",
+    "tx.prior_platinum": "no"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "dx.histology",
+    "ecog",
+    "lab.tsh_normal",
+    "tx.prior_docetaxel"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "dx.histology": "document_only",
+    "ecog": "patient_may_answer",
+    "lab.tsh_normal": "lab_report_only",
+    "tx.prior_docetaxel": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 57.0,
+    "cm.organ_transplant": "no",
+    "med.anticoagulant": "none",
+    "repro.pregnant_or_breastfeeding": "yes",
+    "sex": "male",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1",
+    "tx.prior_platinum": "no",
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "dx.histology": "adenocarcinoma",
+    "ecog": 1.0,
+    "lab.tsh_normal": "yes",
+    "tx.prior_docetaxel": "no"
+   }
+  },
+  {
+   "patient_id": "P003",
+   "sim_alias": "PA-b8241169b027552e",
+   "candidate_trials": [
+    "NCT06928389",
+    "NCT07027514",
+    "NCT07098338"
+   ],
+   "public_known": {
+    "age": 73.0,
+    "cm.organ_transplant": "no",
+    "med.anticoagulant": "other_therapeutic",
+    "sex": "female",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "dx.histology",
+    "ecog",
+    "lab.tsh_normal",
+    "med.live_vaccine_30d",
+    "repro.pregnant_or_breastfeeding",
+    "tx.prior_platinum"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "dx.histology": "document_only",
+    "ecog": "patient_may_answer",
+    "lab.tsh_normal": "lab_report_only",
+    "med.live_vaccine_30d": "patient_may_answer",
+    "repro.pregnant_or_breastfeeding": "patient_may_answer",
+    "tx.prior_platinum": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 73.0,
+    "cm.organ_transplant": "no",
+    "med.anticoagulant": "other_therapeutic",
+    "sex": "female",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1",
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "dx.histology": "adenocarcinoma",
+    "ecog": 0.0,
+    "lab.tsh_normal": "yes",
+    "med.live_vaccine_30d": "no",
+    "repro.pregnant_or_breastfeeding": "no",
+    "tx.prior_platinum": "yes"
+   }
+  },
+  {
+   "patient_id": "P004",
+   "sim_alias": "PA-bfb4fa320d64f94a",
+   "candidate_trials": [
+    "NCT06928389",
+    "NCT07098338",
+    "NCT07416058"
+   ],
+   "public_known": {
+    "age": 55.0,
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "dx.stage": "IIIA",
+    "ecog": 1.0,
+    "med.live_vaccine_30d": "no",
+    "proc.days_since_major_surgery": "21_27d",
+    "sex": "female",
+    "tx.days_since_last_anticancer": "lt_14d",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_platinum": "yes"
+   },
+   "hidden_slots": [
+    "dx.histology",
+    "tx.prior_pd1_pdl1"
+   ],
+   "hidden_case": {
+    "dx.histology": "document_only",
+    "tx.prior_pd1_pdl1": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 55.0,
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "dx.stage": "IIIA",
+    "ecog": 1.0,
+    "med.live_vaccine_30d": "no",
+    "proc.days_since_major_surgery": "21_27d",
+    "sex": "female",
+    "tx.days_since_last_anticancer": "lt_14d",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_platinum": "yes",
+    "dx.histology": "adenocarcinoma",
+    "tx.prior_pd1_pdl1": "ici_other"
+   }
+  },
+  {
+   "patient_id": "P005",
+   "sim_alias": "PA-5edb72c70e451a1a",
+   "candidate_trials": [
+    "NCT07027514",
+    "NCT07416058",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 88.0,
+    "cm.organ_transplant": "no",
+    "dx.histology": "adenocarcinoma",
+    "ecog": 1.0,
+    "med.anticoagulant": "warfarin",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "dx.stage",
+    "lab.tsh_normal",
+    "tx.prior_il12"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "dx.stage": "document_only",
+    "lab.tsh_normal": "lab_report_only",
+    "tx.prior_il12": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 88.0,
+    "cm.organ_transplant": "no",
+    "dx.histology": "adenocarcinoma",
+    "ecog": 1.0,
+    "med.anticoagulant": "warfarin",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1",
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "dx.stage": "IVB",
+    "lab.tsh_normal": "yes",
+    "tx.prior_il12": "no"
+   }
+  },
+  {
+   "patient_id": "P006",
+   "sim_alias": "PA-395c8f374bcd66d7",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT07027514",
+    "NCT07098338"
+   ],
+   "public_known": {
+    "age": 81.0,
+    "bm.driver_alteration": "none",
+    "cm.organ_transplant": "no",
+    "ecog": 1.0,
+    "med.anticoagulant": "none",
+    "med.live_vaccine_30d": "no",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_il12": "no"
+   },
+   "hidden_slots": [
+    "dx.histology",
+    "lab.tsh_normal",
+    "tx.prior_pd1_pdl1"
+   ],
+   "hidden_case": {
+    "dx.histology": "document_only",
+    "lab.tsh_normal": "lab_report_only",
+    "tx.prior_pd1_pdl1": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 81.0,
+    "bm.driver_alteration": "none",
+    "cm.organ_transplant": "no",
+    "ecog": 1.0,
+    "med.anticoagulant": "none",
+    "med.live_vaccine_30d": "no",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_il12": "no",
+    "dx.histology": "adenocarcinoma",
+    "lab.tsh_normal": "yes",
+    "tx.prior_pd1_pdl1": "none"
+   }
+  },
+  {
+   "patient_id": "P007",
+   "sim_alias": "PA-d91dca7862ddf311",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT06928389",
+    "NCT07098338"
+   ],
+   "public_known": {
+    "age": 56.0,
+    "dx.histology": "squamous",
+    "med.live_vaccine_30d": "no",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_platinum": "yes"
+   },
+   "hidden_slots": [
+    "ecog",
+    "tx.prior_pd1_pdl1"
+   ],
+   "hidden_case": {
+    "ecog": "patient_may_answer",
+    "tx.prior_pd1_pdl1": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 56.0,
+    "dx.histology": "squamous",
+    "med.live_vaccine_30d": "no",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_platinum": "yes",
+    "ecog": 1.0,
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1"
+   }
+  },
+  {
+   "patient_id": "P008",
+   "sim_alias": "PA-2fb1302a437c03a2",
+   "candidate_trials": [
+    "NCT07098338",
+    "NCT07416058",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 47.0,
+    "dx.histology": "adenocarcinoma",
+    "ecog": 1.0,
+    "med.live_vaccine_30d": "no",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "male",
+    "tx.days_since_last_anticancer": "ge_14d"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "dx.stage"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "dx.stage": "document_only"
+   },
+   "true_values": {
+    "age": 47.0,
+    "dx.histology": "adenocarcinoma",
+    "ecog": 1.0,
+    "med.live_vaccine_30d": "no",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "male",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "bm.driver_alteration": "kras_g12c",
+    "dx.stage": "IVA"
+   }
+  },
+  {
+   "patient_id": "P009",
+   "sim_alias": "PA-1a6a1bc82816b8e7",
+   "candidate_trials": [
+    "NCT07027514",
+    "NCT07098338",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 54.0,
+    "cm.organ_transplant": "no",
+    "ecog": 2.0,
+    "med.anticoagulant": "other_therapeutic",
+    "sex": "female",
+    "tx.prior_il12": "no"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "dx.histology",
+    "lab.tsh_normal",
+    "med.live_vaccine_30d",
+    "repro.pregnant_or_breastfeeding",
+    "tx.prior_pd1_pdl1"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "dx.histology": "document_only",
+    "lab.tsh_normal": "lab_report_only",
+    "med.live_vaccine_30d": "patient_may_answer",
+    "repro.pregnant_or_breastfeeding": "patient_may_answer",
+    "tx.prior_pd1_pdl1": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 54.0,
+    "cm.organ_transplant": "no",
+    "ecog": 2.0,
+    "med.anticoagulant": "other_therapeutic",
+    "sex": "female",
+    "tx.prior_il12": "no",
+    "bm.driver_alteration": "egfr_uncommon",
+    "dx.histology": "squamous",
+    "lab.tsh_normal": "yes",
+    "med.live_vaccine_30d": "no",
+    "repro.pregnant_or_breastfeeding": "no",
+    "tx.prior_pd1_pdl1": "none"
+   }
+  },
+  {
+   "patient_id": "P010",
+   "sim_alias": "PA-371a1c05d9492634",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT06928389",
+    "NCT07027514"
+   ],
+   "public_known": {
+    "age": 57.0,
+    "bm.driver_alteration": "none",
+    "cm.organ_transplant": "no",
+    "dx.histology": "adenocarcinoma",
+    "ecog": 0.0,
+    "med.anticoagulant": "none",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "none",
+    "tx.prior_platinum": "yes"
+   },
+   "hidden_slots": [
+    "lab.tsh_normal",
+    "tx.other_investigational_4w"
+   ],
+   "hidden_case": {
+    "lab.tsh_normal": "lab_report_only",
+    "tx.other_investigational_4w": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 57.0,
+    "bm.driver_alteration": "none",
+    "cm.organ_transplant": "no",
+    "dx.histology": "adenocarcinoma",
+    "ecog": 0.0,
+    "med.anticoagulant": "none",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "none",
+    "tx.prior_platinum": "yes",
+    "lab.tsh_normal": "yes",
+    "tx.other_investigational_4w": "no"
+   }
+  },
+  {
+   "patient_id": "P011",
+   "sim_alias": "PA-a089d7000d940e6c",
+   "candidate_trials": [
+    "NCT06928389",
+    "NCT07027514",
+    "NCT07416058"
+   ],
+   "public_known": {
+    "age": 46.0,
+    "dx.histology": "mixed_sclc",
+    "dx.stage": "IVA",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_il12": "no",
+    "tx.prior_platinum": "no"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "cm.organ_transplant",
+    "ecog",
+    "lab.tsh_normal",
+    "med.anticoagulant",
+    "tx.days_since_last_anticancer",
+    "tx.prior_pd1_pdl1"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "cm.organ_transplant": "document_only",
+    "ecog": "patient_may_answer",
+    "lab.tsh_normal": "lab_report_only",
+    "med.anticoagulant": "patient_may_answer",
+    "tx.days_since_last_anticancer": "patient_may_answer",
+    "tx.prior_pd1_pdl1": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 46.0,
+    "dx.histology": "mixed_sclc",
+    "dx.stage": "IVA",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_il12": "no",
+    "tx.prior_platinum": "no",
+    "bm.driver_alteration": "kras_g12c",
+    "cm.organ_transplant": "no",
+    "ecog": 2.0,
+    "lab.tsh_normal": "no",
+    "med.anticoagulant": "none",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.prior_pd1_pdl1": "ici_other"
+   }
+  },
+  {
+   "patient_id": "P012",
+   "sim_alias": "PA-a216ca6adc48db49",
+   "candidate_trials": [
+    "NCT06928389",
+    "NCT07098338",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 67.0,
+    "dx.histology": "adenocarcinoma",
+    "ecog": 0.0,
+    "sex": "male",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1",
+    "tx.prior_platinum": "yes"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "med.live_vaccine_30d",
+    "tx.prior_docetaxel"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "med.live_vaccine_30d": "patient_may_answer",
+    "tx.prior_docetaxel": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 67.0,
+    "dx.histology": "adenocarcinoma",
+    "ecog": 0.0,
+    "sex": "male",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1",
+    "tx.prior_platinum": "yes",
+    "bm.driver_alteration": "none",
+    "med.live_vaccine_30d": "no",
+    "tx.prior_docetaxel": "no"
+   }
+  },
+  {
+   "patient_id": "P013",
+   "sim_alias": "PA-caba818aa137f4e3",
+   "candidate_trials": [
+    "NCT06928389",
+    "NCT07027514",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 55.0,
+    "bm.driver_alteration": "none",
+    "cm.organ_transplant": "no",
+    "med.anticoagulant": "none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_il12": "no",
+    "tx.prior_platinum": "no"
+   },
+   "hidden_slots": [
+    "dx.histology",
+    "ecog",
+    "lab.tsh_normal",
+    "tx.prior_pd1_pdl1"
+   ],
+   "hidden_case": {
+    "dx.histology": "document_only",
+    "ecog": "patient_may_answer",
+    "lab.tsh_normal": "lab_report_only",
+    "tx.prior_pd1_pdl1": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 55.0,
+    "bm.driver_alteration": "none",
+    "cm.organ_transplant": "no",
+    "med.anticoagulant": "none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_il12": "no",
+    "tx.prior_platinum": "no",
+    "dx.histology": "adenocarcinoma",
+    "ecog": 1.0,
+    "lab.tsh_normal": "yes",
+    "tx.prior_pd1_pdl1": "durvalumab_consolidation"
+   }
+  },
+  {
+   "patient_id": "P014",
+   "sim_alias": "PA-265efccf31cf1f7c",
+   "candidate_trials": [
+    "NCT06928389",
+    "NCT07098338",
+    "NCT07416058"
+   ],
+   "public_known": {
+    "age": 69.0,
+    "dx.histology": "squamous",
+    "dx.stage": "IVB",
+    "ecog": 1.0,
+    "med.live_vaccine_30d": "no",
+    "sex": "male",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_pd1_pdl1": "ici_other",
+    "tx.prior_platinum": "yes"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "proc.days_since_major_surgery",
+    "tx.days_since_last_anticancer"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "proc.days_since_major_surgery": "patient_may_answer",
+    "tx.days_since_last_anticancer": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 69.0,
+    "dx.histology": "squamous",
+    "dx.stage": "IVB",
+    "ecog": 1.0,
+    "med.live_vaccine_30d": "no",
+    "sex": "male",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_pd1_pdl1": "ici_other",
+    "tx.prior_platinum": "yes",
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "tx.days_since_last_anticancer": "ge_14d"
+   }
+  },
+  {
+   "patient_id": "P015",
+   "sim_alias": "PA-877a40af15d3e79d",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT07027514",
+    "NCT07416058"
+   ],
+   "public_known": {
+    "age": 65.0,
+    "cm.organ_transplant": "no",
+    "dx.histology": "squamous",
+    "ecog": 1.0,
+    "med.anticoagulant": "other_therapeutic",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "male",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "durvalumab_consolidation"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "dx.stage",
+    "lab.tsh_normal",
+    "repro.pregnant_or_breastfeeding",
+    "tx.days_since_last_anticancer"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "dx.stage": "document_only",
+    "lab.tsh_normal": "lab_report_only",
+    "repro.pregnant_or_breastfeeding": "patient_may_answer",
+    "tx.days_since_last_anticancer": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 65.0,
+    "cm.organ_transplant": "no",
+    "dx.histology": "squamous",
+    "ecog": 1.0,
+    "med.anticoagulant": "other_therapeutic",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "male",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "durvalumab_consolidation",
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "dx.stage": "IVA",
+    "lab.tsh_normal": "yes",
+    "repro.pregnant_or_breastfeeding": "no",
+    "tx.days_since_last_anticancer": "lt_14d"
+   }
+  },
+  {
+   "patient_id": "P016",
+   "sim_alias": "PA-92ae2fa0de38200d",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT06928389",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 73.0,
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.prior_docetaxel": "no"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "dx.histology",
+    "ecog",
+    "tx.other_investigational_4w",
+    "tx.prior_pd1_pdl1",
+    "tx.prior_platinum"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "dx.histology": "document_only",
+    "ecog": "patient_may_answer",
+    "tx.other_investigational_4w": "patient_may_answer",
+    "tx.prior_pd1_pdl1": "patient_may_answer",
+    "tx.prior_platinum": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 73.0,
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.prior_docetaxel": "no",
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "dx.histology": "squamous",
+    "ecog": 1.0,
+    "tx.other_investigational_4w": "no",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1",
+    "tx.prior_platinum": "no"
+   }
+  },
+  {
+   "patient_id": "P017",
+   "sim_alias": "PA-0507baf619380499",
+   "candidate_trials": [
+    "NCT06928389",
+    "NCT07027514",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 76.0,
+    "cm.organ_transplant": "no",
+    "lab.tsh_normal": "yes",
+    "med.anticoagulant": "warfarin",
+    "sex": "male",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "durvalumab_consolidation"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "dx.histology",
+    "ecog",
+    "repro.pregnant_or_breastfeeding",
+    "tx.prior_platinum"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "dx.histology": "document_only",
+    "ecog": "patient_may_answer",
+    "repro.pregnant_or_breastfeeding": "patient_may_answer",
+    "tx.prior_platinum": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 76.0,
+    "cm.organ_transplant": "no",
+    "lab.tsh_normal": "yes",
+    "med.anticoagulant": "warfarin",
+    "sex": "male",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "durvalumab_consolidation",
+    "bm.driver_alteration": "none",
+    "dx.histology": "adenocarcinoma",
+    "ecog": 1.0,
+    "repro.pregnant_or_breastfeeding": "yes",
+    "tx.prior_platinum": "yes"
+   }
+  },
+  {
+   "patient_id": "P018",
+   "sim_alias": "PA-29fa222ace711a93",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT06928389",
+    "NCT07098338"
+   ],
+   "public_known": {
+    "age": 64.0,
+    "dx.histology": "adenocarcinoma",
+    "ecog": 0.0,
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_platinum": "yes"
+   },
+   "hidden_slots": [
+    "med.live_vaccine_30d",
+    "proc.days_since_major_surgery",
+    "tx.prior_pd1_pdl1"
+   ],
+   "hidden_case": {
+    "med.live_vaccine_30d": "patient_may_answer",
+    "proc.days_since_major_surgery": "patient_may_answer",
+    "tx.prior_pd1_pdl1": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 64.0,
+    "dx.histology": "adenocarcinoma",
+    "ecog": 0.0,
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_platinum": "yes",
+    "med.live_vaccine_30d": "no",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "tx.prior_pd1_pdl1": "durvalumab_consolidation"
+   }
+  },
+  {
+   "patient_id": "P019",
+   "sim_alias": "PA-d3a5cc07725fe546",
+   "candidate_trials": [
+    "NCT07027514",
+    "NCT07098338",
+    "NCT07416058"
+   ],
+   "public_known": {
+    "age": 68.0,
+    "dx.stage": "IIIB",
+    "ecog": 1.0,
+    "med.anticoagulant": "none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "cm.organ_transplant",
+    "lab.tsh_normal",
+    "med.live_vaccine_30d",
+    "proc.days_since_major_surgery",
+    "tx.days_since_last_anticancer"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "cm.organ_transplant": "document_only",
+    "lab.tsh_normal": "lab_report_only",
+    "med.live_vaccine_30d": "patient_may_answer",
+    "proc.days_since_major_surgery": "patient_may_answer",
+    "tx.days_since_last_anticancer": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 68.0,
+    "dx.stage": "IIIB",
+    "ecog": 1.0,
+    "med.anticoagulant": "none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1",
+    "bm.driver_alteration": "egfr_ex20ins",
+    "cm.organ_transplant": "no",
+    "lab.tsh_normal": "no",
+    "med.live_vaccine_30d": "yes",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "tx.days_since_last_anticancer": "ge_14d"
+   }
+  },
+  {
+   "patient_id": "P020",
+   "sim_alias": "PA-9f021d99ffe68baa",
+   "candidate_trials": [
+    "NCT06928389",
+    "NCT07098338",
+    "NCT07416058"
+   ],
+   "public_known": {
+    "age": 68.0,
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "dx.stage": "IVB",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "female",
+    "tx.days_since_last_anticancer": "lt_14d",
+    "tx.prior_platinum": "no"
+   },
+   "hidden_slots": [
+    "dx.histology",
+    "ecog",
+    "med.live_vaccine_30d",
+    "tx.prior_docetaxel",
+    "tx.prior_pd1_pdl1"
+   ],
+   "hidden_case": {
+    "dx.histology": "document_only",
+    "ecog": "patient_may_answer",
+    "med.live_vaccine_30d": "patient_may_answer",
+    "tx.prior_docetaxel": "patient_may_answer",
+    "tx.prior_pd1_pdl1": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 68.0,
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "dx.stage": "IVB",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "female",
+    "tx.days_since_last_anticancer": "lt_14d",
+    "tx.prior_platinum": "no",
+    "dx.histology": "adenocarcinoma",
+    "ecog": 1.0,
+    "med.live_vaccine_30d": "no",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_pd1_pdl1": "none"
+   }
+  },
+  {
+   "patient_id": "P021",
+   "sim_alias": "PA-127dbb6efa4ee9a7",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT07098338",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 71.0,
+    "dx.histology": "adenocarcinoma",
+    "med.live_vaccine_30d": "no",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "ecog",
+    "tx.other_investigational_4w"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "ecog": "patient_may_answer",
+    "tx.other_investigational_4w": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 71.0,
+    "dx.histology": "adenocarcinoma",
+    "med.live_vaccine_30d": "no",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "bm.driver_alteration": "egfr_uncommon",
+    "ecog": 2.0,
+    "tx.other_investigational_4w": "no"
+   }
+  },
+  {
+   "patient_id": "P022",
+   "sim_alias": "PA-241b31fc2a1555f9",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT07416058",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 64.0,
+    "bm.driver_alteration": "ret",
+    "dx.histology": "adenocarcinoma",
+    "ecog": 0.0,
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "female",
+    "tx.days_since_last_anticancer": "ge_14d"
+   },
+   "hidden_slots": [
+    "dx.stage",
+    "repro.pregnant_or_breastfeeding",
+    "tx.other_investigational_4w"
+   ],
+   "hidden_case": {
+    "dx.stage": "document_only",
+    "repro.pregnant_or_breastfeeding": "patient_may_answer",
+    "tx.other_investigational_4w": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 64.0,
+    "bm.driver_alteration": "ret",
+    "dx.histology": "adenocarcinoma",
+    "ecog": 0.0,
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "female",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "dx.stage": "IIIA",
+    "repro.pregnant_or_breastfeeding": "no",
+    "tx.other_investigational_4w": "no"
+   }
+  },
+  {
+   "patient_id": "P023",
+   "sim_alias": "PA-06b68f21caf8e77a",
+   "candidate_trials": [
+    "NCT07027514",
+    "NCT07098338",
+    "NCT07416058"
+   ],
+   "public_known": {
+    "age": 58.0,
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "med.live_vaccine_30d": "no",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "male",
+    "tx.prior_il12": "yes"
+   },
+   "hidden_slots": [
+    "cm.organ_transplant",
+    "dx.stage",
+    "ecog",
+    "lab.tsh_normal",
+    "med.anticoagulant",
+    "repro.pregnant_or_breastfeeding",
+    "tx.days_since_last_anticancer",
+    "tx.prior_pd1_pdl1"
+   ],
+   "hidden_case": {
+    "cm.organ_transplant": "document_only",
+    "dx.stage": "document_only",
+    "ecog": "patient_may_answer",
+    "lab.tsh_normal": "lab_report_only",
+    "med.anticoagulant": "patient_may_answer",
+    "repro.pregnant_or_breastfeeding": "patient_may_answer",
+    "tx.days_since_last_anticancer": "patient_may_answer",
+    "tx.prior_pd1_pdl1": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 58.0,
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "med.live_vaccine_30d": "no",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "male",
+    "tx.prior_il12": "yes",
+    "cm.organ_transplant": "no",
+    "dx.stage": "IVB",
+    "ecog": 1.0,
+    "lab.tsh_normal": "yes",
+    "med.anticoagulant": "none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.prior_pd1_pdl1": "durvalumab_consolidation"
+   }
+  },
+  {
+   "patient_id": "P024",
+   "sim_alias": "PA-8bf63cfc3ff59802",
+   "candidate_trials": [
+    "NCT06928389",
+    "NCT07027514",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 58.0,
+    "cm.organ_transplant": "no",
+    "ecog": 1.0,
+    "lab.tsh_normal": "yes",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "none"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "dx.histology",
+    "med.anticoagulant",
+    "tx.prior_platinum"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "dx.histology": "document_only",
+    "med.anticoagulant": "patient_may_answer",
+    "tx.prior_platinum": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 58.0,
+    "cm.organ_transplant": "no",
+    "ecog": 1.0,
+    "lab.tsh_normal": "yes",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "none",
+    "bm.driver_alteration": "alk",
+    "dx.histology": "nonsquamous_other",
+    "med.anticoagulant": "other_therapeutic",
+    "tx.prior_platinum": "yes"
+   }
+  },
+  {
+   "patient_id": "P025",
+   "sim_alias": "PA-6801cec66a80bc4d",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT06928389",
+    "NCT07027514"
+   ],
+   "public_known": {
+    "age": 65.0,
+    "bm.driver_alteration": "alk",
+    "cm.organ_transplant": "no",
+    "dx.histology": "adenocarcinoma",
+    "ecog": 2.0,
+    "lab.tsh_normal": "yes",
+    "med.anticoagulant": "none",
+    "sex": "male"
+   },
+   "hidden_slots": [
+    "proc.days_since_major_surgery",
+    "repro.pregnant_or_breastfeeding",
+    "tx.other_investigational_4w",
+    "tx.prior_docetaxel",
+    "tx.prior_il12",
+    "tx.prior_pd1_pdl1",
+    "tx.prior_platinum"
+   ],
+   "hidden_case": {
+    "proc.days_since_major_surgery": "patient_may_answer",
+    "repro.pregnant_or_breastfeeding": "patient_may_answer",
+    "tx.other_investigational_4w": "patient_may_answer",
+    "tx.prior_docetaxel": "patient_may_answer",
+    "tx.prior_il12": "patient_may_answer",
+    "tx.prior_pd1_pdl1": "patient_may_answer",
+    "tx.prior_platinum": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 65.0,
+    "bm.driver_alteration": "alk",
+    "cm.organ_transplant": "no",
+    "dx.histology": "adenocarcinoma",
+    "ecog": 2.0,
+    "lab.tsh_normal": "yes",
+    "med.anticoagulant": "none",
+    "sex": "male",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1",
+    "tx.prior_platinum": "yes"
+   }
+  },
+  {
+   "patient_id": "P026",
+   "sim_alias": "PA-f8e2c9f02f031ddc",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT06928389",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 61.0,
+    "bm.driver_alteration": "met_ex14",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.prior_pd1_pdl1": "none",
+    "tx.prior_platinum": "yes"
+   },
+   "hidden_slots": [
+    "dx.histology",
+    "ecog",
+    "tx.other_investigational_4w",
+    "tx.prior_docetaxel"
+   ],
+   "hidden_case": {
+    "dx.histology": "document_only",
+    "ecog": "patient_may_answer",
+    "tx.other_investigational_4w": "patient_may_answer",
+    "tx.prior_docetaxel": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 61.0,
+    "bm.driver_alteration": "met_ex14",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.prior_pd1_pdl1": "none",
+    "tx.prior_platinum": "yes",
+    "dx.histology": "adenocarcinoma",
+    "ecog": 0.0,
+    "tx.other_investigational_4w": "no",
+    "tx.prior_docetaxel": "no"
+   }
+  },
+  {
+   "patient_id": "P027",
+   "sim_alias": "PA-370602127afcc9d0",
+   "candidate_trials": [
+    "NCT07027514",
+    "NCT07416058",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 72.0,
+    "bm.driver_alteration": "none",
+    "cm.organ_transplant": "no",
+    "dx.stage": "IIIB",
+    "ecog": 0.0,
+    "med.anticoagulant": "none",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.prior_il12": "no"
+   },
+   "hidden_slots": [
+    "dx.histology",
+    "lab.tsh_normal",
+    "tx.prior_pd1_pdl1"
+   ],
+   "hidden_case": {
+    "dx.histology": "document_only",
+    "lab.tsh_normal": "lab_report_only",
+    "tx.prior_pd1_pdl1": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 72.0,
+    "bm.driver_alteration": "none",
+    "cm.organ_transplant": "no",
+    "dx.stage": "IIIB",
+    "ecog": 0.0,
+    "med.anticoagulant": "none",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.prior_il12": "no",
+    "dx.histology": "adenocarcinoma",
+    "lab.tsh_normal": "no",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1"
+   }
+  },
+  {
+   "patient_id": "P028",
+   "sim_alias": "PA-2ae78a13b114b109",
+   "candidate_trials": [
+    "NCT07098338",
+    "NCT07416058",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 69.0,
+    "dx.stage": "IIIC",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "male",
+    "tx.days_since_last_anticancer": "ge_14d"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "dx.histology",
+    "ecog",
+    "med.live_vaccine_30d"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "dx.histology": "document_only",
+    "ecog": "patient_may_answer",
+    "med.live_vaccine_30d": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 69.0,
+    "dx.stage": "IIIC",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "male",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "bm.driver_alteration": "egfr_uncommon",
+    "dx.histology": "adenocarcinoma",
+    "ecog": 0.0,
+    "med.live_vaccine_30d": "no"
+   }
+  },
+  {
+   "patient_id": "P029",
+   "sim_alias": "PA-de4c7ba53b1bbd46",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT06928389",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 74.0,
+    "bm.driver_alteration": "none",
+    "ecog": 0.0,
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "female",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1"
+   },
+   "hidden_slots": [
+    "dx.histology",
+    "repro.pregnant_or_breastfeeding",
+    "tx.other_investigational_4w",
+    "tx.prior_platinum"
+   ],
+   "hidden_case": {
+    "dx.histology": "document_only",
+    "repro.pregnant_or_breastfeeding": "patient_may_answer",
+    "tx.other_investigational_4w": "patient_may_answer",
+    "tx.prior_platinum": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 74.0,
+    "bm.driver_alteration": "none",
+    "ecog": 0.0,
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "female",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1",
+    "dx.histology": "adenocarcinoma",
+    "repro.pregnant_or_breastfeeding": "no",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_platinum": "yes"
+   }
+  },
+  {
+   "patient_id": "P030",
+   "sim_alias": "PA-eda3f9bb4be6e67b",
+   "candidate_trials": [
+    "NCT07098338",
+    "NCT07416058",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 63.0,
+    "bm.driver_alteration": "none",
+    "dx.histology": "adenocarcinoma",
+    "dx.stage": "IVA",
+    "ecog": 1.0,
+    "sex": "male",
+    "tx.days_since_last_anticancer": "ge_14d"
+   },
+   "hidden_slots": [
+    "med.live_vaccine_30d",
+    "proc.days_since_major_surgery"
+   ],
+   "hidden_case": {
+    "med.live_vaccine_30d": "patient_may_answer",
+    "proc.days_since_major_surgery": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 63.0,
+    "bm.driver_alteration": "none",
+    "dx.histology": "adenocarcinoma",
+    "dx.stage": "IVA",
+    "ecog": 1.0,
+    "sex": "male",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "med.live_vaccine_30d": "no",
+    "proc.days_since_major_surgery": "ge_28d_or_none"
+   }
+  },
+  {
+   "patient_id": "P031",
+   "sim_alias": "PA-8b520d7edc329241",
+   "candidate_trials": [
+    "NCT06928389",
+    "NCT07027514",
+    "NCT07098338"
+   ],
+   "public_known": {
+    "age": 60.0,
+    "cm.organ_transplant": "no",
+    "med.anticoagulant": "none",
+    "med.live_vaccine_30d": "no",
+    "sex": "female",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_platinum": "yes"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "dx.histology",
+    "ecog",
+    "lab.tsh_normal",
+    "repro.pregnant_or_breastfeeding",
+    "tx.prior_il12",
+    "tx.prior_pd1_pdl1"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "dx.histology": "document_only",
+    "ecog": "patient_may_answer",
+    "lab.tsh_normal": "lab_report_only",
+    "repro.pregnant_or_breastfeeding": "patient_may_answer",
+    "tx.prior_il12": "patient_may_answer",
+    "tx.prior_pd1_pdl1": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 60.0,
+    "cm.organ_transplant": "no",
+    "med.anticoagulant": "none",
+    "med.live_vaccine_30d": "no",
+    "sex": "female",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_platinum": "yes",
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "dx.histology": "squamous",
+    "ecog": 1.0,
+    "lab.tsh_normal": "yes",
+    "repro.pregnant_or_breastfeeding": "yes",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "durvalumab_consolidation"
+   }
+  },
+  {
+   "patient_id": "P032",
+   "sim_alias": "PA-cb4b7f25ff69d404",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT07027514",
+    "NCT07416058"
+   ],
+   "public_known": {
+    "age": 82.0,
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "cm.organ_transplant": "no",
+    "dx.histology": "adenocarcinoma",
+    "ecog": 0.0,
+    "med.anticoagulant": "none",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_il12": "no"
+   },
+   "hidden_slots": [
+    "dx.stage",
+    "lab.tsh_normal",
+    "tx.days_since_last_anticancer",
+    "tx.prior_pd1_pdl1"
+   ],
+   "hidden_case": {
+    "dx.stage": "document_only",
+    "lab.tsh_normal": "lab_report_only",
+    "tx.days_since_last_anticancer": "patient_may_answer",
+    "tx.prior_pd1_pdl1": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 82.0,
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "cm.organ_transplant": "no",
+    "dx.histology": "adenocarcinoma",
+    "ecog": 0.0,
+    "med.anticoagulant": "none",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_il12": "no",
+    "dx.stage": "IIIB",
+    "lab.tsh_normal": "yes",
+    "tx.days_since_last_anticancer": "lt_14d",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1"
+   }
+  },
+  {
+   "patient_id": "P033",
+   "sim_alias": "PA-95bd61131a3dbd93",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT07098338",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 61.0,
+    "bm.driver_alteration": "kras_g12c",
+    "dx.histology": "adenocarcinoma",
+    "ecog": 1.0,
+    "med.live_vaccine_30d": "no",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.other_investigational_4w": "no"
+   },
+   "hidden_slots": [],
+   "hidden_case": {},
+   "true_values": {
+    "age": 61.0,
+    "bm.driver_alteration": "kras_g12c",
+    "dx.histology": "adenocarcinoma",
+    "ecog": 1.0,
+    "med.live_vaccine_30d": "no",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.other_investigational_4w": "no"
+   }
+  },
+  {
+   "patient_id": "P034",
+   "sim_alias": "PA-5b410d13fb6eb7bc",
+   "candidate_trials": [
+    "NCT07027514",
+    "NCT07098338",
+    "NCT07416058"
+   ],
+   "public_known": {
+    "age": 57.0,
+    "bm.driver_alteration": "none",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "female",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "ici_other"
+   },
+   "hidden_slots": [
+    "cm.organ_transplant",
+    "dx.stage",
+    "ecog",
+    "lab.tsh_normal",
+    "med.anticoagulant",
+    "med.live_vaccine_30d",
+    "repro.pregnant_or_breastfeeding"
+   ],
+   "hidden_case": {
+    "cm.organ_transplant": "document_only",
+    "dx.stage": "document_only",
+    "ecog": "patient_may_answer",
+    "lab.tsh_normal": "lab_report_only",
+    "med.anticoagulant": "patient_may_answer",
+    "med.live_vaccine_30d": "patient_may_answer",
+    "repro.pregnant_or_breastfeeding": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 57.0,
+    "bm.driver_alteration": "none",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "female",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "ici_other",
+    "cm.organ_transplant": "no",
+    "dx.stage": "IVA",
+    "ecog": 1.0,
+    "lab.tsh_normal": "yes",
+    "med.anticoagulant": "none",
+    "med.live_vaccine_30d": "no",
+    "repro.pregnant_or_breastfeeding": "no"
+   }
+  },
+  {
+   "patient_id": "P035",
+   "sim_alias": "PA-ccfd4382582ec6a6",
+   "candidate_trials": [
+    "NCT07027514",
+    "NCT07098338",
+    "NCT07416058"
+   ],
+   "public_known": {
+    "age": 61.0,
+    "cm.organ_transplant": "no",
+    "lab.tsh_normal": "yes",
+    "med.anticoagulant": "none",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.days_since_last_anticancer": "lt_14d"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "dx.stage",
+    "ecog",
+    "med.live_vaccine_30d",
+    "tx.prior_il12",
+    "tx.prior_pd1_pdl1"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "dx.stage": "document_only",
+    "ecog": "patient_may_answer",
+    "med.live_vaccine_30d": "patient_may_answer",
+    "tx.prior_il12": "patient_may_answer",
+    "tx.prior_pd1_pdl1": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 61.0,
+    "cm.organ_transplant": "no",
+    "lab.tsh_normal": "yes",
+    "med.anticoagulant": "none",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.days_since_last_anticancer": "lt_14d",
+    "bm.driver_alteration": "none",
+    "dx.stage": "IIIB",
+    "ecog": 1.0,
+    "med.live_vaccine_30d": "no",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1"
+   }
+  },
+  {
+   "patient_id": "P036",
+   "sim_alias": "PA-e9118a9034b7e514",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT07027514",
+    "NCT07098338"
+   ],
+   "public_known": {
+    "age": 65.0,
+    "med.anticoagulant": "none",
+    "med.live_vaccine_30d": "no",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_pd1_pdl1": "none"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "cm.organ_transplant",
+    "dx.histology",
+    "ecog",
+    "lab.tsh_normal",
+    "proc.days_since_major_surgery",
+    "tx.prior_il12"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "cm.organ_transplant": "document_only",
+    "dx.histology": "document_only",
+    "ecog": "patient_may_answer",
+    "lab.tsh_normal": "lab_report_only",
+    "proc.days_since_major_surgery": "patient_may_answer",
+    "tx.prior_il12": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 65.0,
+    "med.anticoagulant": "none",
+    "med.live_vaccine_30d": "no",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_pd1_pdl1": "none",
+    "bm.driver_alteration": "none",
+    "cm.organ_transplant": "no",
+    "dx.histology": "adenocarcinoma",
+    "ecog": 0.0,
+    "lab.tsh_normal": "yes",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "tx.prior_il12": "no"
+   }
+  },
+  {
+   "patient_id": "P037",
+   "sim_alias": "PA-45728dbba580283f",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT07027514",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 63.0,
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "cm.organ_transplant": "no",
+    "dx.histology": "squamous",
+    "ecog": 1.0,
+    "lab.tsh_normal": "yes",
+    "med.anticoagulant": "none",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.prior_pd1_pdl1": "none"
+   },
+   "hidden_slots": [
+    "tx.other_investigational_4w",
+    "tx.prior_il12"
+   ],
+   "hidden_case": {
+    "tx.other_investigational_4w": "patient_may_answer",
+    "tx.prior_il12": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 63.0,
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "cm.organ_transplant": "no",
+    "dx.histology": "squamous",
+    "ecog": 1.0,
+    "lab.tsh_normal": "yes",
+    "med.anticoagulant": "none",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.prior_pd1_pdl1": "none",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_il12": "no"
+   }
+  },
+  {
+   "patient_id": "P038",
+   "sim_alias": "PA-9415e19f49e21e56",
+   "candidate_trials": [
+    "NCT06928389",
+    "NCT07416058",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 60.0,
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "sex": "female"
+   },
+   "hidden_slots": [
+    "dx.histology",
+    "dx.stage",
+    "ecog",
+    "proc.days_since_major_surgery",
+    "tx.days_since_last_anticancer",
+    "tx.prior_docetaxel",
+    "tx.prior_pd1_pdl1",
+    "tx.prior_platinum"
+   ],
+   "hidden_case": {
+    "dx.histology": "document_only",
+    "dx.stage": "document_only",
+    "ecog": "patient_may_answer",
+    "proc.days_since_major_surgery": "patient_may_answer",
+    "tx.days_since_last_anticancer": "patient_may_answer",
+    "tx.prior_docetaxel": "patient_may_answer",
+    "tx.prior_pd1_pdl1": "patient_may_answer",
+    "tx.prior_platinum": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 60.0,
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "sex": "female",
+    "dx.histology": "adenocarcinoma",
+    "dx.stage": "IIIA",
+    "ecog": 0.0,
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_pd1_pdl1": "durvalumab_consolidation",
+    "tx.prior_platinum": "no"
+   }
+  },
+  {
+   "patient_id": "P039",
+   "sim_alias": "PA-22dca471e9e2c429",
+   "candidate_trials": [
+    "NCT07098338",
+    "NCT07416058",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 66.0,
+    "dx.stage": "IIIB",
+    "ecog": 0.0,
+    "med.live_vaccine_30d": "no",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "male",
+    "tx.days_since_last_anticancer": "ge_14d"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "dx.histology"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "dx.histology": "document_only"
+   },
+   "true_values": {
+    "age": 66.0,
+    "dx.stage": "IIIB",
+    "ecog": 0.0,
+    "med.live_vaccine_30d": "no",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "male",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "bm.driver_alteration": "egfr_uncommon",
+    "dx.histology": "mixed_sclc"
+   }
+  },
+  {
+   "patient_id": "P040",
+   "sim_alias": "PA-ce2f7d5ae3f88f43",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT07027514",
+    "NCT07416058"
+   ],
+   "public_known": {
+    "age": 78.0,
+    "cm.organ_transplant": "no",
+    "dx.histology": "adenocarcinoma",
+    "dx.stage": "IVB",
+    "ecog": 2.0,
+    "med.anticoagulant": "other_therapeutic",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "male",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_pd1_pdl1": "durvalumab_consolidation"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "lab.tsh_normal",
+    "repro.pregnant_or_breastfeeding",
+    "tx.days_since_last_anticancer",
+    "tx.prior_il12"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "lab.tsh_normal": "lab_report_only",
+    "repro.pregnant_or_breastfeeding": "patient_may_answer",
+    "tx.days_since_last_anticancer": "patient_may_answer",
+    "tx.prior_il12": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 78.0,
+    "cm.organ_transplant": "no",
+    "dx.histology": "adenocarcinoma",
+    "dx.stage": "IVB",
+    "ecog": 2.0,
+    "med.anticoagulant": "other_therapeutic",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "male",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_pd1_pdl1": "durvalumab_consolidation",
+    "bm.driver_alteration": "egfr_ex20ins",
+    "lab.tsh_normal": "no",
+    "repro.pregnant_or_breastfeeding": "no",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.prior_il12": "no"
+   }
+  },
+  {
+   "patient_id": "P041",
+   "sim_alias": "PA-72ca54e508f1ccab",
+   "candidate_trials": [
+    "NCT06928389",
+    "NCT07098338",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 67.0,
+    "dx.histology": "adenocarcinoma",
+    "ecog": 0.0,
+    "med.live_vaccine_30d": "no",
+    "sex": "female",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_pd1_pdl1": "none"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "tx.prior_platinum"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "tx.prior_platinum": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 67.0,
+    "dx.histology": "adenocarcinoma",
+    "ecog": 0.0,
+    "med.live_vaccine_30d": "no",
+    "sex": "female",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_pd1_pdl1": "none",
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "tx.prior_platinum": "no"
+   }
+  },
+  {
+   "patient_id": "P042",
+   "sim_alias": "PA-b3b1a69af59e3df4",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT07098338",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 58.0,
+    "dx.histology": "nonsquamous_other",
+    "ecog": 2.0,
+    "med.live_vaccine_30d": "no",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.other_investigational_4w": "no"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only"
+   },
+   "true_values": {
+    "age": 58.0,
+    "dx.histology": "nonsquamous_other",
+    "ecog": 2.0,
+    "med.live_vaccine_30d": "no",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.other_investigational_4w": "no",
+    "bm.driver_alteration": "alk"
+   }
+  },
+  {
+   "patient_id": "P043",
+   "sim_alias": "PA-a17a99d67bec4bfa",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT07416058",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 66.0,
+    "dx.histology": "adenocarcinoma",
+    "dx.stage": "IVA",
+    "ecog": 0.0,
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.other_investigational_4w": "no"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "tx.days_since_last_anticancer"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "tx.days_since_last_anticancer": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 66.0,
+    "dx.histology": "adenocarcinoma",
+    "dx.stage": "IVA",
+    "ecog": 0.0,
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.other_investigational_4w": "no",
+    "bm.driver_alteration": "none",
+    "tx.days_since_last_anticancer": "lt_14d"
+   }
+  },
+  {
+   "patient_id": "P044",
+   "sim_alias": "PA-6e325e49a66c85c1",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT06928389",
+    "NCT07416058"
+   ],
+   "public_known": {
+    "age": 51.0,
+    "dx.histology": "adenocarcinoma",
+    "dx.stage": "IVB",
+    "ecog": 1.0,
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1",
+    "tx.prior_platinum": "yes"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "proc.days_since_major_surgery",
+    "tx.days_since_last_anticancer",
+    "tx.other_investigational_4w",
+    "tx.prior_docetaxel"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "proc.days_since_major_surgery": "patient_may_answer",
+    "tx.days_since_last_anticancer": "patient_may_answer",
+    "tx.other_investigational_4w": "patient_may_answer",
+    "tx.prior_docetaxel": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 51.0,
+    "dx.histology": "adenocarcinoma",
+    "dx.stage": "IVB",
+    "ecog": 1.0,
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1",
+    "tx.prior_platinum": "yes",
+    "bm.driver_alteration": "none",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_docetaxel": "no"
+   }
+  },
+  {
+   "patient_id": "P045",
+   "sim_alias": "PA-14c86cb165b752ee",
+   "candidate_trials": [
+    "NCT06928389",
+    "NCT07416058",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 57.0,
+    "ecog": 2.0,
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "male",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_platinum": "yes"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "dx.histology",
+    "dx.stage",
+    "tx.days_since_last_anticancer",
+    "tx.prior_pd1_pdl1"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "dx.histology": "document_only",
+    "dx.stage": "document_only",
+    "tx.days_since_last_anticancer": "patient_may_answer",
+    "tx.prior_pd1_pdl1": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 57.0,
+    "ecog": 2.0,
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "male",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_platinum": "yes",
+    "bm.driver_alteration": "not_tested",
+    "dx.histology": "squamous",
+    "dx.stage": "IVB",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1"
+   }
+  },
+  {
+   "patient_id": "P046",
+   "sim_alias": "PA-73b69754a69fd827",
+   "candidate_trials": [
+    "NCT07098338",
+    "NCT07416058",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 74.0,
+    "dx.histology": "adenocarcinoma",
+    "dx.stage": "IVB",
+    "med.live_vaccine_30d": "no",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "male"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "ecog",
+    "tx.days_since_last_anticancer"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "ecog": "patient_may_answer",
+    "tx.days_since_last_anticancer": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 74.0,
+    "dx.histology": "adenocarcinoma",
+    "dx.stage": "IVB",
+    "med.live_vaccine_30d": "no",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "male",
+    "bm.driver_alteration": "kras_g12c",
+    "ecog": 0.0,
+    "tx.days_since_last_anticancer": "ge_14d"
+   }
+  },
+  {
+   "patient_id": "P047",
+   "sim_alias": "PA-81568244302da455",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT07027514",
+    "NCT07098338"
+   ],
+   "public_known": {
+    "age": 65.0,
+    "bm.driver_alteration": "none",
+    "cm.organ_transplant": "no",
+    "dx.histology": "adenocarcinoma",
+    "med.anticoagulant": "other_therapeutic",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.prior_pd1_pdl1": "none"
+   },
+   "hidden_slots": [
+    "ecog",
+    "lab.tsh_normal",
+    "med.live_vaccine_30d",
+    "tx.other_investigational_4w",
+    "tx.prior_il12"
+   ],
+   "hidden_case": {
+    "ecog": "patient_may_answer",
+    "lab.tsh_normal": "lab_report_only",
+    "med.live_vaccine_30d": "patient_may_answer",
+    "tx.other_investigational_4w": "patient_may_answer",
+    "tx.prior_il12": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 65.0,
+    "bm.driver_alteration": "none",
+    "cm.organ_transplant": "no",
+    "dx.histology": "adenocarcinoma",
+    "med.anticoagulant": "other_therapeutic",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.prior_pd1_pdl1": "none",
+    "ecog": 0.0,
+    "lab.tsh_normal": "yes",
+    "med.live_vaccine_30d": "no",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_il12": "no"
+   }
+  },
+  {
+   "patient_id": "P048",
+   "sim_alias": "PA-dc74a326663814c5",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT06928389",
+    "NCT07416058"
+   ],
+   "public_known": {
+    "age": 53.0,
+    "dx.stage": "IVB",
+    "ecog": 0.0,
+    "sex": "male",
+    "tx.prior_platinum": "yes"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "dx.histology",
+    "proc.days_since_major_surgery",
+    "repro.pregnant_or_breastfeeding",
+    "tx.days_since_last_anticancer",
+    "tx.other_investigational_4w",
+    "tx.prior_docetaxel",
+    "tx.prior_pd1_pdl1"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "dx.histology": "document_only",
+    "proc.days_since_major_surgery": "patient_may_answer",
+    "repro.pregnant_or_breastfeeding": "patient_may_answer",
+    "tx.days_since_last_anticancer": "patient_may_answer",
+    "tx.other_investigational_4w": "patient_may_answer",
+    "tx.prior_docetaxel": "patient_may_answer",
+    "tx.prior_pd1_pdl1": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 53.0,
+    "dx.stage": "IVB",
+    "ecog": 0.0,
+    "sex": "male",
+    "tx.prior_platinum": "yes",
+    "bm.driver_alteration": "not_tested",
+    "dx.histology": "mixed_sclc",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_docetaxel": "yes",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1"
+   }
+  },
+  {
+   "patient_id": "P049",
+   "sim_alias": "PA-292f740213ab28f5",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT06928389",
+    "NCT07416058"
+   ],
+   "public_known": {
+    "age": 57.0,
+    "dx.histology": "nonsquamous_other",
+    "dx.stage": "IIIA",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_pd1_pdl1": "durvalumab_consolidation",
+    "tx.prior_platinum": "yes"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "ecog",
+    "proc.days_since_major_surgery",
+    "tx.days_since_last_anticancer",
+    "tx.other_investigational_4w"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "ecog": "patient_may_answer",
+    "proc.days_since_major_surgery": "patient_may_answer",
+    "tx.days_since_last_anticancer": "patient_may_answer",
+    "tx.other_investigational_4w": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 57.0,
+    "dx.histology": "nonsquamous_other",
+    "dx.stage": "IIIA",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_pd1_pdl1": "durvalumab_consolidation",
+    "tx.prior_platinum": "yes",
+    "bm.driver_alteration": "none",
+    "ecog": 1.0,
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.other_investigational_4w": "no"
+   }
+  },
+  {
+   "patient_id": "P050",
+   "sim_alias": "PA-109c3eb9edaa1712",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT06928389",
+    "NCT07027514"
+   ],
+   "public_known": {
+    "age": 63.0,
+    "bm.driver_alteration": "alk",
+    "cm.organ_transplant": "no",
+    "dx.histology": "adenocarcinoma",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1"
+   },
+   "hidden_slots": [
+    "ecog",
+    "lab.tsh_normal",
+    "med.anticoagulant",
+    "tx.prior_docetaxel",
+    "tx.prior_platinum"
+   ],
+   "hidden_case": {
+    "ecog": "patient_may_answer",
+    "lab.tsh_normal": "lab_report_only",
+    "med.anticoagulant": "patient_may_answer",
+    "tx.prior_docetaxel": "patient_may_answer",
+    "tx.prior_platinum": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 63.0,
+    "bm.driver_alteration": "alk",
+    "cm.organ_transplant": "no",
+    "dx.histology": "adenocarcinoma",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1",
+    "ecog": 0.0,
+    "lab.tsh_normal": "yes",
+    "med.anticoagulant": "none",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_platinum": "no"
+   }
+  },
+  {
+   "patient_id": "P051",
+   "sim_alias": "PA-eaefede8887343c7",
+   "candidate_trials": [
+    "NCT07098338",
+    "NCT07416058",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 56.0,
+    "dx.histology": "squamous",
+    "ecog": 0.0,
+    "med.live_vaccine_30d": "no",
+    "sex": "male",
+    "tx.days_since_last_anticancer": "lt_14d"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "dx.stage",
+    "proc.days_since_major_surgery"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "dx.stage": "document_only",
+    "proc.days_since_major_surgery": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 56.0,
+    "dx.histology": "squamous",
+    "ecog": 0.0,
+    "med.live_vaccine_30d": "no",
+    "sex": "male",
+    "tx.days_since_last_anticancer": "lt_14d",
+    "bm.driver_alteration": "alk",
+    "dx.stage": "IIIB",
+    "proc.days_since_major_surgery": "ge_28d_or_none"
+   }
+  },
+  {
+   "patient_id": "P052",
+   "sim_alias": "PA-7ecce9efb7a1a8fa",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT06928389",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 69.0,
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1",
+    "tx.prior_platinum": "no"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "dx.histology",
+    "ecog"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "dx.histology": "document_only",
+    "ecog": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 69.0,
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1",
+    "tx.prior_platinum": "no",
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "dx.histology": "adenocarcinoma",
+    "ecog": 1.0
+   }
+  },
+  {
+   "patient_id": "P053",
+   "sim_alias": "PA-24dbf470734c6dba",
+   "candidate_trials": [
+    "NCT06928389",
+    "NCT07027514",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 62.0,
+    "dx.histology": "mixed_sclc",
+    "med.anticoagulant": "none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1",
+    "tx.prior_platinum": "yes"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "cm.organ_transplant",
+    "ecog",
+    "lab.tsh_normal",
+    "tx.prior_il12"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "cm.organ_transplant": "document_only",
+    "ecog": "patient_may_answer",
+    "lab.tsh_normal": "lab_report_only",
+    "tx.prior_il12": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 62.0,
+    "dx.histology": "mixed_sclc",
+    "med.anticoagulant": "none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1",
+    "tx.prior_platinum": "yes",
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "cm.organ_transplant": "no",
+    "ecog": 0.0,
+    "lab.tsh_normal": "yes",
+    "tx.prior_il12": "no"
+   }
+  },
+  {
+   "patient_id": "P054",
+   "sim_alias": "PA-1361cb5ca44f5680",
+   "candidate_trials": [
+    "NCT07098338",
+    "NCT07416058",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 88.0,
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "dx.stage": "IVB",
+    "ecog": 1.0,
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "male",
+    "tx.days_since_last_anticancer": "ge_14d"
+   },
+   "hidden_slots": [
+    "dx.histology",
+    "med.live_vaccine_30d"
+   ],
+   "hidden_case": {
+    "dx.histology": "document_only",
+    "med.live_vaccine_30d": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 88.0,
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "dx.stage": "IVB",
+    "ecog": 1.0,
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "male",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "dx.histology": "nonsquamous_other",
+    "med.live_vaccine_30d": "no"
+   }
+  },
+  {
+   "patient_id": "P055",
+   "sim_alias": "PA-13b91883facdd256",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT06928389",
+    "NCT07027514"
+   ],
+   "public_known": {
+    "age": 75.0,
+    "cm.organ_transplant": "no",
+    "dx.histology": "nonsquamous_other",
+    "ecog": 0.0,
+    "med.anticoagulant": "none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "none"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "lab.tsh_normal",
+    "proc.days_since_major_surgery",
+    "tx.other_investigational_4w",
+    "tx.prior_platinum"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "lab.tsh_normal": "lab_report_only",
+    "proc.days_since_major_surgery": "patient_may_answer",
+    "tx.other_investigational_4w": "patient_may_answer",
+    "tx.prior_platinum": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 75.0,
+    "cm.organ_transplant": "no",
+    "dx.histology": "nonsquamous_other",
+    "ecog": 0.0,
+    "med.anticoagulant": "none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "none",
+    "bm.driver_alteration": "none",
+    "lab.tsh_normal": "yes",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_platinum": "yes"
+   }
+  },
+  {
+   "patient_id": "P056",
+   "sim_alias": "PA-a528928dfb56c1bc",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT06928389",
+    "NCT07416058"
+   ],
+   "public_known": {
+    "age": 65.0,
+    "dx.stage": "IIIC",
+    "ecog": 1.0,
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1",
+    "tx.prior_platinum": "yes"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "dx.histology",
+    "proc.days_since_major_surgery",
+    "tx.days_since_last_anticancer",
+    "tx.prior_docetaxel"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "dx.histology": "document_only",
+    "proc.days_since_major_surgery": "patient_may_answer",
+    "tx.days_since_last_anticancer": "patient_may_answer",
+    "tx.prior_docetaxel": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 65.0,
+    "dx.stage": "IIIC",
+    "ecog": 1.0,
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1",
+    "tx.prior_platinum": "yes",
+    "bm.driver_alteration": "egfr_uncommon",
+    "dx.histology": "squamous",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.prior_docetaxel": "yes"
+   }
+  },
+  {
+   "patient_id": "P057",
+   "sim_alias": "PA-e68c067fc850c0a8",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT06928389",
+    "NCT07027514"
+   ],
+   "public_known": {
+    "age": 55.0,
+    "cm.organ_transplant": "no",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "female",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "none"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "dx.histology",
+    "ecog",
+    "lab.tsh_normal",
+    "med.anticoagulant",
+    "repro.pregnant_or_breastfeeding",
+    "tx.other_investigational_4w",
+    "tx.prior_platinum"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "dx.histology": "document_only",
+    "ecog": "patient_may_answer",
+    "lab.tsh_normal": "lab_report_only",
+    "med.anticoagulant": "patient_may_answer",
+    "repro.pregnant_or_breastfeeding": "patient_may_answer",
+    "tx.other_investigational_4w": "patient_may_answer",
+    "tx.prior_platinum": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 55.0,
+    "cm.organ_transplant": "no",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "female",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "none",
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "dx.histology": "adenocarcinoma",
+    "ecog": 0.0,
+    "lab.tsh_normal": "yes",
+    "med.anticoagulant": "none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_platinum": "yes"
+   }
+  },
+  {
+   "patient_id": "P058",
+   "sim_alias": "PA-0dd0dfa09527da66",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT06928389",
+    "NCT07416058"
+   ],
+   "public_known": {
+    "age": 63.0,
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "yes",
+    "sex": "female",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "dx.histology",
+    "dx.stage",
+    "ecog",
+    "tx.days_since_last_anticancer",
+    "tx.other_investigational_4w",
+    "tx.prior_docetaxel",
+    "tx.prior_platinum"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "dx.histology": "document_only",
+    "dx.stage": "document_only",
+    "ecog": "patient_may_answer",
+    "tx.days_since_last_anticancer": "patient_may_answer",
+    "tx.other_investigational_4w": "patient_may_answer",
+    "tx.prior_docetaxel": "patient_may_answer",
+    "tx.prior_platinum": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 63.0,
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "yes",
+    "sex": "female",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1",
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "dx.histology": "nonsquamous_other",
+    "dx.stage": "IVB",
+    "ecog": 1.0,
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_platinum": "yes"
+   }
+  },
+  {
+   "patient_id": "P059",
+   "sim_alias": "PA-24b3c2ecdf99e746",
+   "candidate_trials": [
+    "NCT07027514",
+    "NCT07416058",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 55.0,
+    "bm.driver_alteration": "none",
+    "cm.organ_transplant": "no",
+    "dx.histology": "squamous",
+    "ecog": 0.0,
+    "med.anticoagulant": "none",
+    "sex": "female",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "none"
+   },
+   "hidden_slots": [
+    "dx.stage",
+    "lab.tsh_normal",
+    "proc.days_since_major_surgery",
+    "repro.pregnant_or_breastfeeding"
+   ],
+   "hidden_case": {
+    "dx.stage": "document_only",
+    "lab.tsh_normal": "lab_report_only",
+    "proc.days_since_major_surgery": "patient_may_answer",
+    "repro.pregnant_or_breastfeeding": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 55.0,
+    "bm.driver_alteration": "none",
+    "cm.organ_transplant": "no",
+    "dx.histology": "squamous",
+    "ecog": 0.0,
+    "med.anticoagulant": "none",
+    "sex": "female",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "none",
+    "dx.stage": "IVA",
+    "lab.tsh_normal": "no",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no"
+   }
+  },
+  {
+   "patient_id": "P060",
+   "sim_alias": "PA-d90be81d2d5aeac3",
+   "candidate_trials": [
+    "NCT06928389",
+    "NCT07098338",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 70.0,
+    "dx.histology": "adenocarcinoma",
+    "ecog": 1.0,
+    "med.live_vaccine_30d": "no",
+    "sex": "male",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_pd1_pdl1": "none"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "tx.prior_platinum"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "tx.prior_platinum": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 70.0,
+    "dx.histology": "adenocarcinoma",
+    "ecog": 1.0,
+    "med.live_vaccine_30d": "no",
+    "sex": "male",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_pd1_pdl1": "none",
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "tx.prior_platinum": "no"
+   }
+  },
+  {
+   "patient_id": "P061",
+   "sim_alias": "PA-fefb0563eeb35b8f",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT06928389",
+    "NCT07416058"
+   ],
+   "public_known": {
+    "age": 59.0,
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_pd1_pdl1": "ici_other",
+    "tx.prior_platinum": "yes"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "dx.histology",
+    "dx.stage",
+    "ecog",
+    "tx.other_investigational_4w"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "dx.histology": "document_only",
+    "dx.stage": "document_only",
+    "ecog": "patient_may_answer",
+    "tx.other_investigational_4w": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 59.0,
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_pd1_pdl1": "ici_other",
+    "tx.prior_platinum": "yes",
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "dx.histology": "adenocarcinoma",
+    "dx.stage": "IIIC",
+    "ecog": 0.0,
+    "tx.other_investigational_4w": "no"
+   }
+  },
+  {
+   "patient_id": "P062",
+   "sim_alias": "PA-2a93249cac32137e",
+   "candidate_trials": [
+    "NCT07098338",
+    "NCT07416058",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 62.0,
+    "ecog": 1.0,
+    "med.live_vaccine_30d": "no",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "male",
+    "tx.days_since_last_anticancer": "ge_14d"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "dx.histology",
+    "dx.stage"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "dx.histology": "document_only",
+    "dx.stage": "document_only"
+   },
+   "true_values": {
+    "age": 62.0,
+    "ecog": 1.0,
+    "med.live_vaccine_30d": "no",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "male",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "bm.driver_alteration": "not_tested",
+    "dx.histology": "adenocarcinoma",
+    "dx.stage": "IIIA"
+   }
+  },
+  {
+   "patient_id": "P063",
+   "sim_alias": "PA-c1fce614f4fa32ce",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT07027514",
+    "NCT07098338"
+   ],
+   "public_known": {
+    "age": 71.0,
+    "cm.organ_transplant": "no",
+    "dx.histology": "squamous",
+    "ecog": 1.0,
+    "med.anticoagulant": "none",
+    "med.live_vaccine_30d": "no",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "lab.tsh_normal",
+    "proc.days_since_major_surgery"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "lab.tsh_normal": "lab_report_only",
+    "proc.days_since_major_surgery": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 71.0,
+    "cm.organ_transplant": "no",
+    "dx.histology": "squamous",
+    "ecog": 1.0,
+    "med.anticoagulant": "none",
+    "med.live_vaccine_30d": "no",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1",
+    "bm.driver_alteration": "none",
+    "lab.tsh_normal": "yes",
+    "proc.days_since_major_surgery": "ge_28d_or_none"
+   }
+  },
+  {
+   "patient_id": "P064",
+   "sim_alias": "PA-bd71afb2341c4b99",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT07098338",
+    "NCT07416058"
+   ],
+   "public_known": {
+    "age": 60.0,
+    "bm.driver_alteration": "none",
+    "dx.stage": "IVB",
+    "ecog": 0.0,
+    "med.live_vaccine_30d": "no",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "male",
+    "tx.days_since_last_anticancer": "ge_14d"
+   },
+   "hidden_slots": [
+    "dx.histology",
+    "repro.pregnant_or_breastfeeding",
+    "tx.other_investigational_4w"
+   ],
+   "hidden_case": {
+    "dx.histology": "document_only",
+    "repro.pregnant_or_breastfeeding": "patient_may_answer",
+    "tx.other_investigational_4w": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 60.0,
+    "bm.driver_alteration": "none",
+    "dx.stage": "IVB",
+    "ecog": 0.0,
+    "med.live_vaccine_30d": "no",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "male",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "dx.histology": "squamous",
+    "repro.pregnant_or_breastfeeding": "no",
+    "tx.other_investigational_4w": "no"
+   }
+  },
+  {
+   "patient_id": "P065",
+   "sim_alias": "PA-197fd3980902bbdf",
+   "candidate_trials": [
+    "NCT07027514",
+    "NCT07098338",
+    "NCT07416058"
+   ],
+   "public_known": {
+    "age": 62.0,
+    "cm.organ_transplant": "no",
+    "dx.stage": "IVB",
+    "ecog": 2.0,
+    "med.anticoagulant": "other_therapeutic",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.prior_il12": "no"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "lab.tsh_normal",
+    "med.live_vaccine_30d",
+    "tx.days_since_last_anticancer",
+    "tx.prior_pd1_pdl1"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "lab.tsh_normal": "lab_report_only",
+    "med.live_vaccine_30d": "patient_may_answer",
+    "tx.days_since_last_anticancer": "patient_may_answer",
+    "tx.prior_pd1_pdl1": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 62.0,
+    "cm.organ_transplant": "no",
+    "dx.stage": "IVB",
+    "ecog": 2.0,
+    "med.anticoagulant": "other_therapeutic",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.prior_il12": "no",
+    "bm.driver_alteration": "not_tested",
+    "lab.tsh_normal": "no",
+    "med.live_vaccine_30d": "no",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.prior_pd1_pdl1": "durvalumab_consolidation"
+   }
+  },
+  {
+   "patient_id": "P066",
+   "sim_alias": "PA-93c49df91db82294",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT06928389",
+    "NCT07098338"
+   ],
+   "public_known": {
+    "age": 65.0,
+    "dx.histology": "adenocarcinoma",
+    "ecog": 1.0,
+    "med.live_vaccine_30d": "no",
+    "sex": "male",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_pd1_pdl1": "none",
+    "tx.prior_platinum": "yes"
+   },
+   "hidden_slots": [
+    "proc.days_since_major_surgery",
+    "repro.pregnant_or_breastfeeding",
+    "tx.prior_docetaxel"
+   ],
+   "hidden_case": {
+    "proc.days_since_major_surgery": "patient_may_answer",
+    "repro.pregnant_or_breastfeeding": "patient_may_answer",
+    "tx.prior_docetaxel": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 65.0,
+    "dx.histology": "adenocarcinoma",
+    "ecog": 1.0,
+    "med.live_vaccine_30d": "no",
+    "sex": "male",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_pd1_pdl1": "none",
+    "tx.prior_platinum": "yes",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "tx.prior_docetaxel": "no"
+   }
+  },
+  {
+   "patient_id": "P067",
+   "sim_alias": "PA-f4d5056d173b3031",
+   "candidate_trials": [
+    "NCT06928389",
+    "NCT07098338",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 57.0,
+    "sex": "female"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "dx.histology",
+    "ecog",
+    "med.live_vaccine_30d",
+    "tx.prior_docetaxel",
+    "tx.prior_pd1_pdl1",
+    "tx.prior_platinum"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "dx.histology": "document_only",
+    "ecog": "patient_may_answer",
+    "med.live_vaccine_30d": "patient_may_answer",
+    "tx.prior_docetaxel": "patient_may_answer",
+    "tx.prior_pd1_pdl1": "patient_may_answer",
+    "tx.prior_platinum": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 57.0,
+    "sex": "female",
+    "bm.driver_alteration": "braf_v600",
+    "dx.histology": "adenocarcinoma",
+    "ecog": 1.0,
+    "med.live_vaccine_30d": "no",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_pd1_pdl1": "none",
+    "tx.prior_platinum": "no"
+   }
+  },
+  {
+   "patient_id": "P068",
+   "sim_alias": "PA-cb1bf74a25bc1291",
+   "candidate_trials": [
+    "NCT06928389",
+    "NCT07416058",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 75.0,
+    "dx.histology": "adenocarcinoma",
+    "dx.stage": "IVA",
+    "sex": "male",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "ecog",
+    "proc.days_since_major_surgery",
+    "tx.days_since_last_anticancer",
+    "tx.prior_platinum"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "ecog": "patient_may_answer",
+    "proc.days_since_major_surgery": "patient_may_answer",
+    "tx.days_since_last_anticancer": "patient_may_answer",
+    "tx.prior_platinum": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 75.0,
+    "dx.histology": "adenocarcinoma",
+    "dx.stage": "IVA",
+    "sex": "male",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1",
+    "bm.driver_alteration": "kras_g12c",
+    "ecog": 0.0,
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.prior_platinum": "yes"
+   }
+  },
+  {
+   "patient_id": "P069",
+   "sim_alias": "PA-4055ddc95207861c",
+   "candidate_trials": [
+    "NCT06928389",
+    "NCT07027514",
+    "NCT07416058"
+   ],
+   "public_known": {
+    "age": 53.0,
+    "cm.organ_transplant": "no",
+    "med.anticoagulant": "none",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "female",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1",
+    "tx.prior_platinum": "yes"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "dx.histology",
+    "dx.stage",
+    "ecog",
+    "lab.tsh_normal",
+    "repro.pregnant_or_breastfeeding",
+    "tx.prior_docetaxel"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "dx.histology": "document_only",
+    "dx.stage": "document_only",
+    "ecog": "patient_may_answer",
+    "lab.tsh_normal": "lab_report_only",
+    "repro.pregnant_or_breastfeeding": "patient_may_answer",
+    "tx.prior_docetaxel": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 53.0,
+    "cm.organ_transplant": "no",
+    "med.anticoagulant": "none",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "female",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1",
+    "tx.prior_platinum": "yes",
+    "bm.driver_alteration": "kras_g12c",
+    "dx.histology": "adenocarcinoma",
+    "dx.stage": "IVB",
+    "ecog": 0.0,
+    "lab.tsh_normal": "yes",
+    "repro.pregnant_or_breastfeeding": "no",
+    "tx.prior_docetaxel": "no"
+   }
+  },
+  {
+   "patient_id": "P070",
+   "sim_alias": "PA-bb8dc6ee1d6f8eb0",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT07416058",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 73.0,
+    "bm.driver_alteration": "none",
+    "ecog": 0.0,
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male"
+   },
+   "hidden_slots": [
+    "dx.histology",
+    "dx.stage",
+    "tx.days_since_last_anticancer",
+    "tx.other_investigational_4w"
+   ],
+   "hidden_case": {
+    "dx.histology": "document_only",
+    "dx.stage": "document_only",
+    "tx.days_since_last_anticancer": "patient_may_answer",
+    "tx.other_investigational_4w": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 73.0,
+    "bm.driver_alteration": "none",
+    "ecog": 0.0,
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "dx.histology": "adenocarcinoma",
+    "dx.stage": "IVB",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.other_investigational_4w": "no"
+   }
+  },
+  {
+   "patient_id": "P071",
+   "sim_alias": "PA-5688c4efad9b9472",
+   "candidate_trials": [
+    "NCT06928389",
+    "NCT07098338",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 49.0,
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "dx.histology": "squamous",
+    "ecog": 0.0,
+    "sex": "male",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_pd1_pdl1": "ici_other"
+   },
+   "hidden_slots": [
+    "med.live_vaccine_30d",
+    "tx.prior_platinum"
+   ],
+   "hidden_case": {
+    "med.live_vaccine_30d": "patient_may_answer",
+    "tx.prior_platinum": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 49.0,
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "dx.histology": "squamous",
+    "ecog": 0.0,
+    "sex": "male",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_pd1_pdl1": "ici_other",
+    "med.live_vaccine_30d": "no",
+    "tx.prior_platinum": "yes"
+   }
+  },
+  {
+   "patient_id": "P072",
+   "sim_alias": "PA-c94129909928027b",
+   "candidate_trials": [
+    "NCT06928389",
+    "NCT07027514",
+    "NCT07098338"
+   ],
+   "public_known": {
+    "age": 61.0,
+    "bm.driver_alteration": "kras_g12c",
+    "cm.organ_transplant": "no",
+    "dx.histology": "adenocarcinoma",
+    "ecog": 1.0,
+    "med.anticoagulant": "warfarin",
+    "med.live_vaccine_30d": "no",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.prior_pd1_pdl1": "ici_other",
+    "tx.prior_platinum": "yes"
+   },
+   "hidden_slots": [
+    "lab.tsh_normal",
+    "tx.prior_docetaxel",
+    "tx.prior_il12"
+   ],
+   "hidden_case": {
+    "lab.tsh_normal": "lab_report_only",
+    "tx.prior_docetaxel": "patient_may_answer",
+    "tx.prior_il12": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 61.0,
+    "bm.driver_alteration": "kras_g12c",
+    "cm.organ_transplant": "no",
+    "dx.histology": "adenocarcinoma",
+    "ecog": 1.0,
+    "med.anticoagulant": "warfarin",
+    "med.live_vaccine_30d": "no",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.prior_pd1_pdl1": "ici_other",
+    "tx.prior_platinum": "yes",
+    "lab.tsh_normal": "yes",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_il12": "no"
+   }
+  },
+  {
+   "patient_id": "P073",
+   "sim_alias": "PA-fcb2d8f3a014d758",
+   "candidate_trials": [
+    "NCT06928389",
+    "NCT07027514",
+    "NCT07098338"
+   ],
+   "public_known": {
+    "age": 78.0,
+    "cm.organ_transplant": "no",
+    "ecog": 0.0,
+    "med.anticoagulant": "none",
+    "med.live_vaccine_30d": "no",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "dx.histology",
+    "lab.tsh_normal",
+    "tx.prior_il12",
+    "tx.prior_platinum"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "dx.histology": "document_only",
+    "lab.tsh_normal": "lab_report_only",
+    "tx.prior_il12": "patient_may_answer",
+    "tx.prior_platinum": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 78.0,
+    "cm.organ_transplant": "no",
+    "ecog": 0.0,
+    "med.anticoagulant": "none",
+    "med.live_vaccine_30d": "no",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1",
+    "bm.driver_alteration": "none",
+    "dx.histology": "adenocarcinoma",
+    "lab.tsh_normal": "no",
+    "tx.prior_il12": "no",
+    "tx.prior_platinum": "yes"
+   }
+  },
+  {
+   "patient_id": "P074",
+   "sim_alias": "PA-e8cc1eb285ac85a7",
+   "candidate_trials": [
+    "NCT06928389",
+    "NCT07027514",
+    "NCT07416058"
+   ],
+   "public_known": {
+    "age": 58.0,
+    "cm.organ_transplant": "no",
+    "dx.histology": "squamous",
+    "ecog": 0.0,
+    "med.anticoagulant": "none",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_platinum": "yes"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "dx.stage",
+    "lab.tsh_normal",
+    "tx.prior_il12",
+    "tx.prior_pd1_pdl1"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "dx.stage": "document_only",
+    "lab.tsh_normal": "lab_report_only",
+    "tx.prior_il12": "patient_may_answer",
+    "tx.prior_pd1_pdl1": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 58.0,
+    "cm.organ_transplant": "no",
+    "dx.histology": "squamous",
+    "ecog": 0.0,
+    "med.anticoagulant": "none",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_platinum": "yes",
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "dx.stage": "IVA",
+    "lab.tsh_normal": "yes",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "anti_pd1_pdl1"
+   }
+  },
+  {
+   "patient_id": "P075",
+   "sim_alias": "PA-dccfcf91eda74edb",
+   "candidate_trials": [
+    "NCT07098338",
+    "NCT07416058",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 56.0,
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "dx.histology": "squamous",
+    "dx.stage": "IVB",
+    "ecog": 0.0,
+    "med.live_vaccine_30d": "yes",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "male"
+   },
+   "hidden_slots": [
+    "tx.days_since_last_anticancer"
+   ],
+   "hidden_case": {
+    "tx.days_since_last_anticancer": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 56.0,
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "dx.histology": "squamous",
+    "dx.stage": "IVB",
+    "ecog": 0.0,
+    "med.live_vaccine_30d": "yes",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "sex": "male",
+    "tx.days_since_last_anticancer": "ge_14d"
+   }
+  },
+  {
+   "patient_id": "P076",
+   "sim_alias": "PA-1c9c7dfa821ce7f8",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT06928389",
+    "NCT07027514"
+   ],
+   "public_known": {
+    "age": 79.0,
+    "dx.histology": "adenocarcinoma",
+    "med.anticoagulant": "none",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "none"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "cm.organ_transplant",
+    "ecog",
+    "lab.tsh_normal",
+    "tx.other_investigational_4w",
+    "tx.prior_docetaxel",
+    "tx.prior_platinum"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "cm.organ_transplant": "document_only",
+    "ecog": "patient_may_answer",
+    "lab.tsh_normal": "lab_report_only",
+    "tx.other_investigational_4w": "patient_may_answer",
+    "tx.prior_docetaxel": "patient_may_answer",
+    "tx.prior_platinum": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 79.0,
+    "dx.histology": "adenocarcinoma",
+    "med.anticoagulant": "none",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.prior_il12": "no",
+    "tx.prior_pd1_pdl1": "none",
+    "bm.driver_alteration": "none",
+    "cm.organ_transplant": "no",
+    "ecog": 0.0,
+    "lab.tsh_normal": "no",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_docetaxel": "no",
+    "tx.prior_platinum": "yes"
+   }
+  },
+  {
+   "patient_id": "P077",
+   "sim_alias": "PA-d615dca7f9763400",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT07098338",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 55.0,
+    "dx.histology": "adenocarcinoma",
+    "ecog": 0.0,
+    "med.live_vaccine_30d": "no",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.other_investigational_4w": "no"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only"
+   },
+   "true_values": {
+    "age": 55.0,
+    "dx.histology": "adenocarcinoma",
+    "ecog": 0.0,
+    "med.live_vaccine_30d": "no",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.other_investigational_4w": "no",
+    "bm.driver_alteration": "egfr_ex19del_L858R"
+   }
+  },
+  {
+   "patient_id": "P078",
+   "sim_alias": "PA-38ba7529e9f81ad1",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT07098338",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 64.0,
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "med.live_vaccine_30d": "no",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.other_investigational_4w": "no"
+   },
+   "hidden_slots": [
+    "dx.histology",
+    "ecog",
+    "proc.days_since_major_surgery"
+   ],
+   "hidden_case": {
+    "dx.histology": "document_only",
+    "ecog": "patient_may_answer",
+    "proc.days_since_major_surgery": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 64.0,
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "med.live_vaccine_30d": "no",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "female",
+    "tx.other_investigational_4w": "no",
+    "dx.histology": "adenocarcinoma",
+    "ecog": 0.0,
+    "proc.days_since_major_surgery": "ge_28d_or_none"
+   }
+  },
+  {
+   "patient_id": "P079",
+   "sim_alias": "PA-b252d98303c4e6cf",
+   "candidate_trials": [
+    "NCT06216301",
+    "NCT07027514",
+    "NCT07416058"
+   ],
+   "public_known": {
+    "age": 69.0,
+    "lab.tsh_normal": "yes",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.prior_pd1_pdl1": "durvalumab_consolidation"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "cm.organ_transplant",
+    "dx.histology",
+    "dx.stage",
+    "ecog",
+    "med.anticoagulant",
+    "tx.days_since_last_anticancer",
+    "tx.other_investigational_4w",
+    "tx.prior_il12"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "cm.organ_transplant": "document_only",
+    "dx.histology": "document_only",
+    "dx.stage": "document_only",
+    "ecog": "patient_may_answer",
+    "med.anticoagulant": "patient_may_answer",
+    "tx.days_since_last_anticancer": "patient_may_answer",
+    "tx.other_investigational_4w": "patient_may_answer",
+    "tx.prior_il12": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 69.0,
+    "lab.tsh_normal": "yes",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.prior_pd1_pdl1": "durvalumab_consolidation",
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "cm.organ_transplant": "no",
+    "dx.histology": "adenocarcinoma",
+    "dx.stage": "IIIB",
+    "ecog": 0.0,
+    "med.anticoagulant": "none",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.other_investigational_4w": "no",
+    "tx.prior_il12": "no"
+   }
+  },
+  {
+   "patient_id": "P080",
+   "sim_alias": "PA-17f5a8c158a5f743",
+   "candidate_trials": [
+    "NCT07027514",
+    "NCT07416058",
+    "NCT07680790"
+   ],
+   "public_known": {
+    "age": 60.0,
+    "med.anticoagulant": "none",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.prior_il12": "no"
+   },
+   "hidden_slots": [
+    "bm.driver_alteration",
+    "cm.organ_transplant",
+    "dx.histology",
+    "dx.stage",
+    "ecog",
+    "lab.tsh_normal",
+    "tx.days_since_last_anticancer",
+    "tx.prior_pd1_pdl1"
+   ],
+   "hidden_case": {
+    "bm.driver_alteration": "document_only",
+    "cm.organ_transplant": "document_only",
+    "dx.histology": "document_only",
+    "dx.stage": "document_only",
+    "ecog": "patient_may_answer",
+    "lab.tsh_normal": "lab_report_only",
+    "tx.days_since_last_anticancer": "patient_may_answer",
+    "tx.prior_pd1_pdl1": "patient_may_answer"
+   },
+   "true_values": {
+    "age": 60.0,
+    "med.anticoagulant": "none",
+    "proc.days_since_major_surgery": "ge_28d_or_none",
+    "repro.pregnant_or_breastfeeding": "no",
+    "sex": "male",
+    "tx.prior_il12": "no",
+    "bm.driver_alteration": "egfr_ex19del_L858R",
+    "cm.organ_transplant": "no",
+    "dx.histology": "nonsquamous_other",
+    "dx.stage": "IIIA",
+    "ecog": 1.0,
+    "lab.tsh_normal": "no",
+    "tx.days_since_last_anticancer": "ge_14d",
+    "tx.prior_pd1_pdl1": "durvalumab_consolidation"
+   }
+  }
+ ]
+}

@@ -9,6 +9,8 @@
 4. 실행한 행동만 원장에 청구 (실패·무응답도 청구, 미실행은 0). 새 사실·문서 확인이 있으면 그 환자를 전체 재평가
 5. policy.apply_outcome (운영 상태만) -> record_producer.build_step -> DecisionRecord v2 / 진단
 종료: horizon_steps 도달, 고를 행동 없음, 예산 소진. 종료 사유는 지표에 남김.
+정답 라벨은 기본이 순환 규칙 GT(rule_labels), run(labels=, gt_kind=)로 외부 GT(예: NSCLC 독립 규칙 GT, cohort.gt)를 넣으면
+주 지표·환자별 결과·비교표가 모두 그 라벨로 채점됩니다 (쌍 키가 코호트 쌍과 정확히 같아야 함).
 oracle_upper(sim.oracle)만 환경·규칙 GT를 받아 만들고, 나머지 정책은 engine 등록표(make_policy)에서 만듭니다.
 환자별 결과(RunResult.per_patient)는 부트스트랩 신뢰구간(sim.stats)의 단위입니다.
 
@@ -36,7 +38,7 @@ from ..engine.experiment import ExperimentSpecError, catalog_claims, require_cat
 from .cohort import SimCohort
 from .environment import CohortEnvironment
 from .evaluator import DOCUMENT_ASSUMPTION, OfflineEvaluator, make_fact, verify_fact
-from .metrics import correct_resolved, label_of, summarize
+from .metrics import GT_KIND, LABELS, correct_resolved, label_of, summarize
 from .oracle import ORACLE_ID, ORACLE_VERSION, OracleUpperPolicy
 from .response_model import ResponseModel, SourceResponse
 
@@ -123,13 +125,29 @@ def rule_labels(cohort: SimCohort, catalog: SourceCatalog) -> dict[str, str]:
     return {p.pair.key: label_of(p.status) for p in co.pairs()}
 
 
+def check_labels(cohort: SimCohort, labels: dict[str, str]) -> None:
+    """외부 GT가 코호트의 쌍 전체를 같은 키로 덮는지 (빠진 쌍이 조용히 라벨 없음이 되지 않게)."""
+    aliases = cohort.aliases()
+    keys = {f"{aliases[p.key]}|{t.trial_id}" for p in cohort.patients for t in cohort.trials_of(p)}
+    missing, extra = sorted(keys - set(labels)), sorted(set(labels) - keys)
+    bad = sorted({v for v in labels.values()} - LABELS)
+    if missing or extra or bad:
+        raise ExperimentSpecError(f"gt_labels_mismatch: 빠진 쌍 {len(missing)} {missing[:2]}, "
+                                  f"코호트에 없는 쌍 {len(extra)} {extra[:2]}, 모르는 라벨 {bad}")
+
+
 def run(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog | None = None,
-        responses: dict[str, SourceResponse] | None = None) -> RunResult:
+        responses: dict[str, SourceResponse] | None = None, labels: dict[str, str] | None = None,
+        gt_kind: str | None = None) -> RunResult:
     catalog = catalog or SourceCatalog()
     _check(spec, cohort, catalog)
     model = ResponseModel(spec.seed, responses)
     env = CohortEnvironment(cohort, catalog, model)
-    labels = rule_labels(cohort, catalog)
+    if labels is None:
+        labels, gt_kind = rule_labels(cohort, catalog), GT_KIND
+    else:
+        check_labels(cohort, labels)
+        gt_kind = gt_kind or "external_gt"
     if spec.policy_id == ORACLE_ID:  # 참고 상한: 환경(응답 결과)과 규칙 GT를 아는 유일한 정책
         policy = OracleUpperPolicy(env, labels, catalog=catalog, **spec.policy_config)
     else:
@@ -227,7 +245,7 @@ def run(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog | None =
                         elapsed_minutes=elapsed, rounds=rounds, progress=progress, termination=termination,
                         repeat_suppressed=loop.suppressed, safety_unfunded=unfunded,
                         audit={"records": audit.records, "warnings": audit.warnings, "blocking": audit.blocking,
-                               "status": audit.status})
+                               "status": audit.status}, gt_kind=gt_kind)
     for k in PRIMARY_PARTS:
         metrics[k] = sum(p[k] for p in per_patient.values())
     result_hash = canonical_hash({"records": [r.model_dump(mode="json") for r in records],
@@ -241,7 +259,8 @@ def run(spec: ExperimentSpec, cohort: SimCohort, catalog: SourceCatalog | None =
         "evaluator": {"id": ev.evaluator_id, "scope": EVALUATOR_SCOPE if cohort.judge is None else JUDGE_SCOPE,
                       "judge_digest": cohort.judge.digest() if cohort.judge is not None else None,
                       "judge_include_draft": bool(getattr(cohort.judge, "include_draft", False)),
-                      "ground_truth": metrics["rule_gt"]["kind"]},
+                      "ground_truth": metrics["rule_gt"]["kind"],
+                      "ground_truth_hash": canonical_hash(dict(sorted(labels.items())))},
         "response_model": model.describe(), "rephrase": bool(spec.policy_config.get("rephrase", False)),
         "llm": {"real_calls": 0, "offline_matcher_requests": ev.client.requests},
         "environment": {"python": sys.version.split()[0], "platform": platform.platform(), "commit": _git_commit()},
@@ -274,10 +293,12 @@ def _per_patient(co: CohortState, labels: dict[str, str], ledger: EffortLedger, 
 
 def compare(cohort: SimCohort, policy_ids: list[str], budgets: list[EffortBudget], seeds: list[int],
             catalog: SourceCatalog | None = None, policy_configs: dict[str, dict] | None = None,
-            responses: dict[str, SourceResponse] | None = None, rephrase: list[bool] = (False,)) -> list[dict]:
+            responses: dict[str, SourceResponse] | None = None, rephrase: list[bool] = (False,),
+            labels: dict[str, str] | None = None, gt_kind: str | None = None) -> list[dict]:
     """같은 코호트·카탈로그·응답 모델·seed로 정책을 돌린 비교표 (M10). 행 = (바꿔 묻기, 예산, seed, 정책).
 
-    rephrase: "모름" 뒤 다른 말로 한 번 더 물을지. 기본 [False], 민감도 분석은 [False, True] (11-06 결정)."""
+    rephrase: "모름" 뒤 다른 말로 한 번 더 물을지. 기본 [False], 민감도 분석은 [False, True] (11-06 결정).
+    labels·gt_kind: 외부 GT (run과 같음, 없으면 순환 규칙 GT)."""
     catalog = catalog or SourceCatalog()
     rows = []
     for rp_on in rephrase:
@@ -288,7 +309,8 @@ def compare(cohort: SimCohort, policy_ids: list[str], budgets: list[EffortBudget
                     if rp_on:
                         cfg["rephrase"] = True
                     spec = build_spec(f"cmp-{pid}-{seed}", pid, cohort, budget, seed, cfg, catalog)
-                    rows.append(_row(pid, cfg, rp_on, budget, seed, run(spec, cohort, catalog, responses)))
+                    rows.append(_row(pid, cfg, rp_on, budget, seed, run(spec, cohort, catalog, responses, labels,
+                                                                         gt_kind)))
     return rows
 
 
@@ -311,4 +333,4 @@ def _row(pid: str, cfg: dict, rp_on: bool, budget: EffortBudget, seed: int, r: R
             "per_patient": r.per_patient}
 
 
-__all__ = ["run", "build_spec", "compare", "rule_labels", "RunResult", "RUNNER_VERSION", "CLAIMS"]
+__all__ = ["run", "build_spec", "compare", "rule_labels", "check_labels", "RunResult", "RUNNER_VERSION", "CLAIMS"]

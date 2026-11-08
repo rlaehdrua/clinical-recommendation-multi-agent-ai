@@ -157,7 +157,9 @@ def test_default_data_no_confirmed_eligible_on_trials_with_unbound_rules():
                 moved[t] = moved.get(t, 0) + 1
             else:
                 assert after[k]["status"] == v["status"]  # 부적격·정보 부족 대조군은 변화 없음
-    assert moved == {"NCT06530004": 72, "NCT06125405": 9}
+    # 팀 결정 5(11-07): cm.serious_organ_disease(NCT06125405 E11)·cm.immune_onc(NCT06530004 E5)가 판단 기준이 되어
+    # 두 시험은 게이트가 없어도 EXPERT_REVIEW로 끝남 (이전 72+9쌍). 게이트가 옮긴 쌍은 미연결 기준이 남은 시험에서만 나옴
+    assert moved == {"NCT07087314": 1}
 
 
 # ---------------------------------------------------------------------------

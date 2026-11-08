@@ -1,0 +1,66 @@
+{
+ "pairs": 240,
+ "gt_labels": {
+  "CONFIRMED_ELIGIBLE": 0,
+  "PENDING_EXPERT_ELIGIBLE": 23,
+  "INELIGIBLE": 130,
+  "NOT_EVALUATED": 87
+ },
+ "gt_labels_by_trial": {
+  "NCT06216301": {
+   "CONFIRMED_ELIGIBLE": 0,
+   "PENDING_EXPERT_ELIGIBLE": 0,
+   "INELIGIBLE": 6,
+   "NOT_EVALUATED": 31
+  },
+  "NCT06928389": {
+   "CONFIRMED_ELIGIBLE": 0,
+   "PENDING_EXPERT_ELIGIBLE": 13,
+   "INELIGIBLE": 30,
+   "NOT_EVALUATED": 0
+  },
+  "NCT07027514": {
+   "CONFIRMED_ELIGIBLE": 0,
+   "PENDING_EXPERT_ELIGIBLE": 0,
+   "INELIGIBLE": 27,
+   "NOT_EVALUATED": 11
+  },
+  "NCT07098338": {
+   "CONFIRMED_ELIGIBLE": 0,
+   "PENDING_EXPERT_ELIGIBLE": 0,
+   "INELIGIBLE": 6,
+   "NOT_EVALUATED": 34
+  },
+  "NCT07416058": {
+   "CONFIRMED_ELIGIBLE": 0,
+   "PENDING_EXPERT_ELIGIBLE": 0,
+   "INELIGIBLE": 31,
+   "NOT_EVALUATED": 11
+  },
+  "NCT07680790": {
+   "CONFIRMED_ELIGIBLE": 0,
+   "PENDING_EXPERT_ELIGIBLE": 10,
+   "INELIGIBLE": 30,
+   "NOT_EVALUATED": 0
+  }
+ },
+ "rule_status": {
+  "FAIL": 199,
+  "NEEDS_EXPERT": 764,
+  "NOT_APPLICABLE": 62,
+  "NOT_EVALUATED": 437,
+  "PASS": 1409
+ },
+ "hidden_value_cases": {
+  "document_only": 117,
+  "lab_report_only": 32,
+  "patient_may_answer": 203
+ },
+ "generator_labels": {
+  "INELIGIBLE": 130,
+  "UNLABELED": 110
+ },
+ "eligible_family_present": true,
+ "ineligible_present": true,
+ "confirmed_eligible_note": "범위 안 판단 기준이 없는 경로에서만 나옴. 6개 시험 모두 판단 기준이 있어 0건이 정상"
+}

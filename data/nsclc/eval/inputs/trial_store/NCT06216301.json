@@ -1,0 +1,386 @@
+{
+ "format_version": 1,
+ "trial_id": "NCT06216301",
+ "trial_hash": "359f424bfc0d53aa",
+ "model": "claude-sonnet-5",
+ "compiled_at": "2026-11-03T12:51:44+00:00",
+ "parsed": {
+  "trial_id": "NCT06216301",
+  "title": "LUNAR-2: TTFields With Pembrolizumab + Platinum-based Chemotherapy for Metastatic NSCLC",
+  "target_population": "ECOG 0-1, histologically/cytologically confirmed stage 4 (AJCC v8) squamous or non-squamous NSCLC, treatment-naive for metastatic disease, eligible for pembrolizumab + platinum-based chemotherapy with or without TTFields",
+  "intervention_summary": "NovoTTF-200T (Tumor Treating Fields, 150kHz) delivered concomitantly with pembrolizumab and platinum-based chemotherapy vs. pembrolizumab and platinum-based chemotherapy alone",
+  "key_conditions": [
+   "Metastatic Non-small Cell Lung Cancer"
+  ],
+  "cohorts": [],
+  "rules": [
+   {
+    "rule_id": "I1",
+    "kind": "inclusion",
+    "text": "≥22 years of age in the USA",
+    "category": "demographic",
+    "field": "age",
+    "operator": ">=",
+    "value": "22",
+    "unit": "years",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I2",
+    "kind": "inclusion",
+    "text": "≥18 years of age outside of the USA",
+    "category": "demographic",
+    "field": "age",
+    "operator": ">=",
+    "value": "18",
+    "unit": "years",
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I3",
+    "kind": "inclusion",
+    "text": "Sex: all (male and female eligible)",
+    "category": "demographic",
+    "field": "sex",
+    "operator": "==",
+    "value": "all",
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I7",
+    "kind": "inclusion",
+    "text": "ECOG Performance Status (PS) of 0-1",
+    "category": "performance_status",
+    "field": "ecog",
+    "operator": "<=",
+    "value": "1",
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": true,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I8",
+    "kind": "inclusion",
+    "text": "Adequate hematologic and end-organ function: for subjects not receiving therapeutic anticoagulation, INR or aPTT ≤ 1.5 x ULN (unless participant is receiving anticoagulant therapy as long as INR or aPTT is within therapeutic range of intended use of anticoagulants)",
+    "category": "lab",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I9",
+    "kind": "inclusion",
+    "text": "A female participant is eligible to participate if she is not pregnant, not breastfeeding",
+    "category": "reproductive",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I10",
+    "kind": "inclusion",
+    "text": "If male subject with a female partner(s) of child-bearing potential, must agree to use an effective contraception",
+    "category": "reproductive",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "I11",
+    "kind": "inclusion",
+    "text": "All subjects must sign written informed consent",
+    "category": "consent_or_logistics",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E1",
+    "kind": "exclusion",
+    "text": "Mixed small cell and NSCLC histology",
+    "category": "diagnosis",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E4",
+    "kind": "exclusion",
+    "text": "Had major surgery <3 weeks prior to randomization",
+    "category": "procedure",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 21,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E5",
+    "kind": "exclusion",
+    "text": "Received radiation therapy to the lung that is >30 Gy within 6 months of randomization",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 180,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   },
+   {
+    "rule_id": "E6",
+    "kind": "exclusion",
+    "text": "Has received prior radiotherapy within 2 weeks of randomization. Subjects must have recovered from all radiation-related toxicities, not require corticosteroids, and not have had radiation pneumonitis. A 1-week washout is permitted for palliative radiation (≤2 weeks of radiotherapy) to non-CNS disease",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 14,
+    "structured_evaluable": false,
+    "underspecified": true,
+    "cohort": null
+   },
+   {
+    "rule_id": "E11",
+    "kind": "exclusion",
+    "text": "Has a diagnosis of immunodeficiency or is receiving chronic systemic steroid therapy (in dosing exceeding 10 mg daily of prednisone equivalent) or any other form of immunosuppressive therapy within 7 days prior randomization. Subjects with asthma that require intermittent use of bronchodilators, inhaled steroids, or local steroid injections would not be excluded from the study",
+    "category": "medication",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 7,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E12",
+    "kind": "exclusion",
+    "text": "Had prior treatment with any other anti-PD-1, or PD-L1 or PD-L2 agent or an antibody or a small molecule targeting other immuno-regulatory receptors or mechanisms in the 12 months prior to randomization",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 365,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E13",
+    "kind": "exclusion",
+    "text": "Participation in another clinical study with an investigational agent or device during the 4 weeks prior to randomization",
+    "category": "treatment_history",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": 28,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   },
+   {
+    "rule_id": "E16",
+    "kind": "exclusion",
+    "text": "Pregnant or breastfeeding",
+    "category": "reproductive",
+    "field": null,
+    "operator": null,
+    "value": null,
+    "unit": null,
+    "time_window_days": null,
+    "structured_evaluable": false,
+    "underspecified": false,
+    "cohort": null
+   }
+  ],
+  "parsing_notes": "연령 기준은 미국 내(≥22세)와 미국 외(≥18세)로 국가에 따라 상이하여 두 개의 규칙(I1, I2)으로 분리함. 구조화 성별 필드(sex=ALL)는 원문에 명시적 문장은 없으나 CT.gov 구조화 필드 반영을 위해 I3으로 추가함. INR/aPTT는 허용된 표준 lab 필드 목록(hemoglobin, platelets, ANC, creatinine, total bilirubin, ast, alt, hba1c)에 포함되지 않고 기준값도 ULN 상대값이라 구조화 불가로 처리함. 코호트(군) 구분 없이 전체 참여자에 동일 기준이 적용되는 단일군 시험으로 cohorts는 빈 리스트로 둠."
+ },
+ "rule_meta": {
+  "I1": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I2": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I3": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I7": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I8": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I9": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I10": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "I11": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E1": {
+   "review": null,
+   "required_evidence": "clinical_record",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E4": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E5": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E6": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E11": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E12": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E13": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  },
+  "E16": {
+   "review": null,
+   "required_evidence": "self_report_ok",
+   "underspecified_state": null,
+   "added_by_validator": false
+  }
+ },
+ "eval_derivation": {
+  "scope": "nsclc_reduced_v1",
+  "derived_from": "data/nsclc/parsed/NCT06216301.json",
+  "derived_from_sha256": "733a10be23ad4e4366257fec09008716b30b29468ceaafe2cd3c98254f477272",
+  "review": "data/nsclc/review/criteria_verification.csv",
+  "kept": [
+   "I1",
+   "I2",
+   "I3",
+   "I7",
+   "I8",
+   "I9",
+   "I10",
+   "I11",
+   "E1",
+   "E4",
+   "E5",
+   "E6",
+   "E11",
+   "E12",
+   "E13",
+   "E16"
+  ],
+  "removed_out_of_scope": [
+   "I4",
+   "I5",
+   "I6",
+   "E2",
+   "E3",
+   "E7",
+   "E8",
+   "E9",
+   "E10",
+   "E14",
+   "E15",
+   "E17"
+  ],
+  "kept_out_of_scope_for_or_path": [],
+  "underspecified_set_for_expert": [
+   "E5",
+   "E6"
+  ],
+  "note": "축소 범위 평가용 사본. 원본 파싱본은 바꾸지 않음. 범위 밖 기준을 뺐으므로 이 저장소로 낸 '적격'은 전체 프로토콜 적격이 아님"
+ }
+}

@@ -1,18 +1,24 @@
 """정책 비교표: python -m ctrec.sim [--budgets 20,45,90,400] [--seeds 1,2] [--rephrase off|on|both] [--oracle]
                 [--bootstrap 2000] [--reference legacy_greedy] [--out DIR]
 생성기 코호트: python -m ctrec.sim --generator data/cohort/generator_config.json --scenario ID [--replicate 0,1,2]
-                [--map data/cohort/source_map.json] [--include-draft]
+                [--map data/cohort/source_map.json] [--include-draft] [--trials-dir data/trials] [--gt pair_gt.csv]
+NSCLC 평가셋 (독립 규칙 GT로 채점):
+  python -m ctrec.sim --generator data/nsclc/eval/inputs/generator_config.json --scenario nsclc-eval-v1
+                --map data/nsclc/eval/inputs/source_map.json --trials-dir data/nsclc/trials --gt data/nsclc/eval/pair_gt.csv
 
 기본 입력은 합성 데모(sim.demo)입니다. 결과는 합성 조건·가정 비용·순환 규칙 GT에서의 **정책 간 상대 비교**이며, 임상
 정확도나 업무시간 절감의 근거가 아닙니다. --rephrase는 "모름" 뒤 다른 말로 한 번 더 물을지 (기본 off, 민감도 both).
 --oracle은 숨긴 값·응답 결과를 아는 참고 정책 oracle_upper를 따로 붙입니다 (비교표에 "참고"로 표시, 엄밀한 최적값 아님).
 --bootstrap N(기본 2000, 0이면 끔)은 환자 단위 부트스트랩 95% 구간과 --reference 정책 대비 짝지은 차이를 출력합니다.
 --out을 주면 실행마다 manifest.json과 decision_records.jsonl을 남깁니다.
+시험 기준은 생성기 설정의 parsed_store(없으면 data/parsed)에서, 시험 정보는 --trials-dir에서 읽습니다.
+--gt를 주면 순환 규칙 GT 대신 그 파일(sim_pair_key, gt_label 열; cohort.gt 형식)로 주 지표를 채점합니다.
 """
 
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 from pathlib import Path
 
@@ -51,8 +57,22 @@ def load_cohorts(a) -> list:
     if sc is None:
         raise SystemExit(f"시나리오 없음: {a.scenario!r} (가능: {[s.scenario_id for s in cfg.scenarios]})")
     smap, h = FG.load_source_map(a.map), G.config_hash(cfg, sd, cat)
-    return [FG.to_sim_cohort(G.generate_cohort(cfg, sd, cat, parsed, sc, rep, h), sd, smap,
-                             include_draft=a.include_draft) for rep in _ints(a.replicate)]
+    trials_dir = G.store_path(a.trials_dir)
+    out = []
+    for rep in _ints(a.replicate):
+        c = G.generate_cohort(cfg, sd, cat, parsed, sc, rep, h)
+        trials = FG.load_trials(list(c.public.trials), G.store_path(cfg.parsed_store), trials_dir)
+        out.append(FG.to_sim_cohort(c, sd, smap, trials, include_draft=a.include_draft))
+    return out
+
+
+def load_gt(path: Path | None) -> tuple[dict[str, str] | None, str | None]:
+    """cohort.gt의 쌍 GT CSV -> runner 라벨 (RUNNER_LABEL). 없으면 (None, None) = 순환 규칙 GT."""
+    if path is None:
+        return None, None
+    from ..cohort import gt as GT
+    with open(path, encoding="utf-8", newline="") as f:
+        return {r["sim_pair_key"]: GT.RUNNER_LABEL[r["gt_label"]] for r in csv.DictReader(f)}, GT.GT_KIND
 
 
 DOCUMENT_NOTE = (f"문서 확인은 합성 가정({DOCUMENT_ASSUMPTION['authority']})입니다. 확정 수는 운영 성능이 아닙니다: "
@@ -71,6 +91,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--scenario", default=None)
     ap.add_argument("--replicate", default="0", help="생성기 replicate (쉼표, 여러 개면 코호트마다 돌려 합침)")
     ap.add_argument("--map", default="data/cohort/source_map.json", help="슬롯·정보원 대응표")
+    ap.add_argument("--trials-dir", default=None, help="시험 정보 폴더 (없으면 data/trials, NSCLC는 data/nsclc/trials)")
+    ap.add_argument("--gt", type=Path, default=None, help="외부 쌍 GT CSV (없으면 순환 규칙 GT)")
     ap.add_argument("--include-draft", action="store_true", help="판정기에 검수 전(draft) 연결도 씀 (결과에 표시됨)")
     ap.add_argument("--oracle", action="store_true", help="참고 정책 oracle_upper 추가 (숨긴 값·응답 결과를 앎)")
     ap.add_argument("--bootstrap", type=int, default=2000, help="부트스트랩 재표본 수 (0이면 구간 생략)")
@@ -78,6 +100,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--out", type=Path, default=None)
     a = ap.parse_args(argv)
     cohorts = load_cohorts(a)
+    labels, gt_kind = load_gt(a.gt)
     budgets = [EffortBudget(coordinator_minutes=m, clinician_minutes=60, horizon_steps=a.horizon)
                for m in _ints(a.budgets)]
     pids = [p for p in a.policies.split(",") if p] + ([ORACLE_ID] if a.oracle else [])
@@ -91,7 +114,7 @@ def main(argv: list[str] | None = None) -> int:
                     for pid in pids:
                         cfg = {"rephrase": True} if rp_on else {}
                         r = runner.run(runner.build_spec(f"{pid}-{int(b.coordinator_minutes)}-{seed}", pid, co, b, seed,
-                                                         cfg), co)
+                                                         cfg), co, labels=labels, gt_kind=gt_kind)
                         d = a.out / f"c{ci}-{pid}-r{int(rp_on)}-b{int(b.coordinator_minutes)}-s{seed}"
                         d.mkdir(parents=True, exist_ok=True)
                         (d / "manifest.json").write_text(json.dumps({**r.manifest, "metrics": r.metrics},
@@ -102,7 +125,8 @@ def main(argv: list[str] | None = None) -> int:
                         w = audit.RecordWriter(path, r.manifest["run_id"])
                         for rec in r.records:
                             w.write(rec)
-    rows = [r for co in cohorts for r in runner.compare(co, pids, budgets, _ints(a.seeds), rephrase=modes)]
+    rows = [r for co in cohorts for r in runner.compare(co, pids, budgets, _ints(a.seeds), rephrase=modes, labels=labels,
+                                                          gt_kind=gt_kind)]
     print("\t".join(COLS))
     for row in rows:
         print("\t".join(str(row[c]) for c in COLS))
@@ -110,6 +134,7 @@ def main(argv: list[str] | None = None) -> int:
     judge = "규칙 엔진 + 결정적 판정기" if co.judge is not None else "규칙 엔진 범위만"
     print(f"# {runner.CLAIMS}: {', '.join(c.cohort_id for c in cohorts)}, 코호트당 환자 {len(co.patients)}명 x "
           f"시험 {len(co.trials)}개, {judge}" + (" / oracle_upper = 참고 상한(최적값 아님)" if a.oracle else ""))
+    print(f"# 정답 라벨: {gt_kind or 'rule_gt_circular'}" + (f" ({a.gt})" if a.gt else " (같은 평가기로 만든 순환 GT)"))
     print(f"# {DOCUMENT_NOTE}")
     if a.bootstrap > 0:
         print()

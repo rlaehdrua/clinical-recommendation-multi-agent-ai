@@ -1,0 +1,24 @@
+From: 서연 (생성기 담당) - 현황판 테스트 수정 제안 (적용하지 않음, 현황판 담당자 승인 필요)
+Subject: [제안] 팀 결정 5 이후 기본 데이터의 확정 적격 대조군 수치 갱신
+
+왜: feat/nsclc-eval-gt에서 spec.EXPERT_SLOTS에 cm.serious_organ_disease·cm.immune_onc를 넣으면(팀 결정 5)
+NCT06125405 E11·NCT06530004 E5가 판단 기준이 되어 두 시험 쌍이 게이트 없이도 EXPERT_REVIEW로 끝납니다.
+대조군(미연결 기준 목록을 비운 상태)의 CONFIRMED_ELIGIBLE이 81쌍(72+9) -> 1쌍(NCT07087314)이 되고,
+게이트 적용 후 CONFIRMED_ELIGIBLE은 0쌍 그대로입니다. 테스트의 의도(미연결 기준 쌍을 확정하지 않음)는 바뀌지 않고 고정 수치만 바뀝니다.
+적용: git apply docs/proposals/decision5_board_test.patch
+---
+diff --git a/tests/test_cohort_board.py b/tests/test_cohort_board.py
+index ac5abe8..1a2e266 100644
+--- a/tests/test_cohort_board.py
++++ b/tests/test_cohort_board.py
+@@ -157,7 +157,9 @@ def test_default_data_no_confirmed_eligible_on_trials_with_unbound_rules():
+                 moved[t] = moved.get(t, 0) + 1
+             else:
+                 assert after[k]["status"] == v["status"]  # 부적격·정보 부족 대조군은 변화 없음
+-    assert moved == {"NCT06530004": 72, "NCT06125405": 9}
++    # 팀 결정 5(11-07): cm.serious_organ_disease(NCT06125405 E11)·cm.immune_onc(NCT06530004 E5)가 판단 기준이 되어
++    # 두 시험은 게이트가 없어도 EXPERT_REVIEW로 끝남 (이전 72+9쌍). 게이트가 옮긴 쌍은 미연결 기준이 남은 시험에서만 나옴
++    assert moved == {"NCT07087314": 1}
+ 
+ 
+ # ---------------------------------------------------------------------------

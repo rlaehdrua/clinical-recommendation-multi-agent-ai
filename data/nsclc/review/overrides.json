@@ -1,0 +1,33 @@
+{
+ "version": 1,
+ "note": "파싱 수정 제안. 원본(data/nsclc/parsed)은 바꾸지 않음. applied_to에 적힌 곳에서만 씀",
+ "verifier": "서연(데이터)",
+ "clinical_review": "미완료",
+ "overrides": [
+  {
+   "trial_id": "NCT06216301",
+   "criterion_id": "I1",
+   "kind": "region_conditional",
+   "parsed": "age >= 22 years",
+   "proposed": {
+    "applies_if": {
+     "country": [
+      "USA"
+     ]
+    },
+    "otherwise": "not_applicable"
+   },
+   "gt_reading": "age>=22면 통과, 아니면 국가를 몰라 판정하지 않음(NOT_EVALUATED)",
+   "reason": "지역 조건(in the USA) 누락: 파싱본은 모든 환자에 22세 이상을 요구. USA 밖 18-21세 환자가 거짓 부적격",
+   "applied_to": [
+    "gt"
+   ],
+   "not_applied_to": [
+    "data/nsclc/parsed (원본 보존)",
+    "평가용 시험 저장소 (엔진 입력은 파싱본 그대로)"
+   ],
+   "verifier": "서연(데이터)",
+   "clinical_review": "미완료"
+  }
+ ]
+}
