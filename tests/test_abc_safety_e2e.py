@@ -89,7 +89,8 @@ def test_three_boundaries_hold_in_one_production_session(tmp_path, production, u
     assert got["DOC"] == ("UNCERTAIN", "VERIFICATION_PENDING", "POTENTIAL_MATCH")  # B
     assert got["EXPERT"] == ("UNCERTAIN", "EXPERT_REVIEW", "NEEDS_REVIEW")  # A 임상의
     assert got["VALUE"][0] == "UNCERTAIN" and got["VALUE"][1] != "CONFIRMED_ELIGIBLE"  # A 환자값
-    assert got["OUT"][0] == "INELIGIBLE" and got["OUT"][2] == "CRITERIA_MISMATCH"  # 명백한 불충족은 그대로
+    # 명백한 불충족: 판정은 그대로, 운영 권한에서는 근거 문서가 없어 엔진 미확정 -> 확정 부적격으로 보이지 않음 (P1-4)
+    assert got["OUT"] == ("INELIGIBLE", "VERIFICATION_PENDING", "INSUFFICIENT_INFORMATION")
     assert got["ASK"][0] == "UNCERTAIN" and got["ASK"][2] == "INSUFFICIENT_INFORMATION"
     assert [t for t, st in ranked.items() if st == "CRITERIA_MATCH"] == ["SELF"]  # 추천의 확정 그룹은 대조군뿐
     assert "OUT" not in ranked
@@ -136,7 +137,7 @@ CASES = {
     "document_required": ([HB, AGE], RECORD, {}, HELD, ("ELIGIBLE", "CONFIRMED_ELIGIBLE", "CRITERIA_MATCH")),
     "clinician_only": ([VAGUE, AGE], "", {}, ("UNCERTAIN", "EXPERT_REVIEW", "NEEDS_REVIEW"), None),
     "clear_ineligible": ([OLDER, AGE], "", {}, ("INELIGIBLE", "CONFIRMED_INELIGIBLE", "CRITERIA_MISMATCH"), None),
-    "declared_ineligible": ([HB_HIGH, AGE], RECORD, {}, ("INELIGIBLE", "VERIFICATION_PENDING", "CRITERIA_MISMATCH"),
+    "declared_ineligible": ([HB_HIGH, AGE], RECORD, {}, ("INELIGIBLE", "VERIFICATION_PENDING", "INSUFFICIENT_INFORMATION"),
                             ("INELIGIBLE", "CONFIRMED_INELIGIBLE", "CRITERIA_MISMATCH")),
     "answered_unknown": ([HISTORY, AGE], "", {"answer": "모름", "rounds": 2}, ("UNCERTAIN", "INFO_MISSING", "INSUFFICIENT_INFORMATION"), None),
     "no_answer": ([HISTORY, AGE], "", {"answer": "", "rounds": 2}, ("UNCERTAIN", "INFO_MISSING", "INSUFFICIENT_INFORMATION"), None),
@@ -165,7 +166,7 @@ def test_each_case_is_the_same_on_every_output(tmp_path, name, attested):
     rules, raw, kw, plain, documented = CASES[name]
     want = (documented or plain) if attested else plain
     if name == "clear_ineligible" and not attested:
-        want = ("INELIGIBLE", "VERIFICATION_PENDING", "CRITERIA_MISMATCH")  # 운영에서는 문서가 없어 확정 부적격에 닿지 않음
+        want = ("INELIGIBLE", "VERIFICATION_PENDING", "INSUFFICIENT_INFORMATION")  # 운영에서는 문서가 없어 확정 부적격에 닿지 않음 (P1-4: 표시도 미확정)
     with document_authority.use(AUTHORITY if attested else NoDocumentAuthority()):
         with run(tmp_path / "w", {"T": rules}, raw, documented=attested, **dict(kw)) as r:
             got = outcome(r.s)

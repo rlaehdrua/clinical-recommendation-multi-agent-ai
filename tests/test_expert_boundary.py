@@ -280,9 +280,10 @@ def test_registered_rules_still_point_at_the_same_text():
         assert not stored[key].underspecified, key  # 플래그가 있으면 목록에 둘 필요 없음
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="분류 신호 밖: 임상 판단 표현이 있어도 플래그·목록에 없으면 경계가 동작하지 않음")
-def test_known_gap_unclassified_clinical_wording():
-    """남은 우회의 표시. 'clinically significant' 기준이 임상 판단인지는 임상 검수가 정합니다 (휴리스틱으로 막지 않음)."""
+def test_known_gap_unclassified_clinical_wording_is_now_registered():
+    """이전의 남은 우회 표시(strict xfail). 2026-11-08 최종 감사 P1-3에서 AUDIT_EXPERT_RULES에 등록해 막음
+    (규칙 GT도 NEEDS_EXPERT). 'clinically significant'라는 표현만으로 막지는 않습니다(목록 등록, 임상 검수로 조정)."""
     rule = next(r for r in _stored_rules()["NCT07027514"] if r.rule_id == "E14")
     assert "clinically significant" in rule.text.lower()
-    assert xb.clinician_reason("NCT07027514", rule)
+    assert xb.clinician_reason("NCT07027514", rule) == xb.REASON_AUDIT
+    assert not xb.JUDGMENT_WORDING.search(rule.text)

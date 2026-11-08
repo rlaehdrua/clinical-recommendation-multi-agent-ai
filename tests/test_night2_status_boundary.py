@@ -196,9 +196,21 @@ def test_clean_failure_next_to_a_conflict_keeps_the_mismatch_label(tmp_path):
     """상충 없는 불충족 기준이 있으면 다른 기준의 상충이 불충족을 풀지 않음."""
     fail = lab("LOW", "platelets", "100", unit="10^3/uL").model_copy(update={"field": "age", "operator": ">=", "value": "99",
                                                                              "unit": "years"})
-    _, v = view(tmp_path, {"T": [HB, fail]}, RISE, documented=False)
+    _, v = view(tmp_path, {"T": [HB, fail]}, RISE, documented=True)
     assert v.holds == {} and v.result["matches"]["T"]["match_status"] == "CRITERIA_MISMATCH"
-    assert v.engine["T"]["unresolved"] == "exclusion_not_document_verified"
+    assert v.engine["T"]["engine_status"] == "CONFIRMED_INELIGIBLE" and v.engine["T"]["unresolved"] is None
+
+
+def test_unverified_clean_failure_next_to_a_conflict_is_not_shown_as_mismatch(tmp_path):
+    """P1-4: 같은 쌍에서 불충족 근거가 문서로 확인되지 않으면 부적격으로 보이지 않음. 상충이 함께 있으므로 의료진 검토."""
+    fail = lab("LOW", "platelets", "100", unit="10^3/uL").model_copy(update={"field": "age", "operator": ">=", "value": "99",
+                                                                             "unit": "years"})
+    _, v = view(tmp_path, {"T": [HB, fail]}, RISE, documented=False)
+    h = v.holds["T"]
+    assert (h.side, h.pair_status, h.display_status) == ("mismatch", "VERIFICATION_PENDING", "NEEDS_REVIEW")
+    assert "exclusion_unverified" in h.kinds and "LOW" in h.rule_ids
+    assert v.result["matches"]["T"]["match_status"] == "NEEDS_REVIEW"
+    assert v.result["matches"]["T"]["eligibility"] == "INELIGIBLE"  # 판정은 그대로
 
 
 # ------------------------------------------------------------ 상태 교차 점검 + 확정 대조군
@@ -221,12 +233,20 @@ def test_confirmed_ineligible_control_keeps_the_mismatch_label(tmp_path):
     assert [x["trial_id"] for x in v.result["recommendation"]["excluded"]] == ["T"]
 
 
-def test_unverified_exclusion_is_recorded_but_left_to_r2(tmp_path):
-    """문서 검증 없는 불충족: 엔진은 미확정, 화면은 불충족. R2 소관이라 낮추지 않고 불일치로만 기록."""
+def test_unverified_exclusion_is_not_shown_as_confirmed_mismatch(tmp_path):
+    """P1-4 (이전 R2 보류 항목): 문서 검증 없는 불충족은 엔진 미확정이므로 '공개 기준 불충족'으로 보이지 않음.
+    표시는 자기 보고 불충족과 같은 '추가 정보 필요', 판정(eligibility)은 그대로, 추천에도 오르지 않음."""
     _, v = view(tmp_path, {"T": [HB, AGE]}, "Hb 8 g/dL on 2026-09-01.", documented=False)
-    assert v.holds == {}
-    assert (v.engine["T"]["engine_status"], v.engine["T"]["pending_kinds"], v.engine["T"]["unresolved"]) == (
-        "VERIFICATION_PENDING", ["exclusion_unverified"], "exclusion_not_document_verified")
+    h = v.holds["T"]
+    assert (h.side, h.kinds, h.rule_ids, h.display_status) == (
+        "mismatch", ("exclusion_unverified",), ("HB",), "INSUFFICIENT_INFORMATION")
+    assert (v.engine["T"]["engine_status"], v.engine["T"]["pending_kinds"], v.engine["T"]["shown"],
+            v.engine["T"]["unresolved"]) == ("VERIFICATION_PENDING", ["exclusion_unverified"], "INSUFFICIENT_INFORMATION", None)
+    m = v.result["matches"]["T"]
+    assert (m["eligibility"], m["match_status"]) == ("INELIGIBLE", "INSUFFICIENT_INFORMATION")
+    rec = v.result["recommendation"]
+    assert rec["ranked"] == [] and [x["trial_id"] for x in rec["held_out"]] == ["T"]
+    assert "T" not in [x["trial_id"] for x in rec.get("excluded") or []]
 
 
 def test_info_missing_matches_a_non_final_label(tmp_path):

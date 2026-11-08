@@ -59,7 +59,7 @@ STATES = [
     ("clinical_llm_pass", {"T": [VAGUE, AGE]}, "", {"verdicts": VAGUE_YES}, "UNCERTAIN", "NEEDS_REVIEW", "EXPERT_REVIEW", True),
     # 계약 변경: R5 P3 확정. 판정부터 NOT_EVALUATED이고 추천 후보가 아님. 예전 ELIGIBLE/NEEDS_REVIEW는 정책 미정 시기의 값
     ("no_required", {"T": [CONSENT]}, "", {}, "NOT_EVALUATED", "NOT_EVALUATED", "NOT_EVALUATED", False),
-    ("ineligible", {"T": [HB, AGE]}, "Hb 8 g/dL on 2026-09-01.", {"documented": False}, "INELIGIBLE", "CRITERIA_MISMATCH", "VERIFICATION_PENDING", False),
+    ("ineligible", {"T": [HB, AGE]}, "Hb 8 g/dL on 2026-09-01.", {"documented": False}, "INELIGIBLE", "INSUFFICIENT_INFORMATION", "VERIFICATION_PENDING", False),  # P1-4
     ("disputed_exclusion", {"T": [HB, AGE]}, FALL, {}, "INELIGIBLE", "NEEDS_REVIEW", "VERIFICATION_PENDING", False),
 ]
 

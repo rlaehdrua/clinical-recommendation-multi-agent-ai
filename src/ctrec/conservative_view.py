@@ -13,11 +13,14 @@ evaluate 하나가 기준이고 모든 출력이 이를 따릅니다.
                    또는 엔진은 확정했어도 원문에 구체 기준이 없는 항목이 통과로 판정됨 (임상의 판단 대기, 판정은 그대로).
 - side="potential": 외부 POTENTIAL_MATCH인데 상충이 남음. 문서 게이트가 통과를 보류하면 상충 쌍의 판정은 ELIGIBLE이 아니라 UNCERTAIN이 되므로,
                    match 조건만 보면 상충 사유가 사라지고 값이 어긋난 쌍이 '기록 확인 시 충족 가능'으로 보임.
-- side="mismatch": 외부 CRITERIA_MISMATCH인데 불충족 근거가 모두 상충이라 열린 경로가 있음(TrialState.mismatch == "none").
-  표시만 낮추고 추천 목록에는 넣지 않습니다. 제외 근거가 다툼 중일 뿐 충족이 확인된 것은 아니기 때문입니다.
-
-일부러 낮추지 않는 경우 (engine_boundary에 불일치로 기록만 함)
-- 상충 없는 불충족이지만 문서 검증 전(exclusion_unverified): 문서 검증 없는 clinical_record 문제와 같은 축이라 R2 소관.
+- side="mismatch": 외부 CRITERIA_MISMATCH인데 엔진이 CONFIRMED_INELIGIBLE이 아님.
+  (1) 불충족 근거가 모두 상충이라 열린 경로가 있음(TrialState.mismatch == "none") -> NEEDS_REVIEW.
+  (2) 상충 없는 불충족이지만 근거가 문서로 확인되지 않음(exclusion_unverified, TrialState.mismatch == "provisional",
+      예: 진료 기록이라고 선언만 한 입력) -> INSUFFICIENT_INFORMATION. 같은 값을 자기 보고로 넣었을 때의 표시와 같습니다.
+      (2026-11-08 최종 감사 P1-4: 이전에는 R2 결정 전까지 낮추지 않고 engine_boundary에 기록만 했음)
+  (3) 그 밖에 엔진이 확정하지 않은 불충족 -> NEEDS_REVIEW.
+  표시만 낮추고 추천 목록에는 넣지 않습니다. 제외 근거가 다툼 중이거나 미확인일 뿐 충족이 확인된 것은 아니기 때문입니다.
+  확정 부적격(CONFIRMED_INELIGIBLE)은 그대로 CRITERIA_MISMATCH이고 제외 목록에 남습니다.
 
 보류 사유는 사실 관계별로 나눕니다. 날짜 차이를 값 모순으로 말하지 않습니다.
 - time_dependent     : 날짜가 다른 값. 실제 변화일 수 있음
@@ -26,6 +29,7 @@ evaluate 하나가 기준이고 모든 출력이 이를 따릅니다.
 - differing_biomarker: 관련 바이오마커 기록의 내용이 다름. 상반된 결과인지 별개 변이인지 코드가 모름
 - no_required_criteria: 판정에 쓰인 필수 기준이 없음
 - clinical_judgment  : 원문에 구체 기준이 없는 항목이 통과로 판정됨
+- exclusion_unverified: 불충족 근거가 아직 문서로 확인되지 않음 (부적격 미확정)
 
 LLM 문장은 정규식으로만 점검합니다(_CLAIM). 표현 목록에 없는 바꿔 쓴 문장은 잡지 못하므로, 점검 통과가 안전을 뜻하지 않습니다.
 """
@@ -50,6 +54,7 @@ ENGINE_PENDING = "engine_pending"
 TIME_DEPENDENT = "time_dependent"
 NO_REQUIRED = "no_required_criteria"
 CLINICAL = "clinical_judgment"
+EXCLUSION_UNVERIFIED = "exclusion_unverified"
 DISPLAY_BY_KIND = {TIME_DEPENDENT: "POTENTIAL_MATCH", "contradictory": "NEEDS_REVIEW", "incomparable": "NEEDS_REVIEW",
                    "differing_biomarker": "NEEDS_REVIEW", ENGINE_PENDING: "NEEDS_REVIEW", NO_REQUIRED: "NEEDS_REVIEW",
                    CLINICAL: "NEEDS_REVIEW"}
@@ -61,9 +66,11 @@ NOTE_BY_KIND = {
     ENGINE_PENDING: "정책 엔진이 아직 확정하지 않은 항목이 있어 의료진 확인 필요",
     NO_REQUIRED: "판정에 쓰인 구체 기준이 없어 의료진 확인 필요",
     CLINICAL: "원문에 구체 기준이 없는 항목이라 담당 의사의 판단 필요",
+    EXCLUSION_UNVERIFIED: "불충족 근거가 아직 문서로 확인되지 않아 부적격으로 확정하지 않음 (기록 확인 필요)",
 }
 _SEVERE_FIRST = ("contradictory", "incomparable", "differing_biomarker", CLINICAL, NO_REQUIRED, ENGINE_PENDING,
-                 TIME_DEPENDENT)
+                 EXCLUSION_UNVERIFIED, TIME_DEPENDENT)
+UNVERIFIED_MISMATCH_DISPLAY = "INSUFFICIENT_INFORMATION"  # status.py: 답변상 불충족인 UNVERIFIED도 이 상태
 _CONFIRMED = {"match": ("CRITERIA_MATCH", label("CRITERIA_MATCH")),
               "potential": ("POTENTIAL_MATCH", label("POTENTIAL_MATCH")),
               "mismatch": ("CRITERIA_MISMATCH", label("CRITERIA_MISMATCH"))}
@@ -144,11 +151,19 @@ def _hold(tid: str, side: str, status: PairStatus, t, conflicting: dict[str, str
         found.add(CLINICAL)
     if side != "mismatch" and required_count(t) == 0:
         found.add(NO_REQUIRED)
+    basis: set[str] = set()
+    unverified = side == "mismatch" and t.mismatch == "provisional"
+    if unverified:  # 상충 없는 불충족, 근거 문서 미확인 (P1-4)
+        found.add(EXCLUSION_UNVERIFIED)
+        basis = {k.split(":", 1)[1] for k in t.mismatch_basis if ":" in k}
     found = found or {ENGINE_PENDING}
     kinds = tuple(k for k in _SEVERE_FIRST if k in found)
-    # 불충족 쪽은 최신 값이 탈락일 수 있으므로 '충족 가능'으로 말하지 않음
-    shown = DISPLAY_BY_KIND[kinds[0]] if side != "mismatch" else "NEEDS_REVIEW"
-    rule_ids = tuple(sorted({c.rule_id for c in open_c} | set(judged)))
+    # 불충족 쪽은 최신 값이 탈락일 수 있으므로 '충족 가능'으로 말하지 않음. 근거 미확인 불충족은 자기 보고와 같은 '추가 정보 필요'
+    if side != "mismatch":
+        shown = DISPLAY_BY_KIND[kinds[0]]
+    else:
+        shown = UNVERIFIED_MISMATCH_DISPLAY if unverified and not any(_conflicted(c) for c in open_c) else "NEEDS_REVIEW"
+    rule_ids = tuple(sorted({c.rule_id for c in open_c} | set(judged) | basis))
     return Hold(tid, side, status.value, kinds, rule_ids, shown)  # type: ignore[arg-type]
 
 
@@ -182,7 +197,8 @@ def evaluate(session) -> tuple[dict[str, Hold], dict[str, dict]]:
             hold = _hold(tid, "match", pair.status, t, state.conflicting_fields, judged)
         elif t is not None and m.match_status == "POTENTIAL_MATCH" and any(_conflicted(c) for c in decisive_criteria(t)):
             hold = _hold(tid, "potential", pair.status, t, state.conflicting_fields)
-        elif t is not None and m.match_status == "CRITERIA_MISMATCH" and t.mismatch == "none":
+        elif t is not None and m.match_status == "CRITERIA_MISMATCH" and (
+                t.mismatch == "none" or pair.status != PairStatus.CONFIRMED_INELIGIBLE):
             hold = _hold(tid, "mismatch", pair.status, t, state.conflicting_fields)
         if hold:
             holds[tid] = hold

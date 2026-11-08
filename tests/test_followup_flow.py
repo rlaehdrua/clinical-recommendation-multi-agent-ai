@@ -403,7 +403,8 @@ def test_answer_moves_pair_status_priority_and_recommendation(env):
     assert ev["equivalence"]["status"] == "match"
     assert case["pairs"]["T-C"]["eligibility"] == "INELIGIBLE" and case["pairs"]["T-C"]["mismatch"] == "provisional"
     rec = case["view"]["result"]["recommendation"]
-    assert "T-C" not in [r["trial_id"] for r in rec["ranked"]] and "T-C" in [r["trial_id"] for r in rec["excluded"]]
+    assert "T-C" not in [r["trial_id"] for r in rec["ranked"]] and "T-C" not in [r["trial_id"] for r in rec["excluded"]]
+    assert [(x["trial_id"], x["match_status"]) for x in rec["held_out"]] == [("T-C", "INSUFFICIENT_INFORMATION")]  # P1-4: 확정 제외 아님
     assert all(p["info_key"] != "age" for p in case["proposals"])  # 답을 받은 항목은 제안에서 빠짐
     # T-C가 닫히자 T-C만 겨냥하던 제안이 줄고 C 순서가 다시 매겨짐
     assert all(set(p["target_trials"]) != {"T-C"} or p["action_type"] != "ASK_PATIENT" for p in case["proposals"])

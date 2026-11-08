@@ -86,7 +86,7 @@ def test_every_gate_in_one_session_and_the_same_on_every_output(tmp_path):
         kinds = {t: display.exclusion_kind(r.s.matches[t], r.s.trials[t], ranked) for t in trials}
     assert got["NR"] == got["NR2"] == NOT_EVALUATED
     assert got["DOC"] == HELD_DOC and got["EXPERT"] == HELD_EXPERT
-    assert got["OUT"][0] == "INELIGIBLE" and got["OUT"][2] == "CRITERIA_MISMATCH"
+    assert got["OUT"][0] == "INELIGIBLE" and got["OUT"][2] == "INSUFFICIENT_INFORMATION"  # 근거 문서 없음: 엔진 미확정 (P1-4)
     assert kinds["NR"] == kinds["NR2"] == "needs_review"
     want = {"DOC": "POTENTIAL_MATCH", "EXPERT": "NEEDS_REVIEW"}
     assert all(v == want for v in outputs.values()), outputs
