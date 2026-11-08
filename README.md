@@ -246,12 +246,13 @@ python scripts/followup_demo_server.py --port 8791 --demo-staff --synthetic-veri
 python scripts/run_e2e_synthetic.py --mode offline --url http://127.0.0.1:8791 --out <출력-폴더>
 #   --url을 빼면 스크립트가 자체 데모 서버를 띄우고 끝나면 끕니다(이번에는 --url로만 확인)
 ```
-기대 출력(약 12초, 종료 코드 0. 안전 위반이 있으면 1):
+기대 출력(약 10초, 종료 코드 0. 안전 위반이 있으면 1). integration/phase1-final에서 5회 실행해 시간 외에는 report.json·행동 기록이 모두 같았습니다:
 ```
-[offline] 환자 6명 x 시험 4개, 4회차, 8.3초, 보낸 요청 30건 (가정 216.0분)
-  참여 가능 확정: 정답과 일치 4 + 의사 판단 뒤 6 / 참여 불가 확정 5 / 미확정 9 / 안전 위반 0
-  글: {'narrative_template': 6, 'document_template': 17, 'document_unavailable': 5} · 서류 읽기 정확 31 / 틀림 0
+[offline] 환자 6명 x 시험 4개, 4회차, 7.2초, 보낸 요청 29건 (가정 198.0분)
+  참여 가능 확정: 정답과 일치 4 + 의사 판단 뒤 6 / 참여 불가 확정 3 / 미확정 11 / 안전 위반 0
+  글: {'narrative_template': 6, 'document_template': 17, 'document_unavailable': 5} · 서류 읽기 정확 30 / 틀림 0
 ```
+- dba06d9에서는 접수 별칭이 난수라 실행마다 '참여 불가 확정 5 / 미확정 9'와 '3 / 11'이 갈렸습니다(F-2). 접수 순번으로 고친 뒤(09088f4) '3 / 11'로 고정됩니다. SYN-02의 T-A·T-C는 서류를 구할 수 없어 '추가 확인 경로 없음 · 보류'(`BLOCKED_FAILURE`, 부적격 아님)입니다.
 채점은 합성 시험 4개의 **규칙 GT** 기준이며 임상 정확도가 아닙니다. '분'은 가정 비용입니다.
 
 ```bash
@@ -676,9 +677,9 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 - `INSUFFICIENT_INFORMATION`과 `POTENTIAL_MATCH`의 구분은 남은 항목의 종류로만 정합니다. 판정을 바꿀 수 있는 정보인지(판정 영향)는 아직 계산하지 않습니다(아키텍처 Stage 2).
 - 가상 데이터로 측정한 정확도는 실제 임상 환경의 성능을 보장하지 않습니다.
 
-### 9.1 알려진 한계와 검증 범위 (dba06d9 기준, 2026-11-08)
+### 9.1 알려진 한계와 검증 범위 (integration/phase1-final 기준, 2026-11-08)
 
-**이번에 실제로 확인한 것** (3.0의 명령, Windows · Python 3.10.11 · `PYTHONPATH=src`, API 키 없음)
+**이번에 실제로 확인한 것** (3.0의 명령, Windows · Python 3.10.11 · `PYTHONPATH=src`, API 키 없음. 처음 표는 dba06d9에서, 아래 '통합 브랜치 재확인'은 integration/phase1-final에서)
 
 | 확인 | 명령 | 결과 |
 |---|---|---|
@@ -690,18 +691,29 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 | 정책 비교 (NSCLC 파일럿) | `python -m ctrec.sim.suite --cohort nsclc --budgets 90 --seeds 1` | 종료 코드 0, 약 46초 |
 | README 명령의 인자 | 각 명령 `--help` | 본문 명령은 일치. 10절 #38 항목의 데모 서버 명령에는 `--synthetic-verification`이 빠져 있어 3.0에서 보완 |
 
+통합 브랜치 재확인 (integration/phase1-final)
+
+| 확인 | 결과 |
+|---|---|
+| 합성 E2E 오프라인 5회 | 5회 모두 같은 결과·같은 행동 기록. 참여 불가 확정 3 / 미확정 11 / 안전 위반 0 |
+| 서류 확인·의사 판단 경로 | `followup_verification_flow.py` 28개 점검 통과. 판단 요청에 revision이 없으면 428, 다르면 409, 맞으면 200(F-03). 거절된 요청은 판정·revision을 바꾸지 않음 |
+| 환자 질문 흐름 | `followup_demo_flow.py` 종료 코드 0, 재시작 2회 |
+| 정책 비교 (NSCLC 파일럿, 30·90·400분, seed 1) | dcvc 확정 부적격 6·8·8, no_bundles 2·4·14, 기준선 0, 거짓 확정 0 (dba06d9와 같음) |
+| NSCLC 평가셋 runner | 400분 확정 부적격∧GT 부적격 47/130, 6000분 판단 기준 외 확인 완료 20/23·124/130, 거짓 확정 0 (`data/nsclc/eval/checks/*_phase1-final.json`) |
+
 **확인하지 않은 것**
-- **깨끗한 환경 설치:** 새 venv에서 `pip install`을 하지 않았습니다. 기존 venv를 썼습니다.
+- **깨끗한 환경 설치:** dba06d9 확인 때는 기존 venv를 썼습니다. 통합 브랜치에서는 새 venv(Python 3.10.11)와 `git archive` 압축본으로 따로 확인했습니다(통합 보고서). 3.13은 확인하지 않았습니다.
 - **브라우저 화면:** 이번 재현에서는 화면을 열지 않았습니다. 10절의 브라우저 확인 기록은 각 작업자가 남긴 보고입니다.
 - **실제 LLM 판정:** 실제 Claude로 판정한 경로는 이번에 검증하지 않았습니다. 10절의 LLM 모드 E2E(`--mode llm`)도 LLM이 가상 서류·소개글을 쓰고 읽는 데만 썼고, 판정은 오프라인 대역이 했습니다.
 - **CLI `ctrec run`:** 키가 필요해서 실행하지 않았습니다(3.1).
-- **전체 테스트:** 이번에는 돌리지 않았습니다. 보고된 값은 6148 passed입니다(dba06d9).
+- **전체 테스트:** dba06d9 보고값은 6148 passed입니다. 통합 브랜치의 결과는 통합 보고서에 있습니다.
 - **임상 검수:** 모든 GT와 라벨은 합성이고, 임상의 검수를 받지 않았습니다.
 
-**남은 안전 한계** (코드에서 확인했고, 수정은 미병합 상태이거나 팀 결정 대기)
-- **의료진·간호사가 전한 검사값을 측정값으로 받아들입니다** (CL-B1). 가족·화자 불명·근사·택일 값은 보류합니다. 하지만 문장에 의사·간호사 등 의료진 표현이 있으면 보류하지 않습니다(`value_grounding.py`의 `_CLINICIAN`). 정책은 팀 결정 대기입니다.
+**남은 안전 한계** (코드에서 확인함)
+- **CL-B1 (이 브랜치에서 반영):** 의료진·간호사·외부 기관·대명사가 전한 값도 가족 전언과 같이 보류합니다(`value_grounding.CLB1_RELAY_HOLD = True`). 직접 측정 문장과 서버 문서 확인은 그대로 채택합니다. 표현 목록은 임상 검수를 받지 않았고, "Critical value called to Dr. X" 같은 문장은 과잉 보류될 수 있습니다.
 - **서술 상충 탐지에 빈틈이 있습니다** (CL-A1). 다른 절의 "r/o X"·"?X"는 의심으로 보지 않아 상충으로 잡지 않습니다(`evidence_directness.py`, 주석 "CL-A1 대기"). 최종 감사의 탐침 기준으로는 일부 질환 상위어·하위어 묶음(예: 신장 이식, 쇼그렌)도 빠져 있습니다.
-- **F-03:** 합성 검증 모드에서 담당자 화면을 거치지 않고 임상의 판단 API를 직접 부르면, `expected_revision`을 생략할 수 있습니다(`followup/service.py`). 그러면 판단자가 보지 못한 최신 사실로 적격 확정이 될 수 있습니다. 화면(`staff.js`)은 revision을 보냅니다. 수정 브랜치는 따로 있고, 아직 병합하지 않았습니다. 운영 설정에서는 이 API 자체가 503입니다.
+- **F-03 (이 브랜치에서 반영):** 임상의 판단 API는 `expected_revision`이 없으면 428, 다르면 409로 거절하고 판정을 바꾸지 않습니다. 역할 확인(403)과 운영 설정(503)이 먼저입니다.
+- **문서 소진 뒤 보류:** 결과지·진료기록을 모두 '구할 수 없음'으로 표시하면 그 항목은 환자 질문으로 되돌아가지 않고 `DEFER item_sources_exhausted`가 됩니다. 쌍은 `BLOCKED_FAILURE`('추가 확인 경로 없음 · 보류', 부적격 아님)이고, 자동으로 생긴 임상 검토 요청은 의사가 끝낼 수 없으므로 화면의 할 일·진행 중인 요청 수에서 빠집니다. 서류 전체를 구할 수 없음(`document_unavailable`)은 그 정보원의 모든 항목을 소진시키므로, ECOG처럼 환자에게 물어볼 수 있었던 항목도 묻지 않고 소진될 수 있습니다(항목 범위 결정 대기).
 - **주 지표를 측정할 수 없습니다.** 주 지표는 "정확히 확정한 적격 쌍"입니다. 그런데 NSCLC 규칙 GT(`data/nsclc/eval/pair_gt.csv`, 240쌍)에는 확정 적격 라벨이 0개입니다(INELIGIBLE 130, NOT_EVALUATED 87, PENDING_EXPERT_ELIGIBLE 23). 그래서 이 지표는 아직 잴 수 없습니다. 3.0 실험 결과도 부적격 확정 수만 비교합니다.
 - **NSCLC GT는 임상 검수를 받지 않았습니다** (`clinical_review` = 미완료). 작성자가 프로토콜을 읽어 만든 라벨입니다.
 - **웹의 코디네이터 시간 배분 효과가 없습니다.** 웹 엔진의 기본 예산은 `coordinator_minutes=100000`(`web/engine_runner.py`)이라, 웹 화면 순서에서는 Cohort C 예산 배분이 사실상 작동하지 않습니다. 배분 효과는 시뮬레이터(`ctrec.sim`)에서만 봅니다. 화면의 '분'은 가정 비용이고 측정한 시간이 아닙니다.
@@ -713,6 +725,25 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 ## 10. 변경 이력
 
 수정할 때마다 무엇을 왜 바꿨는지 여기에 기록합니다. 최신 항목이 위에 옵니다.
+
+### 2026-11-08 — Phase 1 최종 통합 (`integration/phase1-final`, PR #53 dba06d9 기준)
+
+제출 전 필수 수정을 한 브랜치에 모았습니다. 각 변경의 자세한 배경은 아래 각 항목과 커밋 메시지에 있습니다.
+
+| # | 변경 | 출처 |
+|---|---|---|
+| 1 | 오프라인 E2E 결정성: 정책 동률을 난수 별칭이 아니라 접수 순번으로 깸 (F-2) | 09088f4 |
+| 2 | 문서 정보원이 모두 소진된 항목은 환자 질문으로 되돌리지 않고 보류(`DEFER`) | 87f5f07 |
+| 3 | 임상의 판단에 `expected_revision` 필수: 없으면 428, 다르면 409 (F-03) | worktree `workseoyeon-f03` |
+| 4 | 누가 전했든 전해 들은 값은 보류 (CL-B1, 팀 핸드오프 T1 권고 a) | `cand/clb1-conservative-hold` |
+| 5 | 의사가 끝낼 수 없는 검토를 보류로 표시, `BLOCKED_FAILURE` 문구 "추가 확인 경로 없음 · 보류" | PR #55 (4614de7을 #53 위로 옮긴 4dcf8ae) |
+| 6 | 연구 담당자 화면을 질문 고르기 중심으로, 묶음 시간 비교·고른 질문 합계 API | PR #54 |
+| 7 | 보류 검토를 '진행 중인 요청 n건'에서도 뺌 (`open_requests`가 `open_by_status`와 같은 기준) | 통합 중 추가 |
+| 8 | 추천 순서는 예산 제약 미적용, '분'은 가정 비용이라는 문구 (PR #54 탭 이름에 맞춤) | final-sprint D |
+| 9 | README 키 없는 재현(3.0)·환경·한계(9.1), `.env.example` 데모 설정 주석 | `docs/readme-repro` + final-sprint C |
+| 10 | 서연 P0 평가 사례·채점(f0b1814), 지역 사례 `known_defect` 2건 해제(5fa4e24로 고쳐짐 확인), 발표 초안·데모 시나리오(70fe9a5 + sy-demo 갱신본), 이 브랜치 재실행 근거 `*_phase1-final.json` | `data/p0-eval-cases`, `docs/presentation-data-gt` |
+
+정책: `BLOCKED_FAILURE`는 증거 확보 경로 소진에 따른 보류이며 부적격으로 표시하지 않습니다. 묶음 처리로 줄어드는 시간은 가정 비용표에서 나온 값이고 측정값이 아닙니다. 웹의 Cohort C 순서는 예산 제약을 적용하지 않습니다.
 
 ### 2026-11-08 — 연구 담당자 화면을 '질문 고르기' 중심으로 (핵심 아이디어 전달, 동겸)
 
