@@ -101,3 +101,98 @@ def test_d1_manifest_hash_of_non_set_file_does_not_count(tmp_path):
     eng = _engine_file(tmp_path, gt_path, FULL_U)
     rep = gt_eval.run(gt_path, eng, None, g)
     assert rep["official"] is False
+
+
+# --------------------------------------------------------------------------- D-2
+
+def _gu_gt():
+    from gt_lib.models import GTSet
+    return GTSet.model_validate(json.loads(FX_U.read_text(encoding="utf-8")))
+
+
+def _eng(gt, results):
+    return {"format": ENGINE_FORMAT, "gt_set_id": gt.set_id, "level": "U",
+            "items": [{"item_id": k, "result": v} for k, v in results.items()]}
+
+
+def test_d2_missing_engine_item_blocks_official_result(tmp_path):
+    """빠진 항목은 coverage에만 남고 공식 결과가 될 수 없습니다 (거짓 확정 항목을 빼서 A1=0을 만드는 것을 막음)."""
+    from gt_lib.metrics import evaluate
+    gt = _gu_gt()
+    res = dict(FULL_U)
+    res.pop("FX-U-002")
+    rep = evaluate(gt, _eng(gt, res))
+    assert rep["coverage"]["complete"] is False
+    assert any("FX-U-002" in b for b in rep["official_blockers"])
+    # 동결 조건을 모두 맞춰도 커버리지가 100%가 아니면 공식이 아님
+    g = _frozen_root(tmp_path)
+    gt_path = g / "g_u" / "FIXTURE_ONLY_g_u.json"
+    eng = _engine_file(tmp_path, gt_path, res)
+    r = gt_eval.run(gt_path, eng, None, g)
+    assert r["official"] is False and "탐색적" in r["exploratory"]
+    assert gt_eval.main(["--gt", str(gt_path), "--engine", str(eng), "--frozen", str(g), "--official"]) == 1
+
+
+def test_d2_full_coverage_has_no_coverage_blocker():
+    from gt_lib.metrics import evaluate
+    gt = _gu_gt()
+    rep = evaluate(gt, _eng(gt, FULL_U))
+    assert rep["coverage"]["complete"] is True and rep["official_blockers"] == []
+
+
+def test_d2_extra_or_incomplete_baseline_blocks_official():
+    from gt_lib.metrics import evaluate
+    gt = _gu_gt()
+    rep = evaluate(gt, _eng(gt, dict(FULL_U, **{"NOT-IN-GT": {"accepted": True}})))
+    assert any("NOT-IN-GT" in b for b in rep["official_blockers"])
+    base = dict(FULL_U)
+    base.pop("FX-U-003")
+    rep = evaluate(gt, _eng(gt, FULL_U), _eng(gt, base))
+    assert any("기준선" in b and "FX-U-003" in b for b in rep["official_blockers"])
+
+
+@pytest.mark.parametrize("item_id,bad", [
+    ("FX-U-003", {}),                              # accepted 키 없음 (예전: 조용히 보류로 셈)
+    ("FX-U-003", {"accepted": "yes"}),             # bool 아님
+    ("FX-U-003", {"accepted": None}),
+    ("FX-U-005", {"grounding": None}),             # ambiguous 항목도 검사
+    ("FX-U-001", {}),                              # directness 없음
+    ("FX-U-001", {"directness": None}),
+    ("FX-U-001", {"directness": ["direct"]}),
+    ("FX-U-001", "direct"),                        # result가 dict가 아님
+])
+def test_d2_malformed_engine_record_is_error(item_id, bad):
+    from gt_lib.metrics import evaluate
+    gt = _gu_gt()
+    with pytest.raises(ValueError):
+        evaluate(gt, _eng(gt, dict(FULL_U, **{item_id: bad})))
+    # 기준선도 같은 검사
+    with pytest.raises(ValueError):
+        evaluate(gt, _eng(gt, FULL_U), _eng(gt, dict(FULL_U, **{item_id: bad})))
+
+
+def test_d2_structurally_broken_engine_items_are_errors():
+    from gt_lib.metrics import evaluate
+    gt = _gu_gt()
+    for items in ([{"result": {"accepted": True}}],                                  # item_id 없음
+                  [{"item_id": "FX-U-003"}],                                          # result 없음
+                  [{"item_id": "FX-U-003", "result": {"accepted": True}}] * 2,        # 중복
+                  "not-a-list"):
+        eng = {"format": ENGINE_FORMAT, "gt_set_id": gt.set_id, "level": "U", "items": items}
+        with pytest.raises(ValueError):
+            evaluate(gt, eng)
+
+
+def test_d2_pair_and_criterion_records_validated():
+    from gt_lib.metrics import evaluate
+    from gt_lib.models import GTSet
+    gp = GTSet.model_validate(json.loads((FX / "FIXTURE_ONLY_g_p.json").read_text(encoding="utf-8")))
+    ok = {r.item_id: {"pair_status": "INFO_MISSING"} for r in gp.items}
+    assert evaluate(gp, _eng(gp, ok))["official_blockers"] == []
+    first = gp.items[0].item_id
+    for bad in ({}, {"pair_status": "INFO_MISSING", "deciding_criteria": "I1"}):
+        with pytest.raises(ValueError):
+            evaluate(gp, _eng(gp, dict(ok, **{first: bad})))
+    gc = GTSet.model_validate(json.loads((FX / "FIXTURE_ONLY_g_c.json").read_text(encoding="utf-8")))
+    with pytest.raises(ValueError):
+        evaluate(gc, _eng(gc, {r.item_id: {"scope_represented": "yes"} for r in gc.items}))

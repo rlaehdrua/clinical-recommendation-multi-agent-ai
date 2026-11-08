@@ -58,10 +58,10 @@ python -c "import ctrec; print(ctrec.__file__)"   # 이 작업 트리의 src/ctr
 | 8. 조립·검증 | 엔지니어 | `python scripts/gt_assemble.py build --cases cases.json --meta set_meta.json --labels sheet_L-A.csv sheet_L-B.csv --adjudication adjudication_log.csv --out <보관소>/g_u/set7.json` 다음 `python scripts/gt_validate.py <보관소>/g_u/set7.json --freezable` |
 | 9. 동결 | GT 책임자 | `python scripts/gt_freeze.py freeze --gt-root gt --external <보관소> --version gt-v1.0 --reference-date 2026-11-07 --trial-store data/parsed/FROZEN.json --labelers L-A L-B --adjudicator ADJ-1`. 스키마·동결 조건·누출 검사 중 하나라도 실패하면 쓰지 않음. 저장소에는 `gt/FROZEN_GT.json`(해시)만 커밋 |
 | 10. 확인 | 누구나 | `python scripts/gt_verify.py --gt-root gt --external <보관소>` (보관소가 없으면 외부 파일은 "확인 불가"로 표시) |
-| 11. 1회 측정 | 엔지니어 | A·B·C 코드를 고정한 커밋에서: `python scripts/gt_engine_adapter.py <보관소>/g_u/set7.json --out gt/results/gt-v1.0/<sha>/engine.json --engine-commit <sha>` → `python scripts/gt_eval.py --gt <보관소>/g_u/set7.json --engine gt/results/gt-v1.0/<sha>/engine.json [--baseline <전 커밋 출력>] --frozen gt --out gt/results/gt-v1.0/<sha>/report.json` → `python scripts/gt_freeze.py advance --gt-root gt --to measured_once --reason "1회 측정" --measurement gt/results/gt-v1.0/<sha>/report.json --engine-commit <sha>` |
+| 11. 1회 측정 | 엔지니어 | A·B·C 코드를 고정한 커밋에서: `python scripts/gt_engine_adapter.py <보관소>/g_u/set7.json --out gt/results/gt-v1.0/<sha>/engine.json --engine-commit <sha>` → `python scripts/gt_eval.py --gt <보관소>/g_u/set7.json --engine gt/results/gt-v1.0/<sha>/engine.json [--baseline <전 커밋 출력>] --frozen gt --official --out gt/results/gt-v1.0/<sha>/report.json` → `python scripts/gt_freeze.py advance --gt-root gt --to measured_once --reason "1회 측정" --measurement gt/results/gt-v1.0/<sha>/report.json --engine-commit <sha>` |
 | 12. 강등 | GT 책임자 | 결과를 보고 코드를 고치면 즉시 `python scripts/gt_freeze.py advance --gt-root gt --to regression --reason "..."`. 그 뒤 세트는 회귀 세트(EN-12, A·B 병합 뒤 `tests/data/` 쪽으로)이며 독립 평가로 인용하지 않음. 새 독립 평가는 새 세트·새 버전 |
 
-상태는 `sealed → measured_once → regression` 순서로만 바뀝니다. 같은 버전 재동결은 거부되고, 새 버전을 동결하면 이전 목록은 `gt/frozen_history/`로 옮겨집니다. `gt_eval.py`는 `--frozen` 없이 실행하거나 동결 확인이 실패하거나 상태가 `sealed`가 아니면 결과에 "탐색적"을 붙입니다.
+상태는 `sealed → measured_once → regression` 순서로만 바뀝니다. 같은 버전 재동결은 거부되고, 새 버전을 동결하면 이전 목록은 `gt/frozen_history/`로 옮겨집니다. `gt_eval.py`의 공식 결과 조건은 4.1절에 있습니다. 조건 하나라도 못 맞추면 결과에 "탐색적"을 붙이고, `--official`을 주면 거부합니다.
 
 ## 3. 누출 검사
 
@@ -100,7 +100,22 @@ python scripts/gt_leak_check.py <보관소>/g_u/set7.json [--extra-corpus 추가
 
 `gt_eval.py`는 `gt_set_sha256`이 GT 파일과 다르면 거부합니다.
 
-### 4.1 계산하는 지표
+### 4.1 공식 결과와 탐색적 결과
+
+`report["official"]`이 `true`인 것은 다음을 **모두** 만족할 때뿐입니다. 하나라도 어기면 `official_blockers`에 사유가 남고 `exploratory`가 붙습니다.
+
+1. `--frozen gt`를 주었고 `FROZEN_GT.json`이 `verify()`를 통과함 (외부 보관이면 `--external`도 필요)
+2. 상태가 `sealed` (측정 뒤·강등 뒤에는 공식 결과 없음)
+3. `--gt` 파일의 sha256이 매니페스트의 세트 파일(`g_u/`, `g_c/`, `g_p/`) 해시로 등록되어 있음. 동결 루트가 깨끗해도 다른 파일·변조본을 넣으면 공식이 아님
+4. 엔진 출력(그리고 `--baseline`이 있으면 기준선)이 GT 항목을 **100%** 덮고, GT에 없는 항목이 없음
+
+`--official`을 주면 조건을 못 맞출 때 보고서를 쓰지 않고 종료 코드 1로 끝납니다. 1회 측정(2절 11단계)에는 `--official`을 씁니다. `--official` 없이 실행하면 예전처럼 탐색적 결과를 계산하고 종료 코드 0입니다.
+
+**빠진 항목 처리 (D-2):** 빠진 항목을 "최악의 경우"로 채우지 않고 **공식 결과 자체를 거부**하는 쪽을 택했습니다. 최악의 경우는 지표마다 다르고(A1에서는 확정 경로, A5에서는 보류가 최악), 대체값을 만들어 넣으면 엔진이 내지 않은 결과가 보고서에 섞입니다. 따라서 커버리지가 100%가 아니면 공식 수치가 없고, 탐색적 계산에서도 빠진 항목은 `coverage.missing_engine_output`에 남고 분모에서는 빠집니다(탐색적 수치를 공식 수치처럼 인용하면 안 됨). 거짓 확정 항목을 출력에서 빼서 E1=0을 만드는 방식은 이렇게 막힙니다.
+
+**형식이 틀린 엔진 기록은 오류입니다:** value 항목의 `accepted`가 없거나 true/false가 아님, conflict 항목에 문자열 `directness`가 없음, `pair_status`가 알려진 값이 아님, `deciding_criteria`가 문자열 목록이 아님, `scope_represented`가 true/false가 아님, `result`가 객체가 아님, `item_id` 없음·중복. 예전처럼 `accepted`가 없으면 보류로 세는 기본값은 없습니다. 기준선 출력도 같은 검사를 받습니다.
+
+### 4.2 계산하는 지표
 
 | 지표 | 계산 | 비고 |
 |---|---|---|
@@ -114,7 +129,7 @@ python scripts/gt_leak_check.py <보관소>/g_u/set7.json [--extra-corpus 추가
 
 모든 비율은 분자·분모·Wilson 95%·정확 95%를 냅니다. 분모 0은 **"추정 불가"**이고 합격으로 치지 않습니다. 분모가 D 2.8의 최소 n보다 작으면 합격 판정을 하지 않습니다(`d_criterion_met = null`). AMBIGUOUS 항목은 주 분모에서 빼고, 그 항목에서 엔진이 확정한 수를 따로 냅니다.
 
-### 4.2 측정하지 않는 지표 (보고서에 "미측정"으로 표시)
+### 4.3 측정하지 않는 지표 (보고서에 "미측정"으로 표시)
 
 | 지표 | 이유 |
 |---|---|
