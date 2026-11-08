@@ -220,11 +220,14 @@ def criterion_version(parsed: ParsedTrial, rule_id: str) -> str:
 
 
 def info_key(rule, tid: str) -> tuple[str, list[str], bool]:
-    """(키, 항목, 항목이 후보일 뿐인가). 구조화 필드·바이오마커 표적으로만 시험 사이를 묶음."""
+    """(키, 항목, 항목이 후보일 뿐인가). 구조화 필드·바이오마커 표적으로만 시험 사이를 묶음.
+
+    바이오마커 표적은 바이오마커 기준(category biomarker)에서만: 치료력("anti-PD-1/PD-L1 치료")·과민 반응 등 다른 범주의
+    원문에 표적 이름이 있어도 검사 결과 항목이 아님 (바이오마커 근거 게이트·의존 범위와 같은 범주 조건)."""
     f = _engine_field(rule)
     if f:
         return f, [f], False
-    targets = sorted(targets_in(rule.text))
+    targets = sorted(targets_in(rule.text)) if rule.category == "biomarker" else []
     if targets:
         return "biomarker:" + "+".join(targets), ["biomarker"], False
     hints = sorted(LLM_CATEGORY_FIELDS.get(rule.category, set()))
