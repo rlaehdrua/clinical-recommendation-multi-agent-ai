@@ -9,7 +9,7 @@ const fu = { caseId: null, revision: 0, trialsLoaded: false, timer: null, sendin
 // 환자에게 보이는 요청 상태 (내부 코드를 그대로 보이지 않음)
 const FU_STATUS = {
   pending: ["답변 기다리는 중", "accent"],
-  answered: ["답변 반영됨", "ok"],
+  answered: ["답이 반영됐어요", "ok"],
   unknown: ["'모름'으로 기록 · 연구진이 서류 등 다른 방법으로 확인", "warn"],
   unreachable: ["연락이 닿지 않음으로 기록", "warn"],
   requires_document: ["연구진이 서류로 확인 중", "warn"],
@@ -18,6 +18,21 @@ const FU_STATUS = {
   superseded: ["새 요청으로 바뀜", ""],
   cancelled: ["연구진이 취소함", ""],
 };
+// 쉬운 질문 (항목을 알 때만): 화면 문구와 입력 칸만 바꾸고, 보내는 답에는 숫자·값을 그대로 담음 (판정 규칙은 서버)
+const FU_EASY = {
+  age: { q: "나이가 어떻게 되세요? (만 나이)", type: "number", unit: "세", send: (v) => `${v} years old (만 ${v}세)` },
+  sex: { q: "성별이 어떻게 되세요?", options: ["남성", "여성"], send: (v) => (v === "남성" ? "male (남성)" : "female (여성)") },
+};
+// 연구진이 하는 일의 이름 (환자에게 보이는 말)
+const FU_ITEM = { ecog: "몸 상태 점수(ECOG)", age: "나이", "basis:age": "나이 기록", "lab:platelets": "혈소판 수치", "lab:hemoglobin": "혈색소 수치",
+  "lab:absolute neutrophil count": "백혈구(호중구) 수치", "biomarker:EGFR": "EGFR 유전자 검사" };
+const fuItem = (k) => FU_ITEM[k] || (String(k || "").startsWith("lab:") ? "피 검사 수치" : String(k || "").startsWith("biomarker:") ? "유전자 검사"
+  : /^(criterion|review):/.test(String(k || "")) ? "의사가 판단할 조건" : "추가 확인");
+// 보낸 답 중 화면에 보일 부분 (쉬운 질문은 괄호 안 한국어만)
+const fuShownAnswer = (x) => { const a = String((x.response || {}).answer || ""); const m = FU_EASY[x.info_key] && a.match(/\(([^)]+)\)\s*$/); return m ? m[1] : a; };
+const FU_WORK = { requires_document: ["연구진이 서류로 확인하고 있어요", "warn"], document_verified: ["서류 확인 끝", "ok"],
+  document_unavailable: ["서류를 구하지 못했어요", ""], requires_clinician: ["의사 선생님이 판단하고 있어요", "warn"],
+  clinician_decided: ["의사 판단 끝", "ok"] };
 const fuGet = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
 const fuSet = (k, v) => { try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (e) { /* 저장소 없음 */ } };
 const fuUrl = (path) => `/api/followup/cases/${encodeURIComponent(fu.caseId)}${path || ""}`;
@@ -87,8 +102,10 @@ async function fuShow(view, focus) {
   fuPoll();
   if (focus) $("#fu-h").focus();
 }
-function fuAnswerInput(rid, q) {
-  const name = `fu-a-${rid}`;
+function fuAnswerInput(rid, q, key) {
+  const name = `fu-a-${rid}`, easy = FU_EASY[key];
+  if (easy && easy.options) return easy.options.map(o => `<label class="inline-check big"><input type="radio" name="${name}" value="${esc(o)}"> ${esc(o)}</label>`).join(" ");
+  if (easy) return `<input class="fu-input" type="${easy.type}" id="${name}" aria-label="답변" min="0" max="120"> <span class="hint">${esc(easy.unit)}</span>`;
   const opts = (q.options || []).filter(o => String(o).trim());
   if (q.answer_type === "yes_no") return ["예", "아니요"].map(o => `<label class="inline-check"><input type="radio" name="${name}" value="${esc(o)}"> ${esc(o)}</label>`).join(" ");
   if ((q.answer_type === "single_choice" || q.answer_type === "multi_choice") && opts.length >= 2) {
@@ -99,8 +116,12 @@ function fuAnswerInput(rid, q) {
   if (type) return `<input class="fu-input" type="${type}" id="${name}" aria-label="답변"${q.unit ? ` placeholder="${esc(q.unit)}"` : ""}>${q.unit ? ` <span class="hint">${esc(q.unit)}</span>` : ""}`;
   return `<textarea class="fu-input" id="${name}" rows="3" maxlength="2000" aria-label="답변"></textarea>`;
 }
-function fuReadAnswer(box, rid, q) {
-  const name = `fu-a-${rid}`;
+function fuReadAnswer(box, rid, q, key) {
+  const name = `fu-a-${rid}`, easy = FU_EASY[key];
+  if (easy) {
+    const el = easy.options ? box.querySelector(`input[name="${CSS.escape(name)}"]:checked`) : box.querySelector(`#${CSS.escape(name)}`);
+    const v = el ? String(el.value).trim() : ""; return v ? easy.send(v) : "";
+  }
   if (["yes_no", "single_choice", "multi_choice"].includes(q.answer_type) && box.querySelector(`input[name="${CSS.escape(name)}"]`))
     return [...box.querySelectorAll(`input[name="${CSS.escape(name)}"]:checked`)].map(i => i.value).join(", ");
   const el = box.querySelector(`#${CSS.escape(name)}`);
@@ -112,18 +133,21 @@ async function fuLoadRequests() {
   try { r = await fetch(fuUrl("/requests")); if (r.ok) d = await r.json(); } catch (e) { d = null; }
   if (!d) { $("#fu-body").innerHTML = `<div class="note bad">연구진 요청을 불러오지 못했습니다${r ? ` (${esc(r.status)})` : ""}.</div>`; return; }
   const open = d.requests.filter(x => x.answerable), done = d.requests.filter(x => !x.answerable);
-  let html = open.length ? `<p class="hint m0">연구진이 추가로 확인하고 싶은 내용이에요. 아는 만큼 답하고, 모르면 '모르겠어요'를 누르세요. 같은 질문을 다시 하지 않아요.</p>`
-    : `<div class="note info">지금 답할 요청이 없어요. 연구진이 요청을 보내면 여기에 표시돼요 (${FU_POLL_MS / 1000}초마다 확인).</div>`;
-  html += open.map(x => `<div class="fu-req" data-rid="${esc(x.request_id)}">
-      <p class="fu-q">${esc(x.question.question)}</p>
-      <div class="fu-a">${fuAnswerInput(x.request_id, x.question)}</div>
+  const work = d.in_progress || [];
+  let html = open.length ? `<p class="m0"><b>연구진의 질문 ${open.length}개</b>가 있어요. 아는 만큼 답해 주세요. 모르면 '모르겠어요'를 누르면 돼요.</p>`
+    : `<div class="note info">지금 답할 질문이 없어요.${work.some(w => FU_WORK[w.status] && FU_WORK[w.status][1] === "warn") ? " 연구진이 서류를 확인하고 있으니 기다려 주세요." : ""} 질문이 오면 여기에 나와요.</div>`;
+  html += open.map(x => `<div class="fu-req" data-rid="${esc(x.request_id)}" data-key="${esc(x.info_key || "")}">
+      <p class="fu-q">${esc((FU_EASY[x.info_key] || {}).q || x.question.question)}</p>
+      <div class="fu-a">${fuAnswerInput(x.request_id, x.question, x.info_key)}</div>
       <div class="row mt8"><button class="btn sm" type="button" data-fu-send="1">답변 보내기</button>
         <button class="btn ghost sm" type="button" data-fu-unknown="1">모르겠어요</button></div>
       <div class="err" role="alert"></div></div>`).join("");
+  if (work.length) html += `<div class="fu-work"><p class="m0"><b>연구진이 하고 있는 일</b> <span class="hint">(환자분이 하실 일은 없어요)</span></p><ul>
+    ${work.map(w => { const [t, c] = FU_WORK[w.status] || [w.status, ""]; return `<li>${esc(fuItem(w.info_key))} <span class="badge ${c}">${esc(t)}</span></li>`; }).join("")}</ul></div>`;
   if (done.length) html += `<details class="more"${open.length ? "" : " open"}><summary>지난 요청 ${done.length}건</summary><div class="stack mt8">${done.map(x => {
     const [t, c] = FU_STATUS[x.status] || [x.status, ""];
-    return `<div class="fu-req done"><p class="fu-q">${esc(x.question.question)}</p><p class="m0"><span class="badge ${c} wrap">${esc(t)}</span>
-      ${x.response && x.response.outcome === "answered" ? ` <span class="hint">내 답변: ${esc(x.response.answer)}</span>` : ""}</p></div>`;
+    return `<div class="fu-req done"><p class="fu-q">${esc((FU_EASY[x.info_key] || {}).q || x.question.question)}</p><p class="m0"><span class="badge ${c} wrap">${esc(t)}</span>
+      ${x.response && x.response.outcome === "answered" ? ` <span class="hint">내 답: ${esc(fuShownAnswer(x))}</span>` : ""}</p></div>`;
   }).join("")}</div></details>`;
   $("#fu-body").innerHTML = html;
 }
@@ -132,7 +156,7 @@ async function fuRespond(box, unknown) {
   const rid = box.dataset.rid, errEl = box.querySelector(".err");
   const req = await (async () => { try { const r = await fetch(fuUrl("/requests")); return r.ok ? (await r.json()).requests.find(x => x.request_id === rid) : null; } catch (e) { return null; } })();
   if (!req || !req.answerable) { await fuRefresh(true); return; }
-  const answer = unknown ? null : fuReadAnswer(box, rid, req.question);
+  const answer = unknown ? null : fuReadAnswer(box, rid, req.question, req.info_key);
   if (!unknown && !answer) { errEl.textContent = "답을 입력하거나 '모르겠어요'를 누르세요."; return; }
   fu.sending = true; box.querySelectorAll("button, input, textarea").forEach(e => { e.disabled = true; });
   errEl.textContent = ""; setRunState("답변 반영 중", "accent");

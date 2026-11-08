@@ -51,16 +51,23 @@ DEMO_PATIENTS = [
      "summary_ko": [["나이·성별", "58세 여성"], ["진단", "비소세포폐암 4기"], ["전신 상태", "ECOG 1"]]},
     {"patient_id": "DEMO-NSCLC-3", "text": "Synthetic NSCLC patient. 71-year-old male with stage IIIB non-small cell lung cancer. ECOG 0.",
      "summary_ko": [["나이·성별", "71세 남성"], ["진단", "비소세포폐암 3B기"], ["전신 상태", "ECOG 0"]]},
+    # 나이를 적지 않은 환자: 연구진이 환자에게 직접 묻는 장면 (나이는 환자 답으로 확인할 수 있는 기준)
+    {"patient_id": "DEMO-NSCLC-4", "text": "Synthetic NSCLC patient. Female with stage IV non-small cell lung cancer. ECOG 1.",
+     "summary_ko": [["나이·성별", "여성 (나이 미기재)"], ["진단", "비소세포폐암 4기"], ["전신 상태", "ECOG 1"]]},
 ]
 
 
+_ORIGINAL_PATIENTS = list  # main에서 원래 /api/patients 함수로 바꿈
+
+
 def demo_patients() -> list[dict]:
+    """발표용 합성 NSCLC 환자를 맨 앞에, 그 뒤에 원래 예시 사례 전체 (원래 목록을 지우지 않음)."""
     out = []
     for p in DEMO_PATIENTS:
         ko = " · ".join(v for _, v in p["summary_ko"]) + " (합성 환자)"
         out.append({"patient_id": p["patient_id"], "group": "demo", "text": p["text"], "text_ko": ko, "summary_ko": p["summary_ko"],
                     "candidate_trials": [], "has_hidden": False})
-    return out
+    return out + _ORIGINAL_PATIENTS()
 
 
 def synthetic_catalog() -> TrialCatalog:
@@ -102,7 +109,9 @@ def main() -> None:
     pipeline.patient_profiler.profile_patient = latest_mention_profiler
     web.TEST_LLM_BACKEND = "fake"  # 대역만 설치된 프로세스: 실제 호출 허가 게이트 대신 (환경 변수로는 켤 수 없음)
     followup_api.configure(FollowupService(CaseStore(args.store), synthetic_catalog()))
-    # 예시 사례 목록을 발표용 합성 NSCLC 환자로 바꿈 (이 프로세스에서만, 기존 /api/patients 경로를 대체)
+    # 예시 사례 목록 맨 앞에 발표용 합성 NSCLC 환자를 더함 (이 프로세스에서만, 원래 예시 사례는 그 뒤에 그대로)
+    global _ORIGINAL_PATIENTS
+    _ORIGINAL_PATIENTS = web.list_patients
     web.app.router.routes = [r for r in web.app.router.routes if getattr(r, "path", None) != "/api/patients"]
     web.app.get("/api/patients")(demo_patients)
     if args.demo_staff:

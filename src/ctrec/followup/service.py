@@ -1239,13 +1239,16 @@ class FollowupService:
             if r["kind"] not in PATIENT_KINDS or r["status"] in ("superseded", "cancelled") and not r.get("response_id"):
                 continue
             item = {"request_id": r["request_id"], "status": r["status"], "created_at": r["created_at"],
-                    "question": r["question"], "answerable": r["status"] == "pending"}
+                    "question": r["question"], "answerable": r["status"] == "pending", "info_key": r.get("info_key")}
             if r.get("response_id") in resp:
                 x = resp[r["response_id"]]
                 item["response"] = {"outcome": x["outcome"], "answer": x["answer"], "at": x["at"]}
             out.append(item)
+        # 연구진이 서류·의사 판단으로 확인 중인 것 (환자가 할 일은 없음): 종류·항목·상태만, 값·문서·판단 내용은 넣지 않음
+        work = [{"kind": r["kind"], "info_key": r.get("info_key"), "status": r["status"]} for r in data["requests"]
+                if r["kind"] not in PATIENT_KINDS and r["status"] not in ("superseded", "cancelled")]
         return {"case_id": case_id, "revision": data["revision"], "requests": out,
-                "pending": sum(1 for x in out if x["answerable"])}
+                "pending": sum(1 for x in out if x["answerable"]), "in_progress": work}
 
     def inspector_view(self, case_id: str) -> dict:
         from .. import inspector

@@ -53,3 +53,13 @@ pre.raw { max-height: 360px; overflow: auto; background: var(--panel-2); border-
 .crit-judge { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
 @media (max-width: 720px) { .curve-wrap { grid-template-columns: 1fr; } }
 #page-staff details.note > summary { display: block; cursor: pointer; }
+/* 지금 할 일 (11-08 쉬운 화면) */
+.next-step { background: var(--accent-soft); border-radius: 14px; padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+.next-step > b { color: var(--accent); font-size: 15px; }
+.next-step p { flex: 1 1 320px; color: var(--text); font-size: 15px; }
+.work-title { margin: 0; font-weight: 700; color: var(--accent); }
+.work-title.clinician { color: var(--violet); }
+.steps-ko { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
+.steps-ko li > select { margin-left: 6px; }
+.req.done { opacity: .75; }
+details.staff-sec > summary { cursor: pointer; padding: 4px 0; }

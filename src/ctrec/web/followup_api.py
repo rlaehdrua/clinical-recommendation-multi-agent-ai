@@ -388,7 +388,10 @@ def staff_cases(request: Request) -> dict:
         out.append({"case_id": cid, "created_at": d["created_at"], "revision": d["revision"],
                     "synthetic": d["synthetic"], "pair_counts": _pair_counts(d["current"]["pairs"]),
                     "open_requests": sum(1 for r in d["requests"] if r["status"] in ("pending", "requires_document",
-                                                                                     "requires_clinician"))})
+                                                                                     "requires_clinician")),
+                    # 열린 요청을 상태별로 (화면의 '지금 할 일' 안내용): 환자 답 대기 / 서류 대기 / 의사 판단 대기
+                    "open_by_status": {s: n for s in ("pending", "requires_document", "requires_clinician")
+                                       if (n := sum(1 for r in d["requests"] if r["status"] == s))}})
     return {"cases": out}
 
 

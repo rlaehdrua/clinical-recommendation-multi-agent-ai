@@ -12,12 +12,12 @@ const state = { patients: [], trials: [], custom: true, runId: null, es: null, t
   lastId: -1, lastEventAt: 0, running: false, waiting: false, answered: false, questionsSeen: false, stages: {},
   reconnects: 0, ended: false, submitting: false };
 
-// 서버 공식 외부 상태 - 사용자에게 보이는 이름과 설명 (참여 자격 확정처럼 보이지 않게)
+// 서버 공식 외부 상태 - 사용자에게 보이는 이름(status.LABEL_KO와 같아야 함)과 쉬운 설명 (참여 자격 확정처럼 보이지 않게)
 const STATUS = {
   CRITERIA_MATCH: ["공개 기준 충족", "ok", "공개 기준 모두 충족 · 참여 확정 아님"],
   POTENTIAL_MATCH: ["기록 확인 시 충족 가능", "warn", "답변상 충족 · 진료 기록 확인 필요"],
-  NEEDS_REVIEW: ["의료진 검토 필요", "warn", "의료진이 프로토콜과 대조할 조건 있음"],
-  INSUFFICIENT_INFORMATION: ["추가 정보 필요", "warn", "확인 못 한 정보 있음 · 불충족 아님"],
+  NEEDS_REVIEW: ["의료진 검토 필요", "warn", "의사가 직접 판단할 조건이 있음"],
+  INSUFFICIENT_INFORMATION: ["추가 정보 필요", "warn", "아직 확인 못 한 정보가 있음 (안 맞는다는 뜻은 아님)"],
   CRITERIA_MISMATCH: ["공개 기준 불충족", "bad", "맞지 않는 조건 있음"],
   NOT_EVALUATED: ["평가 실패", "warn", "평가 오류 · 부적격 아님"],
 };
@@ -748,7 +748,7 @@ const SOURCE = { record: "환자 기록", self_report: "본인·보호자 답변
 const GROUPS = ["met", "record_check", "missing", "physician_review", "procedural", "not_met", "unclassified"];
 const GROUP_UI = {
   met: ["확인됨", "✓"], record_check: ["서류 확인 필요", "!"], missing: ["정보 부족", "?"],
-  physician_review: ["연구진 판단", "?"], procedural: ["병원에서 확인", "+"], not_met: ["맞지 않음", "×"],
+  physician_review: ["의사 판단", "?"], procedural: ["병원에서 확인", "+"], not_met: ["맞지 않음", "×"],
   unclassified: ["확인 필요", "?"],
 };
 const SAID = { yes: "해당한다고 답함", no: "해당하지 않는다고 답함", not_applicable: "대상이 아니라고 답함", unclear: "답변이 분명하지 않음" };
@@ -803,7 +803,7 @@ function todoLines(m, d) {
   if (g.not_met.length) out.push(["맞지 않는 조건 확인", g.not_met.length, "bad"]);
   if (g.record_check.length) out.push(["검사 결과지·진료 기록 준비", g.record_check.length, "warn"]);
   if (g.missing.length) out.push(["부족한 정보 채우기", g.missing.length, "warn"]);
-  if (g.physician_review.length) out.push(["담당 의사와 프로토콜 대조", g.physician_review.length, "warn"]);
+  if (g.physician_review.length) out.push(["의사가 판단할 조건", g.physician_review.length, "warn"]);
   if (g.unclassified.length) out.push(["의료진 확인", g.unclassified.length, "warn"]);
   if (g.procedural.length) out.push(["참여 단계에서 연구기관이 확인", g.procedural.length, ""]);
   if (!out.length) out.push(["연구기관 스크리닝 받기", "", "ok"]);
@@ -944,7 +944,7 @@ function condRow(tid, a, g, said) {
     // 서버가 일반 문구 대신 넣는 '원문 기준 문장'은 아래 원문 줄·조건 이름과 같아서 다시 쓰지 않음 (display.display_missing_info)
     desc = !a.missing_info ? "불충족 아님" : a.missing_info.startsWith(ORIG_MISSING) ? "판단할 정보가 입력에 없음 · 불충족 아님" : `필요: ${a.missing_info}`;
   }
-  if (g === "physician_review") { stateText = "연구진 판단"; desc = "기준에 구체적인 값 없음 · 의사가 프로토콜과 대조"; }
+  if (g === "physician_review") { stateText = "의사 판단"; desc = "기준에 정해진 숫자가 없어서 의사가 직접 판단해요"; }
   if (g === "procedural") { stateText = "병원에서 확인"; desc = "참여 단계에서 확인 · 지금 준비할 것 없음"; }
   if (g === "unclassified") { stateText = "확인 필요"; desc = "분류 불가 · 의료진 확인"; }
   const ev = a.evidence && !/^근거 없음/.test(a.evidence) ? `<p class="cev">${g === "met" || g === "not_met" ? "근거" : "입력 내용"} <q>${esc(a.evidence)}</q>
