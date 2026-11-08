@@ -600,6 +600,19 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 
 수정할 때마다 무엇을 왜 바꿨는지 여기에 기록합니다. 최신 항목이 위에 옵니다.
 
+### 2026-11-08 — '의사 판단 기다림'인데 의사가 끝낼 수 없는 요청 (발표 데모, 동겸)
+
+배경: 서류를 '구할 수 없어요'로 표시해서 남은 정보원이 없으면 서버가 임상 검토 요청(`item_sources_exhausted`, 충돌은 `conflict_unresolved`)을 자동으로 만듭니다(#39 계약). 그런데 대상이 혈소판·EGFR처럼 값이 있어야 하는 기준이면 의사 판단 기준이 아니라서 판단 API로 끝낼 수 없습니다(`judgeable=False`). 쌍은 '확인할 방법 없음'으로 보류되고, 이것이 안전한 결과입니다. 화면만 이 요청을 '의사 판단 기다림'으로 보여 주고 할 일로 세서, 기다리면 끝날 것처럼 보였습니다.
+
+| # | 변경 | 파일 |
+|---|---|---|
+| 1 | 담당자 사례 화면: 이 요청을 '해야 할 일'에서 빼고 '추가 확인 경로가 없어 보류된 것'에 "추가 확인 경로 없음 · 보류"로 보여 줌 (이유와 "새 서류가 생기면 다시 요청" 안내) | `src/ctrec/web/static/staff.js` |
+| 2 | 담당자 환자 목록 `open_by_status`: 이 요청은 `requires_clinician`이 아니라 `on_hold`로 셈 → '지금 할 일'·할 일 개수에서 빠짐 | `src/ctrec/web/followup_api.py` |
+| 3 | 환자 화면 `in_progress`: '의사 선생님이 판단하고 있어요' 대신 '더 확인할 방법이 없어 보류했어요' (`status: on_hold`, 저장 상태는 그대로) | `src/ctrec/followup/service.py`, `static/followup.js` |
+| 4 | 테스트 1건: 서류를 모두 소진한 혈소판 → `on_hold`로 세고 환자에게도 `on_hold` | `tests/test_demo_roles.py` |
+| 5 | 문구 통일 (선우 제안, 11-08): `BLOCKED_FAILURE`와 이 요청을 '추가 확인 경로 없음 · 보류'로 (참여 불가·의사 판단 필요가 아님). 담당자 시험 상태·현황판·요청 카드 같은 문구, 환자 화면은 '더 확인할 방법이 없어 보류했어요' | `static/staff.js`, `cohort.js`, `followup.js` |
+
+판정·권한·저장 상태는 바뀌지 않습니다(표시와 개수만). 기준 목록은 `followup.service.NO_PATH_REASONS` 하나.
 ### 2026-11-08 — 불충족 근거 확인 요청이 다른 서류 확인 뒤 닫혀 쌍이 멈추던 문제 (브라우저에서 발견, 동겸)
 
 배경: 예시 사례 S003(7세)처럼 자기 보고 나이로 'Age >= 18'이 불충족이면 쌍은 VERIFICATION_PENDING(`exclusion_unverified`, "안 맞는 이유를 서류로 확인")이고, 엔진은 근거 확인 요청(`basis:age`, `exclusion_basis_unverified`)을 냅니다. 그런데 `_supersede`가 열린 기준을 정보 빈칸(gap)으로만 세서, 값이 있어 gap이 없는 그 기준의 근거 확인 요청이 다른 서류 확인(혈소판 등)의 재평가에서 `targets_resolved`로 닫혔습니다. 같은 제안은 다시 나오지 않아 네 쌍이 '서류 확인 필요'인데 할 일 0개로 멈췄습니다. 잘못 확정한 것은 아니고(안전), 확정할 길이 없어진 문제입니다.

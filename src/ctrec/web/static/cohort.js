@@ -30,7 +30,7 @@ const STATUS_UI = {
   VERIFICATION_PENDING: { cls: "warn", label: "확인 대기", desc: "값은 있으나 기록 확인·상충 해소 필요" },
   INFO_MISSING: { cls: "info", label: "정보 부족", desc: "판정에 필요한 정보가 없거나 검사가 오래됨" },
   EXPERT_REVIEW: { cls: "violet", label: "의료진 검토", desc: "임상의 판단이 필요한 기준이 남음" },
-  BLOCKED_FAILURE: { cls: "muted", label: "확보 실패 보류", desc: "확인 수단을 모두 써도 정보를 얻지 못함" },
+  BLOCKED_FAILURE: { cls: "muted", label: "추가 확인 경로 없음 · 보류", desc: "확인 수단을 모두 써도 정보를 얻지 못해 판정을 보류함 (부적격 아님)" },
   NOT_EVALUATED: { cls: "", label: "미평가", desc: "필수 기준을 다 평가하지 못함 (부적격 아님)" },
 };
 const GAP_KO = { missing: "정보 없음", stale: "검사 오래됨", unverified: "기록 확인 필요", conflict: "정보 상충",
