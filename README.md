@@ -45,6 +45,8 @@
 | ⑤ 질문 생성 및 재평가 | 확인 질문 → 추가 정보 반영 → 최종 판정 | 질문 생성 에이전트 → 답변 제공자 → 환자 정보 재추출 → 재매칭 | `QAPair`, 판정 변화 이력 |
 | ⑥ 임상시험 추천 | 적절한 시험 추천 (추천 그룹 + 설명 가능한 표시 순서) | 추천 에이전트 → 결과 설명 에이전트 | `Recommendation`, `report.md` |
 
+> **두 실행 경로를 구분해 주세요.** 1.2·1.3은 API 키가 있을 때 CLI(`python -m ctrec run`)와 웹 `/api/runs`가 쓰는 **LLM 에이전트 경로**입니다. 키 없는 발표용 데모(3.0, `scripts/followup_demo_server.py`)는 다른 경로입니다. 이 데모는 `/api/followup` 확인 흐름과 규칙 기반 정책 엔진(`EngineLoop`, `full_dcvc`)을 쓰고, LLM은 오프라인 대역으로 막습니다. 웹 `/api/runs`의 기본 모드는 여전히 `legacy`(LLM 질문 생성기)입니다(10절 2026-11-07 P 항목).
+
 ### 1.2 에이전트 구성도 (역할과 오케스트레이션)
 
 ```mermaid
@@ -183,6 +185,14 @@ sequenceDiagram
 
 Python 3.10 이상이 필요합니다.
 
+> **Python 버전과 의존성 (팀 결정 대기)**
+> - `pyproject.toml`은 `>=3.10`입니다. 테스트와 3.0 재현은 **3.10.11**에서 했고, 배포 설정 `render.yaml`은 **3.13.5**입니다. 3.13.5에서는 테스트하지 않았습니다.
+> - `requirements.txt`·`pyproject.toml`의 의존성은 하한만 있습니다(`anthropic`만 `<2` 상한). **lock 파일(`requirements.lock.txt`)은 저장소에 없습니다.** 아래 "lock을 함께 제출" 안내는 아직 이행되지 않았습니다.
+> - `playwright`(브라우저 E2E, 선택)는 requirements·extras에 없어 따로 설치합니다(`docs/team_local_setup.md` 4절).
+> - **editable 설치 필수:** `pip install .`(비 editable)로 설치하면 `config.ROOT`가 site-packages 쪽을 가리켜 `data/`를 찾지 못합니다(`verify_frozen()`이 "FROZEN.json이 없거나 비어 있음"을 냄). `pip install -e ".[dev,web]"`로 설치하거나 `PYTHONPATH=src`로 실행하세요.
+> - **Windows 콘솔:** 출력이 파일·파이프로 갈 때 기본 인코딩(cp949)에서 CLI가 `⚠️`를 쓰다 `UnicodeEncodeError`로 끝납니다. `PYTHONUTF8=1`(PowerShell: `$env:PYTHONUTF8='1'`)을 설정하세요.
+> - 제안(미결정): 제출 기준 Python 버전 하나를 정하고, 그 버전의 깨끗한 venv에서 `pip install -e ".[dev,web]"` → `pip freeze > requirements.lock.txt`를 만든 뒤 테스트를 한 번 더 돌려 기록합니다. 3.13.5를 유지한다면 3.13에서도 테스트가 필요합니다.
+
 ```bash
 python3 -m venv ~/.venvs/ctrec && source ~/.venvs/ctrec/bin/activate
 pip install -e ".[dev,web]"      # 또는 pip install -r requirements.txt && pip install -e .
@@ -201,11 +211,71 @@ API 호출 없이 동작하는 단위 테스트로 설치를 확인할 수 있�
 pytest -q
 ```
 
+> **import 경로 주의:** `pip install -e .`로 만든 editable 설치는 설치한 폴더를 가리킵니다. 저장소를 다른 폴더(git worktree, 새 clone)에서 쓰면서 같은 venv를 재사용하면 테스트·스크립트가 **다른 폴더의 코드**를 import할 수 있습니다. 그 폴더에서 `pip install -e .`를 다시 하거나 `PYTHONPATH=src`(PowerShell `$env:PYTHONPATH="src"`)를 붙이고, `python -c "import ctrec; print(ctrec.__file__)"`로 경로를 확인하세요.
+
 ---
 
 ## 3. 실행
 
+### 3.0 키 없는 합성 데모·재현 (API 키·네트워크 불필요)
+
+아래 명령은 API 키 없이 돌아갑니다. 실제 LLM 호출은 막혀 있고(오프라인 대역), 환자·시험은 모두 합성 데이터입니다. 2026-11-08에 dba06d9, Windows, Python 3.10.11, `PYTHONPATH=src`로 실제 실행했습니다. 출력과 시간은 그 실행의 값입니다.
+
+```bash
+# 0) 준비: 저장소 루트에서. editable 설치가 이 폴더를 가리키지 않으면 PYTHONPATH가 필요합니다(2절)
+export PYTHONPATH=src            # PowerShell: $env:PYTHONPATH="src"
+export PYTHONIOENCODING=utf-8    # Windows 콘솔(cp949)에서 한국어 출력이 깨질 때
+python -c "from ctrec import store_patch; print(store_patch.verify_frozen())"   # [] = 잠긴 기준표 26개 해시 일치
+
+# 1) 발표용 데모 서버 (환자 ↔ 연구 담당자 탭, 서류 확인·의사 판단까지)
+#    값은 아무 문자열이나 됩니다(예시는 가짜 값). 비우면 서버가 실행마다 새로 만들어 화면에 출력합니다.
+#    서명 비밀을 고정하지 않으면 재시작 뒤 이전 서류 확인·의사 판단이 인정되지 않습니다.
+export CTREC_STAFF_KEY=<아무-값>
+export CTREC_SYNTHETIC_SIGNING_SECRET=<아무-값>
+python scripts/followup_demo_server.py --port 8791 --demo-staff --synthetic-verification --store <빈-폴더>
+# -> "followup demo (offline, synthetic): http://127.0.0.1:8791  store=..."  종료는 Ctrl+C
+```
+
+- `--synthetic-verification`이 없으면 서류 확인·의사 판단 API가 닫혀(503) 서류가 필요한 쌍이 '확인 대기'에서 멈춥니다. 10절 2026-11-07(#38) 항목의 발표 실행 명령에는 이 플래그가 빠져 있으니 위 명령을 쓰세요.
+- `--demo-staff`는 루프백(127.0.0.1) 접속에서만 담당자 키 없이 담당자 탭을 엽니다.
+- **서류 확인·의사 판단은 합성 권한(synthetic authority)에서만 됩니다.** 서버가 발급한 합성 검증자·임상의 키나 데모 역할로만 동작합니다. 실제 문서 검증이나 실제 의료진 권한이 아닙니다. 운영 설정(`CTREC_VERIFICATION_MODE`를 켜지 않음)에서는 이 API가 503을 돌려주고, 문서로 적격을 확정하지 않습니다.
+- 브라우저: http://127.0.0.1:8791/ (환자 탭) → 연구 담당자 탭. 이번 재현에서는 브라우저 화면을 열어 보지 않았습니다. 화면 확인 기록은 10절 2026-11-08 항목에 있습니다.
+
+```bash
+# 2) 끝까지 자동 실행 (LLM 0회, 결정적): 위 서버를 띄운 채로
+python scripts/run_e2e_synthetic.py --mode offline --url http://127.0.0.1:8791 --out <출력-폴더>
+#   --url을 빼면 스크립트가 자체 데모 서버를 띄우고 끝나면 끕니다(이번에는 --url로만 확인)
+```
+기대 출력(약 12초, 종료 코드 0. 안전 위반이 있으면 1):
+```
+[offline] 환자 6명 x 시험 4개, 4회차, 8.3초, 보낸 요청 30건 (가정 216.0분)
+  참여 가능 확정: 정답과 일치 4 + 의사 판단 뒤 6 / 참여 불가 확정 5 / 미확정 9 / 안전 위반 0
+  글: {'narrative_template': 6, 'document_template': 17, 'document_unavailable': 5} · 서류 읽기 정확 31 / 틀림 0
+```
+채점은 합성 시험 4개의 **규칙 GT** 기준이며 임상 정확도가 아닙니다. '분'은 가정 비용입니다.
+
+```bash
+# 3) 서류 확인·의사 판단 경로 재현 (자체 서버를 임의 포트로 띄우고, 재시작·서명 비밀 변경·검증 모드 끔까지 확인)
+python scripts/followup_verification_flow.py --out <출력-폴더>/verification.json
+#   기대: "OK 28 checks, 27 HTTP calls, ..." 와 점검 28줄 (약 23초). 마지막 줄 "no verification mode: verifier API 503"
+
+# 4) 환자 질문 흐름 재현 (요청 → 재시작 → 답변·'모름'·대체 경로·충돌 → 재시작 → Inspector·Cohort C 대기열)
+python scripts/followup_demo_flow.py --out <출력-폴더>/demo_flow.json
+#   기대: 요청·응답 기록 JSON 출력, "http_calls": 22, "server_restarts": 2 (약 12초)
+
+# 5) 정책 비교 실험 (NSCLC 파일럿: 실제 프로토콜 6개 × 합성 환자 8명, 축소 인자)
+python -m ctrec.sim.suite --cohort nsclc --budgets 90 --seeds 1
+#   약 46초. 기본 인자(generator 코호트 × 예산 3 × seed 3 × replicate 3)는 400초 이상 걸립니다
+#   기대: dcvc 행 verified_ineligible 8, 기준선(random·patient_independent·cost_first) 0, false_eligible 전부 0
+```
+
+- `python -m ctrec.sim.suite` 결과의 정답은 작성자가 프로토콜을 읽어 만든 부적격 전용 라벨(`manual_protocol_reading_ineligible_only`)입니다. 임상 검수를 받지 않았고, seed 1, 가정 비용입니다.
+- 이 절의 명령은 모두 합성 데이터와 오프라인 대역만 씁니다. 실제 LLM 판정 품질은 보여 주지 않습니다(9.1).
+- 다른 키 없는 확인 경로(브라우저 자동 테스트, 파일럿 리허설 등)는 `docs/team_local_setup.md` 9절에 있습니다. `scripts/run_offline_records.py --out <폴더>`(WP7 감사 기록)와 `scripts/render_inspector.py demo`(Inspector HTML)도 오프라인 스크립트입니다. 이 둘은 이번에 `--help`만 확인했습니다.
+
 ### 3.1 빠른 시작 (가상 데모 데이터)
+
+> **API 키가 필요합니다.** `ctrec run`·`ctrec batch`는 실제 Claude API를 호출합니다(`.env`의 `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN` 또는 `ant auth login` 프로필). 자격 증명이 없으면 사전 점검 없이 첫 API 호출에서 실패합니다. 코드상 `llm.py`의 `anthropic.Anthropic()`가 키 없이 만들어지고, `cli.py`가 `[환자 ID] 실패: TypeError ...`를 출력한 뒤 종료 코드 1로 끝납니다. 이 동작은 정적으로 확인했고, 이번에 실행하지는 않았습니다. 키 없이 확인하려면 3.0을 쓰세요. 키가 있으면 웹과 달리 CLI에는 비용 차단 스위치가 없어 바로 유료 호출이 됩니다.
 
 ```bash
 # 오케스트레이터(agent) 모드 + 가상 환자 시뮬레이터로 확인 질문 자동 응답
@@ -247,7 +317,7 @@ python -m ctrec.web              # http://127.0.0.1:8000 (--port로 변경)
 - **탭을 닫았다 다시 열면**: 같은 브라우저의 새 탭에 "진행 중인 분석 이어 보기" 버튼이 나옵니다(`GET /api/runs/active`, 진행 중 실행만, 누를 때만 이어 봄).
 - **배포**: 기본 `render.yaml`은 기록 모드(record, 비용 강제 차단 없음)·`CTREC_FALLBACKS=0`·워커 1개입니다. 비용 상한(enforce) 구성, 대체 모델을 끈 이유, 배포 사전 점검(`scripts/check_web_deployment.py`)은 `docs/web_deployment.md`, 비용 원장 운영(UNKNOWN 정산·백업·복구)은 `docs/web_budget_operations.md`를 보세요.
 - 서버 메모리에는 실행 상태를 최대 20개(`CTREC_WEB_MAX_RUNS`)까지만 두고, 끝난 실행은 2시간(`CTREC_WEB_RUN_TTL_S`, 초), 취소·오류·시간 초과로 끝난 실행은 2분(`CTREC_WEB_ENDED_TTL_S`) 뒤 지웁니다. 작업이 실제로 끝나지 않은 실행이 한도만큼 있으면 새 실행은 429로 거절됩니다.
-- 실행할 때마다 Claude API 비용이 발생합니다. Sonnet 기준 환자 1명당 약 $0.2–0.7입니다.
+- 실행할 때마다 Claude API 비용이 발생합니다. Sonnet 기준 환자 1명당 약 $0.2–0.7입니다(2026-10 측정값이며, 이후 코드 변경 뒤 다시 재지 않았습니다).
 
 ### 3.3 사업단 제공 환자 + 실제 ClinicalTrials.gov 시험
 
@@ -506,6 +576,11 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 | 합성 환자 · 정답 라벨 | `data/patients/synthetic/`, `data/labels/` | 본 프로젝트에서 작성 (Claude 사용, `"synthetic": true`). 시험 기준은 위 CT.gov 레코드를 참조 | 프로젝트 라이선스를 따릅니다. 실존 인물 정보가 없는 가상 데이터입니다. |
 | 사업단 제공 환자 예시 (10건) | `data/patients/provided/synthetic-patients.json` | Healthcare Agentic AI Challenge 2026 사업단 (가상 증례, TREC topic 형식) | 사업단 제공 조건을 따릅니다. *(제공 조건 확인 후 기재)* |
 | 환자–후보 시험 매핑 | `data/topic_map.json` | 본 프로젝트에서 작성 (S001–S010 → 관련 CT.gov 시험) | 프로젝트 라이선스를 따릅니다. |
+| NSCLC 임상시험 프로토콜 (8개) | `data/nsclc/trials/NCT*.json` (파싱 6개: `data/nsclc/parsed/`) | [ClinicalTrials.gov](https://clinicaltrials.gov) API v2. `source.retrieved_at` 2026-11-02 (`data/nsclc/selection/recommended.md`) | 위 CT.gov 행과 같습니다. |
+| NSCLC 합성 평가셋 · 규칙 GT | `data/nsclc/eval/` | 본 프로젝트에서 작성 (합성 환자, 작성자의 프로토콜 판독). `pair_gt.csv`의 `clinical_review`는 "미완료" | 프로젝트 라이선스를 따릅니다. 임상 검수를 받지 않았습니다. |
+| 데모 서버의 합성 시험 T-A~T-D | `src/ctrec/sim/demo.py` (코드 안 정의) | 본 프로젝트에서 작성 (`synthetic`) | 프로젝트 라이선스를 따릅니다. **실제 시험이 아닙니다.** |
+
+> **라이선스 (팀 결정 대기):** 저장소 루트에 LICENSE 파일이 아직 없어서, 위 표의 "프로젝트 라이선스"가 무엇인지 정해지지 않았습니다. 사업단 제공 데이터의 이용 조건 칸도 아직 비어 있습니다.
 
 **유의사항 준수**
 1. 공개 활용이 허용된 데이터(ClinicalTrials.gov)와 사업단 제공 데이터만 사용합니다.
@@ -578,7 +653,7 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 
 ## 8. 모델 및 비용 관련 참고
 
-- **모델**: 모든 에이전트는 기본값 `claude-sonnet-5`를 씁니다($2 / $10 per 1M 입력·출력 토큰). 데모 환자 1명 기준 약 $0.2로, 같은 환자를 `claude-opus-5`로 돌렸을 때(약 $0.57)보다 저렴했습니다. 에이전트마다 추론 강도(`effort`)를 다르게 둡니다. 판정 정확도가 중요한 기준 파싱, 매칭, 추천, 오케스트레이터는 `high`이고, 추출과 문장 생성 위주 단계는 `medium`입니다. 값은 `config.py`의 `EFFORT`에서 조정합니다.
+- **모델**: 모든 에이전트는 기본값 `claude-sonnet-5`를 씁니다($2 / $10 per 1M 입력·출력 토큰). 데모 환자 1명 기준 약 $0.2로, 같은 환자를 `claude-opus-5`로 돌렸을 때(약 $0.57)보다 저렴했습니다(2026-10 측정, 재측정 안 함). 에이전트마다 추론 강도(`effort`)를 다르게 둡니다. 판정 정확도가 중요한 기준 파싱, 매칭, 추천, 오케스트레이터는 `high`이고, 추출과 문장 생성 위주 단계는 `medium`입니다. 값은 `config.py`의 `EFFORT`에서 조정합니다.
 - **캐싱**
   - 에이전트별 시스템 프롬프트에 프롬프트 캐싱을 적용합니다.
   - 시험 기준은 `scripts/compile_trials.py`로 미리 파싱·검증해 `data/parsed/`(git 포함)에 고정합니다. 2026-10-12에 26개 시험 전부를 공식 기준표로 잠갔습니다(`FROZEN.json`, 파일이 바뀌면 테스트 실패). 환자를 평가할 때는 파싱하지 않습니다. 시험 기준 원문이 바뀌면 그 시험은 `COMPILATION_PENDING`이 되므로 다시 컴파일합니다. `data/cache/parsed/`는 컴파일·즉석 파싱용 내부 캐시입니다.
@@ -600,6 +675,38 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 - 추천 표시 순서는 추천 그룹, 모집 상태, 남은 미확인 항목 수, 후보 추림 순서로만 정합니다. 시험 간 임상적 우열, 지리적 접근성, 환자 선호는 반영하지 않습니다.
 - `INSUFFICIENT_INFORMATION`과 `POTENTIAL_MATCH`의 구분은 남은 항목의 종류로만 정합니다. 판정을 바꿀 수 있는 정보인지(판정 영향)는 아직 계산하지 않습니다(아키텍처 Stage 2).
 - 가상 데이터로 측정한 정확도는 실제 임상 환경의 성능을 보장하지 않습니다.
+
+### 9.1 알려진 한계와 검증 범위 (dba06d9 기준, 2026-11-08)
+
+**이번에 실제로 확인한 것** (3.0의 명령, Windows · Python 3.10.11 · `PYTHONPATH=src`, API 키 없음)
+
+| 확인 | 명령 | 결과 |
+|---|---|---|
+| 잠긴 기준표 해시 | `store_patch.verify_frozen()` | `[]` (불일치 없음) |
+| 데모 서버 기동 | `followup_demo_server.py --demo-staff --synthetic-verification` | `/healthz` 200 |
+| 합성 E2E (오프라인, LLM 0회) | `run_e2e_synthetic.py --mode offline --url ...` | 안전 위반 0, 종료 코드 0, 약 12초 |
+| 서류 확인·의사 판단 경로 | `followup_verification_flow.py` | 28개 점검 통과, 약 23초 |
+| 환자 질문 흐름 | `followup_demo_flow.py` | 종료 코드 0, 재시작 2회, 약 12초 |
+| 정책 비교 (NSCLC 파일럿) | `python -m ctrec.sim.suite --cohort nsclc --budgets 90 --seeds 1` | 종료 코드 0, 약 46초 |
+| README 명령의 인자 | 각 명령 `--help` | 본문 명령은 일치. 10절 #38 항목의 데모 서버 명령에는 `--synthetic-verification`이 빠져 있어 3.0에서 보완 |
+
+**확인하지 않은 것**
+- **깨끗한 환경 설치:** 새 venv에서 `pip install`을 하지 않았습니다. 기존 venv를 썼습니다.
+- **브라우저 화면:** 이번 재현에서는 화면을 열지 않았습니다. 10절의 브라우저 확인 기록은 각 작업자가 남긴 보고입니다.
+- **실제 LLM 판정:** 실제 Claude로 판정한 경로는 이번에 검증하지 않았습니다. 10절의 LLM 모드 E2E(`--mode llm`)도 LLM이 가상 서류·소개글을 쓰고 읽는 데만 썼고, 판정은 오프라인 대역이 했습니다.
+- **CLI `ctrec run`:** 키가 필요해서 실행하지 않았습니다(3.1).
+- **전체 테스트:** 이번에는 돌리지 않았습니다. 보고된 값은 6148 passed입니다(dba06d9).
+- **임상 검수:** 모든 GT와 라벨은 합성이고, 임상의 검수를 받지 않았습니다.
+
+**남은 안전 한계** (코드에서 확인했고, 수정은 미병합 상태이거나 팀 결정 대기)
+- **의료진·간호사가 전한 검사값을 측정값으로 받아들입니다** (CL-B1). 가족·화자 불명·근사·택일 값은 보류합니다. 하지만 문장에 의사·간호사 등 의료진 표현이 있으면 보류하지 않습니다(`value_grounding.py`의 `_CLINICIAN`). 정책은 팀 결정 대기입니다.
+- **서술 상충 탐지에 빈틈이 있습니다** (CL-A1). 다른 절의 "r/o X"·"?X"는 의심으로 보지 않아 상충으로 잡지 않습니다(`evidence_directness.py`, 주석 "CL-A1 대기"). 최종 감사의 탐침 기준으로는 일부 질환 상위어·하위어 묶음(예: 신장 이식, 쇼그렌)도 빠져 있습니다.
+- **F-03:** 합성 검증 모드에서 담당자 화면을 거치지 않고 임상의 판단 API를 직접 부르면, `expected_revision`을 생략할 수 있습니다(`followup/service.py`). 그러면 판단자가 보지 못한 최신 사실로 적격 확정이 될 수 있습니다. 화면(`staff.js`)은 revision을 보냅니다. 수정 브랜치는 따로 있고, 아직 병합하지 않았습니다. 운영 설정에서는 이 API 자체가 503입니다.
+- **주 지표를 측정할 수 없습니다.** 주 지표는 "정확히 확정한 적격 쌍"입니다. 그런데 NSCLC 규칙 GT(`data/nsclc/eval/pair_gt.csv`, 240쌍)에는 확정 적격 라벨이 0개입니다(INELIGIBLE 130, NOT_EVALUATED 87, PENDING_EXPERT_ELIGIBLE 23). 그래서 이 지표는 아직 잴 수 없습니다. 3.0 실험 결과도 부적격 확정 수만 비교합니다.
+- **NSCLC GT는 임상 검수를 받지 않았습니다** (`clinical_review` = 미완료). 작성자가 프로토콜을 읽어 만든 라벨입니다.
+- **웹의 코디네이터 시간 배분 효과가 없습니다.** 웹 엔진의 기본 예산은 `coordinator_minutes=100000`(`web/engine_runner.py`)이라, 웹 화면 순서에서는 Cohort C 예산 배분이 사실상 작동하지 않습니다. 배분 효과는 시뮬레이터(`ctrec.sim`)에서만 봅니다. 화면의 '분'은 가정 비용이고 측정한 시간이 아닙니다.
+- **웹 `/api/runs`의 기본 모드는 `legacy`입니다.** LLM 질문 생성기를 쓰므로, 기본 웹 분석 경로는 공통 정책 엔진을 쓰지 않습니다(1.1 아래 안내).
+- **비용 수치가 오래되었습니다.** 3.2·8절의 비용("$0.2–0.7/환자")은 2026-10 측정값이며, 다시 재지 않았습니다.
 
 ---
 
