@@ -246,13 +246,13 @@ python scripts/followup_demo_server.py --port 8791 --demo-staff --synthetic-veri
 python scripts/run_e2e_synthetic.py --mode offline --url http://127.0.0.1:8791 --out <출력-폴더>
 #   --url을 빼면 스크립트가 자체 데모 서버를 띄우고 끝나면 끕니다(이번에는 --url로만 확인)
 ```
-기대 출력(약 10초, 종료 코드 0. 안전 위반이 있으면 1). integration/phase1-final에서 5회 실행해 시간 외에는 report.json·행동 기록이 모두 같았습니다:
+기대 출력(약 10초, 종료 코드 0. 안전 위반이 있으면 1). integration/phase1-final(PR #53 8afe5ea 병합 뒤)에서 3회 실행해 시간 외에는 report.json·행동 기록이 모두 같았습니다(병합 전에도 5회 동일):
 ```
 [offline] 환자 6명 x 시험 4개, 4회차, 7.2초, 보낸 요청 29건 (가정 198.0분)
-  참여 가능 확정: 정답과 일치 4 + 의사 판단 뒤 6 / 참여 불가 확정 3 / 미확정 11 / 안전 위반 0
+  참여 가능 확정: 정답과 일치 4 + 의사 판단 뒤 6 / 참여 불가 확정 4 / 미확정 10 / 안전 위반 0
   글: {'narrative_template': 6, 'document_template': 17, 'document_unavailable': 5} · 서류 읽기 정확 30 / 틀림 0
 ```
-- dba06d9에서는 접수 별칭이 난수라 실행마다 '참여 불가 확정 5 / 미확정 9'와 '3 / 11'이 갈렸습니다(F-2). 접수 순번으로 고친 뒤(09088f4) '3 / 11'로 고정됩니다. SYN-02의 T-A·T-C는 서류를 구할 수 없어 '추가 확인 경로 없음 · 보류'(`BLOCKED_FAILURE`, 부적격 아님)입니다.
+- dba06d9에서는 접수 별칭이 난수라 실행마다 '참여 불가 확정 5 / 미확정 9'와 '3 / 11'이 갈렸습니다(F-2). 접수 순번으로 고친 뒤(09088f4) '3 / 11'로 고정되었고, PR #56(불충족 근거 확인 요청 유지)을 합친 뒤에는 SYN-04 T-C가 확인 대기에서 멈추지 않고 참여 불가(확정, 정답과 같음)가 되어 '4 / 10'으로 고정됩니다. SYN-02의 T-A·T-C는 서류를 구할 수 없어 '추가 확인 경로 없음 · 보류'(`BLOCKED_FAILURE`, 부적격 아님)입니다.
 채점은 합성 시험 4개의 **규칙 GT** 기준이며 임상 정확도가 아닙니다. '분'은 가정 비용입니다.
 
 ```bash
@@ -695,7 +695,7 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 
 | 확인 | 결과 |
 |---|---|
-| 합성 E2E 오프라인 5회 | 5회 모두 같은 결과·같은 행동 기록. 참여 불가 확정 3 / 미확정 11 / 안전 위반 0 |
+| 합성 E2E 오프라인 | 병합 전 5회·PR #53 8afe5ea 병합 뒤 3회, 각각 모두 같은 결과·같은 행동 기록. 병합 뒤 참여 불가 확정 4 / 미확정 10 / 안전 위반 0 (병합 전 3 / 11, 차이는 PR #56의 SYN-04 T-C) |
 | 서류 확인·의사 판단 경로 | `followup_verification_flow.py` 28개 점검 통과. 판단 요청에 revision이 없으면 428, 다르면 409, 맞으면 200(F-03). 거절된 요청은 판정·revision을 바꾸지 않음 |
 | 환자 질문 흐름 | `followup_demo_flow.py` 종료 코드 0, 재시작 2회 |
 | 정책 비교 (NSCLC 파일럿, 30·90·400분, seed 1) | dcvc 확정 부적격 6·8·8, no_bundles 2·4·14, 기준선 0, 거짓 확정 0 (dba06d9와 같음) |
