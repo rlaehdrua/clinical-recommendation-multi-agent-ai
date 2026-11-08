@@ -109,6 +109,7 @@ function setRole(role, push) {
   document.querySelector(".app").classList.toggle("wide", staff);
   if (staff) PATIENT_MAINS.forEach(s => { q$(s).hidden = true; });
   else if (typeof showPage === "function") showPage((typeof state === "object" && state.page) || "run");
+  if (!staff && typeof window.fuRefresh === "function") window.fuRefresh(false);  // 환자 화면으로 돌아오면 바로 다시 확인
   if (push) history.replaceState(null, "", staff ? "/staff" : "/");
   if (staff && !S.key && !S.demo) q$("#st-key").focus();
   if (staff && (S.key || S.demo)) loadAll().catch(() => {});

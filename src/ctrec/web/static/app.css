@@ -78,7 +78,7 @@ main { padding: 12px 20px 40px; display: flex; flex-direction: column; gap: 12px
 .h3 { font-size: 17px; font-weight: 700; margin: 0 0 8px; } .h3.big { font-size: 19px; margin: 4px 0 0; }
 .note { border-radius: 16px; padding: 14px 16px; font-size: 14px; line-height: 1.55; background: var(--panel); color: var(--body); }
 .note.warn { background: var(--warn-soft); color: var(--warn); } .note.bad { background: var(--bad-soft); color: var(--bad); }
-.note.info { background: var(--panel-3); } .note.ok { background: var(--ok-soft); color: var(--ok); } .note.soft { background: var(--panel-2); }
+.note.info { background: var(--panel-3); } .note.demo-next { background: var(--accent-soft); margin-top: 10px; } .note.ok { background: var(--ok-soft); color: var(--ok); } .note.soft { background: var(--panel-2); }
 .note b { font-weight: 700; color: var(--text); }
 .btn { border: 0; background: var(--accent-btn); color: var(--on-accent); font: inherit; font-size: 17px; font-weight: 700; padding: 0 18px; border-radius: 16px; cursor: pointer; min-height: 56px;
   transition: background-color .1s, transform .1s; }
