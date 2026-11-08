@@ -32,7 +32,7 @@ const fuItem = (k) => FU_ITEM[k] || (String(k || "").startsWith("lab:") ? "피 �
 const fuShownAnswer = (x) => { const a = String((x.response || {}).answer || ""); const m = FU_EASY[x.info_key] && a.match(/\(([^)]+)\)\s*$/); return m ? m[1] : a; };
 const FU_WORK = { requires_document: ["연구진이 서류로 확인하고 있어요", "warn"], document_verified: ["서류 확인 끝", "ok"],
   document_unavailable: ["서류를 구하지 못했어요", ""], requires_clinician: ["의사 선생님이 판단하고 있어요", "warn"],
-  clinician_decided: ["의사 판단 끝", "ok"] };
+  clinician_decided: ["의사 판단 끝", "ok"], on_hold: ["더 확인할 방법이 없어 보류했어요", ""] };
 const fuGet = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
 const fuSet = (k, v) => { try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (e) { /* 저장소 없음 */ } };
 const fuUrl = (path) => `/api/followup/cases/${encodeURIComponent(fu.caseId)}${path || ""}`;

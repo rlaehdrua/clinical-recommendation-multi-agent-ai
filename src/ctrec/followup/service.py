@@ -62,6 +62,9 @@ from .models import (ACTION_ROUTES, FORMAT, OPEN_STATUSES, PATIENT_KINDS, STAFF_
                      FollowupRequest, FollowupResponse, PatientQuestion, StatusEvent)
 from .store import CaseStore, new_case_id
 
+# 남은 정보원이 없어 시스템이 만든 임상 검토 (_route_after_failure·_conflict_to_clinician). 대상 기준이 임상의 판단 기준이
+# 아니면 판단 API로 끝낼 수 없고(judgeable=False), 쌍은 보류로 남음. 화면은 '의사 판단 대기'가 아니라 '확인할 방법 없음'으로 보여 줌
+NO_PATH_REASONS = frozenset({"item_sources_exhausted", "conflict_unresolved"})
 CLOSED_PAIRS = frozenset({PairStatus.CONFIRMED_ELIGIBLE.value, PairStatus.CONFIRMED_INELIGIBLE.value,
                           PairStatus.NOT_EVALUATED.value})
 DECLINED = "모름"
@@ -1303,7 +1306,10 @@ class FollowupService:
                 item["response"] = {"outcome": x["outcome"], "answer": x["answer"], "at": x["at"]}
             out.append(item)
         # 연구진이 서류·의사 판단으로 확인 중인 것 (환자가 할 일은 없음): 종류·항목·상태만, 값·문서·판단 내용은 넣지 않음
-        work = [{"kind": r["kind"], "info_key": r.get("info_key"), "status": r["status"]} for r in data["requests"]
+        # 확인할 방법이 없어 멈춘 임상 검토는 '의사가 판단 중'이 아니라 on_hold로 (환자에게 기다리라고 하지 않음)
+        work = [{"kind": r["kind"], "info_key": r.get("info_key"),
+                 "status": "on_hold" if r["status"] == "requires_clinician" and r.get("reason_code") in NO_PATH_REASONS
+                 else r["status"]} for r in data["requests"]
                 if r["kind"] not in PATIENT_KINDS and r["status"] not in ("superseded", "cancelled")]
         return {"case_id": case_id, "revision": data["revision"], "requests": out,
                 "pending": sum(1 for x in out if x["answerable"]), "in_progress": work}
