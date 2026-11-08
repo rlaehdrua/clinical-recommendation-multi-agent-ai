@@ -142,6 +142,10 @@ async function fuLoadRequests() {
       <div class="row mt8"><button class="btn sm" type="button" data-fu-send="1">답변 보내기</button>
         <button class="btn ghost sm" type="button" data-fu-unknown="1">모르겠어요</button></div>
       <div class="err" role="alert"></div></div>`).join("");
+  // 발표용 데모: 서류 확인·의사 판단은 연구 담당자 화면에서 해야 진행됨 (환자 화면만 보면 멈춘 것처럼 보임)
+  if (fu.demo && work.some(w => FU_WORK[w.status] && FU_WORK[w.status][1] === "warn"))
+    html += `<div class="note demo-next"><b>발표용 데모</b> · 다음 단계는 연구진 쪽에서 해요. 위의 <b>'연구 담당자'</b>에서 '서류 확인 끝'·'의사 판단 끝'을 누르고 돌아오면 이 화면이 바로 바뀌어요.
+      <div class="row mt8"><button class="btn sm" type="button" data-fu-go-staff="1">연구 담당자 화면으로 가기</button></div></div>`;
   if (work.length) html += `<div class="fu-work"><p class="m0"><b>연구진이 하고 있는 일</b> <span class="hint">(환자분이 하실 일은 없어요)</span></p><ul>
     ${work.map(w => { const [t, c] = FU_WORK[w.status] || [w.status, ""]; return `<li>${esc(fuItem(w.info_key))} <span class="badge ${c}">${esc(t)}</span></li>`; }).join("")}</ul></div>`;
   if (done.length) html += `<details class="more"${open.length ? "" : " open"}><summary>지난 요청 ${done.length}건</summary><div class="stack mt8">${done.map(x => {
@@ -202,10 +206,16 @@ window.fuInit = async function () {
   fuOnMode();  // 데모 기본 경로 = 연구진 확인 요청 (/api/followup). 바로 분석(/api/runs)은 선택 사항
   $("#fu-refresh").addEventListener("click", () => fuRefresh(true));
   $("#fu-body").addEventListener("click", (e) => {
+    if (e.target.closest("[data-fu-go-staff]")) { const b = document.querySelector('#roles button[data-role="staff"]'); if (b) b.click(); return; }
     const box = e.target.closest(".fu-req"); if (!box) return;
     if (e.target.closest("[data-fu-send]")) fuRespond(box, false);
     if (e.target.closest("[data-fu-unknown]")) fuRespond(box, true);
   });
+  // 다른 탭·연구 담당자 화면에서 돌아오면 20초 기다리지 않고 바로 다시 확인
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && fu.caseId && !fu.sending) fuRefresh(false); });
+  window.addEventListener("focus", () => { if (fu.caseId && !fu.sending) fuRefresh(false); });
+  fetch("/api/followup/staff/session").then(r => r.ok ? r.json() : null)
+    .then(d => { fu.demo = !!(d && d.mode === "demo" && (d.demo_roles || []).length); }).catch(() => {});
   const saved = fuGet(FU_KEY);
   if (!saved) return false;
   fu.caseId = saved;
