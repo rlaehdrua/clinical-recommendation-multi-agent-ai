@@ -115,6 +115,7 @@ def _minutes_to(curve: list[dict], n: int) -> float | None:
 
 def insight(svc: FollowupService) -> dict:
     states, ops, case_of, requested, prop_of, req_of = {}, {}, {}, [], {}, {}
+    gate = {"unproven": set(), "no_basis": {}}  # V4-B1: 사례마다 따로 모아 성공한 사례만 합침 (F-17 격리)
 
     def one(data):  # refresh·복원을 포함한 사례별 본문 전체를 격리 (감사 F-17)
         data = svc.refresh_pairs(data)  # 사례 화면과 같은 지금 권한의 쌍 상태·제안 (저장값이 아니라)
@@ -123,6 +124,7 @@ def insight(svc: FollowupService) -> dict:
             view = svc._view(session)
             view.matched_versions = {t: view.snapshot.version for t in session.matches}
             ds = build_state(view)
+            g = svc._plan_gate(data, session)  # V4-B1 (그 사례의 _scope 안에서)
         state = {"ds": ds, "trials": ds.trials, "status": {t: p["status"] for t, p in data["current"]["pairs"].items()}}
         props: dict = {}
         for p in data["current"]["proposals"]:  # 제안 id마다 첫 제안 (아래 항목의 requestable·preview)
@@ -130,10 +132,12 @@ def insight(svc: FollowupService) -> dict:
         reqs: dict = {}
         for r in data["requests"]:
             reqs.setdefault(r.get("proposal_id"), (r["request_id"], r["status"]))
-        return data, state, codec.load_ops(data["ops"]), props, reqs
+        return data, state, codec.load_ops(data["ops"]), props, reqs, g
 
     done, unreadable = svc.each_readable_case(one)
-    for data, state, op, props, reqs in done:
+    for data, state, op, props, reqs, g in done:
+        gate["unproven"] |= g["unproven"]
+        gate["no_basis"].update(g["no_basis"])
         alias = data["alias"]
         states[alias] = state
         ops[alias] = op
@@ -144,7 +148,7 @@ def insight(svc: FollowupService) -> dict:
         return {"questions": [], "summary": {"cases": 0}, "unreadable": unreadable}
     co = CohortState.from_decision_states({a: s["ds"] for a, s in states.items()}, ops=ops)
     pol = svc.policy_factory()
-    plan = svc._plan(co, requested)
+    plan = svc._plan(co, requested, gate)
     created = sorted(case_of, key=lambda a: (case_of[a]["created_at"], case_of[a]["case_id"]))
 
     items = []
