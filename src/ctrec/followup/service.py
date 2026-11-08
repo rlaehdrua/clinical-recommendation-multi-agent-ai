@@ -997,12 +997,19 @@ class FollowupService:
                     lines.append(line + (f" ({lab.date})" if lab.date else ""))
                     lab = lab.model_copy(update={"source_quote": line})
                     labs = [x for x in labs if x.name.casefold() != lab.name.casefold()] + [lab]
+            # 나이·ECOG·성별도 검사값처럼 확인 줄을 붙임: Matcher는 프로필 구조화 값이 원문(최초 입력·답변)에 적혀 있는지로
+            # 출처를 정하므로, 줄이 없으면 문서로 기록한 값이 '출처 불명'으로 남아 해제 경로(release)를 타지 못했음
             elif name == "age" and proj.age_value is not None:
                 update.update(age=proj.age, age_value=proj.age_value, age_unit=proj.age_unit)
-            elif name in ("ecog", "primary_diagnosis", "disease_stage") and getattr(proj, name) is not None:
+                lines.append(f"Age {proj.age_value:g} {proj.age_unit or 'years'}")
+            elif name == "ecog" and proj.ecog is not None:
+                update["ecog"] = proj.ecog
+                lines.append(f"ECOG {proj.ecog}")
+            elif name in ("primary_diagnosis", "disease_stage") and getattr(proj, name) is not None:
                 update[name] = getattr(proj, name)
             elif name == "sex" and proj.sex != "unknown":
                 update["sex"] = proj.sex
+                lines.append(f"Sex {proj.sex}")
         update["labs"] = labs
         session.profile = prof.model_copy(update=update)
         if lines:
