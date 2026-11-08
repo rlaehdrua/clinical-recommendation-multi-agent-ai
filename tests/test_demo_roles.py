@@ -128,6 +128,8 @@ def test_exhausted_lab_review_is_shown_as_on_hold_not_waiting_for_a_clinician(en
     listed = c.get("/api/followup/staff/cases", headers=D.STAFF).json()["cases"]
     counts = next(x for x in listed if x["case_id"] == cid)["open_by_status"]
     assert counts.get("on_hold") == 1 and "requires_clinician" not in counts
+    row = next(x for x in listed if x["case_id"] == cid)
+    assert row["open_requests"] == sum(v for k, v in counts.items() if k != "on_hold")  # 보류는 진행 중인 요청 수에서 빠짐
     work = patient.get(f"/api/followup/cases/{cid}/requests").json()["in_progress"]
     assert {"kind": "clinician_review", "info_key": "lab:platelets", "status": "on_hold"} in work
     assert not any(w["status"] == "requires_clinician" for w in work)

@@ -394,8 +394,9 @@ def staff_cases(request: Request) -> dict:
         d = svc.refresh_pairs(d)  # 사례 화면과 같은 쌍 상태 (권한이 바뀌면 저장값이 아니라 지금 권한 기준)
         return {"case_id": cid, "created_at": d["created_at"], "revision": d["revision"],
                 "synthetic": d["synthetic"], "pair_counts": _pair_counts(d["current"]["pairs"]),
-                "open_requests": sum(1 for r in d["requests"] if r["status"] in ("pending", "requires_document",
-                                                                                 "requires_clinician")),
+                # 진행 중인 요청 수 (화면 요약). 확인할 방법이 없어 멈춘 임상 검토(on_hold)는 할 일이 아니므로 빼고 셈
+                "open_requests": sum(1 for r in d["requests"] if _open_state(r) in ("pending", "requires_document",
+                                                                                    "requires_clinician")),
                 # 열린 요청을 상태별로 (화면의 '지금 할 일' 안내용): 환자 답 대기 / 서류 대기 / 의사 판단 대기.
                 # 확인할 방법이 없어 멈춘 임상 검토(NO_PATH_REASONS)는 할 일이 아니라 on_hold로 따로 셈
                 "open_by_status": {s: n for s in ("pending", "requires_document", "requires_clinician", "on_hold")
