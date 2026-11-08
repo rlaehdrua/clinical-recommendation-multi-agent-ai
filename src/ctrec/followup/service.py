@@ -1290,25 +1290,63 @@ class FollowupService:
         good, bad = [], []
         for cid in self.store.case_ids():
             try:
-                good.append(self.store.load(cid))
-            except (ValueError, OSError) as e:  # JSONDecodeError는 ValueError
+                data = self.store.load(cid)
+                self._check_shape(data)  # JSON은 정상이지만 구조가 깨진 사례 (session·current 없음, requests: null)
+                good.append(data)
+            except (ValueError, OSError, TypeError) as e:  # JSONDecodeError는 ValueError
                 log.warning("followup case unreadable: %s (%s)", cid, type(e).__name__)
                 bad.append(cid)
         return good, bad
 
+    @staticmethod
+    def _check_shape(data: dict) -> None:
+        """목록·대기열이 사례마다 기대는 구조 (감사 F-17). 어긋나면 TypeError (메시지에 내용 없음)."""
+        for key, typ in (("session", dict), ("current", dict), ("requests", list), ("alias", str)):
+            if not isinstance(data.get(key), typ):
+                raise TypeError(key)
+        if "ops" not in data or not isinstance(data["current"].get("pairs"), dict) \
+                or not isinstance(data["current"].get("proposals"), list):
+            raise TypeError("current")
+        if not all(isinstance(r, dict) for r in data["requests"]):
+            raise TypeError("requests")
+
+    def each_readable_case(self, body: Callable[[dict], object]) -> tuple[list, list[str]]:
+        """읽을 수 있는 사례마다 body(data)를 부르고 (결과 목록, 읽지 못한 사례 id)를 돌려줌 (감사 F-17).
+
+        복원·권한 범위·refresh를 포함한 사례별 본문 전체를 사례 단위로 격리: 한 사례에서 예외가 나면 그 사례만 빼고
+        id를 unreadable에 더함. 기록은 사례 id와 예외 종류만 (원문·예외 메시지 없음)."""
+        cases, bad = self.readable_cases()
+        out = []
+        for data in cases:
+            try:
+                out.append(body(data))
+            except Exception as e:  # noqa: BLE001 - 사례 하나가 목록 전체를 500으로 만들지 않게
+                log.warning("followup case unreadable: %s (%s)", data["case_id"], type(e).__name__)
+                bad.append(data["case_id"])
+        return out, bad
+
     def staff_queue(self) -> dict:
         """모든 열린 사례를 한 코호트로 보고 DCV+C가 고른 순서 (Cohort C 우선순위). 판정은 바꾸지 않음."""
-        states, ops, case_of, requested, sessions = {}, {}, {}, [], {}
-        cases, unreadable = self.readable_cases()
-        for data in cases:
+        states, ops, case_of, requested, sessions, req_of = {}, {}, {}, [], {}, {}
+
+        def one(data):
             session = self._restore(data)
             with self._scope(data, session):  # 사례마다 그 사례의 권한으로 (다른 사례의 증명·판단은 무효)
                 view = self._view(session)
                 view.matched_versions = {t: view.snapshot.version for t in session.matches}
-                states[data["alias"]] = build_state(view)
-            ops[data["alias"]] = codec.load_ops(data["ops"])
+                state = build_state(view)
+            reqs: dict = {}
+            for r in data["requests"]:  # 제안마다 첫 요청 (아래 항목의 request_id·status)
+                reqs.setdefault(r.get("proposal_id"), (r["request_id"], r["status"]))
+            return data, session, state, codec.load_ops(data["ops"]), reqs
+
+        done, unreadable = self.each_readable_case(one)
+        for data, session, state, op, reqs in done:
+            states[data["alias"]] = state
+            ops[data["alias"]] = op
             case_of[data["alias"]] = data
             sessions[data["alias"]] = session
+            req_of[data["alias"]] = reqs
             requested += data["requests"]
         if not states:
             return {"items": [], "unreadable": unreadable}
@@ -1317,12 +1355,12 @@ class FollowupService:
         items = []
         for rank, a in enumerate(plan.selected, 1):
             data = case_of[a.patient_alias]
-            req = next((r for r in data["requests"] if r.get("proposal_id") == a.action_id), None)
+            req = req_of[a.patient_alias].get(a.action_id)
             route = self._route(a)
             items.append({"rank": rank, "case_id": data["case_id"], "proposal_id": a.action_id,
                           "action_type": a.action_type, "route": route[0] if route else None,
                           "source_id": a.source_id, "info_key": a.info_key, "target_criteria": list(a.target_criteria),
                           "reason_code": a.reason_code, "safety_required": a.safety_required,
-                          "request_id": req["request_id"] if req else None,
-                          "request_status": req["status"] if req else None})
+                          "request_id": req[0] if req else None,
+                          "request_status": req[1] if req else None})
         return {"items": items, "cases": len(states), "unreadable": unreadable}

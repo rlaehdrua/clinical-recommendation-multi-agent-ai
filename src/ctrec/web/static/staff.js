@@ -159,7 +159,9 @@ async function loadAll() {
   S.cases = list;
   renderSummary(ins.summary, list);
   renderQuestions();
-  renderCases(list);
+  // 읽지 못한 사례(손상된 사례 파일)는 목록에서 빠지므로 조용히 사라지지 않게 개수를 알림 (감사 F-17)
+  const unreadable = new Set([cases, queue, ins].flatMap(x => (x && x.unreadable) || []));
+  renderCases(list, unreadable.size);
   renderQueue(queue);
 }
 async function poll() {
@@ -309,14 +311,15 @@ function sendGroup(box) {
 }
 
 // ------------------------------------------------------------ ② 서류·판단 처리 (환자별)
-function renderCases(list) {
-  q$("#st-cases").innerHTML = [...list].map(c => {
+function renderCases(list, unreadable) {
+  const notice = unreadable ? `<div class="note warn" role="status">읽지 못한 사례 ${h(unreadable)}건: 사례 기록이 손상되어 목록에서 빠졌어요. 관리자에게 알려 주세요.</div>` : "";
+  q$("#st-cases").innerHTML = notice + ([...list].map(c => {
     const o = c.open_by_status || {}, todo = (o.requires_document || 0) + (o.requires_clinician || 0);
     return `<button class="case-item${c.case_id === S.caseId ? " on" : ""}" type="button" data-case="${h(c.case_id)}">
       <span class="cid">${h(who(c.case_id))}</span> ${c.synthetic ? '<span class="badge demo">가상</span>' : ""}
       ${todo ? `<span class="badge warn">할 일 ${h(todo)}</span>` : o.pending ? `<span class="badge accent">환자 답 기다림</span>` : ""}<br>
       ${Object.entries(c.pair_counts || {}).map(([k, n]) => `${badge(PAIR, k)} ${h(n)}`).join(" ")}</button>`;
-  }).join("") || '<div class="empty">아직 환자가 없어요.</div>';
+  }).join("") || (unreadable ? "" : '<div class="empty">아직 환자가 없어요.</div>'));
 }
 async function openCase(id, focus) {
   S.caseId = id; tab("c");
