@@ -65,6 +65,37 @@ def test_approximate_age_or_ecog_in_the_record_is_held(field, value, text):
     assert vg.ground(field, value, text) == H, text
 
 
+# ----------------------------------------------------------------------------- 택일 값
+@pytest.mark.parametrize("field,value,text,status", [
+    ("hemoglobin", 12, "Hb 12 or 12.5 g/dL", H),
+    ("hemoglobin", 12.5, "Hb 12 or 12.5 g/dL", U),  # 뒤쪽 값은 검사명에 연결되지 않음
+    ("hemoglobin", 12, "Hb 12 g/dL or 12.5 g/dL", H),
+    ("hemoglobin", 12, "혈색소 12 또는 13", H),
+    ("hemoglobin", 12, "혈색소 12~13", U),  # 범위는 기존대로 값이 아님
+    ("hemoglobin", 10, "Hb 10 or 11 g/dL", H),
+    ("hemoglobin", 11, "Hb 10 or 11 g/dL", U),
+])
+def test_alternative_lab_value_is_held(field, value, text, status):
+    assert lab(field, value, text) == status, text
+
+
+@pytest.mark.parametrize("field,value,text,status", [
+    ("age", 67, "Self-reported age 67 or 68; no ID available.", H),
+    ("age", 68, "67 or 68 years old", H),
+    ("age", 67, "나이 67~68세", H),
+    ("age", 67, "Age 67-68.", H),
+    ("age", 67, "67 또는 68세", U),
+    ("ecog", 1, "ECOG 1 or 2", H),
+])
+def test_alternative_age_or_ecog_in_the_record_is_held(field, value, text, status):
+    assert vg.ground(field, value, text) == status, text
+
+
+def test_alternative_age_does_not_confirm_eligible(run):
+    held(run("폐암 환자. Self-reported age 67 or 68.", [AGE], prof(age=67)))
+
+
+# ----------------------------------------------------------------------------- 정상 값 (대조)
 @pytest.mark.parametrize("field,value,text,unit", [
     ("hemoglobin", 12.1, "Hb 12.1 g/dL (2026-10-01)", "g/dL"),
     ("hemoglobin", 10.5, "Hb 10.5 g/dL - 2026-11-05 CBC.", "g/dL"),

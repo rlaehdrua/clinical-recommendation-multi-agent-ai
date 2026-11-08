@@ -506,9 +506,22 @@ def _approximate(body: str, lo: int, hi: int) -> bool:
                 or _APPROX_AFTER.match(body, hi))
 
 
+# P0-B (택일 값): 값 바로 앞뒤가 다른 수치와의 택일·범위이면 어느 값인지 정해지지 않음. "12 or 12.5", "12~13", "67 또는 68세"
+# 참고 범위 "(ref 12-16)"의 수치는 값으로 연결되지 않고(_NOT_A_VALUE), 값 뒤 날짜 "12.0 g/dL ~ 2026-11-06"은 택일이 아님
+_ALT_WORD = r"\bor\b|또는|혹은|아니면|내지"
+_ALT_LINK = rf"\s*(?:세|살)?\s*(?:{_ALT_WORD}|\bto\b|이나|에서)\s*|\s*[~～]\s*"
+_ALTERNATIVE_AFTER = re.compile(rf"(?:{_ALT_LINK}|[-–]|\s*{_UNIT}\s*(?:{_ALT_WORD})\s*)(?=\d)(?!\d{{4}}[-./])", re.IGNORECASE)
+_ALTERNATIVE_BEFORE = re.compile(rf"\d(?:\s*{_UNIT})?(?:{_ALT_LINK}|[-–])$", re.IGNORECASE)
+
+
+def _alternative(body: str, lo: int, hi: int) -> bool:
+    head = _scope(body, lo, hi)[1]
+    return bool(_ALTERNATIVE_AFTER.match(body, hi) or _ALTERNATIVE_BEFORE.search(head))
+
+
 def _record_uncertain(field: str, body: str, lo: int, hi: int) -> bool:
-    """P0-B: 확정된 직접 측정 사실로 쓸 수 없는 값인가 (근사·추측)."""
-    return field != "sex" and _approximate(body, lo, hi)
+    """P0-B: 확정된 직접 측정 사실로 쓸 수 없는 값인가 (근사·추측·택일)."""
+    return field != "sex" and (_approximate(body, lo, hi) or _alternative(body, lo, hi))
 
 
 def _usable_answers(source_text: str, qa) -> list[ed.Segment]:
