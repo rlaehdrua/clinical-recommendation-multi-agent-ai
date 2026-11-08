@@ -227,12 +227,12 @@ function renderSummary(s, list) {
       <div class="num"><span>하나씩 따로 하면</span><b>${h(min(remAlone))}</b></div>
       <div class="arrow" aria-hidden="true">→</div>
       <div class="num accent"><span>환자마다 같은 서류로 묶으면</span><b>${h(min(remMin))}</b></div>
-      <div class="num ok"><span>줄어드는 시간</span><b>${h(min(saved))}</b><em>${h(pct)}% 절약</em></div></div>`
+      <div class="num ok"><span>줄어드는 시간</span><b>${h(min(saved))}</b><em>${h(pct)}% 절약 · 가정된 활동시간 기준</em></div></div>`
       : sentAlone > s.spent_minutes ? `<div class="hero-nums" aria-label="보낸 요청의 예상 시간">
       <div class="num"><span>보낸 요청을 하나씩 했다면</span><b>${h(min(sentAlone))}</b></div>
       <div class="arrow" aria-hidden="true">→</div>
       <div class="num accent"><span>환자마다 같은 서류로 묶어 보낸 시간</span><b>${h(min(s.spent_minutes))}</b></div>
-      <div class="num ok"><span>줄어든 시간</span><b>${h(min(sentAlone - s.spent_minutes))}</b><em>${h(Math.round(100 * (sentAlone - s.spent_minutes) / sentAlone))}% 절약</em></div></div>
+      <div class="num ok"><span>줄어든 시간</span><b>${h(min(sentAlone - s.spent_minutes))}</b><em>${h(Math.round(100 * (sentAlone - s.spent_minutes) / sentAlone))}% 절약 · 가정된 활동시간 기준</em></div></div>
       <p class="m0">보낼 질문을 모두 보냈어요.</p>`
       : `<p class="m0">보낼 질문을 모두 보냈어요. 지금까지 보낸 요청의 예상 시간 ${h(min(s.spent_minutes))}.</p>`}
     <p class="hint m0">환자 ${h(s.cases)}명 · 남은 확인 ${h(rem.length)}건 · 진행 중인 요청 ${h(open)}건 · 결과: 참여 가능(확정) ${h(pc("CONFIRMED_ELIGIBLE"))} · 참여 불가(확정) ${h(pc("CONFIRMED_INELIGIBLE"))} / 전체 ${h(all)}개 시험
@@ -323,7 +323,7 @@ function renderPickBar() {
   if (!n) { bar.innerHTML = `<p class="m0 hint">질문을 고르면 함께 보낼 때의 예상 시간이 여기에 나와요.</p>${S.sendMsg ? `<span class="err ok-msg" role="status">${h(S.sendMsg)}</span>` : ""}`; return; }
   const saved = e ? Math.max(0, e.minutes_alone - e.minutes) : 0, gain = e ? Math.max(0, e.decidable_pairs - e.decidable_pairs_before) : 0;
   bar.innerHTML = `<div class="pick-sum"><b>고른 질문 ${h(n)}개</b>
-      ${e ? `<span>함께 보내면 <b>${h(min(e.minutes))}</b></span>${saved ? `<span class="hint">하나씩 하면 ${h(min(e.minutes_alone))}</span><span class="good"><b>${h(min(saved))} 절약</b></span>` : ""}
+      ${e ? `<span>함께 보내면 <b>${h(min(e.minutes))}</b></span>${saved ? `<span class="hint">하나씩 하면 ${h(min(e.minutes_alone))}</span><span class="good"><b>${h(min(saved))} 절약</b> <span class="hint">(가정된 활동시간 기준)</span></span>` : ""}
       <span>결과가 나올 수 있는 시험 <b>+${h(gain)}개</b> <span class="hint">(최대)</span></span>` : '<span class="hint">계산 중…</span>'}</div>
     <button class="btn" type="button" data-send-picked="1">고른 질문 보내기 (${h(pickedList().length)}건)</button>
     <span class="err" id="st-qerr" role="alert">${h(S.sendMsg || "")}</span>`;
