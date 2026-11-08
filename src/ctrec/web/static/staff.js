@@ -620,8 +620,10 @@ async function doWork(btn) {
       await afterWork(box.dataset.rid, `의사 판단 끝. ${transText(out.transitions) || "아직 다른 확인이 남아 있어서 결과는 그대로예요."}`); return;
     }
   } catch (e) {
-    if (msg) msg.textContent = e.code === "stale_revision" ? "그 사이 내용이 바뀌었어요. 다시 눌러 주세요." : e.message;
-    if (e.code === "stale_revision") await openCase(S.caseId);
+    // stale_revision(409)·revision_required(428, F-03): 화면을 새로 받아 지금 revision으로 다시 누르게 함
+    const stale = e.code === "stale_revision" || e.code === "revision_required";
+    if (msg) msg.textContent = stale ? "그 사이 내용이 바뀌었어요. 화면을 새로 불러왔으니 다시 눌러 주세요." : e.message;
+    if (stale) await openCase(S.caseId);
   } finally { S.busy = false; btn.disabled = false; }
 }
 
