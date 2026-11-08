@@ -9,9 +9,12 @@
   서명 비밀(CTREC_SYNTHETIC_SIGNING_SECRET)을 고정하지 않으면 재시작할 때마다 바뀌어 이전 증명·판단이 인정되지 않음.
   계약: docs/dev/document_clinician_api_contract.md
   --demo-staff: 발표용. 이 서버(루프백 전용)에서는 담당자 탭이 키 없이 바로 열림 (followup_api.DEMO_STAFF).
+- --seed-demo: 발표용. 저장소가 비어 있으면 합성 NSCLC 환자 6명(ctrec.sim.demo SYN-01~06, 공개 사실만)을 신청된 상태로 넣음.
+  연구진 화면이 처음부터 여러 환자를 함께 보도록 (한 명씩 신청하지 않음). 같은 순서·같은 글이라 녹화마다 숫자가 같음.
+  미리 넣은 환자는 환자 화면 쿠키가 없어 환자로서 답할 수 없으므로, 환자 질문 장면은 환자 탭에서 한 명을 직접 신청해서 보여 줌.
 
 실행:
-    python scripts/followup_demo_server.py --port 8010 [--demo-staff]
+    python scripts/followup_demo_server.py --port 8010 [--demo-staff] [--seed-demo]
     # 환자 화면: POST http://127.0.0.1:8010/api/followup/cases  (X-CTREC-Request: 1)
     # 담당자:    GET  http://127.0.0.1:8010/api/followup/staff/cases  (X-CTREC-Staff-Key: <키>)
 계약: docs/dev/followup_api_contract.md
@@ -79,6 +82,44 @@ def synthetic_catalog() -> TrialCatalog:
                         parsed={t.parsed.trial_id: t.parsed for t in st})
 
 
+SEED_TRIALS = ["T-A", "T-B", "T-C", "T-D"]
+
+
+def seed_texts() -> list[tuple[str, str]]:
+    """sim.demo 코호트(SYN-01~06)의 공개 사실만으로 쓴 소개글 (숨긴 값은 넣지 않음, 오프라인 대역이 읽는 영어 표기).
+
+    미리 넣은 환자는 환자로서 답할 수 없으므로, 환자가 알 수 있는 ECOG가 공개 사실에 없으면 정답 값을 자기 보고로 적음
+    (환자 질문 대신 서류 확인 장면이 되도록). 검사 수치·유전자 등 서류가 필요한 값은 넣지 않음."""
+    from ctrec.sim import documents as D
+    co = demo.cohort()
+    out = []
+    for p in co.patients:
+        items = [D.DocItem(f.field, f.value, f.unit, f.observed_at, "self_report" if f.source_type == "self_report" else "normal")
+                 for f in p.public]
+        if not any(i.field == "ecog" for i in items):
+            ecog = next((f for f in co.oracle.truth[p.key] if f.field == "ecog"), None)
+            if ecog is not None:
+                items.append(D.DocItem("ecog", ecog.value, None, None, "self_report"))
+        out.append((p.key, D.template_narrative(items, set())))
+    return out
+
+
+def seed_demo(svc: FollowupService, gap: float = 1.05) -> int:
+    """저장소가 비어 있을 때만 합성 환자를 순서대로 신청 상태로 넣음 (다시 켜도 중복되지 않음). 넣은 수."""
+    import time
+
+    from ctrec.web import access
+    if svc.store.case_ids():
+        return 0
+    texts = seed_texts()
+    for i, (_, text) in enumerate(texts):
+        if i:
+            time.sleep(gap)  # 신청 시각(초 단위)이 달라야 연구진 화면의 환자 번호·순서가 매번 같음
+        svc.create_case(patient_text=text, trial_ids=SEED_TRIALS, input_source="self_report",
+                        patient_token_digest=access.digest(access.new_token()), synthetic=True)
+    return len(texts)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--host", default="127.0.0.1")
@@ -87,6 +128,7 @@ def main() -> None:
     ap.add_argument("--synthetic-verification", action="store_true",
                     help="합성 시험 전용 문서 검증자·임상의 권한을 켬 (키가 환경 변수에 없으면 새로 만듦)")
     ap.add_argument("--demo-staff", action="store_true", help="발표용: 담당자 키 없이 담당자 탭을 엶 (루프백 접속만)")
+    ap.add_argument("--seed-demo", action="store_true", help="발표용: 저장소가 비어 있으면 합성 NSCLC 환자 6명을 미리 넣음")
     args = ap.parse_args()
     if args.host not in ("127.0.0.1", "::1", "localhost"):
         sys.exit("오프라인 데모 서버는 루프백 주소에서만 실행합니다.")
@@ -108,7 +150,11 @@ def main() -> None:
     env = qe.OfflineEnvironment(3).__enter__()  # 프로세스가 끝날 때까지 실제 LLM 호출 차단
     pipeline.patient_profiler.profile_patient = latest_mention_profiler
     web.TEST_LLM_BACKEND = "fake"  # 대역만 설치된 프로세스: 실제 호출 허가 게이트 대신 (환경 변수로는 켤 수 없음)
-    followup_api.configure(FollowupService(CaseStore(args.store), synthetic_catalog()))
+    svc = FollowupService(CaseStore(args.store), synthetic_catalog())
+    followup_api.configure(svc)
+    if args.seed_demo:
+        n = seed_demo(svc)
+        print(f"발표용 합성 환자 {n}명을 미리 넣었습니다." if n else "저장소에 사례가 있어 합성 환자를 다시 넣지 않았습니다.", flush=True)
     # 예시 사례 목록 맨 앞에 발표용 합성 NSCLC 환자를 더함 (이 프로세스에서만, 원래 예시 사례는 그 뒤에 그대로)
     global _ORIGINAL_PATIENTS
     _ORIGINAL_PATIENTS = web.list_patients
