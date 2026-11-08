@@ -57,17 +57,19 @@ def _called_paths(src: str, prefix: str) -> set[str]:
     """화면 코드의 API 경로 (템플릿 변수는 값 하나로 바꿔 실제 경로 모양으로)."""
     paths = set()
     for m in re.finditer(r"[`\"](/api/followup[^`\"]*)[`\"]", src):
-        if m.group(1) != "/api/followup/staff":  # api()가 앞에 붙이는 접두사 자체
+        if m.group(1) not in ("/api/followup/staff", "/api/followup"):  # api()·roleApi()가 앞에 붙이는 접두사 자체
             paths.add(re.sub(r"\$\{[^}]+\}", "X", m.group(1)))
     for m in re.finditer(r"(?:api|fuUrl)\(\s*[`\"]([^`\"]*)[`\"]", src):
         paths.add(prefix + re.sub(r"\$\{[^}]+\}", "X", m.group(1)))
+    for m in re.finditer(r"roleApi\(\s*\"\w+\",\s*[`\"]([^`\"]*)[`\"]", src):  # 검증자·임상의 (발표용 데모 역할)
+        paths.add("/api/followup" + re.sub(r"\$\{[^}]+\}", "X", m.group(1)))
     return paths
 
 
 def test_every_path_the_screens_call_exists():
     routes = _routes()
     called = _called_paths(_js("followup.js"), "/api/followup/cases/X") | _called_paths(_js("staff.js"), "/api/followup/staff")
-    assert called
+    assert called and any(p.startswith("/api/followup/verifier/") for p in called) and any(p.startswith("/api/followup/clinician/") for p in called)
     missing = [p for p in called if not any(rx.match(p) for _, rx in routes)]
     assert not missing, missing
 

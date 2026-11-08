@@ -6,6 +6,9 @@
   환자 질문은 진료 기록이 필요한 기준(required_evidence=clinical_record)을 정하지 못하므로 그런 쌍은 세지 않음
 - 예상 코디네이터 분: 비용 원장(EffortLedger) 그대로 - 같은 환자·같은 정보원 연락은 한 번만 청구되므로 계획 순서의 추가 비용
 그리고 계획 전체를 추천 순서(C)대로 할 때와 환자 순서대로 할 때, 같은 수의 쌍이 정해지기까지 걸리는 분을 비교합니다.
+- 따로 요청할 때의 분(minutes_alone): 같은 확인을 다른 확인과 묶지 않고 하나만 요청할 때의 원장 비용. 계획의 추가 비용과의 차이가
+  같은 환자·같은 정보원(예: 검사 결과지 한 장)으로 묶어서 줄어든 연락 비용입니다 (DCV 번들, 같은 가정 비용)
+- 보낸 요청의 분(spent_minutes): 지금까지 보낸 요청을 같은 원장으로 청구한 값 (실제 측정 시간이 아님)
 
 해석: 판정 '가능' 수는 답이 실제로 나온다고 볼 때의 상한이며(모름·연락 불가·상충이면 정해지지 않음), 분은 엔진 카탈로그의
 가정 비용입니다. 판정 규칙은 여기 없고 decision_state·정책 엔진 결과를 읽기만 합니다.
@@ -91,6 +94,21 @@ def _curve(items: list[dict], states: dict, catalog, pre_charged: list) -> list[
     return out
 
 
+def _alone(action, catalog) -> float:
+    """다른 확인과 묶지 않고 이것 하나만 요청할 때의 코디네이터 분 (새 원장)."""
+    cost, _ = EffortLedger(FOLLOWUP_BUDGET, catalog).charge(action)
+    return cost.coordinator_minutes
+
+
+def _spent(requested: list[dict], catalog) -> float:
+    ledger, total = EffortLedger(FOLLOWUP_BUDGET, catalog), 0.0
+    for r in requested:
+        if r.get("action") and r.get("created_by") != "system":
+            cost, _ = ledger.charge(Action.model_validate(r["action"]))
+            total += cost.coordinator_minutes
+    return round(total, 1)
+
+
 def _minutes_to(curve: list[dict], n: int) -> float | None:
     return next((p["minutes"] for p in curve if p["decided_pairs"] >= n), None)
 
@@ -126,6 +144,7 @@ def insight(svc: FollowupService) -> dict:
         prop = next((p for p in data["current"]["proposals"] if p["proposal_id"] == a.action_id), None)
         req = next((r for r in data["requests"] if r.get("proposal_id") == a.action_id), None)
         items.append({"rank": rank, "action": a, "alias": a.patient_alias, "case_id": data["case_id"], "route": route[0],
+                      "source_id": a.source_id,
                       "info_key": a.info_key, "action_type": a.action_type, "proposal_id": a.action_id,
                       "requestable": bool(prop and prop.get("requestable")),
                       "preview": prop.get("patient_question_preview") if prop else None,
@@ -138,16 +157,18 @@ def insight(svc: FollowupService) -> dict:
     for x, pt, prev in zip(items, c_curve, [{"minutes": 0.0, "decided_pairs": 0}] + c_curve[:-1]):
         x["minutes"] = round(pt["minutes"] - prev["minutes"], 1)
         x["newly_decided"] = pt["decided_pairs"] - prev["decided_pairs"]  # 추천 순서대로 할 때 이 확인에서 정해지는 쌍
+        x["minutes_alone"] = round(_alone(x["action"], pol.catalog), 1)
 
     groups: dict[tuple, dict] = {}
     for x in items:
         g = groups.setdefault((x["route"], x["info_key"]), {
             "route": x["route"], "info_key": x["info_key"], "action_type": x["action_type"], "best_rank": x["rank"],
+            "source_id": x["source_id"],
             "preview": None, "patients": []})
         g["preview"] = g["preview"] or x["preview"]
         imp = _impact(states, x["alias"], x["route"], x["info_key"])
         g["patients"].append({"case_id": x["case_id"], "proposal_id": x["proposal_id"], "rank": x["rank"],
-                              "minutes": x["minutes"], "related_trials": imp["related"], "decided_trials": imp["now"],
+                              "minutes": x["minutes"], "minutes_alone": x["minutes_alone"], "related_trials": imp["related"], "decided_trials": imp["now"],
                               "next_trials": imp["next"], "record_after_trials": imp["record_after"], "newly_decided_in_order": x["newly_decided"],
                               "requestable": x["requestable"], "request_id": x["request_id"],
                               "request_status": x["request_status"]})
@@ -162,6 +183,7 @@ def insight(svc: FollowupService) -> dict:
                  n_record_after_pairs=sum(len(p["record_after_trials"]) for p in ps),
                  n_newly_decided_in_order=sum(p["newly_decided_in_order"] for p in ps),
                  minutes=round(sum(p["minutes"] for p in ps), 1),
+                 minutes_alone=round(sum(p["minutes_alone"] for p in ps), 1),
                  n_open=len(todo), n_sendable=sum(1 for p in todo if p["requestable"]))
         out.append(g)
     out.sort(key=lambda g: g["best_rank"])
@@ -170,6 +192,8 @@ def insight(svc: FollowupService) -> dict:
     return {"questions": out, "summary": {
         "cases": len(states), "items": len(items),
         "minutes_all": c_curve[-1]["minutes"] if c_curve else 0.0, "decidable_pairs": total,
+        "minutes_all_alone": round(sum(x["minutes_alone"] for x in items), 1),
+        "spent_minutes": _spent(requested, pol.catalog),
         "milestones": [{"pairs": n, "c_order_minutes": _minutes_to(c_curve, n), "patient_order_minutes": _minutes_to(p_curve, n)}
                        for n in marks],
         "c_curve": c_curve, "patient_order_curve": p_curve,
