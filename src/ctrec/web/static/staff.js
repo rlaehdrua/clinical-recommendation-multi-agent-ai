@@ -462,6 +462,31 @@ function critFor(vr, fd) {
     : { age: /\bage\b|years? (old|of age)/i, ecog: /ecog|performance/i, sex: /\b(fe)?male\b|\bsex\b|wom[ae]n|\bmen\b/i }[fd];
   return (re && cs.find(c => re.test(c.text || ""))) || (cs.length === 1 ? cs[0] : null);
 }
+// 한 요청이 여러 시험의 기준을 함께 확인할 때(예: 혈소판 >= 75 / 100 / 150) 그 항목의 기준 전부
+function critsFor(vr, fd) {
+  const one = critFor(vr, fd); if (!one) return [];
+  const re = fd.startsWith("lab:") ? (LAB_RE[fd.slice(4).toLowerCase()] || new RegExp(escRe(fd.slice(4)), "i"))
+    : { age: /\bage\b|years? (old|of age)/i, ecog: /ecog|performance/i }[fd];
+  const all = re ? (vr.criteria || []).filter(c => re.test(c.text || "")) : [];
+  return all.length ? all : [one];
+}
+// 기준 문장 하나가 값 v로 충족되는가 (숫자 비교만, 모르면 null)
+function meets(c, v) {
+  const t = String((c && c.text) || ""), x = Number(v); if (isNaN(x)) return null;
+  const m = t.match(/(>=|<=|≥|≤|>|<)\s*(\d+(?:\.\d+)?)/), r = t.match(/(\d+(?:\.\d+)?)\s*[-–~]\s*(\d+(?:\.\d+)?)/);
+  let holds = null;
+  if (m) { const y = Number(m[2]); holds = { ">=": x >= y, "≥": x >= y, "<=": x <= y, "≤": x <= y, ">": x > y, "<": x < y }[m[1]]; }
+  else if (r) holds = x >= Number(r[1]) && x <= Number(r[2]);
+  return holds == null ? null : (c.kind === "exclusion" ? !holds : holds);
+}
+// '조건에 맞게'면 그 항목의 기준 전부를 충족하는 값, '안 맞게'면 전부 어기는 값 (없으면 가장 많이 맞추는/어기는 값)
+function demoValueAll(fd, vr, meet) {
+  const cs = critsFor(vr, fd); if (!cs.length) return "";
+  const cand = [...new Set(cs.flatMap(c => [demoValue(fd, c, true), demoValue(fd, c, false)]).filter(v => v !== ""))];
+  if (cand.length < 2 || cs.length < 2) return demoValue(fd, cs[0], meet);
+  const score = (v) => cs.reduce((n, c) => n + (meets(c, v) === meet ? 1 : 0), 0);
+  return cand.reduce((best, v) => score(v) > score(best) ? v : best, demoValue(fd, cs[0], meet));
+}
 const round = (x) => x >= 10 ? Math.round(x) : Math.round(x * 10) / 10;
 function demoValue(fd, c, meet) {
   const t = String((c && c.text) || ""), ok = c && c.kind === "exclusion" ? !meet : meet;
@@ -496,7 +521,7 @@ function docTemplate(vr, rows) {
 // '조건에 맞게/안 맞게'를 바꾸면 값과 서류 내용을 다시 채움 (서류 내용을 손으로 고쳤으면 그대로 둠)
 function refillDoc(box, meet) {
   const vr = (S.vdata.requests || []).find(x => x.request_id === box.dataset.rid); if (!vr) return;
-  if (meet !== null) for (const row of box.querySelectorAll(".vrow")) row.querySelector('[data-f="value"]').value = demoValue(row.dataset.field, critFor(vr, row.dataset.field), meet);
+  if (meet !== null) for (const row of box.querySelectorAll(".vrow")) row.querySelector('[data-f="value"]').value = demoValueAll(row.dataset.field, vr, meet);
   const ta = box.querySelector('[data-f="text"]'); if (ta && !ta.dataset.edited) ta.value = docTemplate(vr, docRows(box));
 }
 // 기록할 항목: 서버가 받는 사실 항목. 유전자 검사는 사실 항목이 'biomarker' 하나(값에 변이 이름)라 'biomarker:EGFR' 같은 키는 뺌
@@ -515,7 +540,7 @@ function workArea(r) {
     const label = (fd) => itemName(fd.includes(":") ? fd : (fd === "biomarker" || !vr.info_key ? fd : vr.info_key));
     const unitFor = (fd) => { const c = critFor(vr, fd); return c ? unitOf(c.text) : ""; };
     const factText = (f) => `${f.value}${f.unit ? " " + f.unit : ""}`;
-    const rows = facts.map(f => `- ${itemName(f.field)}: ${factText(f)}`).concat(fields.map(fd => { const v = demoValue(fd, critFor(vr, fd), true), u = unitFor(fd);
+    const rows = facts.map(f => `- ${itemName(f.field)}: ${factText(f)}`).concat(fields.map(fd => { const v = demoValueAll(fd, vr, true), u = unitFor(fd);
       return v === "" ? "" : `- ${label(fd)}: ${v}${u ? " " + u : ""} (검사일 ${daysAgo(3)})`; })).filter(Boolean);
     return `<div class="work" data-work="doc" data-rid="${h(r.request_id)}">
       <p class="work-title">서류 확인하기 <span class="badge demo">발표용 · 가상 권한</span></p>
@@ -527,7 +552,7 @@ function workArea(r) {
           ${facts.map(f => `<label class="inline-check"><input type="checkbox" data-fact="${h(f.fact_id)}" data-label="${h(itemName(f.field))}" data-value="${h(factText(f))}" checked> 환자가 말한 <b>${h(f.value)}${f.unit ? " " + h(f.unit) : ""}</b>이(가) 서류와 같아요</label>`).join("")}
           ${fields.length ? `<label class="hint inline-check">가상 서류 값 <select data-f="meet" aria-label="가상 서류 값" style="width:auto;display:inline-block"><option value="1">조건에 맞게</option><option value="0">조건에 안 맞게</option></select> (발표용으로 미리 채운 값, 고칠 수 있어요)</label>` : ""}
           ${fields.map(fd => `<div class="row vrow" data-field="${h(fd)}" data-label="${h(label(fd))}"><span>${h(label(fd))}</span>
-            <input data-f="value" value="${h(demoValue(fd, critFor(vr, fd), true))}" placeholder="값" size="10" aria-label="${h(label(fd))} 값">
+            <input data-f="value" value="${h(demoValueAll(fd, vr, true))}" placeholder="값" size="10" aria-label="${h(label(fd))} 값">
             <input data-f="unit" value="${h(unitFor(fd))}" placeholder="단위" size="8" aria-label="단위">
             <input data-f="date" type="date" value="${h(daysAgo(3))}" aria-label="검사한 날"></div>`).join("")}</li>
         <li><button class="btn sm" type="button" data-act="verify">서류 확인 끝</button> <span class="hint">누르면 결과가 다시 계산돼요</span>
