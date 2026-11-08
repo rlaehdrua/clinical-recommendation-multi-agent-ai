@@ -121,6 +121,7 @@ def test_alternative_age_does_not_confirm_eligible(run):
     ("hemoglobin", 12, "I was told my Hb is 12.", H),
     ("hemoglobin", 10, "Pt thinks her hemoglobin was 'around 10'", H),
     ("platelets", 140, "My oncologist mentioned, I believe, that my platelets were 140.", H),  # 추측 표지가 "that" 절의 앞 절
+    ("absolute neutrophil count", 1.5, "ANC was something like 1.5, not sure.", H),
 ])
 def test_relayed_lab_value_is_held(field, value, text, status):
     assert lab(field, value, text) == status, text
@@ -154,6 +155,7 @@ def test_clinician_relayed_lab_is_left_as_before(text):
 @pytest.mark.parametrize("field,value,text,status", [
     ("age", 72, "보호자(아들)가 환자 나이를 72세라고 전함.", H),
     ("age", 72, "Son says she is 72 years old.", H),
+    ("age", 68, "나이는 68인가 69인가, 정확히 기억이 안 남.", H),
 ])
 def test_age_relayed_by_family_or_unsure_is_held(field, value, text, status):
     assert vg.ground(field, value, text) == status, text

@@ -477,7 +477,7 @@ def _uncertain(body: str, lo: int, hi: int) -> bool:
 
 
 # P0-B (불확실 값): 기록 구간에서도 근사값은 직접 측정 사실로 채택하지 않음. 표현은 임상 검수를 받지 않았습니다.
-_APPROX_EXTRA = re.compile(r"\bor\s+so\b|\d\s*-?ish\b|\broughly\b|\bapprox\b\.?|\bcirca\b|대충|어림", re.IGNORECASE)
+_APPROX_EXTRA = re.compile(r"\bor\s+so\b|\d\s*-?ish\b|\broughly\b|\bapprox\b\.?|\bcirca\b|\bsomething\s+like\b|\bor\s+something\b|\bgive\s+or\s+take\b|\bmore\s+or\s+less\b|대충|어림", re.IGNORECASE)
 _APPROX_SIGN = re.compile(r"(?:^|[^\d\s~～])\s*[~～≈]\s*$|\bapprox\.\s*(?:\w+\s+){0,2}$|\bca\.\s*$", re.IGNORECASE)  # 값 바로 앞의 "~12", "≈12", "Approx. 64" (숫자 사이의 "~"는 범위)
 _APPROX_AFTER = re.compile(rf"\s*{_UNIT}\s*(?:내외|전후|안팎|가량|남짓|언저리)", re.IGNORECASE)  # 값(단위) 바로 뒤: "12 내외", "12 g/dL 전후" ("수술 전후"는 값 뒤가 아님)
 
@@ -509,7 +509,7 @@ def _approximate(body: str, lo: int, hi: int) -> bool:
 # P0-B (택일 값): 값 바로 앞뒤가 다른 수치와의 택일·범위이면 어느 값인지 정해지지 않음. "12 or 12.5", "12~13", "67 또는 68세"
 # 참고 범위 "(ref 12-16)"의 수치는 값으로 연결되지 않고(_NOT_A_VALUE), 값 뒤 날짜 "12.0 g/dL ~ 2026-11-06"은 택일이 아님
 _ALT_WORD = r"\bor\b|또는|혹은|아니면|내지"
-_ALT_LINK = rf"\s*(?:세|살)?\s*(?:{_ALT_WORD}|\bto\b|이나|에서)\s*|\s*[~～]\s*"
+_ALT_LINK = rf"\s*(?:세|살)?\s*(?:{_ALT_WORD}|\bto\b|이나|에서|인가|인지)\s*|\s*[~～]\s*"  # "68인가 69인가"
 _ALTERNATIVE_AFTER = re.compile(rf"(?:{_ALT_LINK}|[-–]|\s*{_UNIT}\s*(?:{_ALT_WORD})\s*)(?=\d)(?!\d{{4}}[-./])", re.IGNORECASE)
 _ALTERNATIVE_BEFORE = re.compile(rf"\d(?:\s*{_UNIT})?(?:{_ALT_LINK}|[-–])$", re.IGNORECASE)
 
