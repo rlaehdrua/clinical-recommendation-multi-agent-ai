@@ -118,6 +118,7 @@ def test_alternative_age_does_not_confirm_eligible(run):
     ("hemoglobin", 12, "Pt states her Hb was 12.", H),
     ("hemoglobin", 10, "Patient says Hb was 10 at the outside clinic.", H),
     ("hemoglobin", 12, "Per patient, Hb 12.", H),
+    ("hemoglobin", 12, "Patient reports fatigue and patient states Hb 12 g/dL.", H),  # 뒤쪽 동사의 대상이 값
     ("hemoglobin", 12, "I was told my Hb is 12.", H),
     ("hemoglobin", 10, "Pt thinks her hemoglobin was 'around 10'", H),
     ("platelets", 140, "My oncologist mentioned, I believe, that my platelets were 140.", H),  # 추측 표지가 "that" 절의 앞 절

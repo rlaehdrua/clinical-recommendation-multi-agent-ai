@@ -545,7 +545,7 @@ _LEAD_FAMILY = re.compile(_lead(_FAMILY_EN, _FAMILY_KO) + rf"|\b{_FAMILY_EN}\s+(
 _LEAD_LAY = re.compile(_LEAD_FAMILY.pattern + "|" + _lead(_SELF_EN, _SELF_KO)
                        + r"|\bI\s+(?:was\s+told|heard|have\s+heard)\b|\bheard\s+(?:that|it\s+was)\b|들은\s*(?:바로는|얘기로는|바에\s*따르면)"
                        r"|\bfrom\s+(?:her|his|my|the\s+patient'?s)?\s*memory\b|기억(?:으로는?|하기로는?|상|에는)", re.IGNORECASE)  # 기억에 의존한 수치
-_SELF_REPORT = re.compile(rf"\b{_SELF_EN}\s+(?:\w+\s+)?{_RELAY_VERB}\b(?P<gap>[^.;\n]*)$", re.IGNORECASE)  # "Patient states Hb 12", "Pt states her Hb was 12"
+_SELF_REPORT = re.compile(rf"\b{_SELF_EN}\s+(?:\w+\s+)?{_RELAY_VERB}\b", re.IGNORECASE)  # "Patient states Hb 12", "Pt states her Hb was 12"
 _GAP_BREAK = re.compile(r",|\b(?:and|but|plus|with|while|also)\b|(?:\S+\s+){8}", re.IGNORECASE)  # "Patient reports fatigue and Hb 12": 동사의 대상은 증상
 _FAMILY_SUBJECT = re.compile(rf"(?<![가-힣]){_FAMILY_KO}(?:\s*\([^)]*\))?\s*(?:이|가|께서|는|은)(?![가-힣])", re.IGNORECASE)
 _QUOTED = re.compile(r"이?래요|이?래(?![가-힣])|이?라더라|이?라던데|이?랍니다|이?라네요|이?라구요|대요|다더라|다던데|답니다|다네요|"
@@ -574,8 +574,12 @@ def _hearsay(field: str, body: str, lo: int, hi: int) -> bool:
         return True
     if _CLINICIAN.search(ed._sentence(body, lo)):
         return False
-    m = _SELF_REPORT.search(head)
-    return bool(m and not _GAP_BREAK.search(m.group("gap"))) or _quoted_after(body, hi)
+    return _reaches(_SELF_REPORT, head) or _quoted_after(body, hi)
+
+
+def _reaches(verb: re.Pattern, head: str) -> bool:
+    """값 앞의 전하는 동사 가운데 하나라도 대상이 값인가 (동사와 값 사이에 다른 대상·접속이 없음). 맨 앞 동사만 보면 뒤의 진술을 놓침."""
+    return any(not _GAP_BREAK.search(head[m.end():]) for m in verb.finditer(head))
 
 
 def _record_uncertain(field: str, body: str, lo: int, hi: int) -> bool:
