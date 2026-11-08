@@ -155,6 +155,33 @@ def verify(gt_root: Path, *, external: Path | None = None, repo_root: Path | Non
     return problems
 
 
+def official_blockers(gt_digest: str, gt_root: Path, *, external: Path | None = None,
+                      repo_root: Path | None = None) -> tuple[list[str], dict]:
+    """공식(비탐색적) 결과가 되기 위한 동결 조건. 반환: (막는 사유 목록, {"problems", "status", "listed_as"}).
+
+    1) FROZEN_GT.json이 verify()를 통과하고, 2) 상태가 sealed이고, 3) 평가하는 GT 파일의 sha256이
+    매니페스트의 세트 파일(g_u/, g_c/, g_p/) 해시로 등록되어 있어야 합니다.
+    """
+    problems = verify(gt_root, external=external, repo_root=repo_root)
+    status, listed = None, None
+    path = gt_root / FROZEN_NAME
+    if path.exists():
+        m = json.loads(path.read_text(encoding="utf-8"))
+        status = m.get("status")
+        for rel, info in m.get("files", {}).items():
+            if rel.split("/")[0] in SET_DIRS and info.get("sha256") == gt_digest:
+                listed = rel
+                break
+    blockers = []
+    if problems:
+        blockers.append(f"동결 확인 실패 {len(problems)}건")
+    if status != "sealed":
+        blockers.append(f"상태가 sealed가 아님 ({status})")
+    if listed is None:
+        blockers.append("GT 파일의 sha256이 동결 목록에 없음 (동결되지 않았거나 변조된 파일)")
+    return blockers, {"problems": problems, "status": status, "listed_as": listed}
+
+
 def advance(gt_root: Path, to: str, *, reason: str, measurement: Path | None = None,
             engine_commit: str | None = None) -> dict:
     """상태를 앞으로만 옮김. measured_once에는 측정 결과 파일이 필요."""
@@ -174,4 +201,4 @@ def advance(gt_root: Path, to: str, *, reason: str, measurement: Path | None = N
     return m
 
 
-__all__ = ["build_manifest", "write_manifest", "verify", "advance", "sha256_file", "collect_files", "GT_LIB_DIR"]
+__all__ = ["build_manifest", "write_manifest", "verify", "official_blockers", "advance", "sha256_file", "collect_files", "GT_LIB_DIR"]
