@@ -1,9 +1,9 @@
-# NSCLC 축소 범위 평가셋 + 독립 규칙 GT (nsclc_eval_v1)
+# NSCLC 축소 범위 평가셋 + 축소 범위 규칙 GT (임상 전문가 미검수) (nsclc_eval_v1)
 
 작성: 서연 (데이터·GT) · 2026-11-08 · 브랜치 `feat/nsclc-eval-gt`
 
 > **검증 수준: 데이터 검증 완료 / 임상 검수 미완료.** 작성자는 임상 검수자가 아닙니다.
-> 이 문서의 GT는 **규칙 GT**(검수표 + 합성 환자 값으로 계산)이며 임상 정답이 아닙니다. 수치는 정확도·임상 성능이 아닙니다.
+> 공식 명칭: **축소 범위 규칙 GT (임상 전문가 미검수)**. 검수표 + 합성 환자 값으로 계산하며 임상 판정 결과가 아닙니다. 이 문서에서 줄여 쓴 "GT"는 모두 이 GT입니다. 코드 식별자·파일명·라벨 값(`independent_rule_gt_reduced_scope`, `rule_gt.csv` 등)은 바꾸지 않았습니다. 수치는 정확도·임상 성능이 아닙니다.
 
 ## 1. 데이터 출처
 
@@ -17,7 +17,7 @@
 
 프로토콜 8건 중 평가셋에 들어간 것은 파싱이 끝난 6건입니다. NCT04892953·NCT05255302 2건은 "파싱 미완료 - API 크레딧, 분할 파서 반영됨"이라 빠졌습니다(`data/nsclc/review/protocol_status.csv`).
 
-## 2. 파일 구성: 생성 / 검토 / 정답 분리
+## 2. 파일 구성: 생성 / 검토 / GT 분리
 
 | 단계 | 담당 | 파일 |
 |---|---|---|
@@ -25,7 +25,7 @@
 | 입력 (검토표에서 만듦) | `scripts/build_nsclc_eval.py inputs` | `data/nsclc/eval/inputs/trial_store/*.json`(축소 시험 저장소), `slot_dictionary.json` |
 | 입력 (손으로 씀) | 서연 | `inputs/generator_config.json`, `source_catalog.json`, `lab_reference.json`, `source_map.json`(원본 사본 + `sex`) |
 | 생성 | 생성기 (`ctrec.cohort.generate`) | `data/nsclc/eval/generated/cohort.json`. 생성기 라벨은 GT가 아닙니다 |
-| 정답 | 독립 GT (`ctrec.cohort.gt`) | `rule_gt.csv`(기준별 상태 + 근거 문장), `pair_gt.csv` |
+| GT | 축소 범위 규칙 GT (`ctrec.cohort.gt`) | `rule_gt.csv`(기준별 상태 + 근거 문장), `pair_gt.csv` |
 | 묶음 | `scripts/build_nsclc_eval.py gt` | `patients.json`, `pairs.csv`, `label_summary.json`, `manifest.json` |
 
 **GT의 독립성**
@@ -42,7 +42,7 @@
 | 범위 안이지만 미연결 (검수표 '모호') | 11 | NOT_EVALUATED |
 | 검사 수치 4개 (ANC·총 빌리루빈·CrCl·Hb) | **0** | 6개 시험 원문에 기준값이 없음 (§6 결정 D2) |
 | 임상 전문가 판단 | 19 | NEEDS_EXPERT |
-| excluded: 동의서·절차 (팀 결정 2) | 9 | 규칙 GT를 만들지 않음, 목록만 (`pair_gt.csv` `excluded_criteria`) |
+| excluded: 동의서·절차 (팀 결정 2) | 9 | 축소 범위 규칙 GT 대상에서 뺌, 목록만 (`pair_gt.csv` `excluded_criteria`) |
 | 범위 밖 | 79 | 평가하지 않음. 평가 저장소에서 뺌 (코호트 전용 기준은 OR 경로 보존용으로 남기고 연결하지 않음) |
 
 - 범주형 범위 안 기준은 34개입니다. 지시의 30개는 CSV 인용 자동 매칭 기준이었고, 원문 대조 중 4건(NCT06928389 I9, NCT06216301 I9, NCT07098338 I8, NCT07416058 E14)을 같은 슬롯으로 바로잡아 더했습니다.
@@ -89,7 +89,7 @@
 규칙 수준 (기준 하나, `rule_gt.csv`의 `status`와 `basis`)
 - `PASS` / `FAIL`: 슬롯 값을 검수표의 연산자·값과 비교한 결과입니다. 제외 기준은 성립하면 FAIL입니다.
 - `NOT_APPLICABLE`: 적용 조건(예: 여성만)에 해당하지 않는 경우입니다. **통과로 세지 않습니다.**
-- `NEEDS_EXPERT`: 판단 기준입니다. 값·정답을 만들지 않습니다.
+- `NEEDS_EXPERT`: 판단 기준입니다. 값·GT 라벨을 만들지 않습니다.
 - `NOT_EVALUATED`: 범위 안 미연결(모호)이거나, 지역 조건이라 국가를 모르는 경우입니다.
 
 쌍 수준 (`pair_gt.csv`의 `gt_label`. `runner_label`은 #20·#37 runner 문자열)
@@ -106,10 +106,10 @@
 | 출처 | 이름 | 같은 개념 |
 |---|---|---|
 | 팀 결정 1 | 전문가 판단 대기 적격 | ← 이 이름으로 통일 |
-| 독립 GT | `PENDING_EXPERT_ELIGIBLE` | GT 라벨 |
+| 축소 범위 규칙 GT | `PENDING_EXPERT_ELIGIBLE` | GT 라벨 |
 | #37 | `eligible_pending_expert` (라벨), `correct_expert_ready` (지표) | 라벨 / 시스템 EXPERT_REVIEW ∧ GT 라벨 |
 | 역할 정리 문서 | "Expert-ready" | 저장소·원격 브랜치에서 원문 미확인 |
-| 독립 GT `score()` | `expert_ready_with_gt_pending` | 주 지표 = 시스템 EXPERT_REVIEW ∧ GT 전문가 판단 대기 적격 |
+| 축소 범위 규칙 GT `score()` | `expert_ready_with_gt_pending` | 주 지표 = 시스템 EXPERT_REVIEW ∧ GT 전문가 판단 대기 적격 |
 
 PR #26(R5)과 다른 점은 보고만 합니다(코드 미변경).
 - R5의 실질 기준은 `applicable ∧ category ≠ consent_or_logistics`로, 나이·성별도 실질 기준으로 칩니다. 이 GT는 인구학 기준만 통과한 경우를 적격 근거로 보지 않습니다.
@@ -162,7 +162,7 @@ mkdir -p data/cache
 git show origin/feat/p-common-engine:docs/dev/expert_rules_review_queue_2026_11_07.csv > data/cache/expert_rules_review_queue_2026_11_07.csv
 python scripts/nsclc_review_table.py data/cache/expert_rules_review_queue_2026_11_07.csv
 python scripts/nsclc_expression_review.py
-# 3·4단계 입력 -> 생성(validate + 2회 해시) -> 독립 GT
+# 3·4단계 입력 -> 생성(validate + 2회 해시) -> 축소 범위 규칙 GT
 python scripts/build_nsclc_eval.py all
 # runner 연결 확인 (시뮬레이터 코드 변경 없음). --out으로 저장해 data/nsclc/eval/checks/의 값과 비교
 python scripts/check_nsclc_eval_runner.py --policies no_action,full_dcvc --budget 400 --horizon 10 --out r400.json
@@ -170,7 +170,7 @@ python scripts/check_nsclc_eval_runner.py --policies full_dcvc --budget 6000 --h
 python -m pytest -q tests/test_nsclc_eval_gt.py
 ```
 
-실행 뒤 확인할 값 (`4f81460` + #43 `c3cc3d5`, 2026-11-08 새 worktree에서 이 절차로 재현 확인)
+실행 뒤 확인할 값 (최종 통합본 `b1d2a7f` 재현 결과. 처음 재현 확인은 `4f81460` + #43 `c3cc3d5`, 2026-11-08 새 worktree. 생성 로그·해시·라벨 분포는 두 커밋에서 같고, runner 400분 full_dcvc만 48 → 47로 다름 - 아래 노트)
 
 | 항목 | 기대값 | 위치 |
 |---|---|---|
@@ -178,7 +178,7 @@ python -m pytest -q tests/test_nsclc_eval_gt.py
 | 내용 해시 | `ec277a2796e37bfce63387bc93bd8f830d3675a53ff4832271fa67a130e3d469` | `manifest.json` `content_hash` |
 | 시뮬레이터 코호트 해시 | `4bd9143334bb0871` | `manifest.json` `sim.cohort_hash` |
 | 라벨 분포 | 확정 적격 0 / 판단 대기 적격 23 / 부적격 130 / 미평가 87 | `label_summary.json` |
-| runner 400분 | no_action 0·0·0·0, full_dcvc 0·48·0·0 | `r400.json` (판단 대기 도달·확정 부적격∧GT 부적격·GT 부적격 아님 확정 부적격·확정 적격) |
+| runner 400분 | no_action 0·0·0·0, full_dcvc 0·47·0·0 | `r400.json` (판단 대기 도달·확정 부적격∧GT 부적격·GT 부적격 아님 확정 부적격·확정 적격). `4f81460` 엔진에서는 full_dcvc 0·48·0·0 |
 | runner 6000분 | full_dcvc 20·124·0·0 | `r6000.json` |
 | 테스트 | 20 passed | pytest |
 
@@ -191,13 +191,14 @@ python -m pytest -q tests/test_nsclc_eval_gt.py
 - `python -m ctrec.sim` CLI는 시험을 `data/parsed`에서 읽으므로 이 평가셋을 바로 쓸 수 없습니다.
 - 라이브러리 호출로는 됩니다: `to_sim_cohort(cohort, sd, smap, trials=load_trials(ids, store_dir=data/nsclc/eval/inputs/trial_store, trials_dir=data/nsclc/trials))`.
 - `RunResult.final`의 쌍 키(`<별칭>|<시험>`)가 `pair_gt.csv`의 `sim_pair_key`와 같습니다(테스트).
-- 실행 사례 (seed 1, 통합본 `4f81460` 위 - Q 통합 #41·#42로 #22·#37·#26·#39 등 포함)
+- 실행 사례 (seed 1, 최종 통합본 `b1d2a7f`, 출처 `docs/dev/final_review_evidence/phase1_final_runs.json`. 400분 결과는 `dba06d9`·`8afe5ea`와 같음)
 
   | 정책 | 예산·horizon | 최종 상태 | EXPERT_REVIEW ∧ GT 판단 대기 | 확정 부적격 ∧ GT 부적격 | GT가 부적격 아님 + 확정 부적격 | 확정 적격 |
   |---|---|---|---|---|---|---|
-  | no_action | 400분·10 | 정보 부족 166 / 검증 대기 74 | 0 | 0 | 0 | 0 |
-  | full_dcvc | 400분·10 | 확정 부적격 48 / 정보 부족 166 / 검증 대기 26 | 0 | 48 / 130 | 0 | 0 |
-  | full_dcvc | 6000분·80 | 확정 부적격 124 / EXPERT_REVIEW 20 / 정보 부족 92 / 검증 대기 4 | 20 / 23 | 124 / 130 | 0 | 0 |
+  | no_action | 400분·10 | 정보 부족 165 / 검증 대기 75 | 0 | 0 | 0 | 0 |
+  | full_dcvc | 400분·10 | 확정 부적격 47 / 정보 부족 165 / 검증 대기 28 | 0 | 47 / 130 | 0 | 0 |
+  | full_dcvc | 6000분·80 | 확정 부적격 124 / EXPERT_REVIEW 20 / 정보 부족 91 / 검증 대기 5 | 20 / 23 | 124 / 130 | 0 | 0 |
+- 이전 통합본 `4f81460`(Q 통합 #41·#42로 #22·#37·#26·#39 등 포함) 실행 사례: no_action 400분 정보 부족 166 / 검증 대기 74, full_dcvc 400분 확정 부적격 48 / 정보 부족 166 / 검증 대기 26 (48 / 130), 6000분 확정 부적격 124 / EXPERT_REVIEW 20 / 정보 부족 92 / 검증 대기 4. 400분 48 → 47은 P034 × NCT07416058 1쌍(확정 부적격 → 검증 대기) 차이이고 원인 후보는 `39ec3d2`입니다(`docs/dev/final_review_evidence/r400_three_commits.json`, `presentation_data_gt.md` 슬라이드 5 노트). 지표(20 / 23, 124 / 130, 거짓 확정 0)는 6000분에서 같습니다.
 - 이전 기준(`290420d` + #22, #37 미포함) 실행: 400분 두 정책 모두 확정 0, 6000분 EXPERT_REVIEW ∧ GT 판단 대기 21 / 확정 부적격 ∧ GT 부적격 122
 
 ## 7. 결정 로그
@@ -233,7 +234,7 @@ python -m pytest -q tests/test_nsclc_eval_gt.py
 
 **주장 가능**
 - 실제 NSCLC 프로토콜 6개의 축소 범위 기준 72개를 원문과 1:1로 대조했습니다(일치 60 / 모호 11 / 불일치 1). 데이터 검증 결과이며 임상 검수 전입니다.
-- 독립 규칙 GT는 엔진 판정 코드와 분리되어 있고(테스트), 생성기 truth와 연결 기준에서 같은 결론을 냅니다.
+- 축소 범위 규칙 GT는 엔진 판정 코드와 분리되어 있고(테스트), 생성기 truth와 연결 기준에서 같은 결론을 냅니다.
 - 이 합성 평가셋에서 정책이 "판단 기준 외 확인을 마치고 EXPERT_REVIEW에 도달한 쌍"을 GT와 대조해 셀 수 있습니다. 정책 간 상대 비교만 가능합니다.
 - 실행 사례에서 확정 적격 0, GT가 부적격이 아닌데 확정 부적격 0이었습니다. 이 평가셋·이 실행 조건에 한합니다.
 

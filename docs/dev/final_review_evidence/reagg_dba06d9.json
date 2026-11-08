@@ -1,0 +1,1816 @@
+{
+ "nsclc_pilot|cost_first|30": {
+  "n": 5,
+  "CI_mean": 0,
+  "CI_sd": 0.0,
+  "CI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "VI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "sim-nsclc-pilot-8x6"
+  ],
+  "files": [
+   "e1_nsclc_out/c0-cost_first-b30-s1/result.json",
+   "e1_nsclc_out/c0-cost_first-b30-s2/result.json",
+   "e1_nsclc_out/c0-cost_first-b30-s3/result.json",
+   "e1_nsclc_out/c0-cost_first-b30-s4/result.json",
+   "e1_nsclc_out/c0-cost_first-b30-s5/result.json"
+  ]
+ },
+ "nsclc_pilot|cost_first|90": {
+  "n": 5,
+  "CI_mean": 0,
+  "CI_sd": 0.0,
+  "CI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "VI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "sim-nsclc-pilot-8x6"
+  ],
+  "files": [
+   "e1_nsclc_out/c0-cost_first-b90-s1/result.json",
+   "e1_nsclc_out/c0-cost_first-b90-s2/result.json",
+   "e1_nsclc_out/c0-cost_first-b90-s3/result.json",
+   "e1_nsclc_out/c0-cost_first-b90-s4/result.json",
+   "e1_nsclc_out/c0-cost_first-b90-s5/result.json"
+  ]
+ },
+ "nsclc_pilot|cost_first|400": {
+  "n": 5,
+  "CI_mean": 0,
+  "CI_sd": 0.0,
+  "CI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "VI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "sim-nsclc-pilot-8x6"
+  ],
+  "files": [
+   "e1_nsclc_out/c0-cost_first-b400-s1/result.json",
+   "e1_nsclc_out/c0-cost_first-b400-s2/result.json",
+   "e1_nsclc_out/c0-cost_first-b400-s3/result.json",
+   "e1_nsclc_out/c0-cost_first-b400-s4/result.json",
+   "e1_nsclc_out/c0-cost_first-b400-s5/result.json"
+  ]
+ },
+ "nsclc_pilot|dcvc|30": {
+  "n": 5,
+  "CI_mean": 6,
+  "CI_sd": 0.0,
+  "CI_values": [
+   6,
+   6,
+   6,
+   6,
+   6
+  ],
+  "VI_values": [
+   6,
+   6,
+   6,
+   6,
+   6
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "sim-nsclc-pilot-8x6"
+  ],
+  "files": [
+   "e1_nsclc_out/c0-dcvc-b30-s1/result.json",
+   "e1_nsclc_out/c0-dcvc-b30-s2/result.json",
+   "e1_nsclc_out/c0-dcvc-b30-s3/result.json",
+   "e1_nsclc_out/c0-dcvc-b30-s4/result.json",
+   "e1_nsclc_out/c0-dcvc-b30-s5/result.json"
+  ]
+ },
+ "nsclc_pilot|dcvc|90": {
+  "n": 5,
+  "CI_mean": 8,
+  "CI_sd": 0.0,
+  "CI_values": [
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "VI_values": [
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "sim-nsclc-pilot-8x6"
+  ],
+  "files": [
+   "e1_nsclc_out/c0-dcvc-b90-s1/result.json",
+   "e1_nsclc_out/c0-dcvc-b90-s2/result.json",
+   "e1_nsclc_out/c0-dcvc-b90-s3/result.json",
+   "e1_nsclc_out/c0-dcvc-b90-s4/result.json",
+   "e1_nsclc_out/c0-dcvc-b90-s5/result.json"
+  ]
+ },
+ "nsclc_pilot|dcvc|400": {
+  "n": 5,
+  "CI_mean": 8,
+  "CI_sd": 0.0,
+  "CI_values": [
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "VI_values": [
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "sim-nsclc-pilot-8x6"
+  ],
+  "files": [
+   "e1_nsclc_out/c0-dcvc-b400-s1/result.json",
+   "e1_nsclc_out/c0-dcvc-b400-s2/result.json",
+   "e1_nsclc_out/c0-dcvc-b400-s3/result.json",
+   "e1_nsclc_out/c0-dcvc-b400-s4/result.json",
+   "e1_nsclc_out/c0-dcvc-b400-s5/result.json"
+  ]
+ },
+ "nsclc_pilot|dcvc-no_bundles|30": {
+  "n": 5,
+  "CI_mean": 2,
+  "CI_sd": 0.0,
+  "CI_values": [
+   2,
+   2,
+   2,
+   2,
+   2
+  ],
+  "VI_values": [
+   2,
+   2,
+   2,
+   2,
+   2
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "sim-nsclc-pilot-8x6"
+  ],
+  "files": [
+   "e1_nsclc_out/c0-dcvc-no_bundles-b30-s1/result.json",
+   "e1_nsclc_out/c0-dcvc-no_bundles-b30-s2/result.json",
+   "e1_nsclc_out/c0-dcvc-no_bundles-b30-s3/result.json",
+   "e1_nsclc_out/c0-dcvc-no_bundles-b30-s4/result.json",
+   "e1_nsclc_out/c0-dcvc-no_bundles-b30-s5/result.json"
+  ]
+ },
+ "nsclc_pilot|dcvc-no_bundles|90": {
+  "n": 5,
+  "CI_mean": 4,
+  "CI_sd": 0.0,
+  "CI_values": [
+   4,
+   4,
+   4,
+   4,
+   4
+  ],
+  "VI_values": [
+   4,
+   4,
+   4,
+   4,
+   4
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "sim-nsclc-pilot-8x6"
+  ],
+  "files": [
+   "e1_nsclc_out/c0-dcvc-no_bundles-b90-s1/result.json",
+   "e1_nsclc_out/c0-dcvc-no_bundles-b90-s2/result.json",
+   "e1_nsclc_out/c0-dcvc-no_bundles-b90-s3/result.json",
+   "e1_nsclc_out/c0-dcvc-no_bundles-b90-s4/result.json",
+   "e1_nsclc_out/c0-dcvc-no_bundles-b90-s5/result.json"
+  ]
+ },
+ "nsclc_pilot|dcvc-no_bundles|400": {
+  "n": 5,
+  "CI_mean": 14,
+  "CI_sd": 0.0,
+  "CI_values": [
+   14,
+   14,
+   14,
+   14,
+   14
+  ],
+  "VI_values": [
+   14,
+   14,
+   14,
+   14,
+   14
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "sim-nsclc-pilot-8x6"
+  ],
+  "files": [
+   "e1_nsclc_out/c0-dcvc-no_bundles-b400-s1/result.json",
+   "e1_nsclc_out/c0-dcvc-no_bundles-b400-s2/result.json",
+   "e1_nsclc_out/c0-dcvc-no_bundles-b400-s3/result.json",
+   "e1_nsclc_out/c0-dcvc-no_bundles-b400-s4/result.json",
+   "e1_nsclc_out/c0-dcvc-no_bundles-b400-s5/result.json"
+  ]
+ },
+ "nsclc_pilot|dcvc-no_dcv|30": {
+  "n": 5,
+  "CI_mean": 6,
+  "CI_sd": 0.0,
+  "CI_values": [
+   6,
+   6,
+   6,
+   6,
+   6
+  ],
+  "VI_values": [
+   6,
+   6,
+   6,
+   6,
+   6
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "sim-nsclc-pilot-8x6"
+  ],
+  "files": [
+   "e1_nsclc_out/c0-dcvc-no_dcv-b30-s1/result.json",
+   "e1_nsclc_out/c0-dcvc-no_dcv-b30-s2/result.json",
+   "e1_nsclc_out/c0-dcvc-no_dcv-b30-s3/result.json",
+   "e1_nsclc_out/c0-dcvc-no_dcv-b30-s4/result.json",
+   "e1_nsclc_out/c0-dcvc-no_dcv-b30-s5/result.json"
+  ]
+ },
+ "nsclc_pilot|dcvc-no_dcv|90": {
+  "n": 5,
+  "CI_mean": 8,
+  "CI_sd": 0.0,
+  "CI_values": [
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "VI_values": [
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "sim-nsclc-pilot-8x6"
+  ],
+  "files": [
+   "e1_nsclc_out/c0-dcvc-no_dcv-b90-s1/result.json",
+   "e1_nsclc_out/c0-dcvc-no_dcv-b90-s2/result.json",
+   "e1_nsclc_out/c0-dcvc-no_dcv-b90-s3/result.json",
+   "e1_nsclc_out/c0-dcvc-no_dcv-b90-s4/result.json",
+   "e1_nsclc_out/c0-dcvc-no_dcv-b90-s5/result.json"
+  ]
+ },
+ "nsclc_pilot|dcvc-no_dcv|400": {
+  "n": 5,
+  "CI_mean": 8,
+  "CI_sd": 0.0,
+  "CI_values": [
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "VI_values": [
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "sim-nsclc-pilot-8x6"
+  ],
+  "files": [
+   "e1_nsclc_out/c0-dcvc-no_dcv-b400-s1/result.json",
+   "e1_nsclc_out/c0-dcvc-no_dcv-b400-s2/result.json",
+   "e1_nsclc_out/c0-dcvc-no_dcv-b400-s3/result.json",
+   "e1_nsclc_out/c0-dcvc-no_dcv-b400-s4/result.json",
+   "e1_nsclc_out/c0-dcvc-no_dcv-b400-s5/result.json"
+  ]
+ },
+ "nsclc_pilot|dcvc-no_evidence_routing|30": {
+  "n": 5,
+  "CI_mean": 2,
+  "CI_sd": 0.0,
+  "CI_values": [
+   2,
+   2,
+   2,
+   2,
+   2
+  ],
+  "VI_values": [
+   2,
+   2,
+   2,
+   2,
+   2
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "sim-nsclc-pilot-8x6"
+  ],
+  "files": [
+   "e1_nsclc_out/c0-dcvc-no_evidence_routing-b30-s1/result.json",
+   "e1_nsclc_out/c0-dcvc-no_evidence_routing-b30-s2/result.json",
+   "e1_nsclc_out/c0-dcvc-no_evidence_routing-b30-s3/result.json",
+   "e1_nsclc_out/c0-dcvc-no_evidence_routing-b30-s4/result.json",
+   "e1_nsclc_out/c0-dcvc-no_evidence_routing-b30-s5/result.json"
+  ]
+ },
+ "nsclc_pilot|dcvc-no_evidence_routing|90": {
+  "n": 5,
+  "CI_mean": 4,
+  "CI_sd": 0.0,
+  "CI_values": [
+   4,
+   4,
+   4,
+   4,
+   4
+  ],
+  "VI_values": [
+   4,
+   4,
+   4,
+   4,
+   4
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "sim-nsclc-pilot-8x6"
+  ],
+  "files": [
+   "e1_nsclc_out/c0-dcvc-no_evidence_routing-b90-s1/result.json",
+   "e1_nsclc_out/c0-dcvc-no_evidence_routing-b90-s2/result.json",
+   "e1_nsclc_out/c0-dcvc-no_evidence_routing-b90-s3/result.json",
+   "e1_nsclc_out/c0-dcvc-no_evidence_routing-b90-s4/result.json",
+   "e1_nsclc_out/c0-dcvc-no_evidence_routing-b90-s5/result.json"
+  ]
+ },
+ "nsclc_pilot|dcvc-no_evidence_routing|400": {
+  "n": 5,
+  "CI_mean": 4,
+  "CI_sd": 0.0,
+  "CI_values": [
+   4,
+   4,
+   4,
+   4,
+   4
+  ],
+  "VI_values": [
+   4,
+   4,
+   4,
+   4,
+   4
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "sim-nsclc-pilot-8x6"
+  ],
+  "files": [
+   "e1_nsclc_out/c0-dcvc-no_evidence_routing-b400-s1/result.json",
+   "e1_nsclc_out/c0-dcvc-no_evidence_routing-b400-s2/result.json",
+   "e1_nsclc_out/c0-dcvc-no_evidence_routing-b400-s3/result.json",
+   "e1_nsclc_out/c0-dcvc-no_evidence_routing-b400-s4/result.json",
+   "e1_nsclc_out/c0-dcvc-no_evidence_routing-b400-s5/result.json"
+  ]
+ },
+ "nsclc_pilot|dcvc-no_recovery|30": {
+  "n": 5,
+  "CI_mean": 6,
+  "CI_sd": 0.0,
+  "CI_values": [
+   6,
+   6,
+   6,
+   6,
+   6
+  ],
+  "VI_values": [
+   6,
+   6,
+   6,
+   6,
+   6
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "sim-nsclc-pilot-8x6"
+  ],
+  "files": [
+   "e1_nsclc_out/c0-dcvc-no_recovery-b30-s1/result.json",
+   "e1_nsclc_out/c0-dcvc-no_recovery-b30-s2/result.json",
+   "e1_nsclc_out/c0-dcvc-no_recovery-b30-s3/result.json",
+   "e1_nsclc_out/c0-dcvc-no_recovery-b30-s4/result.json",
+   "e1_nsclc_out/c0-dcvc-no_recovery-b30-s5/result.json"
+  ]
+ },
+ "nsclc_pilot|dcvc-no_recovery|90": {
+  "n": 5,
+  "CI_mean": 8,
+  "CI_sd": 0.0,
+  "CI_values": [
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "VI_values": [
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "sim-nsclc-pilot-8x6"
+  ],
+  "files": [
+   "e1_nsclc_out/c0-dcvc-no_recovery-b90-s1/result.json",
+   "e1_nsclc_out/c0-dcvc-no_recovery-b90-s2/result.json",
+   "e1_nsclc_out/c0-dcvc-no_recovery-b90-s3/result.json",
+   "e1_nsclc_out/c0-dcvc-no_recovery-b90-s4/result.json",
+   "e1_nsclc_out/c0-dcvc-no_recovery-b90-s5/result.json"
+  ]
+ },
+ "nsclc_pilot|dcvc-no_recovery|400": {
+  "n": 5,
+  "CI_mean": 8,
+  "CI_sd": 0.0,
+  "CI_values": [
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "VI_values": [
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "sim-nsclc-pilot-8x6"
+  ],
+  "files": [
+   "e1_nsclc_out/c0-dcvc-no_recovery-b400-s1/result.json",
+   "e1_nsclc_out/c0-dcvc-no_recovery-b400-s2/result.json",
+   "e1_nsclc_out/c0-dcvc-no_recovery-b400-s3/result.json",
+   "e1_nsclc_out/c0-dcvc-no_recovery-b400-s4/result.json",
+   "e1_nsclc_out/c0-dcvc-no_recovery-b400-s5/result.json"
+  ]
+ },
+ "nsclc_pilot|no_action|30": {
+  "n": 5,
+  "CI_mean": 0,
+  "CI_sd": 0.0,
+  "CI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "VI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "sim-nsclc-pilot-8x6"
+  ],
+  "files": [
+   "e1_nsclc_out/c0-no_action-b30-s1/result.json",
+   "e1_nsclc_out/c0-no_action-b30-s2/result.json",
+   "e1_nsclc_out/c0-no_action-b30-s3/result.json",
+   "e1_nsclc_out/c0-no_action-b30-s4/result.json",
+   "e1_nsclc_out/c0-no_action-b30-s5/result.json"
+  ]
+ },
+ "nsclc_pilot|no_action|90": {
+  "n": 5,
+  "CI_mean": 0,
+  "CI_sd": 0.0,
+  "CI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "VI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "sim-nsclc-pilot-8x6"
+  ],
+  "files": [
+   "e1_nsclc_out/c0-no_action-b90-s1/result.json",
+   "e1_nsclc_out/c0-no_action-b90-s2/result.json",
+   "e1_nsclc_out/c0-no_action-b90-s3/result.json",
+   "e1_nsclc_out/c0-no_action-b90-s4/result.json",
+   "e1_nsclc_out/c0-no_action-b90-s5/result.json"
+  ]
+ },
+ "nsclc_pilot|no_action|400": {
+  "n": 5,
+  "CI_mean": 0,
+  "CI_sd": 0.0,
+  "CI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "VI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "sim-nsclc-pilot-8x6"
+  ],
+  "files": [
+   "e1_nsclc_out/c0-no_action-b400-s1/result.json",
+   "e1_nsclc_out/c0-no_action-b400-s2/result.json",
+   "e1_nsclc_out/c0-no_action-b400-s3/result.json",
+   "e1_nsclc_out/c0-no_action-b400-s4/result.json",
+   "e1_nsclc_out/c0-no_action-b400-s5/result.json"
+  ]
+ },
+ "nsclc_pilot|patient_independent|30": {
+  "n": 5,
+  "CI_mean": 0,
+  "CI_sd": 0.0,
+  "CI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "VI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "sim-nsclc-pilot-8x6"
+  ],
+  "files": [
+   "e1_nsclc_out/c0-patient_independent-b30-s1/result.json",
+   "e1_nsclc_out/c0-patient_independent-b30-s2/result.json",
+   "e1_nsclc_out/c0-patient_independent-b30-s3/result.json",
+   "e1_nsclc_out/c0-patient_independent-b30-s4/result.json",
+   "e1_nsclc_out/c0-patient_independent-b30-s5/result.json"
+  ]
+ },
+ "nsclc_pilot|patient_independent|90": {
+  "n": 5,
+  "CI_mean": 0,
+  "CI_sd": 0.0,
+  "CI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "VI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "sim-nsclc-pilot-8x6"
+  ],
+  "files": [
+   "e1_nsclc_out/c0-patient_independent-b90-s1/result.json",
+   "e1_nsclc_out/c0-patient_independent-b90-s2/result.json",
+   "e1_nsclc_out/c0-patient_independent-b90-s3/result.json",
+   "e1_nsclc_out/c0-patient_independent-b90-s4/result.json",
+   "e1_nsclc_out/c0-patient_independent-b90-s5/result.json"
+  ]
+ },
+ "nsclc_pilot|patient_independent|400": {
+  "n": 5,
+  "CI_mean": 0,
+  "CI_sd": 0.0,
+  "CI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "VI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "sim-nsclc-pilot-8x6"
+  ],
+  "files": [
+   "e1_nsclc_out/c0-patient_independent-b400-s1/result.json",
+   "e1_nsclc_out/c0-patient_independent-b400-s2/result.json",
+   "e1_nsclc_out/c0-patient_independent-b400-s3/result.json",
+   "e1_nsclc_out/c0-patient_independent-b400-s4/result.json",
+   "e1_nsclc_out/c0-patient_independent-b400-s5/result.json"
+  ]
+ },
+ "nsclc_pilot|random|30": {
+  "n": 5,
+  "CI_mean": 0,
+  "CI_sd": 0.0,
+  "CI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "VI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "sim-nsclc-pilot-8x6"
+  ],
+  "files": [
+   "e1_nsclc_out/c0-random-b30-s1/result.json",
+   "e1_nsclc_out/c0-random-b30-s2/result.json",
+   "e1_nsclc_out/c0-random-b30-s3/result.json",
+   "e1_nsclc_out/c0-random-b30-s4/result.json",
+   "e1_nsclc_out/c0-random-b30-s5/result.json"
+  ]
+ },
+ "nsclc_pilot|random|90": {
+  "n": 5,
+  "CI_mean": 0,
+  "CI_sd": 0.0,
+  "CI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "VI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "sim-nsclc-pilot-8x6"
+  ],
+  "files": [
+   "e1_nsclc_out/c0-random-b90-s1/result.json",
+   "e1_nsclc_out/c0-random-b90-s2/result.json",
+   "e1_nsclc_out/c0-random-b90-s3/result.json",
+   "e1_nsclc_out/c0-random-b90-s4/result.json",
+   "e1_nsclc_out/c0-random-b90-s5/result.json"
+  ]
+ },
+ "nsclc_pilot|random|400": {
+  "n": 5,
+  "CI_mean": 0,
+  "CI_sd": 0.0,
+  "CI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "VI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "sim-nsclc-pilot-8x6"
+  ],
+  "files": [
+   "e1_nsclc_out/c0-random-b400-s1/result.json",
+   "e1_nsclc_out/c0-random-b400-s2/result.json",
+   "e1_nsclc_out/c0-random-b400-s3/result.json",
+   "e1_nsclc_out/c0-random-b400-s4/result.json",
+   "e1_nsclc_out/c0-random-b400-s5/result.json"
+  ]
+ },
+ "generator|cost_first|200": {
+  "n": 6,
+  "CI_mean": 0,
+  "CI_sd": 0.0,
+  "CI_values": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "VI_values": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "neph-k3-catalog-source-r00@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r01@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r02@d8c8982c87e0b69a+map7403ddeb"
+  ],
+  "files": [
+   "e1_gen_out/c0-cost_first-b200-s1/result.json",
+   "e1_gen_out/c0-cost_first-b200-s2/result.json",
+   "e1_gen_out/c1-cost_first-b200-s1/result.json",
+   "e1_gen_out/c1-cost_first-b200-s2/result.json",
+   "e1_gen_out/c2-cost_first-b200-s1/result.json",
+   "e1_gen_out/c2-cost_first-b200-s2/result.json"
+  ]
+ },
+ "generator|cost_first|800": {
+  "n": 6,
+  "CI_mean": 0,
+  "CI_sd": 0.0,
+  "CI_values": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "VI_values": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "neph-k3-catalog-source-r00@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r01@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r02@d8c8982c87e0b69a+map7403ddeb"
+  ],
+  "files": [
+   "e1_gen_out/c0-cost_first-b800-s1/result.json",
+   "e1_gen_out/c0-cost_first-b800-s2/result.json",
+   "e1_gen_out/c1-cost_first-b800-s1/result.json",
+   "e1_gen_out/c1-cost_first-b800-s2/result.json",
+   "e1_gen_out/c2-cost_first-b800-s1/result.json",
+   "e1_gen_out/c2-cost_first-b800-s2/result.json"
+  ]
+ },
+ "generator|dcvc|200": {
+  "n": 6,
+  "CI_mean": 4,
+  "CI_sd": 4.34,
+  "CI_values": [
+   2,
+   2,
+   9,
+   10,
+   0,
+   1
+  ],
+  "VI_values": [
+   2,
+   2,
+   9,
+   10,
+   0,
+   1
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "neph-k3-catalog-source-r00@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r01@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r02@d8c8982c87e0b69a+map7403ddeb"
+  ],
+  "files": [
+   "e1_gen_out/c0-dcvc-b200-s1/result.json",
+   "e1_gen_out/c0-dcvc-b200-s2/result.json",
+   "e1_gen_out/c1-dcvc-b200-s1/result.json",
+   "e1_gen_out/c1-dcvc-b200-s2/result.json",
+   "e1_gen_out/c2-dcvc-b200-s1/result.json",
+   "e1_gen_out/c2-dcvc-b200-s2/result.json"
+  ]
+ },
+ "generator|dcvc|800": {
+  "n": 6,
+  "CI_mean": 5,
+  "CI_sd": 5.87,
+  "CI_values": [
+   2,
+   2,
+   12,
+   13,
+   0,
+   1
+  ],
+  "VI_values": [
+   2,
+   2,
+   12,
+   13,
+   0,
+   1
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "neph-k3-catalog-source-r00@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r01@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r02@d8c8982c87e0b69a+map7403ddeb"
+  ],
+  "files": [
+   "e1_gen_out/c0-dcvc-b800-s1/result.json",
+   "e1_gen_out/c0-dcvc-b800-s2/result.json",
+   "e1_gen_out/c1-dcvc-b800-s1/result.json",
+   "e1_gen_out/c1-dcvc-b800-s2/result.json",
+   "e1_gen_out/c2-dcvc-b800-s1/result.json",
+   "e1_gen_out/c2-dcvc-b800-s2/result.json"
+  ]
+ },
+ "generator|dcvc-no_bundles|200": {
+  "n": 6,
+  "CI_mean": 3.333,
+  "CI_sd": 3.33,
+  "CI_values": [
+   2,
+   2,
+   7,
+   8,
+   0,
+   1
+  ],
+  "VI_values": [
+   2,
+   2,
+   7,
+   8,
+   0,
+   1
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "neph-k3-catalog-source-r00@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r01@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r02@d8c8982c87e0b69a+map7403ddeb"
+  ],
+  "files": [
+   "e1_gen_out/c0-dcvc-no_bundles-b200-s1/result.json",
+   "e1_gen_out/c0-dcvc-no_bundles-b200-s2/result.json",
+   "e1_gen_out/c1-dcvc-no_bundles-b200-s1/result.json",
+   "e1_gen_out/c1-dcvc-no_bundles-b200-s2/result.json",
+   "e1_gen_out/c2-dcvc-no_bundles-b200-s1/result.json",
+   "e1_gen_out/c2-dcvc-no_bundles-b200-s2/result.json"
+  ]
+ },
+ "generator|dcvc-no_bundles|800": {
+  "n": 6,
+  "CI_mean": 8,
+  "CI_sd": 3.69,
+  "CI_values": [
+   7,
+   7,
+   12,
+   13,
+   4,
+   5
+  ],
+  "VI_values": [
+   7,
+   7,
+   12,
+   13,
+   4,
+   5
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "neph-k3-catalog-source-r00@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r01@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r02@d8c8982c87e0b69a+map7403ddeb"
+  ],
+  "files": [
+   "e1_gen_out/c0-dcvc-no_bundles-b800-s1/result.json",
+   "e1_gen_out/c0-dcvc-no_bundles-b800-s2/result.json",
+   "e1_gen_out/c1-dcvc-no_bundles-b800-s1/result.json",
+   "e1_gen_out/c1-dcvc-no_bundles-b800-s2/result.json",
+   "e1_gen_out/c2-dcvc-no_bundles-b800-s1/result.json",
+   "e1_gen_out/c2-dcvc-no_bundles-b800-s2/result.json"
+  ]
+ },
+ "generator|dcvc-no_dcv|200": {
+  "n": 6,
+  "CI_mean": 4,
+  "CI_sd": 4.34,
+  "CI_values": [
+   2,
+   2,
+   9,
+   10,
+   0,
+   1
+  ],
+  "VI_values": [
+   2,
+   2,
+   9,
+   10,
+   0,
+   1
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "neph-k3-catalog-source-r00@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r01@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r02@d8c8982c87e0b69a+map7403ddeb"
+  ],
+  "files": [
+   "e1_gen_out/c0-dcvc-no_dcv-b200-s1/result.json",
+   "e1_gen_out/c0-dcvc-no_dcv-b200-s2/result.json",
+   "e1_gen_out/c1-dcvc-no_dcv-b200-s1/result.json",
+   "e1_gen_out/c1-dcvc-no_dcv-b200-s2/result.json",
+   "e1_gen_out/c2-dcvc-no_dcv-b200-s1/result.json",
+   "e1_gen_out/c2-dcvc-no_dcv-b200-s2/result.json"
+  ]
+ },
+ "generator|dcvc-no_dcv|800": {
+  "n": 6,
+  "CI_mean": 5,
+  "CI_sd": 5.87,
+  "CI_values": [
+   2,
+   2,
+   12,
+   13,
+   0,
+   1
+  ],
+  "VI_values": [
+   2,
+   2,
+   12,
+   13,
+   0,
+   1
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "neph-k3-catalog-source-r00@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r01@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r02@d8c8982c87e0b69a+map7403ddeb"
+  ],
+  "files": [
+   "e1_gen_out/c0-dcvc-no_dcv-b800-s1/result.json",
+   "e1_gen_out/c0-dcvc-no_dcv-b800-s2/result.json",
+   "e1_gen_out/c1-dcvc-no_dcv-b800-s1/result.json",
+   "e1_gen_out/c1-dcvc-no_dcv-b800-s2/result.json",
+   "e1_gen_out/c2-dcvc-no_dcv-b800-s1/result.json",
+   "e1_gen_out/c2-dcvc-no_dcv-b800-s2/result.json"
+  ]
+ },
+ "generator|dcvc-no_evidence_routing|200": {
+  "n": 6,
+  "CI_mean": 4,
+  "CI_sd": 4.34,
+  "CI_values": [
+   2,
+   2,
+   9,
+   10,
+   0,
+   1
+  ],
+  "VI_values": [
+   2,
+   2,
+   9,
+   10,
+   0,
+   1
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "neph-k3-catalog-source-r00@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r01@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r02@d8c8982c87e0b69a+map7403ddeb"
+  ],
+  "files": [
+   "e1_gen_out/c0-dcvc-no_evidence_routing-b200-s1/result.json",
+   "e1_gen_out/c0-dcvc-no_evidence_routing-b200-s2/result.json",
+   "e1_gen_out/c1-dcvc-no_evidence_routing-b200-s1/result.json",
+   "e1_gen_out/c1-dcvc-no_evidence_routing-b200-s2/result.json",
+   "e1_gen_out/c2-dcvc-no_evidence_routing-b200-s1/result.json",
+   "e1_gen_out/c2-dcvc-no_evidence_routing-b200-s2/result.json"
+  ]
+ },
+ "generator|dcvc-no_evidence_routing|800": {
+  "n": 6,
+  "CI_mean": 4,
+  "CI_sd": 4.34,
+  "CI_values": [
+   2,
+   2,
+   9,
+   10,
+   0,
+   1
+  ],
+  "VI_values": [
+   2,
+   2,
+   9,
+   10,
+   0,
+   1
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "neph-k3-catalog-source-r00@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r01@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r02@d8c8982c87e0b69a+map7403ddeb"
+  ],
+  "files": [
+   "e1_gen_out/c0-dcvc-no_evidence_routing-b800-s1/result.json",
+   "e1_gen_out/c0-dcvc-no_evidence_routing-b800-s2/result.json",
+   "e1_gen_out/c1-dcvc-no_evidence_routing-b800-s1/result.json",
+   "e1_gen_out/c1-dcvc-no_evidence_routing-b800-s2/result.json",
+   "e1_gen_out/c2-dcvc-no_evidence_routing-b800-s1/result.json",
+   "e1_gen_out/c2-dcvc-no_evidence_routing-b800-s2/result.json"
+  ]
+ },
+ "generator|dcvc-no_recovery|200": {
+  "n": 6,
+  "CI_mean": 4,
+  "CI_sd": 4.34,
+  "CI_values": [
+   2,
+   2,
+   9,
+   10,
+   0,
+   1
+  ],
+  "VI_values": [
+   2,
+   2,
+   9,
+   10,
+   0,
+   1
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "neph-k3-catalog-source-r00@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r01@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r02@d8c8982c87e0b69a+map7403ddeb"
+  ],
+  "files": [
+   "e1_gen_out/c0-dcvc-no_recovery-b200-s1/result.json",
+   "e1_gen_out/c0-dcvc-no_recovery-b200-s2/result.json",
+   "e1_gen_out/c1-dcvc-no_recovery-b200-s1/result.json",
+   "e1_gen_out/c1-dcvc-no_recovery-b200-s2/result.json",
+   "e1_gen_out/c2-dcvc-no_recovery-b200-s1/result.json",
+   "e1_gen_out/c2-dcvc-no_recovery-b200-s2/result.json"
+  ]
+ },
+ "generator|dcvc-no_recovery|800": {
+  "n": 6,
+  "CI_mean": 5,
+  "CI_sd": 5.87,
+  "CI_values": [
+   2,
+   2,
+   12,
+   13,
+   0,
+   1
+  ],
+  "VI_values": [
+   2,
+   2,
+   12,
+   13,
+   0,
+   1
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "neph-k3-catalog-source-r00@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r01@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r02@d8c8982c87e0b69a+map7403ddeb"
+  ],
+  "files": [
+   "e1_gen_out/c0-dcvc-no_recovery-b800-s1/result.json",
+   "e1_gen_out/c0-dcvc-no_recovery-b800-s2/result.json",
+   "e1_gen_out/c1-dcvc-no_recovery-b800-s1/result.json",
+   "e1_gen_out/c1-dcvc-no_recovery-b800-s2/result.json",
+   "e1_gen_out/c2-dcvc-no_recovery-b800-s1/result.json",
+   "e1_gen_out/c2-dcvc-no_recovery-b800-s2/result.json"
+  ]
+ },
+ "generator|no_action|200": {
+  "n": 6,
+  "CI_mean": 0,
+  "CI_sd": 0.0,
+  "CI_values": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "VI_values": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "neph-k3-catalog-source-r00@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r01@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r02@d8c8982c87e0b69a+map7403ddeb"
+  ],
+  "files": [
+   "e1_gen_out/c0-no_action-b200-s1/result.json",
+   "e1_gen_out/c0-no_action-b200-s2/result.json",
+   "e1_gen_out/c1-no_action-b200-s1/result.json",
+   "e1_gen_out/c1-no_action-b200-s2/result.json",
+   "e1_gen_out/c2-no_action-b200-s1/result.json",
+   "e1_gen_out/c2-no_action-b200-s2/result.json"
+  ]
+ },
+ "generator|no_action|800": {
+  "n": 6,
+  "CI_mean": 0,
+  "CI_sd": 0.0,
+  "CI_values": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "VI_values": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "neph-k3-catalog-source-r00@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r01@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r02@d8c8982c87e0b69a+map7403ddeb"
+  ],
+  "files": [
+   "e1_gen_out/c0-no_action-b800-s1/result.json",
+   "e1_gen_out/c0-no_action-b800-s2/result.json",
+   "e1_gen_out/c1-no_action-b800-s1/result.json",
+   "e1_gen_out/c1-no_action-b800-s2/result.json",
+   "e1_gen_out/c2-no_action-b800-s1/result.json",
+   "e1_gen_out/c2-no_action-b800-s2/result.json"
+  ]
+ },
+ "generator|patient_independent|200": {
+  "n": 6,
+  "CI_mean": 0.833,
+  "CI_sd": 0.98,
+  "CI_values": [
+   0,
+   0,
+   2,
+   2,
+   0,
+   1
+  ],
+  "VI_values": [
+   0,
+   0,
+   2,
+   2,
+   0,
+   1
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "neph-k3-catalog-source-r00@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r01@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r02@d8c8982c87e0b69a+map7403ddeb"
+  ],
+  "files": [
+   "e1_gen_out/c0-patient_independent-b200-s1/result.json",
+   "e1_gen_out/c0-patient_independent-b200-s2/result.json",
+   "e1_gen_out/c1-patient_independent-b200-s1/result.json",
+   "e1_gen_out/c1-patient_independent-b200-s2/result.json",
+   "e1_gen_out/c2-patient_independent-b200-s1/result.json",
+   "e1_gen_out/c2-patient_independent-b200-s2/result.json"
+  ]
+ },
+ "generator|patient_independent|800": {
+  "n": 6,
+  "CI_mean": 1.833,
+  "CI_sd": 2.48,
+  "CI_values": [
+   0,
+   0,
+   5,
+   5,
+   0,
+   1
+  ],
+  "VI_values": [
+   0,
+   0,
+   5,
+   5,
+   0,
+   1
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "neph-k3-catalog-source-r00@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r01@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r02@d8c8982c87e0b69a+map7403ddeb"
+  ],
+  "files": [
+   "e1_gen_out/c0-patient_independent-b800-s1/result.json",
+   "e1_gen_out/c0-patient_independent-b800-s2/result.json",
+   "e1_gen_out/c1-patient_independent-b800-s1/result.json",
+   "e1_gen_out/c1-patient_independent-b800-s2/result.json",
+   "e1_gen_out/c2-patient_independent-b800-s1/result.json",
+   "e1_gen_out/c2-patient_independent-b800-s2/result.json"
+  ]
+ },
+ "generator|random|200": {
+  "n": 6,
+  "CI_mean": 0.333,
+  "CI_sd": 0.82,
+  "CI_values": [
+   0,
+   0,
+   0,
+   2,
+   0,
+   0
+  ],
+  "VI_values": [
+   0,
+   0,
+   0,
+   2,
+   0,
+   0
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "neph-k3-catalog-source-r00@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r01@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r02@d8c8982c87e0b69a+map7403ddeb"
+  ],
+  "files": [
+   "e1_gen_out/c0-random-b200-s1/result.json",
+   "e1_gen_out/c0-random-b200-s2/result.json",
+   "e1_gen_out/c1-random-b200-s1/result.json",
+   "e1_gen_out/c1-random-b200-s2/result.json",
+   "e1_gen_out/c2-random-b200-s1/result.json",
+   "e1_gen_out/c2-random-b200-s2/result.json"
+  ]
+ },
+ "generator|random|800": {
+  "n": 6,
+  "CI_mean": 2.833,
+  "CI_sd": 4.49,
+  "CI_values": [
+   0,
+   0,
+   7,
+   10,
+   0,
+   0
+  ],
+  "VI_values": [
+   0,
+   0,
+   7,
+   10,
+   0,
+   0
+  ],
+  "FI_values": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cohorts": [
+   "neph-k3-catalog-source-r00@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r01@d8c8982c87e0b69a+map7403ddeb",
+   "neph-k3-catalog-source-r02@d8c8982c87e0b69a+map7403ddeb"
+  ],
+  "files": [
+   "e1_gen_out/c0-random-b800-s1/result.json",
+   "e1_gen_out/c0-random-b800-s2/result.json",
+   "e1_gen_out/c1-random-b800-s1/result.json",
+   "e1_gen_out/c1-random-b800-s2/result.json",
+   "e1_gen_out/c2-random-b800-s1/result.json",
+   "e1_gen_out/c2-random-b800-s2/result.json"
+  ]
+ },
+ "_wp6_400_head": {
+  "head": "dba06d9d26b1ee5ee653e17375ac5d48903ac521",
+  "ctrec": "C:\\Users\\jsw58\\Desktop\\workseoyeon-sy-exp\\src\\ctrec\\__init__.py",
+  "gt_kind": "independent_rule_gt_reduced_scope"
+ },
+ "eval240|no_action|400": {
+  "arm": "no_action",
+  "system_confirmed_ineligible": null,
+  "verified_ineligible": null,
+  "false_ineligible": null,
+  "correct_expert_ready": null,
+  "result_hash": "a5a82411ac9152db",
+  "seed": 1
+ },
+ "eval240|random|400": {
+  "arm": "random",
+  "system_confirmed_ineligible": null,
+  "verified_ineligible": null,
+  "false_ineligible": null,
+  "correct_expert_ready": null,
+  "result_hash": "b0d398ccc4d5ba45",
+  "seed": 1
+ },
+ "eval240|patient_independent|400": {
+  "arm": "patient_independent",
+  "system_confirmed_ineligible": null,
+  "verified_ineligible": null,
+  "false_ineligible": null,
+  "correct_expert_ready": null,
+  "result_hash": "8c33142e1ff91790",
+  "seed": 1
+ },
+ "eval240|cost_first|400": {
+  "arm": "cost_first",
+  "system_confirmed_ineligible": null,
+  "verified_ineligible": null,
+  "false_ineligible": null,
+  "correct_expert_ready": null,
+  "result_hash": "2265a418447ed093",
+  "seed": 1
+ },
+ "eval240|dcvc|400": {
+  "arm": "dcvc",
+  "system_confirmed_ineligible": null,
+  "verified_ineligible": null,
+  "false_ineligible": null,
+  "correct_expert_ready": null,
+  "result_hash": "e487f6ca93a9a302",
+  "seed": 1
+ },
+ "eval240|dcvc-no_bundles|400": {
+  "arm": "dcvc-no_bundles",
+  "system_confirmed_ineligible": null,
+  "verified_ineligible": null,
+  "false_ineligible": null,
+  "correct_expert_ready": null,
+  "result_hash": "18e531be0b4bcfdb",
+  "seed": 1
+ },
+ "eval240|dcvc-no_dcv|400": {
+  "arm": "dcvc-no_dcv",
+  "system_confirmed_ineligible": null,
+  "verified_ineligible": null,
+  "false_ineligible": null,
+  "correct_expert_ready": null,
+  "result_hash": "e74d9b539ddfd446",
+  "seed": 1
+ },
+ "eval240|dcvc-no_recovery|400": {
+  "arm": "dcvc-no_recovery",
+  "system_confirmed_ineligible": null,
+  "verified_ineligible": null,
+  "false_ineligible": null,
+  "correct_expert_ready": null,
+  "result_hash": "b152ecc74e16bdba",
+  "seed": 1
+ },
+ "eval240|dcvc-no_evidence_routing|400": {
+  "arm": "dcvc-no_evidence_routing",
+  "system_confirmed_ineligible": null,
+  "verified_ineligible": null,
+  "false_ineligible": null,
+  "correct_expert_ready": null,
+  "result_hash": "b9b113a0ee4fb157",
+  "seed": 1
+ }
+}

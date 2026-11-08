@@ -1,0 +1,32 @@
+{
+ "tag": "8afe5ea",
+ "run": {
+  "policy": "full_dcvc",
+  "budget_minutes": 6000,
+  "horizon": 80,
+  "seed": 1
+ },
+ "gt_labels": {
+  "PENDING_EXPERT_ELIGIBLE": 23,
+  "NOT_EVALUATED": 87,
+  "INELIGIBLE": 130
+ },
+ "pending_expert_reached_expert_review": 20,
+ "ineligible_confirmed": 124,
+ "confirmed_ineligible_not_gt_ineligible": 0,
+ "confirmed_eligible": 0,
+ "final_status_counts": {
+  "CONFIRMED_INELIGIBLE": 124,
+  "INFO_MISSING": 91,
+  "VERIFICATION_PENDING": 5,
+  "EXPERT_REVIEW": 20
+ },
+ "obs_e12_info_keys": {
+  "criterion:NCT06216301:E12": 64
+ },
+ "obs_pregnancy_actions_for_male": [],
+ "sex_known": {
+  "male": 47,
+  "female": 33
+ }
+}

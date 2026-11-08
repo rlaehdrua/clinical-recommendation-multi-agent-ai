@@ -1,0 +1,516 @@
+{
+ "pipeline": "offline_stub(value_grounding.ground*/evidence_directness.check)",
+ "tag": "8afe5ea",
+ "commit": "8afe5ea",
+ "reference_date": "2026-11-07",
+ "results": {
+  "V001": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V002": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V003": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V004": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V005": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V006": {
+   "got": "hold",
+   "detail": "conflict"
+  },
+  "V007": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V008": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V009": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V010": {
+   "got": "hold",
+   "detail": "conflict"
+  },
+  "V011": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "V012": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V013": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "V014": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V015": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "V016": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V017": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V018": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V019": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V020": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "V021": {
+   "got": "hold",
+   "detail": "conflict"
+  },
+  "V022": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "V023": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "V024": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "V025": {
+   "got": "hold",
+   "detail": "hedged"
+  },
+  "V026": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "V027": {
+   "got": "hold",
+   "detail": "hedged"
+  },
+  "V028": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "V029": {
+   "got": "hold",
+   "detail": "hedged"
+  },
+  "V030": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "V031": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "V032": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "V033": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "V034": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "V035": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "V036": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "V037": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "V038": {
+   "got": "hold",
+   "detail": "hedged"
+  },
+  "V039": {
+   "got": "hold",
+   "detail": "hedged"
+  },
+  "V040": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "V041": {
+   "got": "hold",
+   "detail": "hedged"
+  },
+  "V042": {
+   "got": "hold",
+   "detail": "hedged"
+  },
+  "V043": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "V044": {
+   "got": "hold",
+   "detail": "hedged"
+  },
+  "V045": {
+   "got": "hold",
+   "detail": "hedged"
+  },
+  "V046": {
+   "got": "hold",
+   "detail": "hedged"
+  },
+  "V047": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "V048": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "V049": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "V050": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V051": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "V052": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "V053": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "V054": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V055": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "V056": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "V057": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V058": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "V059": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V060": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V061": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V062": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V063": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V064": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V065": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V066": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V067": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V068": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V069": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "V070": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V071": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V072": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V073": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V074": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V075": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V076": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V077": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V078": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V079": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V080": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V081": {
+   "got": "accept",
+   "detail": ""
+  },
+  "V082": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "N001": {
+   "got": "conflict",
+   "detail": "conflicting ['conflicting_evidence']"
+  },
+  "N002": {
+   "got": "conflict",
+   "detail": "conflicting ['conflicting_evidence']"
+  },
+  "N003": {
+   "got": "accept",
+   "detail": "unchecked []"
+  },
+  "N004": {
+   "got": "hold",
+   "detail": "unlocated ['quote_not_located']"
+  },
+  "N005": {
+   "got": "conflict",
+   "detail": "conflicting ['conflicting_evidence']"
+  },
+  "N006": {
+   "got": "accept",
+   "detail": "unchecked []"
+  },
+  "N007": {
+   "got": "accept",
+   "detail": "unchecked []"
+  },
+  "N008": {
+   "got": "accept",
+   "detail": "unchecked []"
+  },
+  "N009": {
+   "got": "accept",
+   "detail": "unchecked []"
+  },
+  "N010": {
+   "got": "accept",
+   "detail": "unchecked []"
+  },
+  "N011": {
+   "got": "accept",
+   "detail": "unchecked []"
+  },
+  "N012": {
+   "got": "accept",
+   "detail": "unchecked []"
+  },
+  "N013": {
+   "got": "accept",
+   "detail": "unchecked []"
+  },
+  "N014": {
+   "got": "accept",
+   "detail": "unchecked []"
+  },
+  "N015": {
+   "got": "accept",
+   "detail": "unchecked []"
+  },
+  "N016": {
+   "got": "accept",
+   "detail": "unchecked []"
+  },
+  "N017": {
+   "got": "accept",
+   "detail": "unchecked []"
+  },
+  "N018": {
+   "got": "accept",
+   "detail": "unchecked []"
+  },
+  "N019": {
+   "got": "accept",
+   "detail": "unchecked []"
+  },
+  "N020": {
+   "got": "accept",
+   "detail": "unchecked []"
+  },
+  "H6H01": {
+   "got": "hold",
+   "detail": "hedged"
+  },
+  "H6H02": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "H6H03": {
+   "got": "hold",
+   "detail": "hedged"
+  },
+  "H6H04": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "H6H05": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "H6H06": {
+   "got": "hold",
+   "detail": "hedged"
+  },
+  "H6H07": {
+   "got": "hold",
+   "detail": "hedged"
+  },
+  "H6H08": {
+   "got": "hold",
+   "detail": "hedged"
+  },
+  "H6H09": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "H6H10": {
+   "got": "hold",
+   "detail": "unlocated"
+  },
+  "H6C01": {
+   "got": "conflict",
+   "detail": "conflicting ['conflicting_evidence']"
+  },
+  "H6C02": {
+   "got": "conflict",
+   "detail": "conflicting ['conflicting_evidence']"
+  },
+  "H6C03": {
+   "got": "conflict",
+   "detail": "conflicting ['conflicting_evidence']"
+  },
+  "H6C04": {
+   "got": "hold",
+   "detail": "unlocated ['quote_not_located']"
+  },
+  "H6C05": {
+   "got": "conflict",
+   "detail": "conflicting ['conflicting_evidence']"
+  },
+  "H6C06": {
+   "got": "hold",
+   "detail": "unlocated ['quote_not_located']"
+  },
+  "H6C07": {
+   "got": "accept",
+   "detail": "unchecked []"
+  },
+  "H6C08": {
+   "got": "conflict",
+   "detail": "conflicting ['conflicting_evidence']"
+  },
+  "H6C09": {
+   "got": "conflict",
+   "detail": "conflicting ['conflicting_evidence']"
+  },
+  "H6C10": {
+   "got": "conflict",
+   "detail": "conflicting ['conflicting_evidence']"
+  },
+  "H6C11": {
+   "got": "conflict",
+   "detail": "conflicting ['conflicting_evidence']"
+  },
+  "H6C12": {
+   "got": "conflict",
+   "detail": "conflicting ['conflicting_evidence']"
+  },
+  "H6C13": {
+   "got": "conflict",
+   "detail": "conflicting ['conflicting_evidence']"
+  },
+  "H6C14": {
+   "got": "conflict",
+   "detail": "conflicting ['conflicting_evidence']"
+  },
+  "H6C15": {
+   "got": "conflict",
+   "detail": "conflicting ['conflicting_evidence']"
+  }
+ }
+}
