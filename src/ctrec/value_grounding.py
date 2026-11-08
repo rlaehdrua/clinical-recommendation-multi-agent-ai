@@ -476,6 +476,41 @@ def _uncertain(body: str, lo: int, hi: int) -> bool:
     return ed.hedged(head) or ed.hedged(clause) or bool(_APPROX.search(head + " " + clause))
 
 
+# P0-B (불확실 값): 기록 구간에서도 근사값은 직접 측정 사실로 채택하지 않음. 표현은 임상 검수를 받지 않았습니다.
+_APPROX_EXTRA = re.compile(r"\bor\s+so\b|\d\s*-?ish\b|\broughly\b|\bapprox\b\.?|\bcirca\b|대충|어림", re.IGNORECASE)
+_APPROX_SIGN = re.compile(r"(?:^|[^\d\s~～])\s*[~～≈]\s*$|\bapprox\.\s*(?:\w+\s+){0,2}$|\bca\.\s*$", re.IGNORECASE)  # 값 바로 앞의 "~12", "≈12", "Approx. 64" (숫자 사이의 "~"는 범위)
+_APPROX_AFTER = re.compile(rf"\s*{_UNIT}\s*(?:내외|전후|안팎|가량|남짓|언저리)", re.IGNORECASE)  # 값(단위) 바로 뒤: "12 내외", "12 g/dL 전후" ("수술 전후"는 값 뒤가 아님)
+
+
+def _scope(body: str, lo: int, hi: int) -> tuple[str, str]:
+    """값의 절과 값 앞(값의 숫자 직전까지). 값의 절이 "that"으로 시작하면 앞 절의 동사에 딸린 내용이므로 문장 처음부터 봄."""
+    clause = ed._clause(body, lo, hi)
+    digit = re.search(r"\d", body[lo:hi])
+    head = body[:lo + digit.start()] if digit else body[:lo]
+    if re.match(r"\s*that\b", clause, re.IGNORECASE):
+        clause = body[_sentence_start(body, lo):lo] + clause
+    return clause, head
+
+
+def _sentence_start(body: str, lo: int) -> int:
+    start = max(body.rfind("\n", 0, lo) + 1, 0)
+    for m in ed._SENTENCE_BOUNDARY.finditer(body, 0, lo):
+        start = max(start, m.end())
+    return start
+
+
+def _approximate(body: str, lo: int, hi: int) -> bool:
+    """값을 적은 절에 추측·근사 표지가 있는가 (절 밖의 진술은 보지 않음)."""
+    clause, head = _scope(body, lo, hi)
+    return bool(ed.hedged(clause) or _APPROX.search(clause) or _APPROX_EXTRA.search(clause) or _APPROX_SIGN.search(head)
+                or _APPROX_AFTER.match(body, hi))
+
+
+def _record_uncertain(field: str, body: str, lo: int, hi: int) -> bool:
+    """P0-B: 확정된 직접 측정 사실로 쓸 수 없는 값인가 (근사·추측)."""
+    return field != "sex" and _approximate(body, lo, hi)
+
+
 def _usable_answers(source_text: str, qa) -> list[ed.Segment]:
     """사실을 말한 답변 줄. 모름·거부와 의사 참고용 문답의 답은 판정 근거가 아님."""
     from .question_contract import non_answer
@@ -524,10 +559,11 @@ def ground(field: str, value, source_text: str | None, *, key: str | None = None
     initial = normalize(field, evidence.split_source(source_text)[0])
     mentioned = _mentions(field, initial)
     current = {x for x, lo, hi in mentioned if not _past_mention(field, initial, lo, hi)}
-    in_record = any(_about_patient(field, initial, m.start(), m.end())
-                    and not ((current or field == "ecog") and _past_mention(field, initial, m.start(), m.end()))
-                    for m in pat.finditer(initial)) or (field == "age" and _from_birth_year(v, initial, reference_date))
-    stated, hedged = False, False
+    found = [m for m in pat.finditer(initial) if _about_patient(field, initial, m.start(), m.end())
+             and not ((current or field == "ecog") and _past_mention(field, initial, m.start(), m.end()))]
+    unsure = [m for m in found if _record_uncertain(field, initial, m.start(), m.end())]  # P0-B: 근사·추측 값은 보류 근거만
+    in_record = len(found) > len(unsure) or (field == "age" and _from_birth_year(v, initial, reference_date))
+    stated, hedged = False, bool(unsure)
     answered: set[str] = set()
     usable = _usable_answers(source_text, qa)
     for seg in usable:
@@ -535,7 +571,7 @@ def ground(field: str, value, source_text: str | None, *, key: str | None = None
         for m in pat.finditer(body):
             if not _about_patient(field, body, m.start(), m.end()):
                 continue
-            if _uncertain(body, m.start(), m.end()):
+            if _uncertain(body, m.start(), m.end()) or _record_uncertain(field, body, m.start(), m.end()):
                 hedged = True
             else:
                 stated = True
@@ -757,7 +793,7 @@ def ground_lab(lab: str, value, quote: str | None, source_text: str | None, *, k
                 continue  # 과거로 표시된 값은 현재 값의 근거가 아님 (현재 값이 없으면 보류)
             if h.seg.role == "record" and not any(float(x[2]) == float(value) and x[3] == "measured" for x in in_record):
                 continue  # 다음 줄의 무효 선언·복사 각주는 구간 안에서 보이지 않음: 기록 전체로 본 결과를 따름 (과거 값이면 보류)
-            if _uncertain(body, lo, hi) if h.seg.role == "answer" else ed.hedged(ed._clause(body, lo, hi)):
+            if (h.seg.role == "answer" and _uncertain(body, lo, hi)) or _record_uncertain(f"lab:{canon}", body, lo, hi):  # P0-B: 기록 구간도 근사·추측
                 hedged = True
             else:
                 return None
