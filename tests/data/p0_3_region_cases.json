@@ -153,7 +153,7 @@
     "I1": "UNKNOWN",
     "I2": "MET"
    },
-   "known_defect": true
+   "known_defect": false
   },
   {
    "case_id": "age20-USA",
@@ -227,7 +227,7 @@
     "I1": "UNKNOWN",
     "I2": "MET"
    },
-   "known_defect": true
+   "known_defect": false
   },
   {
    "case_id": "age22-unknown",
