@@ -563,18 +563,88 @@ def _quoted_after(body: str, hi: int) -> bool:
 
 
 def _hearsay(field: str, body: str, lo: int, hi: int) -> bool:
-    """값이 비의료인의 전언이거나 화자가 적히지 않은 전언 어미로 끝나는가. 의료진이 전했다고 적힌 값은 지금 동작 그대로 (CL-B1)."""
+    """값이 비의료인의 전언이거나 화자가 적히지 않은 전언 어미로 끝나는가.
+    CL-B1 후보 (팀 결정 전, CLB1_RELAY_HOLD=True): 의료진·외부 기관·대명사가 전한 값도 같은 전언으로 보류 (_relayed)."""
     start, end = _sentence_start(body, lo), len(_scope(body, lo, hi)[1])
     for m in _HEAD_BREAK.finditer(body, start, end):
         start = m.end()
     head = body[start:end]  # 같은 문장의 값 앞. ";"·"but" 앞은 다른 진술: "Wife says she is 55, but the patient himself is 68"
     if not field.startswith("lab:"):
-        return bool(_LEAD_FAMILY.search(head) or (_FAMILY_SUBJECT.search(head) and _quoted_after(body, hi)))
+        return bool(_LEAD_FAMILY.search(head) or (_FAMILY_SUBJECT.search(head) and _quoted_after(body, hi))
+                    or (CLB1_RELAY_HOLD and _relayed(field, body, lo, hi)))
     if _LEAD_LAY.search(head):
         return True
-    if _CLINICIAN.search(ed._sentence(body, lo)):
-        return False
+    if CLB1_RELAY_HOLD:  # CL-B1 후보 (팀 결정 전): 문장에 의료진이 있어도 전언 검사를 생략하지 않음
+        if _relayed(field, body, lo, hi):
+            return True
+    elif _CLINICIAN.search(ed._sentence(body, lo)):
+        return False  # 이전 동작: 의료진이 있는 문장은 전언 어미·환자 진술 동사로 보류하지 않음
     return _reaches(_SELF_REPORT, head) or _quoted_after(body, hi)
+
+
+# ----------------------------------------------------------------------------- CL-B1 후보 (팀 결정 전)
+# 문장 내용만 봅니다: 값이 누군가의 말·전화·외부 기관을 거쳐 전해졌다고 적혀 있으면, 전한 사람이 의료진이든 가족이든
+# 대명사든 알 수 없는 사람이든 같은 보류(HEDGED)입니다. 팀 127건 README의 작성 원칙 "의료진 전언(불확실) -> hold"를 따름.
+# 출처 메타데이터(evidence_source, 기록/답변 구간)는 여기서 보지 않습니다. 문서 확인 경로(evidence_basis.release, fact_view.gate,
+# fact_store.document_backed)는 이 함수를 부르지 않습니다. 다만 처음 입력 원문에서 온 값은 서버 증명이 붙어도 matcher의
+# structured_problem이 원문 문구를 다시 보므로 전언 문구의 값은 보류로 남습니다 (기존 가족 전언과 같음). 직접 측정 문장("Hb 12 g/dL (2026-10-01)",
+# "Lab: Hb 12", "Lab reported Hb 12")은 그대로 채택합니다. False로 두면 이전 동작입니다. 표현은 임상 검수를 받지 않았습니다.
+CLB1_RELAY_HOLD = True
+_DOC_NOUN = re.compile(r"labs?|laborator(?:y|ies)|results?|reports?|cbc|panels?|chemistry|chem|analy[sz]ers?|machine|charts?|records?|emr|ehr|"
+                       r"smear|differential|pathology|tests?|assays?|poc|bloods|bloodwork|printout|sheet|id|registration|intake|insurance|protocol",
+                       re.IGNORECASE)  # 주어·출처가 기록 자체: "Lab reported Hb 12", "Results reported: Hb 12", "Per chart, Hb 12"
+_SELF_SUBJECT = re.compile(r"patient|pt|i|he|she|they|we|self|himself|herself", re.IGNORECASE)  # 나이·ECOG는 본인 진술이 자기 보고 허용 근거
+_TITLE_END = re.compile(r"\b(?:dr|mr|mrs|ms|prof)\.\s*$", re.IGNORECASE)  # "Dr. Kim": 이 마침표는 문장 경계가 아님
+_CHANNEL = r"called|calls|phoned|rang(?:\s+back)?|rings|texted|messaged|e-?mailed|informed|let\s+(?:me|us|her|him|them)\s+know"
+_RELAY_ANY = re.compile(rf"(?<![\w'])(?P<subj>[A-Za-z][\w'-]*)\s+(?:(?:also|then|later|just|already|has|had|have|was|were)\s+)?"
+                        rf"(?:{_RELAY_VERB}|{_CHANNEL})\b", re.IGNORECASE)  # "X said/says/told/reported/called ... Hb 12" (X는 누구든)
+_PER_ANY = re.compile(r"\b(?:per|according\s+to|as\s+(?:told|relayed|reported)\s+by)\s+(?:the\s+|her\s+|his\s+|my\s+|their\s+|our\s+|today'?s\s+|this\s+morning'?s\s+)?"
+                      r"(?P<who>[A-Za-z][\w'-]*)", re.IGNORECASE)  # "Per the nurse,", "According to Dr. Kim,", "Per outside hospital,"
+_OUTSIDE = re.compile(r"\b(?:outside|external|referring)\s+(?:\w+\s+)?(?:hospitals?|clinics?|labs?|laborator(?:y|ies)|facilit(?:y|ies)|"
+                      r"cent(?:er|re)s?|institutions?|offices?|providers?|records?|results?)\b|\boutside\s+(?:cbc|bloods|bloodwork|testing)\b|"
+                      r"\b(?:other|another|different)\s+(?:hospitals?|clinics?|facilit(?:y|ies)|cent(?:er|re)s?|institutions?)\b|"  # "Other labs:"는 추가 검사라 제외
+                      r"외부\s*(?:병원|기관|의원|검사)|(?<![가-힣])타\s*(?:병원|기관|의원)|다른\s*(?:병원|의원|기관)", re.IGNORECASE)  # 외부 기관 결과를 옮겨 적음
+_CHANNEL_HEAD = re.compile(rf"(?<![\w'])[A-Za-z][\w'-]*\s+(?:{_CHANNEL}|left\s+(?:a\s+)?(?:voice\s*mail|voicemail|message))\b|"
+                           r"전화(?:로|해서|했|가\s*와|를\s*받|\s*받)|문자(?:로|를\s*받)",
+                           re.IGNORECASE)  # 주어가 있는 통보만: "The nurse called; Hb 12" (기록자의 "Called patient; Hb 12"는 제외)
+_LEAD_KO_ANY = re.compile(r"(?:말|말씀|얘기|이야기)\s*(?:로는|으로는|에\s*따르면|에\s*의하면)|(?:께서|이|가)\s*(?:그러는데|그러던데|그러더라|그랬는데|그러시는데|하는\s*말이)|"
+                          r"들었는데|들었고|듣기로는?|전해\s*(?:들|받)")  # 화자가 누구든 같은 전언 도입부: "주치의 말로는", "들었는데"
+_CONTRAST_BREAK = re.compile(r"\s(?:but|however|whereas|although|though)\s|(?:지만|으나|반면(?:에)?)(?=\s|,)", re.IGNORECASE)
+
+
+def _relay_start(body: str, lo: int) -> int:
+    """값이 있는 문장의 시작. "Dr."·"Mr." 뒤의 마침표는 문장 경계로 보지 않음 (ed._SENTENCE_BOUNDARY는 공용이라 그대로 둠)."""
+    start = _sentence_start(body, lo)
+    while start and (m := _TITLE_END.search(body, 0, start)):
+        start = _sentence_start(body, m.start())
+    return start
+
+
+def _relayed(field: str, body: str, lo: int, hi: int) -> bool:
+    """CL-B1 후보: 값이 누군가의 말·전화·외부 기관을 거쳐 전해졌다고 적혀 있는가. 전한 사람이 의료진인지는 보지 않음.
+
+    값 앞은 같은 문장에서 ";"·"but" 뒤만 봅니다 ("Patient says she feels well; Hb 12"는 채택). 전화·문자 통보
+    ("The nurse called; Hb 12")만 ";"를 넘어 봅니다: 그 통보가 뒤의 값을 전한 경로이기 때문."""
+    lab = field.startswith("lab:")
+    start, end = _relay_start(body, lo), len(_scope(body, lo, hi)[1])
+    whole = body[start:end]
+    whole = whole[max((m.end() for m in _CONTRAST_BREAK.finditer(whole)), default=0):]  # "but" 앞은 다른 진술
+    head = whole[whole.rfind(";") + 1:]
+    tail_end = _TAIL_END.search(body, hi)
+    tail = body[hi:tail_end.start() if tail_end else len(body)]
+    if _OUTSIDE.search(head) or _OUTSIDE.search(tail):
+        return True
+    for m in _PER_ANY.finditer(head):
+        who = m.group("who")
+        if not _DOC_NOUN.fullmatch(who) and (lab or not _SELF_SUBJECT.fullmatch(who)):
+            return True
+    for m in _RELAY_ANY.finditer(head):
+        subj = m.group("subj")
+        if _DOC_NOUN.fullmatch(subj) or _norm(subj) in _LAB_CANON or (not lab and _SELF_SUBJECT.fullmatch(subj)):
+            continue  # 기록·검사 자체가 주어("Hb reported as 12")이거나, 나이·ECOG의 본인 진술
+        if not _GAP_BREAK.search(head[m.end():]):
+            return True
+    return lab and bool(_CHANNEL_HEAD.search(whole) or _LEAD_KO_ANY.search(head))
 
 
 def _reaches(verb: re.Pattern, head: str) -> bool:

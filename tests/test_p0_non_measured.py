@@ -98,7 +98,7 @@ MEASURED = {
                 "지난주 Hb 결과 무효, 오늘 Hb 12 g/dL", "이전 Hb 8 g/dL 용혈로 무효. 재검 Hb 12 g/dL", "이전 CBC 무효, 재검 Hb 12 g/dL", "CBC 무효, 재검 Hb 12 g/dL", "Hb 8 g/dL 용혈로 무효, Hb 12 g/dL", "Hb 12 g/dL 무효 아님", "Hb 12 g/dL (not hemolyzed)",
                 "Hb 12 g/dL no error"],
     "institution": ["오늘 기준 Hb 12 g/dL", "2026-03-01 기준 Hb 12 g/dL", "최근 기준 Hb 12 g/dL", "현재 기준 Hb 12 g/dL", "기관 검사 Hb 12 g/dL", "본원 검사 Hb 12 g/dL", "본원 Hb 12 g/dL",
-                    "본원 검사실 Hb 12 g/dL", "외부 병원 Hb 12 g/dL", "타 병원 Hb 12 g/dL", "at our institution Hb 12 g/dL", "Hb 12 g/dL, 기관 기준 정상", "Hb 12 g/dL (기준치 12-16)",
+                    "본원 검사실 Hb 12 g/dL", "at our institution Hb 12 g/dL", "Hb 12 g/dL, 기관 기준 정상", "Hb 12 g/dL (기준치 12-16)",
                     "Hb 12 g/dL (참고치 12-16)", "Hb 12 g/dL (ref 12-16)", "Hb 12 g/dL (정상)"],
     "other": ["본인 Hb 12 g/dL", "환자 본인 Hb 12 g/dL", "기증자 Hb 13 g/dL, 환자 Hb 12 g/dL", "기증자 검사 정상, Hb 12 g/dL", "골수 기증자 없음, Hb 12 g/dL", "기증자 매칭 중, Hb 12 g/dL",
               "기증받은 신장 이식 후 Hb 12 g/dL", "donor transplant done, Hb 12 g/dL", "환자 Hb 12 g/dL, 기증자 정보 없음", "공여자 없음, Hb 12 g/dL", "참여자 Hb 12 g/dL"],
@@ -214,6 +214,13 @@ def test_not_a_measurement(kind, text):
 @pytest.mark.parametrize("kind, text", [*flat(MEASURED), *(("control", t) for t in STILL_MEASURED), *(("held_out", t) for t in HELD_OUT_YES)])
 def test_measurement_stays(kind, text):
     assert lab(text) is None
+
+
+# CL-B1 후보 (팀 결정 전): 외부 기관 결과를 옮겨 적은 값은 전언으로 보류. 이전에는 위 "institution" 대조군에서 채택(None)이었음.
+# 기관 "기준" 표현과 구분하려던 대조군이므로 "기준" 판정(UNLOCATED·CONFLICT 아님)은 그대로이고 보류 상태만 HEDGED로 바뀜.
+@pytest.mark.parametrize("text", ["외부 병원 Hb 12 g/dL", "타 병원 Hb 12 g/dL"])
+def test_outside_institution_value_is_held_clb1(text):
+    assert lab(text) == vg.HEDGED
 
 
 @pytest.mark.parametrize("text", ECOG_NOT)

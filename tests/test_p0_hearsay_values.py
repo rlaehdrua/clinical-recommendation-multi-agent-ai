@@ -147,10 +147,10 @@ def test_reporting_verb_on_something_else_does_not_hold_the_lab(text):
 @pytest.mark.parametrize("text", [
     "The nurse called; Hb 12.0 g/dL.", "의사 선생님이 혈색소 12래요", "Dr. Kim said Hb 12.0 g/dL.", "Her GP told her the Hb was 10.",
 ])
-def test_clinician_relayed_lab_is_left_as_before(text):
-    """의료진이 전한 값은 임상 결정 CL-B1 전까지 이 변경으로 바꾸지 않음 (지금 동작: 채택). 결정되면 이 고정값을 갱신."""
+def test_clinician_relayed_lab_is_held_clb1(text):
+    """CL-B1 후보 (팀 결정 전): 의료진이 전한 값도 전언이므로 보류. 이전 고정값: 채택(None) -> HEDGED. 결정되면 이 고정값을 갱신."""
     value = 10 if "was 10" in text else 12
-    assert lab("hemoglobin", value, text) is None, text
+    assert lab("hemoglobin", value, text) == H, text
 
 
 @pytest.mark.parametrize("field,value,text,status", [
