@@ -2,6 +2,9 @@
 
   python scripts/demo_nsclc_scenarios.py --out data/nsclc/eval/checks/demo_scenarios_4f81460.json
 
+(dba06d9 사본, 핸드오프 Agent C: 행동별 가정 비용(assumed_coordinator_min·assumed_latency_min)과 환자별 가정 코디네이터 분을 기록에 더함.
+ 판정·선택 로직은 70fe9a5 원본과 같음)
+
 - 평가셋(data/nsclc/eval)을 #20 runner로 full_dcvc, 6000분, horizon 80, seed 1 실행 -> 환자별 행동 기록
 - A: GT 전문가 판단 대기 적격 + 최종 EXPERT_REVIEW / B: GT 부적격 + 최종 CONFIRMED_INELIGIBLE
 - C: 연결된(bindable) 기준의 환자 질문이 '모름'(no_answer)으로 끝난 뒤 같은 항목을 문서·검사지 요청으로 확보한 환자
@@ -41,8 +44,17 @@ def run_log():
             "step": rec.step, "action": a.action_type, "source": a.source_id, "info_key": a.info_key,
             "targets": list(a.target_criteria), "outcome": rec.outcome.status if rec.outcome else None,
             "error": rec.outcome.error_code if rec.outcome else None,
+            "new_facts": len(rec.outcome.new_fact_ids) if rec.outcome else None,  # 0이면 값을 새로 얻지 못함 (기존 사실 확인만)
+            # 가정 비용 (시뮬레이터 비용표의 코디네이터 분·대기 분, 측정 시간 아님)
+            "assumed_coordinator_min": rec.outcome.cost_charged.coordinator_minutes if rec.outcome else None,
+            "assumed_latency_min": rec.outcome.latency_minutes if rec.outcome else None,
             "pairs": [f"{t.pair.trial_id}:{t.before.value}->{t.after.value}" for t in rec.pairs]})
+    global PER_PATIENT_MIN
+    PER_PATIENT_MIN = {k: v.get("coordinator_minutes") for k, v in r.per_patient.items()}
     return c, sim, final, by_alias
+
+
+PER_PATIENT_MIN: dict = {}
 
 
 def region_case() -> dict:
@@ -89,13 +101,13 @@ def main() -> int:
     with open(B.REVIEW, encoding="utf-8-sig", newline="") as f:
         bindable = {f"{r['trial_id']}:{r['criterion_id']}" for r in csv.DictReader(f) if r["gt_use"] == "bindable"}
 
-    def asked_then_doc(k, g, lg):
+    def asked_then_doc(k, g, lg, need_new_fact=False):
         t = g["trial_id"]
         for i, x in enumerate(lg):
             if x["action"] == "ASK_PATIENT" and x["error"] == "no_answer" and any(
                     y.startswith(t) and y in bindable for y in x["targets"]):
                 if any(y["action"] == "REQUEST_DOCUMENT" and y["info_key"] == x["info_key"] and y["outcome"] == "succeeded"
-                       for y in lg[i + 1:]):
+                       and (not need_new_fact or (y.get("new_facts") or 0) > 0) for y in lg[i + 1:]):
                     return True
         return False
 
@@ -104,10 +116,13 @@ def main() -> int:
         "B_ineligible": pick(lambda k, g, lg: g["gt_label"] == "INELIGIBLE" and final[k] == "CONFIRMED_INELIGIBLE"
                              and any(x["outcome"] == "succeeded" for x in lg)),
         "C_unknown_then_document": pick(asked_then_doc),
+        # dba06d9 추가: 원래 C 조건은 문서 요청 '성공'만 봄. 성공해도 새 사실이 0건일 수 있어(값 없음) 값을 실제로 얻은 경우를 따로 고름
+        "C2_unknown_then_document_new_fact": pick(lambda k, g, lg: asked_then_doc(k, g, lg, need_new_fact=True)),
     }
     c_all = sorted(k for k, g in gt.items() if asked_then_doc(k, g, logs.get(k.split("|")[0], [])))
     out = {"run": {"policy": "full_dcvc", "budget_minutes": 6000, "horizon": 80, "seed": 1, "cohort": sim.cohort_id},
-           "scenarios": {}, "C_candidates": c_all, "D_region": region_case()}
+           "scenarios": {}, "C_candidates": c_all,
+           "C2_candidates": sorted(k for k, g in gt.items() if asked_then_doc(k, g, logs.get(k.split("|")[0], []), need_new_fact=True)), "D_region": region_case()}
     for name, k in chosen.items():
         if k is None:
             out["scenarios"][name] = None
@@ -120,6 +135,7 @@ def main() -> int:
             "gt_reasons": g["reasons"], "final_status": final[k], "candidate_trials": p.candidate_trials,
             "public_known": p.known, "hidden": c.oracle.hidden.get(p.patient_id, {}),
             "other_pairs_final": {t: final[f"{al}|{t}"] for t in p.candidate_trials},
+            "assumed_patient_coordinator_min": PER_PATIENT_MIN.get(al),
             "actions": [x for x in logs.get(al, []) if any(y.startswith(g["trial_id"]) for y in x["targets"]) or not x["targets"]]}
     args = a.out
     args.parent.mkdir(parents=True, exist_ok=True)
