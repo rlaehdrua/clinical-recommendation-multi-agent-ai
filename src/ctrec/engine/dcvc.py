@@ -5,8 +5,12 @@ DCV (후보 고르기): LegacyAdapterPolicy.propose 그대로 + 결정 영향 �
   안전 필수 행동·임상의 검토·보류 기록은 빼지 않음 (M1: DCV가 필수 검증·전문가 이관을 제거하면 안 됨).
   근거 경로 (0.2, P): 환자 질문의 대상 기준이 모두 진료 기록 근거가 필요한 기준(required_evidence = clinical_record)이면
   환자 답(자기 보고)으로는 그 기준을 확정할 수 없으므로, 같은 항목을 담은 문서 정보원이 남아 있을 때 그 질문을 문서 요청
-  (reason record_evidence_required)으로 바꿈. 실패한 정보원·이미 요청한 (문서, 항목)은 쓰지 않고(대체 규칙과 같음), 남은
-  문서가 없으면 환자 질문 그대로 둠 (부분 정보는 여전히 쓸모 있음). 기준의 근거 요건(판정 메타데이터)만 보며 확률을 쓰지 않음.
+  (reason record_evidence_required)으로 바꿈. 실패한 정보원·이미 요청한 (문서, 항목)은 쓰지 않음(대체 규칙과 같음).
+  그 항목의 문서 경로가 있었는데 모두 실패했으면 환자 질문으로 되돌리지 않고 DEFER(item_sources_exhausted), 실패 없이
+  요청한 문서만 다 썼으면 DEFER(requested_documents_unresolved) - _convert의 소진 보류와 같은 사유 (환자 자기 보고로는
+  그 기준을 확정할 수 없고, 실패한 문서 요청과 같은 행동 ID라 실행할 수도 없음). 카탈로그에 그 항목의 문서 경로가 처음부터
+  없으면 환자 질문 그대로 둠 (0.1 동작). 같은 규칙을 소진 판단(_cut_off_items)에도 씀 (reroute). 기준의 근거 요건(판정
+  메타데이터)만 보며 확률을 쓰지 않음.
 C (코호트 단위 선택): 안전 필수 -> 환자별 최소 배정까지는 기준선과 같고, 남은 예산은 매번
   점수 = sum(1 / 그 쌍의 남은 필수 기준 수, 행동이 움직일 수 있는 열린 쌍마다) / 지금 원장 기준 추가 비용(분)
   이 가장 큰 행동을 고름. 결정 단락(0.2, P): 불충족(NOT_MET)으로 판정된 필수 기준의 근거를 확인하는 행동은 그것만으로
@@ -23,12 +27,14 @@ C (코호트 단위 선택): 안전 필수 -> 환자별 최소 배정까지는 �
 
 from __future__ import annotations
 
-from .cohort_state import CohortState
+from .cohort_state import CohortState, OpsState
 from .contracts import NON_EXECUTING, REPHRASE, ZERO_COST, Action, EffortBudget, PairStatus, SkippedAction
 from .cost import EffortLedger
 from .policy import LegacyAdapterPolicy, item_key, tried_key
 
 DCVC_VERSION = "0.2-draft"
+EXHAUSTED = "item_sources_exhausted"  # policy.EXHAUSTED_DEFERS
+UNRESOLVED = "requested_documents_unresolved"  # policy._convert와 같은 사유
 RECORD_EVIDENCE = "record_evidence_required"
 MIN_COST = 0.5  # 분. 추가 비용이 0인 행동(이미 요청한 문서의 같은 항목 등)이 점수를 무한대로 만들지 않게
 _CLOSED = frozenset({PairStatus.CONFIRMED_ELIGIBLE, PairStatus.CONFIRMED_INELIGIBLE, PairStatus.BLOCKED_FAILURE,
@@ -63,7 +69,7 @@ class FullDCVCPolicy(LegacyAdapterPolicy):
     def propose(self, cohort: CohortState, pending_reevaluation=None) -> list[Action]:
         cands = super().propose(cohort, pending_reevaluation)
         if self.evidence_routing:
-            cands = [self.route_evidence(cohort, a) for a in cands]
+            cands = [self.reroute(cohort, a) for a in cands]
         if not self.dcv_impact:
             return cands
         return [a for a in cands if a.safety_required or a.action_type in NON_EXECUTING
@@ -77,19 +83,32 @@ class FullDCVCPolicy(LegacyAdapterPolicy):
                  for c in t.criteria if c.key == k]
         return bool(found) and all(c.required_evidence == "clinical_record" for c in found)
 
-    def route_evidence(self, cohort: CohortState, a: Action) -> Action:
-        """진료 기록이 필요한 기준만 겨냥한 환자 질문 -> 남은 문서 정보원의 문서 요청 (없으면 그대로)."""
+    def reroute(self, cohort: CohortState, a: Action, ops: OpsState | None = None) -> Action:
+        """후보 생성(propose)과 소진 판단(LegacyAdapterPolicy._cut_off_items)이 함께 쓰는 근거 경로."""
+        return self.route_evidence(cohort, a, ops) if self.evidence_routing else a
+
+    def route_evidence(self, cohort: CohortState, a: Action, ops: OpsState | None = None) -> Action:
+        """진료 기록이 필요한 기준만 겨냥한 환자 질문 -> 남은 문서 정보원의 문서 요청.
+        문서 경로가 모두 실패·사용됐으면 보류(DEFER), 문서 경로가 처음부터 없으면 그대로.
+        ops: 아직 코호트에 반영하지 않은 운영 상태 (apply_outcome의 소진 판단). 없으면 cohort.ops."""
         src = self.catalog.get(a.source_id)
         if a.action_type != "ASK_PATIENT" or a.reason_code == REPHRASE or src is None or src.kind != "patient"                 or a.purpose != "eligibility" or not self.record_only(cohort, a):
             return a
-        ops = cohort.ops.get(a.patient_alias)
+        ops = ops if ops is not None else cohort.ops.get(a.patient_alias)
         item = item_key(a.info_key, a.fingerprint)
         failed_sources = ops.failed_sources if ops else frozenset()
+        failed_items = ops.failed_items if ops else frozenset()
         tried = {(s, item) for s in self.catalog.sources if ops and ops.attempts.get(tried_key(s, item))}
-        blocked = (ops.failed_items if ops else frozenset()) | tried
-        docs = self.item_alternatives(a.source_id, a.required_fields, a.info_key, item, failed_sources, blocked)
+        docs = self.item_alternatives(a.source_id, a.required_fields, a.info_key, item, failed_sources,
+                                      failed_items | tried)
         if not docs:
-            return a
+            if not self.item_alternatives(a.source_id, a.required_fields, a.info_key, item, frozenset(), frozenset()):
+                return a  # 이 항목을 담는 문서 정보원이 카탈로그에 없음 (소진이 아님)
+            unfailed = self.item_alternatives(a.source_id, a.required_fields, a.info_key, item, failed_sources,
+                                              failed_items)
+            return a.model_copy(update={"action_type": "DEFER", "source_id": None, "expected_cost": ZERO_COST,
+                                        "safety_required": False,
+                                        "reason_code": UNRESOLVED if unfailed else EXHAUSTED})
         doc = self.catalog[docs[0]]
         n_items = max(len(a.target_criteria), 1)
         cost = ZERO_COST if doc is None else doc.request_cost.model_copy(update={

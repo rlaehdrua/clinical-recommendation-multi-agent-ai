@@ -202,11 +202,14 @@ def test_missing_document_chain_ends_in_clinician_review_not_completion(env):
         out = status(staff, cid, chain, "document_unavailable")
         nxt = next(r for r in out["case"]["requests"] if r["follows"] == chain)
         kinds.append(nxt["kind"])
-        assert assert_invariants(staff, patient, cid)["pairs"] == before["pairs"]
+        pairs = assert_invariants(staff, patient, cid)["pairs"]
+        # 문서 경로 소진은 보류(BLOCKED_FAILURE)로만 바뀜 - 확정·부적격 없음 (exhausted-doc DEFER 수정 뒤)
+        assert all(pairs[t] in (before["pairs"][t], "BLOCKED_FAILURE") for t in pairs), (pairs, before["pairs"])
         if nxt["kind"] == "clinician_review":
             break
         chain = nxt["request_id"]
     assert kinds[-1] == "clinician_review" and set(kinds[:-1]) <= {"document_review"}
+    assert pairs == {"T-A": "BLOCKED_FAILURE"}  # 남은 항목이 모두 같은 문서 정보원 -> 쌍 소진 (임상 검토는 열림)
     review = next(r for r in D.staff_case(staff, cid)["requests"] if r["kind"] == "clinician_review")
     assert review["status"] == "requires_clinician" and review["reason_code"] == "item_sources_exhausted"
     status(staff, cid, chain, "document_unavailable", expect=409)  # 이미 닫힌 요청

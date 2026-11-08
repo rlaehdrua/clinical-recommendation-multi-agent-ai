@@ -347,6 +347,11 @@ class LegacyAdapterPolicy:
                 skipped.append(SkippedAction(action_id=a.action_id, reason_code="over_budget"))
                 done.add(a.action_id)
 
+    def reroute(self, cohort: CohortState, a: Action, ops: OpsState | None = None) -> Action:
+        """_convert 뒤 하위 정책의 행동 경로 조정 (full_dcvc 근거 경로). 기본: 그대로.
+        후보 생성과 소진 판단(_cut_off_items)이 같은 값을 보도록 둘 다 이 함수를 거침."""
+        return a
+
     # ------------------------------------------------------------ outcome
     def _cut_off_items(self, cohort: CohortState, alias: str, trials: set[str], ops: OpsState) -> set[str]:
         """대상 시험에서 더 얻을 길이 없는 항목 (그 환자의 다음 계획에서 소진 보류가 될 항목의 info_key).
@@ -355,7 +360,7 @@ class LegacyAdapterPolicy:
         gaps = {c.key: c.gap for c in st.criteria()}
         out, live = set(), set()
         for seq, la in enumerate(candidates(st, self.cfg)[0]):
-            a = self._convert(alias, seq, la, ops, gaps)
+            a = self.reroute(cohort, self._convert(alias, seq, la, ops, gaps), ops)  # propose와 같은 근거 경로
             if a.action_type not in NON_EXECUTING:
                 live.add(a.info_key)
             elif a.action_type == "DEFER" and a.reason_code in EXHAUSTED_DEFERS and a.info_key \

@@ -305,7 +305,9 @@ def test_unknown_unreachable_and_unavailable_never_confirm(env):
         r = staff.post(f"/api/followup/staff/cases/{cid}/requests/{chain}/status", headers=D.STAFF,
                        json={"status": "document_unavailable"})
         assert r.status_code == 200, r.text
-        assert assert_invariants(staff, patient, cid)["pairs"] == before["pairs"]
+        pairs = assert_invariants(staff, patient, cid)["pairs"]
+        # 문서 경로 소진은 보류(BLOCKED_FAILURE)로만 바뀜 - 확정·부적격 없음 (exhausted-doc DEFER 수정 뒤)
+        assert all(pairs[t] in (before["pairs"][t], "BLOCKED_FAILURE") for t in pairs), (pairs, before["pairs"])
         nxt = [x for x in r.json()["case"]["requests"] if x["follows"] == chain]
         if not nxt or nxt[0]["kind"] != "document_review":
             break
