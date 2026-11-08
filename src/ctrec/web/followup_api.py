@@ -449,6 +449,27 @@ def staff_insight(request: Request) -> dict:
         return insight(service())
 
 
+class EstimatePick(BaseModel):
+    case_id: str = Field(min_length=1, max_length=80)
+    proposal_id: str = Field(min_length=1, max_length=200)
+
+
+class EstimateBody(BaseModel):
+    picks: list[EstimatePick] = Field(default_factory=list, max_length=200)
+    groups: list[list[EstimatePick]] = Field(default_factory=list, max_length=40)
+
+
+@router.post("/staff/insight/estimate")
+def staff_insight_estimate(body: EstimateBody, request: Request) -> dict:
+    """고른 확인들을 함께 보낼 때의 가정 비용·판정 가능 쌍(상한). 읽기만 하고 요청을 만들지 않음."""
+    access.check_state_changing(request)
+    require_staff(request)
+    from .followup_insight import estimate
+    with _flow():
+        return estimate(service(), [(p.case_id, p.proposal_id) for p in body.picks],
+                        [[(p.case_id, p.proposal_id) for p in g] for g in body.groups])
+
+
 @router.get("/staff/cases/{case_id}/inspector")
 def staff_inspector(case_id: str, request: Request) -> dict:
     require_staff(request)
