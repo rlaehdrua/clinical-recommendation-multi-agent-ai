@@ -404,8 +404,15 @@ class FollowupService:
         req["updated_at"] = _now()
 
     def _supersede(self, data: dict, ds, pairs: dict, session) -> None:
-        """대상 기준이 더는 열려 있지 않은 요청을 닫음. 충돌 확인은 그 충돌이 사라졌을 때만."""
-        open_criteria = {f"{c.trial_id}:{c.rule_id}" for c in _criteria(ds) if c.gap != "none"}
+        """대상 기준이 더는 열려 있지 않은 요청을 닫음. 충돌 확인은 그 충돌이 사라졌을 때만.
+
+        열린 기준 = 정보 빈칸(gap)이 남은 기준 + 아직 문서로 검증되지 않은 불충족 근거 기준 (쌍이 provisional 불충족일 때의
+        mismatch_basis, decision_policy의 exclusion_basis_unverified 제안과 같은 조건). 근거 기준은 값이 있어 gap이 없지만
+        확인이 남았으므로, gap만 보면 그 근거 확인 요청이 다른 서류 확인의 재평가에서 닫히고 다시 제안되지 않음 (11-08)."""
+        crit = {c.key: c for c in _criteria(ds)}
+        open_criteria = {k for k, c in crit.items() if c.gap != "none"}
+        open_criteria |= {k for t in ds.trials.values() if t.open and t.mismatch == "provisional"
+                          for k in t.mismatch_basis if k in crit and crit[k].basis_tier != "verified"}
         live_pairs = {t for t, p in pairs.items() if p["status"] not in CLOSED_PAIRS}
         conflicts = {(c["field"], tuple(sorted(c["fact_ids"]))) for c in session.fact_store.conflicts(session.case.patient_id)}
         for r in data["requests"]:

@@ -726,7 +726,7 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 
 수정할 때마다 무엇을 왜 바꿨는지 여기에 기록합니다. 최신 항목이 위에 옵니다.
 
-### 2026-11-08 — Phase 1 최종 통합 (`integration/phase1-final`, PR #53 dba06d9 기준)
+### 2026-11-08 — Phase 1 최종 통합 (`integration/phase1-final`, PR #53 dba06d9에서 시작해 PR #53 최신 head 8afe5ea를 병합)
 
 제출 전 필수 수정을 한 브랜치에 모았습니다. 각 변경의 자세한 배경은 아래 각 항목과 커밋 메시지에 있습니다.
 
@@ -738,6 +738,7 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 | 4 | 누가 전했든 전해 들은 값은 보류 (CL-B1, 팀 핸드오프 T1 권고 a) | `cand/clb1-conservative-hold` |
 | 5 | 의사가 끝낼 수 없는 검토를 보류로 표시, `BLOCKED_FAILURE` 문구 "추가 확인 경로 없음 · 보류" | PR #55 (4614de7을 #53 위로 옮긴 4dcf8ae) |
 | 6 | 연구 담당자 화면을 질문 고르기 중심으로, 묶음 시간 비교·고른 질문 합계 API | PR #54 |
+| 6b | 불충족 근거(나이 등) 확인 요청이 다른 서류 확인 뒤 닫히지 않게 함 | PR #56 (PR #53 8afe5ea에 이미 병합되어 함께 들어옴) |
 | 7 | 보류 검토를 '진행 중인 요청 n건'에서도 뺌 (`open_requests`가 `open_by_status`와 같은 기준) | 통합 중 추가 |
 | 8 | 추천 순서는 예산 제약 미적용, '분'은 가정 비용이라는 문구 (PR #54 탭 이름에 맞춤) | final-sprint D |
 | 9 | README 키 없는 재현(3.0)·환경·한계(9.1), `.env.example` 데모 설정 주석 | `docs/readme-repro` + final-sprint C |
@@ -775,6 +776,17 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 | 5 | 문구 통일 (선우 제안, 11-08): `BLOCKED_FAILURE`와 이 요청을 '추가 확인 경로 없음 · 보류'로 (참여 불가·의사 판단 필요가 아님). 담당자 시험 상태·현황판·요청 카드 같은 문구, 환자 화면은 '더 확인할 방법이 없어 보류했어요' | `static/staff.js`, `cohort.js`, `followup.js` |
 
 판정·권한·저장 상태는 바뀌지 않습니다(표시와 개수만). 기준 목록은 `followup.service.NO_PATH_REASONS` 하나.
+### 2026-11-08 — 불충족 근거 확인 요청이 다른 서류 확인 뒤 닫혀 쌍이 멈추던 문제 (브라우저에서 발견, 동겸)
+
+배경: 예시 사례 S003(7세)처럼 자기 보고 나이로 'Age >= 18'이 불충족이면 쌍은 VERIFICATION_PENDING(`exclusion_unverified`, "안 맞는 이유를 서류로 확인")이고, 엔진은 근거 확인 요청(`basis:age`, `exclusion_basis_unverified`)을 냅니다. 그런데 `_supersede`가 열린 기준을 정보 빈칸(gap)으로만 세서, 값이 있어 gap이 없는 그 기준의 근거 확인 요청이 다른 서류 확인(혈소판 등)의 재평가에서 `targets_resolved`로 닫혔습니다. 같은 제안은 다시 나오지 않아 네 쌍이 '서류 확인 필요'인데 할 일 0개로 멈췄습니다. 잘못 확정한 것은 아니고(안전), 확정할 길이 없어진 문제입니다.
+
+| # | 변경 | 파일 |
+|---|---|---|
+| 1 | `_supersede`의 열린 기준에 '아직 문서로 검증되지 않은 불충족 근거 기준'을 더함 (쌍이 open·provisional 불충족일 때 `mismatch_basis` 중 `basis_tier != verified`, `decision_policy`의 `exclusion_basis_unverified` 제안과 같은 조건). 대상 기준이 정말 닫힌 요청은 그대로 닫힘 | `src/ctrec/followup/service.py` (선우 담당, 8줄) |
+| 2 | 테스트 2건: 16세 자기 보고 → 혈소판 서류 확인 뒤에도 나이 근거 요청이 열려 있고(수정 전 실패), 나이 확인 뒤 참여 불가(확정) / 근거 요청만 있을 때 확인하면 확정되고 남은 요청이 닫힘 | `tests/test_exclusion_basis_request.py` (신규) |
+
+브라우저 확인(데모 서버, S003 7세): 서류 확인 4건 동안 '나이 기록' 요청 유지 → 나이 확인 끝 → T-A~D 참여 불가(확정), 할 일 0개. 이미 닫힌 옛 사례의 요청은 되살리지 않습니다(새 사례부터 적용).
+
 
 ### 2026-11-08 — 환자 화면이 '확인 중'에 멈춘 것처럼 보이던 문제 (발표 데모, 동겸)
 
