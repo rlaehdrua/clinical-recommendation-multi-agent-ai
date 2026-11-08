@@ -115,6 +115,7 @@ def _minutes_to(curve: list[dict], n: int) -> float | None:
 
 def insight(svc: FollowupService) -> dict:
     states, ops, case_of, requested = {}, {}, {}, []
+    gate = {"unproven": set(), "no_basis": {}}
     cases, unreadable = svc.readable_cases()  # 감사 F-17
     for data in cases:
         data = svc.refresh_pairs(data)  # 사례 화면과 같은 지금 권한의 쌍 상태·제안 (저장값이 아니라)
@@ -123,6 +124,7 @@ def insight(svc: FollowupService) -> dict:
             view = svc._view(session)
             view.matched_versions = {t: view.snapshot.version for t in session.matches}
             ds = build_state(view)
+            svc._plan_gate(data, session, gate)
         alias = data["alias"]
         states[alias] = {"ds": ds, "trials": ds.trials,
                          "status": {t: p["status"] for t, p in data["current"]["pairs"].items()}}
@@ -133,7 +135,7 @@ def insight(svc: FollowupService) -> dict:
         return {"questions": [], "summary": {"cases": 0}, "unreadable": unreadable}
     co = CohortState.from_decision_states({a: s["ds"] for a, s in states.items()}, ops=ops)
     pol = svc.policy_factory()
-    plan = svc._plan(co, requested)
+    plan = svc._plan(co, requested, gate)
     created = sorted(case_of, key=lambda a: (case_of[a]["created_at"], case_of[a]["case_id"]))
 
     items = []

@@ -58,9 +58,14 @@ class EngineLoop:
     def fresh(self, cands: list[Action]) -> list[Action]:
         return [a for a in cands if a.action_type in NON_EXECUTING or repeat_key(a) not in self.tried]
 
-    def preview(self, cohort: CohortState) -> Plan:
-        """상태를 바꾸지 않는 계획 (원장·시도 기록·억제 수 그대로)."""
-        return self.policy.select(self.fresh(self.policy.propose(cohort)), self.budget, self.ledger, cohort)
+    def preview(self, cohort: CohortState, keep: Callable[[Action], bool] | None = None) -> Plan:
+        """상태를 바꾸지 않는 계획 (원장·시도 기록·억제 수 그대로).
+
+        keep: 이 경로에서 지금 실행해도 끝낼 수 없는 후보를 select 전에 뺌 (예산을 차지하지 않게). None = 모두."""
+        cands = self.fresh(self.policy.propose(cohort))
+        if keep is not None:
+            cands = [a for a in cands if keep(a)]
+        return self.policy.select(cands, self.budget, self.ledger, cohort)
 
     def plan(self, cohort: CohortState) -> Plan:
         cands = self.policy.propose(cohort)

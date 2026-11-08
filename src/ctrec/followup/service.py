@@ -217,28 +217,73 @@ class FollowupService:
                                   "mismatch": p.mismatch} for p in co.pairs()}
 
     # ------------------------------------------------------------------ 제안 (DCV+C)
-    def _loop(self, requests: list[dict]) -> EngineLoop:
+    def _loop(self, requests: list[dict], unproven: frozenset[str] = frozenset()) -> EngineLoop:
         """P 공통 엔진 루프(engine.loop.EngineLoop)를 요청 기록에서 다시 세움. 웹(CohortRunner)·WP6 시뮬레이터와 같은 객체.
 
         - 진행 중 요청(OPEN_STATUSES): 실행했으므로 원장에 청구(같은 정보원 묶음 할인). 아직 결과가 없어 시도로 세지 않음
           -> 같은 제안이 화면에 남고, 다시 고르면 기존 요청을 돌려줌 (create_requests의 existing).
         - 끝난 요청(답변·모름·연락 불가·문서 없음·확인 완료·대체됨): loop.begin(executed=True) = 청구 + 시도 기록. 같은 사실
           상태에서 같은 정보원에 같은 행동을 다시 고르지 않음 (repeat_key, 시뮬레이터·웹과 같은 반복 억제).
-        - 취소: 실행하지 않았으므로 기록하지 않음."""
+        - 취소: 실행하지 않았으므로 기록하지 않음.
+        - 문서 확인을 마쳤지만 그 증명이 지금 권한으로 인정되지 않는 요청(unproven, _plan_gate): 청구만 하고 시도로 세지 않음.
+          권한 철회(서명 비밀 변경 등)는 사실 지문을 바꾸지 않으므로, 세면 같은 확인을 다시 제안할 수 없음 (V4-B1)."""
         loop = EngineLoop(self.policy_factory(), FOLLOWUP_BUDGET)
         for r in requests:
             if not r.get("action") or r["status"] == "cancelled":
                 continue
             a = Action.model_validate(r["action"])
-            if r["status"] in OPEN_STATUSES:
+            if r["status"] in OPEN_STATUSES or r["request_id"] in unproven:
                 loop.ledger.charge(a)
             else:
                 loop.begin(a, executed=True)
         return loop
 
-    def _plan(self, co: CohortState, requests: list[dict]):
-        """제안 = 공통 루프의 계획 (propose -> 반복 억제 -> select). 상태를 바꾸지 않는 preview."""
-        return self._loop(requests).preview(co)
+    @staticmethod
+    def _plan_gate(data: dict, session, gate: dict | None = None) -> dict:
+        """계획에 쓰는 지금 권한의 사실 (반드시 그 사례의 _scope 안에서 부름). 여러 사례(대기열·Insight)는 같은 gate에 모음.
+
+        - unproven: 문서 확인 완료(document_verified) 요청 중 확인한 사실이 지금 document_backed가 아닌 것
+        - no_basis: 증명이 철회된 확인(unproven)이 있고 문서로 확인된 사실이 하나도 남지 않은 환자 별칭 -> 그 환자의 시험
+          해석본. 진료 기록 필요 기준의 임상의 판단은 문서로 확인된 근거 사실이 하나 이상 있어야 기록되므로(clinician_judgment,
+          409 basis_not_document_verified) 그 임상 검토(CLINICIAN_REVIEW) 제안은 지금 끝낼 수 없음 -> 다시 확인 제안을 먼저
+          냄. 처음 접수(검증 기록 없음)의 임상 검토 요청·판단 가능 표시는 기존 계약 그대로 (서비스가 병행해서 엶)."""
+        from ..fact_store import FactStoreError, document_backed
+        gate = gate if gate is not None else {"unproven": set(), "no_basis": {}}
+        withdrawn = False
+        for v in data.get("verifications") or []:
+            for it in v.get("items") or []:
+                try:
+                    ok = document_backed(session.fact_store.get(it.get("fact_id")))
+                except FactStoreError:
+                    ok = False
+                if not ok:
+                    gate["unproven"].add(v.get("request_id"))
+                    withdrawn = True
+                    break
+        if withdrawn and not any(document_backed(f) for f in session.fact_store.facts(session.case.patient_id)):
+            gate["no_basis"][data["alias"]] = dict(session.parsed)
+        return gate
+
+    @staticmethod
+    def _needs_record_basis(parsed: dict, keys) -> bool:
+        """대상 기준 중 진료 기록 근거가 필요한 기준(matcher._meta required_evidence=clinical_record)이 있는가."""
+        for key in keys:
+            tid, _, rid = key.partition(":")
+            p = parsed.get(tid)
+            rule = next((x for x in p.rules if x.rule_id == rid), None) if p else None
+            if rule is not None and matcher._meta(p, rule).required_evidence == "clinical_record":
+                return True
+        return False
+
+    def _plan(self, co: CohortState, requests: list[dict], gate: dict):
+        """제안 = 공통 루프의 계획 (propose -> 반복 억제 -> select). 상태를 바꾸지 않는 preview. gate = _plan_gate."""
+        no_basis = gate["no_basis"]
+
+        def keep(a: Action) -> bool:
+            return not (a.action_type == "CLINICIAN_REVIEW" and a.patient_alias in no_basis
+                        and self._needs_record_basis(no_basis[a.patient_alias], a.target_criteria))
+
+        return self._loop(requests, frozenset(gate["unproven"])).preview(co, keep)
 
     def _settle(self, co: CohortState, requests: list[dict], action: Action,
                 outcome: ActionOutcome) -> CohortState:
@@ -247,7 +292,7 @@ class FollowupService:
         return co
 
     def _proposals(self, data: dict, session, co: CohortState) -> tuple[list[dict], list[dict]]:
-        plan = self._plan(co, data["requests"])
+        plan = self._plan(co, data["requests"], self._plan_gate(data, session))
         by_proposal = {r["proposal_id"]: r for r in data["requests"] if r.get("proposal_id")}
         runner = EngineRunner(session)
         out = []
@@ -374,7 +419,7 @@ class FollowupService:
             known.add(key)
             targets = sorted({f"{x.trial_id}:{x.rule_id}" for x in self._field_criteria(session, c["field"])})
             linked = {r["proposal_id"] for r in data["requests"] if r.get("proposal_id")}
-            verify = next((a for a in self._plan(co, data["requests"]).selected
+            verify = next((a for a in self._plan(co, data["requests"], self._plan_gate(data, session)).selected
                            if a.action_type == "VERIFY_RECORD" and a.info_key == c["field"] and a.action_id not in linked),
                           None)
             r = self._new_request(data, kind="conflict_resolution", status="requires_document", by="system",
@@ -481,7 +526,7 @@ class FollowupService:
             with self._scope(data, session):
                 ops = codec.load_ops(data["ops"])
                 _, co = self._cohort(session, data["alias"], ops)
-                plan = self._plan(co, data["requests"])
+                plan = self._plan(co, data["requests"], self._plan_gate(data, session))
                 current = {a.action_id: a for a in plan.selected}
                 runner = EngineRunner(session)
                 created, existing = [], []
@@ -620,7 +665,7 @@ class FollowupService:
         key = failed.get("info_key")
         live = {r["proposal_id"] for r in data["requests"] if r["status"] in OPEN_STATUSES and r.get("proposal_id")}
         _, co = self._cohort(session, data["alias"], ops)
-        plan = self._plan(co, data["requests"])
+        plan = self._plan(co, data["requests"], self._plan_gate(data, session))
         for a in plan.selected:
             if a.action_type not in FALLBACK_TYPES or self._route(a)[0] == "ask_patient":
                 continue
@@ -1299,6 +1344,7 @@ class FollowupService:
     def staff_queue(self) -> dict:
         """모든 열린 사례를 한 코호트로 보고 DCV+C가 고른 순서 (Cohort C 우선순위). 판정은 바꾸지 않음."""
         states, ops, case_of, requested, sessions = {}, {}, {}, [], {}
+        gate = {"unproven": set(), "no_basis": {}}
         cases, unreadable = self.readable_cases()
         for data in cases:
             session = self._restore(data)
@@ -1306,6 +1352,7 @@ class FollowupService:
                 view = self._view(session)
                 view.matched_versions = {t: view.snapshot.version for t in session.matches}
                 states[data["alias"]] = build_state(view)
+                self._plan_gate(data, session, gate)
             ops[data["alias"]] = codec.load_ops(data["ops"])
             case_of[data["alias"]] = data
             sessions[data["alias"]] = session
@@ -1313,7 +1360,7 @@ class FollowupService:
         if not states:
             return {"items": [], "unreadable": unreadable}
         co = CohortState.from_decision_states(states, ops=ops)
-        plan = self._plan(co, requested)
+        plan = self._plan(co, requested, gate)
         items = []
         for rank, a in enumerate(plan.selected, 1):
             data = case_of[a.patient_alias]
