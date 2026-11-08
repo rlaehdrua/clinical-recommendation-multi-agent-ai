@@ -54,3 +54,39 @@ def test_seed_fills_an_empty_store_once(env):
     assert ins["summary"]["cases"] == 6
     rem = [p for g in ins["questions"] if g["route"] != "clinician_review" for p in g["patients"] if not p["request_id"]]
     assert sum(p["minutes"] for p in rem) < sum(p["minutes_alone"] for p in rem)  # 묶으면 하나씩보다 짧음
+
+
+def test_reset_archives_everything_and_reseeds(env):
+    """'처음부터 다시': 지금 사례·서류·감사 기록을 archive/<시각>/ 으로 옮기고(지우지 않음) 같은 6명을 처음 상태로 다시 넣음."""
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    srv, svc = _server(), followup_api.service()
+    srv.seed_demo(svc, gap=0)
+    first = svc.store.case_ids()
+    cid = first[0]
+    case = D.staff_case(D.staff_client(), cid)
+    D.make_requests(D.staff_client(), cid, case["proposals"][0]["proposal_id"])  # 진행한 흔적 (revision이 오름)
+    assert D.staff_case(D.staff_client(), cid)["revision"] > 1
+
+    app = FastAPI()
+    srv.install_reset(app, svc, gap=0)
+    c = TestClient(app)
+    assert c.get("/api/followup/demo", headers=D.STAFF).json()["reset"] is True
+    assert c.get("/api/followup/demo").status_code in (401, 403)  # 담당자 권한 필요
+    assert c.post("/api/followup/demo/reset", headers=D.STAFF).status_code == 403  # CSRF 헤더 없음
+    r = c.post("/api/followup/demo/reset", headers={**D.STAFF, "X-CTREC-Request": "1"})
+    assert r.status_code == 200, r.text
+    out = r.json()
+    assert out["archived"] == 6 and out["seeded"] == 6
+    archived = svc.store.root / out["archive"]
+    assert sorted(p.stem for p in archived.glob("FC-*.json")) == first  # 지우지 않고 옮김
+    now = svc.store.case_ids()
+    assert len(now) == 6 and not set(now) & set(first)
+    listed = D.staff_client().get("/api/followup/staff/cases", headers=D.STAFF).json()["cases"]
+    assert len(listed) == 6 and all(x["revision"] == 1 for x in listed)  # 처음 상태 (신청 직후, 진행한 흔적 없음)
+
+
+def test_reset_route_is_not_on_the_regular_app(env):
+    from ctrec.web import app as web
+    assert not [r for r in web.app.router.routes if getattr(r, "path", "").startswith("/api/followup/demo")]

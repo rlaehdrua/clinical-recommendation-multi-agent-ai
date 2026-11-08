@@ -11,6 +11,8 @@
   서명 비밀(CTREC_SYNTHETIC_SIGNING_SECRET)을 고정하지 않으면 재시작할 때마다 바뀌어 이전 증명·판단이 인정되지 않음.
   계약: docs/dev/document_clinician_api_contract.md
   --demo-staff: 발표용. 이 서버(루프백 전용)에서는 담당자 탭이 키 없이 바로 열림 (followup_api.DEMO_STAFF).
+- --seed-demo + --demo-staff: 담당자 화면에 '처음부터 다시' 버튼 (POST /api/followup/demo/reset). 지금 사례·서류·감사 기록을
+  저장소 안 archive/<시각>/ 으로 옮기고(지우지 않음) SYN-01~06을 다시 넣음. 이 서버에만 있고 운영 API에는 없음.
 - --seed-demo: 발표용. 저장소가 비어 있으면 합성 NSCLC 환자 6명(ctrec.sim.demo SYN-01~06, 공개 사실만)을 신청된 상태로 넣음.
   연구진 화면이 처음부터 여러 환자를 함께 보도록 (한 명씩 신청하지 않음). 같은 순서·같은 글이라 녹화마다 숫자가 같음.
   미리 넣은 환자는 환자 화면 쿠키가 없어 환자로서 답할 수 없으므로, 환자 질문 장면은 환자 탭에서 한 명을 직접 신청해서 보여 줌.
@@ -28,10 +30,13 @@ import argparse
 import os
 import secrets
 import sys
+import threading
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
+
+from fastapi import Request  # noqa: E402  (모듈 전역: from __future__ annotations라 FastAPI가 여기서 찾음)
 
 from ctrec import config, pipeline  # noqa: E402
 from ctrec import question_eval as qe  # noqa: E402
@@ -151,6 +156,46 @@ def seed_demo(svc: FollowupService, gap: float = 1.05) -> int:
     return len(texts)
 
 
+_RESET_LOCK = threading.Lock()
+
+
+def reset_demo(svc: FollowupService, gap: float = 1.05) -> dict:
+    """발표용 '처음부터 다시': 지금 사례(FC-*.json)·서류·감사 기록을 저장소 안 archive/<시각>/ 으로 옮기고 다시 시드.
+
+    지우지 않음 (옮긴 폴더에 그대로 남음). case_ids()는 저장소 맨 위 FC-*.json만 보므로 옮긴 기록은 화면에 다시 나오지 않음."""
+    import shutil
+    import time
+
+    with _RESET_LOCK:
+        root = svc.store.root
+        dest = root / "archive" / time.strftime("%Y%m%d-%H%M%S")
+        while dest.exists():
+            dest = dest.with_name(dest.name + "-1")
+        moved = 0
+        for p in [*root.glob("FC-*.json"), root / "documents", root / "audit"]:
+            if p.exists():
+                dest.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(p), str(dest / p.name))
+                moved += p.suffix == ".json"
+        return {"archived": moved, "archive": str(dest.relative_to(root)) if dest.exists() else None, "seeded": seed_demo(svc, gap)}
+
+
+def install_reset(app, svc: FollowupService, gap: float = 1.05) -> None:
+    """'처음부터 다시' 경로를 이 데모 서버의 앱에만 붙임. 담당자 권한(데모: 루프백) + 상태 변경 POST 확인(CSRF)."""
+    from ctrec.web import access, followup_api
+
+    @app.get("/api/followup/demo")
+    def demo_info(request: Request) -> dict:
+        followup_api.require_staff(request)
+        return {"reset": True, "patients": len(seed_texts())}
+
+    @app.post("/api/followup/demo/reset")
+    def demo_reset(request: Request) -> dict:
+        access.check_state_changing(request)
+        followup_api.require_staff(request)
+        return reset_demo(svc, gap)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--host", default="127.0.0.1")
@@ -193,6 +238,8 @@ def main() -> None:
     web.app.get("/api/patients")(demo_patients)
     if args.demo_staff:
         followup_api.DEMO_STAFF = True
+        if args.seed_demo:
+            install_reset(web.app, svc)
         print("발표용 데모: 담당자 탭이 키 없이 열립니다 (이 컴퓨터에서만, 합성 데이터)", flush=True)
     print(f"followup demo (offline, synthetic): http://{args.host}:{args.port}  store={args.store}", flush=True)
     try:
