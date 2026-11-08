@@ -7,6 +7,7 @@ import pytest
 from ctrec.cohort import spec as cohort_spec
 from ctrec.engine import contracts as C
 from ctrec.engine.bundles import SourceCatalog
+from ctrec.engine.experiment import ExperimentSpecError
 from ctrec.sim import demo, from_generator as FG, runner
 from ctrec.sim.cohort import make_cohort
 from ctrec.sim.judge import CategoricalJudge
@@ -64,10 +65,9 @@ def test_confirming_a_pending_expert_pair_counts_as_disagreement():
     assert gt["confirmed_eligible_gt_pending_expert"] == 1 and gt["rule_gt_disagreements"] == 1
 
 
-def test_expert_slots_match_the_generator_definition_when_present():
-    if not hasattr(cohort_spec, "is_expert_slot"):
-        pytest.skip("#22 미병합: cohort.spec에 판단 슬롯 정의 없음")
-    assert FG.EXPERT_SLOTS == cohort_spec.EXPERT_SLOTS and FG.EXPERT_SLOT_PREFIX == cohort_spec.EXPERT_SLOT_PREFIX
+def test_expert_slots_come_from_the_generator_definition():
+    assert FG.is_expert_slot is cohort_spec.is_expert_slot and FG.EXPERT_SLOTS is cohort_spec.EXPERT_SLOTS
+    assert FG.is_expert_slot("cm.serious_organ_disease") and FG.is_expert_slot("cm.immune_onc")  # 결정 5
 
 
 def test_expert_rules_are_marked_and_not_judged():
@@ -85,3 +85,45 @@ def test_expert_rules_are_marked_and_not_judged():
         pytest.skip("Binding.key 없음")
     assert b_key in CategoricalJudge([b], {}, "2026-01-01").bindings
     assert b_key not in CategoricalJudge([b], {}, "2026-01-01", expert_rules=frozenset({b_key})).bindings
+
+
+# ---------------------------------------------------------------------------
+# 외부 GT로 채점 (run(labels=), 서연 #43 독립 규칙 GT를 주 지표에 넣는 방식)
+# ---------------------------------------------------------------------------
+
+def test_external_labels_score_the_primary_metric_and_are_recorded():
+    co = _expert_cohort()
+    rule = runner.rule_labels(co, SourceCatalog())
+    spec = runner.build_spec("t", "full_dcvc", co, B400, 1)
+    base = runner.run(spec, co)
+    same = runner.run(spec, co, labels=dict(rule), gt_kind="test_gt")
+    assert same.metrics["correct_eligible_resolved"] == base.metrics["correct_eligible_resolved"]
+    assert same.metrics["rule_gt"]["kind"] == "test_gt" == same.manifest["evaluator"]["ground_truth"]
+    assert base.metrics["rule_gt"]["kind"] == "rule_gt_circular"
+    # 정답을 모두 라벨 없음으로 바꾸면 주 지표가 0, 행동·기록은 그대로 (채점만 바뀜)
+    blank = runner.run(spec, co, labels={k: "unlabeled" for k in rule}, gt_kind="blank")
+    assert blank.metrics["correct_eligible_resolved"] == 0 and blank.metrics["status_final"] == base.metrics["status_final"]
+    assert blank.manifest["evaluator"]["ground_truth_hash"] != base.manifest["evaluator"]["ground_truth_hash"]
+    rows = runner.compare(co, ["full_dcvc"], [B400], [1], labels={k: "unlabeled" for k in rule}, gt_kind="blank")
+    assert rows[0]["correct_eligible_resolved"] == 0
+
+
+def test_external_labels_must_cover_exactly_the_cohort_pairs():
+    co = _expert_cohort()
+    rule = runner.rule_labels(co, SourceCatalog())
+    spec = runner.build_spec("t", "full_dcvc", co, B400, 1)
+    k = next(iter(rule))
+    for bad in ({x: v for x, v in rule.items() if x != k}, {**rule, "PA-x|T-A": "eligible"}, {**rule, k: "ELIGIBLE"}):
+        with pytest.raises(ExperimentSpecError, match="gt_labels_mismatch"):
+            runner.run(spec, co, labels=bad)
+
+
+def test_cli_reads_the_pair_gt_csv_in_runner_labels(tmp_path):
+    from ctrec.sim.__main__ import load_gt
+    p = tmp_path / "pair_gt.csv"
+    p.write_text("sim_pair_key,gt_label\nPA-1|T-A,PENDING_EXPERT_ELIGIBLE\nPA-1|T-B,INELIGIBLE\n"
+                 "PA-2|T-A,NOT_EVALUATED\nPA-2|T-B,CONFIRMED_ELIGIBLE\n", encoding="utf-8")
+    labels, kind = load_gt(p)
+    assert labels == {"PA-1|T-A": PENDING_EXPERT, "PA-1|T-B": "ineligible", "PA-2|T-A": "unlabeled",
+                      "PA-2|T-B": ELIGIBLE}
+    assert kind == "independent_rule_gt_reduced_scope" and load_gt(None) == (None, None)

@@ -1,0 +1,19 @@
+{
+ "version": 1,
+ "note": "NSCLC 축소 범위 평가용. 비용은 data/cohort/source_catalog.json과 같은 가정값(상대 비교 전용). S_summary는 S_chart와 같은 엔진 정보원(medical_record)으로 대응돼 N:1이 생기므로 쓰지 않음 (팀 결정 6 보류)",
+ "sources": {
+  "S_lab": {"label": "최근 혈액검사 결과지", "evidence": "record", "cost_min": 3, "cost_range": [1, 10], "reveals": ["lab.*"],
+            "basis": "가정. 전체 규모: 환자-시험 1건 평가 평균 0.74-0.94시간, 35.8%가 10-30분 (Penberthy 2012, doi:10.1200/JOP.2012.000646)"},
+  "S_path": {"label": "병리·유전자 결과지", "evidence": "record", "cost_min": 5, "cost_range": [2, 15], "reveals": ["bm.*", "dx.histology*"],
+             "basis": "가정"},
+  "S_med": {"label": "처방 목록", "evidence": "record", "cost_min": 5, "cost_range": [2, 15], "reveals": ["med.*"], "basis": "가정"},
+  "S_chart": {"label": "전체 진료기록 열람", "evidence": "record", "cost_min": 30, "cost_range": [10, 60],
+              "reveals": ["cm.*", "ecog", "dx.*", "other.*", "tx.*", "proc.*"],
+              "basis": "가정. 스크리닝 시간 중 EHR 열람 비중이 가장 큼 (Dexheimer 2019, doi:10.1097/PEC.0000000000001592)"},
+  "S_phone": {"label": "환자 전화", "evidence": "self_report", "cost_min": 15, "cost_range": [5, 30],
+              "reveals": ["repro.*", "med.*", "tx.*", "proc.*"],
+              "basis": "가정. 진료기록이 필요한 기준은 자기 보고로 확정되지 않음 (acquisition.py, UNVERIFIED)"},
+  "S_md": {"label": "담당의 문의", "evidence": "physician", "cost_min": 20, "cost_range": [10, 60], "reveals": ["judge.*"],
+           "basis": "가정. 연구자 판단형 기준 전용"}
+ }
+}

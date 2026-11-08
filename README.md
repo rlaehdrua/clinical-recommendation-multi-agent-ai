@@ -599,6 +599,19 @@ python scripts/generate_synthetic_patients.py --trial data/trials/NCT0XXXXXXX.js
 
 수정할 때마다 무엇을 왜 바꿨는지 여기에 기록합니다. 최신 항목이 위에 옵니다.
 
+### 2026-11-08 — WP6 runner가 NSCLC 평가셋과 독립 규칙 GT를 바로 쓰도록 (#43 후속, 동겸)
+
+배경: 서연의 #43(NSCLC 평가셋·독립 규칙 GT)이 동겸에게 요청한 것 중 ① runner CLI가 시험을 `data/parsed`에서만 읽어 평가셋을 못 씀 ② 독립 GT를 주 지표에 넣는 방식입니다. 판단 슬롯 사본 교체와 결정 5 테스트 기대값은 서연의 `feat/nsclc-eval-gt-decision5-patches`에 들어 있어 그 위에 쌓았습니다(동겸이 `test_recovery_stress` 16·24를 쌍 단위로 다시 확인: 막힌 쌍은 전부 NCT07087314, 환자를 고정하면 변화 0). ②는 `run(..., labels=)`로 정했습니다. 실행 뒤 `cohort.gt.score()`로만 채점하면 합계 한 줄만 나오고, 환자별 결과(부트스트랩 단위)·비교표·짝지은 차이에는 순환 GT가 그대로 남기 때문입니다. `score()`는 교차 확인용으로 남깁니다.
+
+| # | 변경 | 파일 |
+|---|---|---|
+| 1 | 판단 슬롯 사본 일치 테스트를 "같은 객체"로 (결정 5 두 슬롯 포함 확인) | `tests/test_sim_expert_metric.py` |
+| 2 | `runner.run(labels=, gt_kind=)`·`compare(labels=, gt_kind=)`: 외부 GT로 주 지표·환자별 결과·비교표를 채점. 쌍 키가 코호트 쌍과 정확히 같지 않거나 모르는 라벨이면 거절(`gt_labels_mismatch`). manifest에 GT 종류와 해시. 기본(없음)은 지금과 같은 순환 규칙 GT, 행동·기록·result_hash에는 영향 없음 | `src/ctrec/sim/runner.py`, `src/ctrec/sim/metrics.py` |
+| 3 | CLI: 생성기 설정의 `parsed_store`에서 기준을 읽고 `--trials-dir`로 시험 정보, `--gt pair_gt.csv`로 독립 GT 채점. 출력 끝에 정답 라벨 종류 표시 | `src/ctrec/sim/__main__.py` |
+| 4 | 테스트 3건 추가 (외부 GT 채점·기록, 쌍 불일치 거절, CSV 읽기) | `tests/test_sim_expert_metric.py` |
+
+NSCLC 평가셋 실행: `python -m ctrec.sim --generator data/nsclc/eval/inputs/generator_config.json --scenario nsclc-eval-v1 --map data/nsclc/eval/inputs/source_map.json --trials-dir data/nsclc/trials --gt data/nsclc/eval/pair_gt.csv`
+
 ### 2026-11-07 — P: 웹·WP6 공통 엔진 루프, 코호트 실행기, 근거 경로 DCV, 기준선·ablation 실험
 
 배경: 웹 Session과 시뮬레이터가 같은 정책을 쓰는지 점검했습니다. 반복 억제·청구·정산은 두 경로에 따로 구현돼 있었습니다. 웹은 다시 매칭하지 않은 시험의 판정 시점을 숨겼고, 코호트(여러 환자) 실행은 시뮬레이터에만 있었습니다. 보고서는 `docs/dev/p_common_engine_2026_11_07.md`, 결과는 `docs/dev/p_results/`에 있습니다.

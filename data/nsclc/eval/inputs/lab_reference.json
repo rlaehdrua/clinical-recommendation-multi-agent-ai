@@ -1,0 +1,15 @@
+{
+ "version": 1,
+ "status": "데이터 정의 / 임상 검수 미완료",
+ "note": "팀 결정 3의 검사 수치 4개. 파싱된 6개 시험 원문에는 기준값이 있는 기준이 없어 이 평가셋에서 연결·생성하지 않음. 기준값이 있는 원문은 파싱 미완료 2개 시험(NCT04892953, NCT05255302)에 있음. 참고 범위는 성인 일반 참고값이며 기관·검사법마다 다름 (정답 계산에 쓰지 않음)",
+ "labs": {
+  "lab.anc": {"info_key": "lab:absolute neutrophil count", "unit": "10^9/L", "reference_range": "1.5-8.0 (성인 일반)", "source": "lab_report",
+              "protocol_thresholds_seen": {"NCT05255302": ">= 1.5 (1500/mm3)"}},
+  "lab.bilirubin_uln": {"info_key": "lab:total bilirubin", "unit": "x ULN", "reference_range": "<= 1.0 x ULN (정상 상한 대비 배수)", "source": "lab_report",
+                        "protocol_thresholds_seen": {"NCT04892953": "<= 1.5 x ULN (Gilbert 예외)", "NCT05255302": "< 2 x ULN"}},
+  "lab.creatinine_clearance": {"info_key": "lab:creatinine clearance", "unit": "mL/min", "reference_range": "약 90-140 (성인 일반, 계산식·성별에 따라 다름)", "source": "lab_report",
+                               "protocol_thresholds_seen": {"NCT04892953": "> 15 (Cockcroft-Gault)", "NCT05255302": ">= 45 (Cockcroft·MDRD·CKD-EPI)"}},
+  "lab.hemoglobin": {"info_key": "lab:hemoglobin", "unit": "g/dL", "reference_range": "남 13.5-17.5 / 여 12.0-15.5 (성인 일반)", "source": "lab_report",
+                     "protocol_thresholds_seen": {"NCT04892953": ">= 9.0", "NCT05255302": ">= 9"}}
+ }
+}

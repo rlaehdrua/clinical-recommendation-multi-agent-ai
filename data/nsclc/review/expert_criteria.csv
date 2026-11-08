@@ -1,0 +1,44 @@
+﻿trial_id,criterion_id,expert_slot,original_text,parser_underspecified,engine_route_without_flag,eval_store_underspecified,sunwoo_queue,specimen_or_timing_candidate,clinical_review
+NCT06216301,E5,tx.recent_radiotherapy,Received radiation therapy to the lung that is > 30 Gy within 6 months of randomization.,false,"missing -> 확보 시도 (BLOCKED 가능, #20 리뷰 2)",true,,,미완료
+NCT06216301,E6,tx.recent_radiotherapy,Has received prior radiotherapy within 2 weeks of randomization. Subjects must have recovered ...,false,"missing -> 확보 시도 (BLOCKED 가능, #20 리뷰 2)",true,,,미완료
+NCT06928389,I5,judge.life_expectancy,Expected life expectancy of at least 3 months.,false,"missing -> 확보 시도 (BLOCKED 가능, #20 리뷰 2)",true,registered/unreviewed,,미완료
+NCT06928389,E8,cm.cardiac,"History of myocarditis, cardiomyopathy, and malignant arrhythmia.",false,"missing -> 확보 시도 (BLOCKED 가능, #20 리뷰 2)",true,,,미완료
+NCT06928389,E9,cm.cardiac,"History of myocarditis, cardiomyopathy, and malignant arrhythmia.",false,"missing -> 확보 시도 (BLOCKED 가능, #20 리뷰 2)",true,,,미완료
+NCT06928389,E10,cm.cardiac,"History of myocarditis, cardiomyopathy, and malignant arrhythmia.",false,"missing -> 확보 시도 (BLOCKED 가능, #20 리뷰 2)",true,,,미완료
+NCT07027514,I7,judge.life_expectancy,Have a life expectancy > 12 weeks,false,"missing -> 확보 시도 (BLOCKED 가능, #20 리뷰 2)",true,registered/unreviewed,,미완료
+NCT07027514,E14,cm.cardiac,"Have congestive heart failure, active coronary artery disease, ... or clinically significant cardiac arrhythmias.",false,"missing -> 확보 시도 (BLOCKED 가능, #20 리뷰 2)",true,wording_only/unreviewed,,미완료
+NCT07027514,E20,judge.investigator_unsuitable,Have other systemic conditions or organ abnormalities that may interfere with the conduct of the study,true,physician_review,true,underspecified/unreviewed,,미완료
+NCT07027514,E21,judge.investigator_unsuitable,Have any acute or chronic psychiatric problems or substance abuse disorder that make the participant unsuitable,true,physician_review,true,underspecified/unreviewed,,미완료
+NCT07098338,I5,judge.life_expectancy,Life expectancy ≥ 12 weeks,false,"missing -> 확보 시도 (BLOCKED 가능, #20 리뷰 2)",true,registered/unreviewed,,미완료
+NCT07098338,I6,other.tumor_tissue,Provision of acceptable tumour tissue,false,"missing -> 확보 시도 (BLOCKED 가능, #20 리뷰 2)",true,vague_suspected/unreviewed,,미완료
+NCT07098338,E1,judge.investigator_unsuitable,"As judged by the investigator, any severe or uncontrolled systemic diseases ...",true,physician_review,true,underspecified/unreviewed,,미완료
+NCT07098338,E10,cm.cardiac,Uncontrolled or significant cardiac disease,false,"missing -> 확보 시도 (BLOCKED 가능, #20 리뷰 2)",true,registered/unreviewed,,미완료
+NCT07416058,E5,cm.cardiac,New York Heart Association (NYHA) class III or IV heart failure,false,"missing -> 확보 시도 (BLOCKED 가능, #20 리뷰 2)",true,,,미완료
+NCT07416058,E16,judge.investigator_unsuitable,"Any other serious medical condition ... that, in the opinion of the investigator, would compromise ...",true,physician_review,true,underspecified/unreviewed,,미완료
+NCT07416058,E17,cm.cardiac,"Clinically significant cardiovascular disease, including but not limited to:",false,"missing -> 확보 시도 (BLOCKED 가능, #20 리뷰 2)",true,wording_only/unreviewed,,미완료
+NCT07680790,I2,dx.disease_setting,"newly diagnosed locally advanced (Stage IIIB/IIIC), metastatic (Stage IVA/IVB), or recurrent disease not amenable to curative surgery or definitive radiotherapy and requiring systemic treatment",false,"missing -> 확보 시도 (BLOCKED 가능, #20 리뷰 2)",true,registered/unreviewed,,미완료
+NCT07680790,E3,cm.cardiac,Participants must not have clinically significant cardiac disease,true,physician_review,true,underspecified/unreviewed,,미완료
+NCT06216301,I8,lab.inr_aptt_uln,Adequate hematologic and end-organ function / For subjects not receiving therapeutic anticoagulation: INR or aPTT ≤ 1.5 x ULN,false,,false,wording_only/unreviewed,검체: 혈액,미완료
+NCT06216301,E1,dx.histology,Mixed small cell and NSCLC histology.,false,,false,,검체: 조직·세포,미완료
+NCT06216301,E4,proc.days_since_major_surgery,Had major surgery <3 weeks prior to randomization,false,,false,,시점: 무작위배정 전 3주,미완료
+NCT06216301,E11,cm.immunodeficiency,Has a diagnosis of immunodeficiency or is receiving chronic systemic steroid therapy (in dosing exceeding 10 mg daily ...) or any other form of immunosuppressive therapy within 7 days,false,,false,,시점: 7일,미완료
+NCT06216301,E12,tx.prior_pd1_pdl1,"Had prior treatment with any other anti-PD-1, or PD-L1 or PD-L2 agent ... in the 12 months prior to randomization.",false,,false,,시점: 12개월,미완료
+NCT06216301,E13,tx.other_investigational_4w,Participation in another clinical study with an investigational agent or device during the 4 weeks prior to randomization.,false,,false,,시점: 4주,미완료
+NCT06928389,I2,age,Age ≥ 18 years old and ≤ 75 years old at the time of randomization.,false,,false,,시점: 무작위배정 시점,미완료
+NCT06928389,I3,age,Age ≥ 18 years old and ≤ 75 years old at the time of randomization.,false,,false,,시점: 무작위배정 시점,미완료
+NCT06928389,E1,dx.histology,Histologic or cytopathologic evidence of the presence of small cell lung carcinoma.,false,,false,,검체: 조직·세포,미완료
+NCT07027514,I4,lab.tsh_normal,Thyroid-stimulating hormone (TSH) within normal limits,false,,false,,검체: 혈청(TSH),미완료
+NCT07027514,E3,bm.driver_alteration,Have known EGFR or ALK mutations,false,,false,,검체: 종양 조직·혈장,미완료
+NCT07027514,E7,med.live_vaccine_30d,Have received live vaccines prior to C1D1,false,,false,,시점: C1D1 전 (기간 없음),미완료
+NCT07098338,I1,age,Participant must be ≥ 18 years of age at the time of signing the ICF,false,,false,,시점: 동의서 서명 시점,미완료
+NCT07098338,I7,dx.histology,Histologically or cytologically documented advanced or metastatic NSCLC,false,,false,,검체: 조직·세포,미완료
+NCT07098338,I8,dx.histology,Histologically or cytologically documented advanced or metastatic NSCLC,false,,false,,검체: 조직·세포,미완료
+NCT07098338,E9,cm.hiv,"Active infection, including TB and infections with HIV, HBV (verified by known positive HBsAg result), HCV.",false,,false,,검체: 혈청 (HBsAg),미완료
+NCT07098338,E19,med.live_vaccine_30d,"Receipt of live, attenuated vaccine within 30 days prior to the first dose of study intervention.",false,,false,,시점: 첫 투여 전 30일,미완료
+NCT07416058,I3,dx.stage,"histologically confirmed locally advanced or metastatic NSCLC (AJCC 9th Edition, Stage IIIB-IVB)",false,,false,,검체: 조직,미완료
+NCT07416058,I4,bm.driver_alteration,"harbor confirmed actionable driver mutations ... EGFR (19del, L858R); ALK, ROS1, RET fusions; KRAS G12C; BRAF V600; and HER2 exon 20 insertions",false,,false,,검체: 종양 조직·혈장,미완료
+NCT07416058,I6,tx.days_since_last_anticancer,a 2-week washout period is required for prior TKI therapy or chemotherapy,false,,false,,시점: 2주 휴약,미완료
+NCT07416058,I8,bm.pdl1_tps,"PD-L1 tumor proportion score (TPS) ≥ 50%, as confirmed by central laboratory testing using the 22C3 or SP263 clone on fresh or archival tumor tissue (collected within 2 years)",false,,false,,"검체: 신선·보관 종양 조직, 중앙검사실, 22C3·SP263 클론; 시점: 검체 2년 이내",미완료
+NCT07416058,E12,proc.days_since_major_surgery,Major surgery within 4 weeks before first dose of study treatment,false,,false,,시점: 첫 투여 전 4주,미완료
+NCT07680790,I1,dx.histology,Participants must have histologically or cytologically confirmed non-squamous NSCLC,false,,false,,검체: 조직·세포,미완료
+NCT07680790,I3,bm.driver_alteration,Participants must have documented EGFR-TKI-sensitizing mutation (exon 19 deletion or exon 21 L858R substitution),false,,false,,검체: 종양 조직·혈장,미완료

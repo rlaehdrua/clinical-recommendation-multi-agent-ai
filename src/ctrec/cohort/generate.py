@@ -46,12 +46,19 @@ def _read(path: str | Path) -> dict:
     return json.loads(p.read_text(encoding="utf-8"))
 
 
-def load_parsed(trial_ids: list[str]) -> dict[str, ParsedTrial]:
+def store_path(store: str | Path | None) -> Path | None:
+    if store is None:
+        return None
+    p = Path(store)
+    return p if p.is_absolute() else app_config.ROOT / p
+
+
+def load_parsed(trial_ids: list[str], store: str | Path | None = None) -> dict[str, ParsedTrial]:
     out = {}
     for tid in trial_ids:
-        rec = trial_store.read_record(tid)
+        rec = trial_store.read_record(tid, store_path(store))
         if rec is None:
-            raise GenerationError(f"{tid}: data/parsed에 컴파일된 기준이 없음 (scripts/compile_trials.py)")
+            raise GenerationError(f"{tid}: {store or 'data/parsed'}에 컴파일된 기준이 없음 (scripts/compile_trials.py)")
         out[tid] = ParsedTrial(**rec["parsed"])
     return out
 
@@ -61,7 +68,7 @@ def load_inputs(config_path: str | Path) -> tuple[GeneratorConfig, SlotDictionar
     sd = SlotDictionary(**_read(cfg.slot_dictionary))
     cat = SourceCatalog(**_read(cfg.source_catalog))
     trials = sorted({t for c in cfg.clusters.values() for t in c.trials})
-    return cfg, sd, cat, load_parsed(trials)
+    return cfg, sd, cat, load_parsed(trials, cfg.parsed_store)
 
 
 def config_hash(cfg: GeneratorConfig, sd: SlotDictionary, cat: SourceCatalog) -> str:
