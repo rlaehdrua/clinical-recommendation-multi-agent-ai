@@ -24,6 +24,9 @@ oracle(숨긴 값·정답·쌍 라벨)은 쓰지 않습니다 - 상태는 '정�
 - UNCERTAIN도 그대로 둡니다: 근거 부족·판단 대기는 남은 작업이 있는 상태이며 미평가와 구분합니다.
 - 연결된 기준이 하나도 없는 시험도 확정 근거가 없으므로 NOT_EVALUATED (엔진과 같은 규칙, required_criteria=0).
 bound_eligibility에 연결된 기준만으로 본 결과를 남깁니다 (확정 근거가 아니라 설명용).
+EXPERT_REVIEW도 그대로 두지만(판단 기준이 먼저 적용됨), 미연결 기준이 남은 쌍은 '판단 기준 외 확인 완료'가 아닙니다
+(decision5_evidence.md 선택지 b). 쌍마다 unbound_remaining(미연결이 남았거나 목록을 모름)을, 현황판에 EXPERT_REVIEW
+총계를 나눈 expert_review_split {"unbound_remaining", "expert_only"}를 함께 냅니다 (판정·상태 불변).
 정적 생성 데이터에는 확보 실패(BLOCKED_FAILURE)가 없지만, 같은 7가지 상태 체계로 보여 줍니다.
 """
 
@@ -109,6 +112,7 @@ def pair_board(public: dict, patient: dict, trial_id: str, expert_slots: frozens
     in_path = {x["rule_id"] for x in applied}
     return {"status": status.value, "eligibility": eligibility, "bound_eligibility": bound, "path": path,
             "unbound_rules": None if unbound is None else len(unbound),
+            "unbound_remaining": unbound is None or bool(unbound),
             "pending_kinds": sorted(pending_kinds(eligibility, gaps, mismatch, required_criteria=n)),
             "rules": [{"rule_id": x["rule_id"], "gap": x["gap"], "applied": x["rule_id"] in in_path} for x in rows]}
 
@@ -120,8 +124,11 @@ def board(cohort: dict) -> dict:
     pairs = {f"{p['patient_id']}|{t}": pair_board(public, p, t, expert)
              for p in public["patients"] for t in p["candidate_trials"]}
     counts = Counter(v["status"] for v in pairs.values())
+    expert = [v for v in pairs.values() if v["status"] == PairStatus.EXPERT_REVIEW.value]
+    remaining = sum(v["unbound_remaining"] for v in expert)
     return {"contract_version": CONTRACT_VERSION, "status_order": STATUS_ORDER, "pairs": pairs,
-            "status_counts": {s: counts.get(s, 0) for s in STATUS_ORDER}}
+            "status_counts": {s: counts.get(s, 0) for s in STATUS_ORDER},
+            "expert_review_split": {"unbound_remaining": remaining, "expert_only": len(expert) - remaining}}
 
 
 __all__ = ["board", "pair_board", "rule_gap", "STATUS_ORDER"]

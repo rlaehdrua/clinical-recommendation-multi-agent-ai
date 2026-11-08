@@ -150,10 +150,14 @@ function renderTiles() {
     else if (label !== "INELIGIBLE") noLabel++;
   }
   const counts = c.board.status_counts;
+  // 의료진 검토 총계를 '미연결 남음'(검수 전 기준도 남아 판단 기준 외 확인 완료가 아님)과 '판단 기준만 남음'으로 나눔
+  const split = c.board.expert_review_split;
+  const desc = (s) => s === "EXPERT_REVIEW" && split && counts[s]
+    ? `미연결 남음 ${split.unbound_remaining} · 판단 기준만 남음 ${split.expert_only}` : STATUS_UI[s].desc;
   const kids = [
     tile("환자", c.public.patients.length, `시험 ${c.public.trials.length}개`),
     tile("환자–시험 쌍", pairs, "상태 기준: 지금 정보"),
-    ...c.board.status_order.map((s) => tile(STATUS_UI[s].label, counts[s] || 0, STATUS_UI[s].desc, `st ${STATUS_UI[s].cls}`)),
+    ...c.board.status_order.map((s) => tile(STATUS_UI[s].label, counts[s] || 0, desc(s), `st ${STATUS_UI[s].cls}`)),
     tile("확인 수단", Object.keys(c.public.sources).length, "소스 수"),
   ];
   if (showOracle()) kids.push(tile("실제 적격", trueEligible, `정답 기준 · ${pairs ? Math.round((trueEligible / pairs) * 100) : 0}%` +
@@ -248,7 +252,9 @@ function renderDetail() {
   const st = pairStatus(c, pid, t);
   const b = c.board.pairs[`${pid}|${t}`];
   const kinds = b.pending_kinds;
-  const scopeNote = b.status !== "NOT_EVALUATED" ? null : !b.rules.length && !ub.length ? "연결된 기준이 없어 평가할 근거가 없습니다."
+  const scopeNote = b.status === "EXPERT_REVIEW" && b.unbound_remaining
+    ? "미연결 남음: 의료진 판단 기준 말고도 검수 전 기준이 남아 있어 '판단 기준 외 확인 완료'가 아닙니다."
+    : b.status !== "NOT_EVALUATED" ? null : !b.rules.length && !ub.length ? "연결된 기준이 없어 평가할 근거가 없습니다."
     : b.bound_eligibility === "ELIGIBLE" ? "일부 기준만 평가: 연결된 기준은 통과했지만 평가하지 못한 기준이 남아 적격으로 확정하지 않습니다." : null;
   $("detail").replaceChildren(...[
     el("p", { class: "m0", text: `${pid} · ${t} ${trialTitle(t) !== t ? "· " + trialTitle(t) : ""}` }),
