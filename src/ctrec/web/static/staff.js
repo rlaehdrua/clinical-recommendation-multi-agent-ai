@@ -376,9 +376,23 @@ function requestBox(r, responses) {
     ${resp ? `<p class="m0">${resp.outcome === "unknown" ? '<span class="badge warn">환자가 "모르겠어요"를 눌렀어요</span>' : `환자의 답: <b>${h(resp.answer)}</b>`}
       ${(resp.conflicts || []).length ? ' <span class="badge bad">전에 알려 준 내용과 달라서 보류</span>' : ""}</p>` : ""}
     ${work || (NOT_SUPPORTED[r.status] ? `<p class="hint m0">${h(NOT_SUPPORTED[r.status])}</p>` : "")}
+    ${docLink(r)}
     ${moves.length ? `<div class="row mt8">${moves.map(m => `<button class="btn ghost sm" type="button" data-move="${h(m)}">${h(MOVE_KO[m] || m)}</button>`).join("")}</div>` : ""}</div>`;
 }
 
+// 확인에 쓴 서류 보기 (서류 확인 담당 권한으로 원문을 불러옴 - 발표용 데모에서만)
+function docLink(r) {
+  const v = r.status === "document_verified" && S.roles.includes("verifier") && ((S.data || {}).verifications || []).find(x => x.request_id === r.request_id);
+  return v ? `<details class="doc-view" data-doc="${h(v.document_id)}"><summary class="hint">확인에 쓴 서류 보기</summary><pre class="raw doc-text">불러오는 중…</pre></details>` : "";
+}
+async function showDoc(box) {
+  const pre = box.querySelector(".doc-text"); if (box.dataset.loaded) return;
+  try {
+    const r = await fetch(`/api/followup/verifier/cases/${encodeURIComponent(S.caseId)}/documents/${encodeURIComponent(box.dataset.doc)}/content`,
+      { headers: { "X-CTREC-Demo-Role": "verifier" } });
+    pre.textContent = r.ok ? await r.text() : `서류를 불러오지 못했어요 (${r.status})`; box.dataset.loaded = "1";
+  } catch (e) { pre.textContent = "서류를 불러오지 못했어요."; }
+}
 // 서류 확인 (담당자가 서류를 올리고, 서류 확인 담당이 값을 확인) -> 의사 판단. 판정은 서버가 다시 계산(화면은 결과만 보여 줌)
 const unitOf = (text) => { const m = String(text || "").match(/[<>=≥≤]+\s*[\d.]+\s*([^\s,;)]+)/); return m && !/^(years?|세)$/i.test(m[1]) ? m[1] : ""; };
 const daysAgo = (n) => { const d = new Date(Date.now() - n * 864e5); return d.toISOString().slice(0, 10); };
@@ -388,7 +402,8 @@ function docTemplate(vr) {
 // 기록할 항목: 서버가 받는 사실 항목. 유전자 검사는 사실 항목이 'biomarker' 하나(값에 변이 이름)라 'biomarker:EGFR' 같은 키는 뺌
 function recordFields(vr) {
   const f = vr.allowed_fields || [];
-  return f.includes("biomarker") ? f.filter(x => !x.startsWith("biomarker:")) : f;
+  const g = f.filter(x => !x.startsWith("basis:"));  // basis:* 는 근거 확인 요청 키 (사실 항목은 같이 오는 age 등)
+  return g.includes("biomarker") ? g.filter(x => !x.startsWith("biomarker:")) : g;
 }
 function workArea(r) {
   if (r.kind === "document_review" && r.status === "requires_document" && S.vdata) {
@@ -590,6 +605,7 @@ async function init() {
   q$("#st-reload").addEventListener("click", async () => { try { await loadAll(); if (S.caseId) await refreshCase(); } catch (e) { setConn(e.message, "bad"); } });
   q$("#st-tab-q").addEventListener("click", () => tab("q")); q$("#st-tab-c").addEventListener("click", () => tab("c")); q$("#st-tab-u").addEventListener("click", () => tab("u"));
   q$("#page-staff").addEventListener("change", (e) => { if (e.target.id === "st-qsort") renderQuestions(); });
+  q$("#page-staff").addEventListener("toggle", (e) => { if (e.target.matches && e.target.matches(".doc-view") && e.target.open) showDoc(e.target); }, true);
   q$("#page-staff").addEventListener("click", (e) => {
     const go = e.target.closest("[data-go]");
     if (go) { const v = go.dataset.go; tab(v);
